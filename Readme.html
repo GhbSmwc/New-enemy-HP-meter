@@ -1,0 +1,101 @@
+<html>
+	<head>
+		<style>
+			html {
+			background-color: #101010;
+			color: rgb(221, 221, 221);
+			font-family: sans-serif;
+			}
+			
+			table, th, td {
+			border: 1px solid white;
+			border-collapse: collapse;
+			}
+			
+			span.NoLineBreak {
+				white-space: nowrap;
+			}
+			
+			abbr{cursor: help;}
+			img.img-hor {
+				-moz-transform: scaleX(-1);
+				-o-transform: scaleX(-1);
+				-webkit-transform: scaleX(-1);
+				transform: scaleX(-1);
+				filter: FlipH;
+				-ms-filter: "FlipH";
+			}
+			div.CodeBlock {
+				overflow: auto;
+				width: 1000px;
+				height: 500px;
+				border: 1px solid white;
+				resize: both;
+				background-color: #101010;
+			}
+			pre {
+				margin: 0px;
+			}
+			*.FixedWidth {
+				font-family: monospace;
+			}
+			
+			*.NoLineBreak {
+				font-family: monospace;
+				white-space: pre;
+			}
+			*.Center {
+				text-align: center;
+			}
+			
+			li {
+				padding: 5px;
+			}
+		</style>
+	</head>
+<body style="max-width: 1000px; margin: auto; padding: 15px">
+<h1 class="Center">Enemy HP patch</h1>
+<div class="Center">By HammerBrother</div>
+<div>
+	<p>This ASM resource displays the enemies' HP as a numerical value and/or as a bar when they take damage on the status bar/HUD.</p>
+	<p>This is similar to <i>Kirby & The Amazing Mirror</i>. With the differences being:</p>
+	<ul>
+		<li>The bar in this resource displays its current HP percentage and its previous HP via a rapid-flicker. In K&tAM, the bar
+		updates with a gradual decrease without showing the previous HP percentage.</li>
+		
+		<li>Touching enemies will not display the meter, in K&tAM, it is possible to make it show its HP without damaging the enemy
+		by having Sone Kirby in his stone form (not moving or rolling down slopes) and an enemy passes by.</li>
+	</ul>
+	<p>So few enemies in SMW can take damage without being one-shotted, they are Chucks, Wendy/Lemmy, Ludwig, Morton/Roy, Big Boo boss,
+	and Bowser (although the status bar in that battle is disabled)</p>
+</div>
+<hr>
+<div>
+	<h2>What you need</h2>
+	<ul>
+		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=17109">Lunar magic</a></li>
+		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=14560">Asar</a></li>
+		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=39036">Uberasm tool version 2.0 or higher</a> (latest version recommended)</li>
+	</ul>
+	<h2>Recommended</h2>
+	<ul>
+		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=37432">Pixi</a></li>
+	</ul>
+</div>
+<hr>
+<div>
+	<h2>How to insert</h2>
+	<ol>
+		<li>
+			<p>Make any changes necessary on the defines, especially freeram data. It is likely that you would have them take up a large amount of bytes due to
+			them being sprite tables. There are multiple files due to some resources are general-purpose, such as the graphical bar can be used for player's HP
+			or other meters besides HP. The defines specific to sprite HP are in <kbd>EnemyHPMeterDefines.asm</kbd>. For editing what tiles used by general-purpose
+			subroutines, they're in <kbd>NumberDisplayRoutinesDefines.asm</kbd>.</p>
+			
+			<p>Once you are done, you'll need to have copies of these txt files (not the folder itself containing the texts) in same directory as the tools'
+			<kbd>.exe</kbd> programs are at (pixi and uberasm tool).</p>
+			
+			<p>If you later make changes in any of the defines, make sure you update its existing copies elsewhere.</p>
+		</li>
+	</ol>
+</div>

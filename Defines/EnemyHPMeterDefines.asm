@@ -2,6 +2,11 @@
 	incsrc "StatusBarDefines.asm"
 ;Freeram settings
 	;[BytesUsed = 1 + (!sprite_slots*2) + (!sprite_slots * EnabledTables)]
+	;Where "EnabledTables" is how many tables you can optionally have, which is the total:
+	; +!Setting_SpriteHP_TwoByte
+	; +(!Setting_SpriteHP_DisplayGraphicalBar & !Setting_SpriteHP_BarAnimation)*2
+	;
+	;
 	;A series of HP data stored in memory, in this order:
 	;
 	; - [1 byte]: Current sprite slot to display HP on. $FF means neither.
