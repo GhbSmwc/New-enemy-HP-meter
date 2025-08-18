@@ -113,7 +113,7 @@
 					; 1 = show transparent.
 					; This applies when the player takes damage.
 	;Misc settings
-		!Setting_SpriteHP_DisplaySpriteHPDataOnConsole = 0
+		!Setting_SpriteHP_DisplaySpriteHPDataOnConsole = 1
 			;^0 = no
 			; 1 = yes, display the HP data RAM usage on asar console.
 
@@ -144,6 +144,7 @@
 		!StructGuard_SpriteHPData = 1
 	endif
 	if !Setting_SpriteHP_DisplaySpriteHPDataOnConsole
+		print "---------------------------------------------------------------------------------"
 		print "Sprite HP data layout (use this for Address Tracker)"
 		print "$", hex(SpriteHPDataStructure.SpriteSlot), " 1 Current index to display sprite's HP"
 		print "$", hex(SpriteHPDataStructure.CurrentHPLow), " ", dec(!sprite_slots), " Sprite current HP, low byte."
@@ -156,6 +157,7 @@
 			print "$", hex(SpriteHPDataStructure.BarAnimationFill), " ", dec(!sprite_slots), " Sprite graphical bar fill amount for animation."
 			print "$", hex(SpriteHPDataStructure.BarAnimationTimer), " ", dec(!sprite_slots), " Sprite graphical bar fill delay timer."
 		endif
+		print "---------------------------------------------------------------------------------"
 	endif
 	
 	!Setting_SpriteHP_TrueMaximumHPAndDamageValue = min((10**!Setting_SpriteHP_MaxDigits)-1, (2**(8*(1+!Setting_SpriteHP_TwoByte)))-1)
