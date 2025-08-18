@@ -146,6 +146,7 @@
 	if !Setting_SpriteHP_DisplaySpriteHPDataOnConsole
 		print "---------------------------------------------------------------------------------"
 		print "Sprite HP data layout (use this for Address Tracker)"
+		print "---------------------------------------------------------------------------------"
 		print "$", hex(SpriteHPDataStructure.SpriteSlot), " 1 Current index to display sprite's HP"
 		print "$", hex(SpriteHPDataStructure.CurrentHPLow), " ", dec(!sprite_slots), " Sprite current HP, low byte."
 		print "$", hex(SpriteHPDataStructure.MaxHPLow), " ", dec(!sprite_slots), " Sprite max HP, low byte."
