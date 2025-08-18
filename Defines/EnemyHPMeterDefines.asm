@@ -137,9 +137,10 @@
 		macro MacroDataOneAfterAnother(Define_Name, Size, Define_Name_Offseter)
 			;This macro assigns Define_Name to an address, then offsets (Plus Size)
 			;to the first byte after the last byte of Define_Name. This is useful
-			;for having multiple defines at contiguous regions.
-			!{<Define_Name>} #= !<Define_Name_Offseter>
-			!<Define_Name_Offseter> #= <Size>+!<Define_Name_Offseter>
+			;for having multiple defines at contiguous regions by repeatedly calling
+			;this macro with different Define_Name.
+			!{<Define_Name>} #= !{<Define_Name_Offseter>}
+			!{<Define_Name_Offseter>} #= <Size>+!<Define_Name_Offseter>
 		endmacro
 		!MacroGuard_SpriteHPData = 1
 	endif
