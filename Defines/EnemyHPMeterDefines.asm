@@ -9,13 +9,15 @@
 	;
 	;A series of HP data stored in memory, in this order:
 	;
-	; - [1 byte]: Current sprite slot to display HP on. $FF means neither.
-	; - [BytesUsed = !sprite_slots]: Sprite's current HP, low byte
-	; - [BytesUsed = !sprite_slots]: Sprite's max HP, low byte
-	; - [BytesUsed = !sprite_slots * !Setting_SpriteHP_TwoByte]: Sprite's current HP, high byte
-	; - [BytesUsed = !sprite_slots * !Setting_SpriteHP_TwoByte]: Sprite's max HP, high byte
-	; - [BytesUsed = !sprite_slots * (!Setting_SpriteHP_DisplayGraphicalBar & !Setting_SpriteHP_BarAnimation)]: Bar fill animation
-	; - [BytesUsed = !sprite_slots * (!Setting_SpriteHP_DisplayGraphicalBar & !Setting_SpriteHP_BarAnimation)]: Bar fill animation timer
+	; - [1 byte][!Freeram_SpriteHP_SlotToDisplayHP]:
+	; -- Current sprite slot to display HP of. When ranging from 0 to !sprite_slots-1, will display HP. Any other value
+	;    will not display HP.
+	; - [BytesUsed = !sprite_slots][!Freeram_SpriteHP_CurrentHPLow]: Sprite's current HP, low byte
+	; - [BytesUsed = !sprite_slots][!Freeram_SpriteHP_MaxHPLow]: Sprite's max HP, low byte
+	; - [BytesUsed = !sprite_slots * !Setting_SpriteHP_TwoByte][!Freeram_SpriteHP_CurrentHPHi]: Sprite's current HP, high byte
+	; - [BytesUsed = !sprite_slots * !Setting_SpriteHP_TwoByte][!Freeram_SpriteHP_MaxHPHi]: Sprite's max HP, high byte
+	; - [BytesUsed = !sprite_slots * (!Setting_SpriteHP_DisplayGraphicalBar & !Setting_SpriteHP_BarAnimation)][!Freeram_SpriteHP_BarAnimationFill]: Bar fill animation
+	; - [BytesUsed = !sprite_slots * (!Setting_SpriteHP_DisplayGraphicalBar & !Setting_SpriteHP_BarAnimation)][!Freeram_SpriteHP_BarAnimationTimer]: Bar fill animation timer
 		if !sa1 == 0
 			!Setting_SpriteHP_SpriteHPData = $7FACC4
 		else
@@ -63,6 +65,9 @@
 			;Position for right-aligned, when !Setting_SpriteHP_NumericalTextAlignment == 2.
 				!Setting_SpriteHP_NumericalPosRightAligned_x = 31
 				!Setting_SpriteHP_NumericalPosRightAligned_y = 0
+			;Tile properties for numbers
+				!Setting_SpriteHP_Numerical_PropPage	= 0	;>Valid values: 0-3
+				!Setting_SpriteHP_Numerical_PropPalette	= 6	;>Valid values: 0-7
 		;Graphical bar settings
 			!Setting_SpriteHP_DisplayGraphicalBar = 1
 				;^0 = don't show the bar
@@ -128,52 +133,71 @@
 	if !Setting_SpriteHP_DisplayGraphicalBar == 0	;>Override to disable unused animation for the bar if the bar doesn't exist.
 		!Setting_SpriteHP_BarAnimation = 0
 	endif
-
-	if not(defined("MacroGuard_SpriteHPData"))
-		;^Labels, structs, functions, and macros, they cannot be redefined. And includeonce fails if there are two involved
-		; ASM files incsrcs with a different path to the same ASM file in which that file uses includeonce:
-		; https://github.com/RPGHacker/asar/issues/287
-		!AddressLocator #= !Setting_SpriteHP_SpriteHPData
-		macro MacroDataOneAfterAnother(Define_Name, Size, Define_Name_Offseter)
-			;This macro assigns Define_Name to an address, then offsets (Plus Size)
-			;to the first byte after the last byte of Define_Name. This is useful
-			;for having multiple defines at contiguous regions by repeatedly calling
-			;this macro with different Define_Name.
-			!{<Define_Name>} #= !{<Define_Name_Offseter>}
-			!{<Define_Name_Offseter>} #= <Size>+!<Define_Name_Offseter>
-		endmacro
-		!MacroGuard_SpriteHPData = 1
-	endif
-	
-	%MacroDataOneAfterAnother(Freeram_SpriteHP_SlotToDisplayHP, 1, AddressLocator)
-	%MacroDataOneAfterAnother(Freeram_SpriteHP_CurrentHPLow, !sprite_slots, AddressLocator)
-	%MacroDataOneAfterAnother(Freeram_SpriteHP_MaxHPLow, !sprite_slots, AddressLocator)
-	if !Setting_SpriteHP_TwoByte
-		%MacroDataOneAfterAnother(Freeram_SpriteHP_CurrentHPHi, !sprite_slots, AddressLocator)
-		%MacroDataOneAfterAnother(Freeram_SpriteHP_MaxHPHi, !sprite_slots, AddressLocator)
-	endif
-	if !Setting_SpriteHP_BarAnimation
-		%MacroDataOneAfterAnother(Freeram_SpriteHP_BarAnimationFill, !sprite_slots, AddressLocator)
-		%MacroDataOneAfterAnother(Freeram_SpriteHP_BarAnimationTimer, !sprite_slots, AddressLocator)
-	endif
-	
-	if !Setting_SpriteHP_DisplaySpriteHPDataOnConsole
-		print "counter: $", hex(!AddressLocator)
-		print "---------------------------------------------------------------------------------"
-		print "Sprite HP data layout (use this for Address Tracker)"
-		print "---------------------------------------------------------------------------------"
-		print "$", hex(!Freeram_SpriteHP_SlotToDisplayHP), " 1 Current index to display sprite's HP"
-		print "$", hex(!Freeram_SpriteHP_CurrentHPLow), " ", dec(!sprite_slots), " Sprite current HP, low byte."
-		print "$", hex(!Freeram_SpriteHP_MaxHPLow), " ", dec(!sprite_slots), " Sprite max HP, low byte."
+	;Obtain addresses representing HP data
+		if not(defined("MacroGuard_SpriteHPData"))
+			;^Labels, structs, functions, and macros, they cannot be redefined. And includeonce fails if there are two involved
+			; ASM files incsrcs with a different path to the same ASM file in which that file uses includeonce:
+			; https://github.com/RPGHacker/asar/issues/287
+			!AddressLocator #= !Setting_SpriteHP_SpriteHPData
+			macro MacroDataOneAfterAnother(Define_Name, Size, Define_Name_Offseter)
+				;This macro assigns Define_Name to an address, then offsets (Plus Size)
+				;to the first byte after the last byte of Define_Name. This is useful
+				;for having multiple defines at contiguous regions by repeatedly calling
+				;this macro with different Define_Name.
+				!{<Define_Name>} #= !{<Define_Name_Offseter>}
+				!{<Define_Name_Offseter>} #= <Size>+!<Define_Name_Offseter>
+			endmacro
+			!MacroGuard_SpriteHPData = 1
+		endif
+		
+		%MacroDataOneAfterAnother(Freeram_SpriteHP_SlotToDisplayHP, 1, AddressLocator)
+		%MacroDataOneAfterAnother(Freeram_SpriteHP_CurrentHPLow, !sprite_slots, AddressLocator)
+		%MacroDataOneAfterAnother(Freeram_SpriteHP_MaxHPLow, !sprite_slots, AddressLocator)
 		if !Setting_SpriteHP_TwoByte
-			print "$", hex(!Freeram_SpriteHP_CurrentHPHi), " ", dec(!sprite_slots), " Sprite current HP, high byte."
-			print "$", hex(!Freeram_SpriteHP_MaxHPHi), " ", dec(!sprite_slots), " Sprite max HP, high byte."
+			%MacroDataOneAfterAnother(Freeram_SpriteHP_CurrentHPHi, !sprite_slots, AddressLocator)
+			%MacroDataOneAfterAnother(Freeram_SpriteHP_MaxHPHi, !sprite_slots, AddressLocator)
 		endif
 		if !Setting_SpriteHP_BarAnimation
-			print "$", hex(!Freeram_SpriteHP_BarAnimationFill), " ", dec(!sprite_slots), " Sprite graphical bar fill amount for animation."
-			print "$", hex(!Freeram_SpriteHP_BarAnimationTimer), " ", dec(!sprite_slots), " Sprite graphical bar fill delay timer."
+			%MacroDataOneAfterAnother(Freeram_SpriteHP_BarAnimationFill, !sprite_slots, AddressLocator)
+			%MacroDataOneAfterAnother(Freeram_SpriteHP_BarAnimationTimer, !sprite_slots, AddressLocator)
+		endif
+	;Get status bar addresses
+		!Setting_SpriteHP_NumericalPos_XYPos = VanillaStatusBarXYToAddress(!Setting_SpriteHP_NumericalPos_x, !Setting_SpriteHP_NumericalPos_y, !RAM_0EF9)
+		!Setting_SpriteHP_NumericalPosRightAligned_XYPos = VanillaStatusBarXYToAddress(!Setting_SpriteHP_NumericalPosRightAligned_x, !Setting_SpriteHP_NumericalPosRightAligned_y, !RAM_0EF9)
+		!Setting_SpriteHP_GraphicalBarPos_XYPos = VanillaStatusBarXYToAddress(!Setting_SpriteHP_GraphicalBarPos_x, !Setting_SpriteHP_GraphicalBarPos_y, !RAM_0EF9)
+		if !UsingCustomStatusBar
+			!Setting_SpriteHP_NumericalPos_XYPos = PatchedStatusBarXYToAddress(!Setting_SpriteHP_NumericalPos_x, !Setting_SpriteHP_NumericalPos_y, !StatusBarPatchAddr_Tile, !StatusbarFormat)
+			!Setting_SpriteHP_NumericalPos_XYPosProp = PatchedStatusBarXYToAddress(!Setting_SpriteHP_NumericalPos_x, !Setting_SpriteHP_NumericalPos_y, !StatusBarPatchAddr_Prop, !StatusbarFormat)
+			
+			!Setting_SpriteHP_NumericalPosRightAligned_XYPos = PatchedStatusBarXYToAddress(!Setting_SpriteHP_NumericalPosRightAligned_x, !Setting_SpriteHP_NumericalPosRightAligned_y, !StatusBarPatchAddr_Tile, !StatusbarFormat)
+			!Setting_SpriteHP_NumericalPosRightAligned_XYPosProp = PatchedStatusBarXYToAddress(!Setting_SpriteHP_NumericalPosRightAligned_x, !Setting_SpriteHP_NumericalPosRightAligned_y, !StatusBarPatchAddr_Prop, !StatusbarFormat)
+			
+			!Setting_SpriteHP_GraphicalBarPos_XYPos = PatchedStatusBarXYToAddress(!Setting_SpriteHP_GraphicalBarPos_x, !Setting_SpriteHP_GraphicalBarPos_y, !StatusBarPatchAddr_Tile, !StatusbarFormat)
+			!Setting_SpriteHP_GraphicalBarPos_XYPosProp = PatchedStatusBarXYToAddress(!Setting_SpriteHP_GraphicalBarPos_x, !Setting_SpriteHP_GraphicalBarPos_y, !StatusBarPatchAddr_Prop, !StatusbarFormat)
+		endif
+	;Get YXPCCCTT data
+		!Setting_SpriteHP_NumericalProp = GetLayer3YXPCCCTT(0, 0, 1, !Setting_SpriteHP_Numerical_PropPalette, !Setting_SpriteHP_Numerical_PropPage)
+	
+	if !Setting_SpriteHP_DisplaySpriteHPDataOnConsole
+		print "---------------------------------------------------------------------------------"
+		print "\!Setting_SpriteHP_SpriteHPData's Total bytes used: ", dec(!AddressLocator-!Setting_SpriteHP_SpriteHPData)
+		print "Range: $", hex(!Setting_SpriteHP_SpriteHPData), "~$", hex(!AddressLocator-1)
+		print "---------------------------------------------------------------------------------"
+		print "\!Setting_SpriteHP_SpriteHPData (Address Tracker format)"
+		print "---------------------------------------------------------------------------------"
+		print "$", hex(!Freeram_SpriteHP_SlotToDisplayHP), " 1 Current index to display sprite's HP (\!Freeram_SpriteHP_SlotToDisplayHP)."
+		print "$", hex(!Freeram_SpriteHP_CurrentHPLow), " ", dec(!sprite_slots), " Sprite current HP, low byte (\!Freeram_SpriteHP_CurrentHPLow)."
+		print "$", hex(!Freeram_SpriteHP_MaxHPLow), " ", dec(!sprite_slots), " Sprite max HP, low byte (\!Freeram_SpriteHP_MaxHPLow)."
+		if !Setting_SpriteHP_TwoByte
+			print "$", hex(!Freeram_SpriteHP_CurrentHPHi), " ", dec(!sprite_slots), " Sprite current HP, high byte (\!Freeram_SpriteHP_CurrentHPHi)."
+			print "$", hex(!Freeram_SpriteHP_MaxHPHi), " ", dec(!sprite_slots), " Sprite max HP, high byte (\!Freeram_SpriteHP_MaxHPHi)."
+		endif
+		if !Setting_SpriteHP_BarAnimation
+			print "$", hex(!Freeram_SpriteHP_BarAnimationFill), " ", dec(!sprite_slots), " Sprite graphical bar fill amount for animation (\!Freeram_SpriteHP_BarAnimationFill)."
+			print "$", hex(!Freeram_SpriteHP_BarAnimationTimer), " ", dec(!sprite_slots), " Sprite graphical bar fill delay timer (\!Freeram_SpriteHP_BarAnimationTimer)."
 		endif
 		print "---------------------------------------------------------------------------------"
 	endif
 	
 	!Setting_SpriteHP_TrueMaximumHPAndDamageValue = min((10**!Setting_SpriteHP_MaxDigits)-1, (2**(8*(1+!Setting_SpriteHP_TwoByte)))-1)
+	
