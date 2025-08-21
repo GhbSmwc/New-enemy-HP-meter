@@ -8,7 +8,7 @@ incsrc "../GraphicalBarDefines.asm"
 	;	$04-$05: Remainder
 	?.FindTotalPieces
 		?..FindTotalMiddle
-			if !CPUMode != 0
+			if !sa1 != 0
 				LDA !Scratchram_GraphicalBar_MiddlePiece	;\TotalMiddlePieces = MiddlePieces*MiddleLength
 				STA $00						;|Note: Multiply two 8-bit numbers.
 				STZ $01						;|

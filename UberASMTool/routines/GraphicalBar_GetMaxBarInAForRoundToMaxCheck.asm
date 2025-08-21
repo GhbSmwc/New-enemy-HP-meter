@@ -6,7 +6,7 @@
 	;Destroys:
 	; -$00-$07 in LoROM
 	; -$04-$05 in SA-1
-	if !CPUMode != 0
+	if !sa1 != 0
 		LDA !Scratchram_GraphicalBar_MiddlePiece	;\Get amount of pieces in middle
 		AND #$00FF					;|
 		STA $00						;|

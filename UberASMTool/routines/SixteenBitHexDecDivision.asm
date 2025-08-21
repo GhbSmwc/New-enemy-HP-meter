@@ -23,7 +23,7 @@
 	;!Scratchram_16bitHexDecOutput is address $02 for normal ROM and $04 for SA-1.
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		?SixteenBitHexDecDivision:
-			if !CPUMode == 0
+			if !sa1 == 0
 				PHX
 				PHY
 

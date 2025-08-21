@@ -105,14 +105,6 @@ endif
 			;  above limitation, is 64 tile bytes (indexes $00 to $3F).
 			;
 			; But this is highly unlikely as the screen is 32 8x8 tiles wide.
-
-		!Setting_GraphicalBar_SNESMathOnly = 0
-			;^Info follows:
-			;-Set this to 0 if your code calls the graphical bar routines under the SA-1 processor on SA-1
-			; ROM. Otherwise set it to 1 if it only calls it under the SNES CPU.
-			;
-			; As an important note: certain emulators follows a rule that only the correct CPU can access
-			; the registers of the matching type (e.g. SA-1 registers can only be used by SA-1 CPU, not SNES).
 		!GraphicalBar_OAMSlot = 4
 			;^Starting slot number to use (increments of 1) for checking, not to be confused with index (which increments by 4). Use only values 0-127 ($00-$7F).
 ;Print descriptions (if you have trouble tracking your RAM address)
@@ -130,12 +122,3 @@ endif
 			print "-Middle length: $", hex(!Scratchram_GraphicalBar_TempLength)
 			print "-Fill byte table: $", hex(!Scratchram_GraphicalBar_FillByteTbl), " to $", hex(!Scratchram_GraphicalBar_FillByteTbl+31), " (at max length)"
 		endif
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;Don't touch.
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	;Determine should registers be SNES (0) or SA-1 (1)
-	!CPUMode = 0
-	if (and(equal(!sa1, 1),equal(!Setting_GraphicalBar_SNESMathOnly, 0)))
-		!CPUMode = 1
-	endif
