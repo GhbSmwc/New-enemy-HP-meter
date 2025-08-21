@@ -1,4 +1,3 @@
-	incsrc "SA1StuffDefines.asm"
 	incsrc "StatusBarDefines.asm"
 ;Freeram settings
 	;[BytesUsed = 1 + (!sprite_slots*2) + (!sprite_slots * EnabledTables)]
@@ -177,7 +176,12 @@
 		endif
 	;Get YXPCCCTT data
 		!Setting_SpriteHP_NumericalProp = GetLayer3YXPCCCTT(0, 0, 1, !Setting_SpriteHP_Numerical_PropPalette, !Setting_SpriteHP_Numerical_PropPage)
-	
+
+	;Maximum string length failsafe
+		!Setting_SpriteHP_MaxStringLength = !Setting_SpriteHP_MaxDigits
+		if !Setting_SpriteHP_DisplayNumerical == 2
+			!Setting_SpriteHP_MaxStringLength = (!Setting_SpriteHP_MaxDigits*2)+1
+		endif
 	if !Setting_SpriteHP_DisplaySpriteHPDataOnConsole
 		print "---------------------------------------------------------------------------------"
 		print "\!Setting_SpriteHP_SpriteHPData's Total bytes used: ", dec(!AddressLocator-!Setting_SpriteHP_SpriteHPData)
