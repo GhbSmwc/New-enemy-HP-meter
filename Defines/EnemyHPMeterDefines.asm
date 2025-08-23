@@ -11,12 +11,18 @@
 	; - [1 byte][!Freeram_SpriteHP_SlotToDisplayHP]:
 	; -- Current sprite slot to display HP of. When ranging from 0 to !sprite_slots-1, will display HP. Any other value
 	;    will not display HP.
-	; - [BytesUsed = !sprite_slots][!Freeram_SpriteHP_CurrentHPLow]: Sprite's current HP, low byte
-	; - [BytesUsed = !sprite_slots][!Freeram_SpriteHP_MaxHPLow]: Sprite's max HP, low byte
-	; - [BytesUsed = !sprite_slots * !Setting_SpriteHP_TwoByte][!Freeram_SpriteHP_CurrentHPHi]: Sprite's current HP, high byte
-	; - [BytesUsed = !sprite_slots * !Setting_SpriteHP_TwoByte][!Freeram_SpriteHP_MaxHPHi]: Sprite's max HP, high byte
-	; - [BytesUsed = !sprite_slots * (!Setting_SpriteHP_DisplayGraphicalBar & !Setting_SpriteHP_BarAnimation)][!Freeram_SpriteHP_BarAnimationFill]: Bar fill animation
-	; - [BytesUsed = !sprite_slots * (!Setting_SpriteHP_DisplayGraphicalBar & !Setting_SpriteHP_BarAnimation)][!Freeram_SpriteHP_BarAnimationTimer]: Bar fill animation timer
+	; - [BytesUsed = !sprite_slots][!Freeram_SpriteHP_CurrentHPLow]:
+	;    Sprite's current HP, low byte
+	; - [BytesUsed = !sprite_slots][!Freeram_SpriteHP_MaxHPLow]:
+	;    Sprite's max HP, low byte
+	; - [BytesUsed = !sprite_slots * !Setting_SpriteHP_TwoByte][!Freeram_SpriteHP_CurrentHPHi]:
+	;    Sprite's current HP, high byte
+	; - [BytesUsed = !sprite_slots * !Setting_SpriteHP_TwoByte][!Freeram_SpriteHP_MaxHPHi]:
+	;    Sprite's max HP, high byte
+	; - [BytesUsed = !sprite_slots * (!Setting_SpriteHP_DisplayGraphicalBar & !Setting_SpriteHP_BarAnimation)][!Freeram_SpriteHP_BarAnimationFill]:
+	;    Bar fill animation
+	; - [BytesUsed = !sprite_slots * (!Setting_SpriteHP_DisplayGraphicalBar & !Setting_SpriteHP_BarAnimation & !Setting_SpriteHP_BarChangeDelay)][!Freeram_SpriteHP_BarAnimationTimer]:
+	;    Bar fill animation timer
 		if !sa1 == 0
 			!Setting_SpriteHP_SpriteHPData = $7FACC4
 		else
@@ -81,19 +87,32 @@
 				!Setting_SpriteHP_GraphicalBar_LeftPieces                  = 3             ;\These will by default, set the RAM for the pieces for each section
 				!Setting_SpriteHP_GraphicalBar_MiddlePieces                = 8             ;|(note that these apply for both levels and overworlds)
 				!Setting_SpriteHP_GraphicalBar_RightPieces                 = 3             ;/
+
+			;Avoid percentage bar from representing 0 or full when really close but not at those values:
+				!Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull	= 3
+					;^0 = allow bar to display 0% when HP is very close to zero and 100% when close to max.
+					; 1 = display 1 pixel or piece filled when low on HP and only 0 if HP is 0.
+					; 2 = display MaxPieces-1 when nearly full.
+					; 3 = Display 1 piece or MaxPieces-1 if close to 0 or MaxPieces.
+			;Rounding the amount of fill settings:
+				!Setting_SpriteHP_BarFillRoundDirection = 0
+					; 0 = Round to nearest
+					; 1 = Round down (bar may display 0 fill amount when !Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull isn't 1 or 3)
+					; 2 = Round up
+
 			;Length of bar (number of middle tiles). Full screen width is 32 tiles.
 				!Setting_SpriteHP_GraphicalBarMiddleLength           = 7
 			;Fill direction. 0 = Left-to-right, 1 = Right-to-left
-				!Setting_SpriteHP_LeftwardsBar                       = 0
+				!Setting_SpriteHP_LeftwardsBar                       = 1
 			;Tile properties (X-flip for leftwards bar is already handled.)
 				!Setting_SpriteHP_BarProps_Page                      = 0  ;>Use only values 0-3
 				!Setting_SpriteHP_BarProps_Palette                   = 6  ;>Use only values 0-7
+				
 			;Bar animation stuff
 				!Setting_SpriteHP_BarAnimation			= 1
-					;^0 = HP bar instantly updates when the player heals or take damage
+					;^0 = HP bar instantly updates when the enemy heals or take damage
 					;     (!Freeram_SpriteHP_BarRecord is no longer used).
-					; 1 = HP bar displays a changing animation (transparent segment to
-					;     indicate the amount of damage or recovery)
+					; 1 = Shows animation (gradual change, rapid-flick for previous and current HP).
 
 				!Setting_SpriteHP_FillDelayFrames				= $00
 					;^Speed that the bar fills up. Only use these values:
@@ -115,19 +134,23 @@
 				!Setting_SpriteHP_BarChangeDelay				= 30
 					;^How many frames the record effect (transparent effect) hangs
 					; before shrinking down to current HP, up to 255 is allowed.
-					; Set to 0 to disable (will also disable !Freeram_SpriteHP_BarAnimationFill
+					; Set to 0 to disable (will also disable !Freeram_SpriteHP_BarAnimationTimer
 					; from being used). Remember, the game runs 60 FPS. This also applies
 					; to healing should !Setting_SpriteHP_ShowHealedTransparent be enabled.
 
 				!Setting_SpriteHP_ShowHealedTransparent		= 1
-					;^0 = show sliding upwards animation
+					;^0 = show sliding upwards animation (with an optional sound effect)
 					; 1 = show amount healed as transparent segment.
 
 				!Setting_SpriteHP_ShowDamageTransperent		= 1
 					;^0 = show no transparent (if !Setting_SpriteHP_BarAnimation is
 					;     enabled, would perform a sliding down animation as opaque)
 					; 1 = show transparent.
-					; This applies when the player takes damage.
+					; This applies when the sprite takes damage.
+				;Sound effect when the bar fills up (boss intro, or when enemy heals).
+				;See https://www.smwcentral.net/?p=viewthread&t=6665
+					!Setting_SpriteHP_FillingSFXNumb		= $23		;>Sound number (set to 0 to disable SFX)
+					!Setting_SpriteHP_FillingSFXPort		= $1DFC|!addr	;>Use $1DF9, $1DFA, or $1DFC, followed by "|!addr" if you're using SA-1
 	;Misc settings
 		!Setting_SpriteHP_DisplaySpriteHPDataOnConsole = 1
 			;^0 = no
@@ -165,7 +188,9 @@
 		endif
 		if !Setting_SpriteHP_BarAnimation
 			%MacroDataOneAfterAnother(Freeram_SpriteHP_BarAnimationFill, !sprite_slots, AddressLocator)
-			%MacroDataOneAfterAnother(Freeram_SpriteHP_BarAnimationTimer, !sprite_slots, AddressLocator)
+			if !Setting_SpriteHP_BarChangeDelay
+				%MacroDataOneAfterAnother(Freeram_SpriteHP_BarAnimationTimer, !sprite_slots, AddressLocator)
+			endif
 		endif
 	;Get status bar addresses
 		!Setting_SpriteHP_NumericalPos_XYPos = VanillaStatusBarXYToAddress(!Setting_SpriteHP_NumericalPos_x, !Setting_SpriteHP_NumericalPos_y, !RAM_0EF9)
@@ -183,6 +208,7 @@
 		endif
 	;Get YXPCCCTT data
 		!Setting_SpriteHP_NumericalProp = GetLayer3YXPCCCTT(0, 0, 1, !Setting_SpriteHP_Numerical_PropPalette, !Setting_SpriteHP_Numerical_PropPage)
+		!Setting_SpriteHP_GraphicalBarProp = GetLayer3YXPCCCTT(0, !Setting_SpriteHP_LeftwardsBar, 1, !Setting_SpriteHP_BarProps_Palette, !Setting_SpriteHP_BarProps_Page)
 	;Graphical bar values
 		!Setting_SpriteHP_GraphicalBar_LeftEndExists #= notequal(!Setting_SpriteHP_GraphicalBar_LeftPieces, 0)
 		!Setting_SpriteHP_GraphicalBar_MiddleExists #= !Setting_SpriteHP_GraphicalBarMiddleLength*(notequal(!Setting_SpriteHP_GraphicalBar_MiddlePieces, 0))
@@ -211,7 +237,9 @@
 		endif
 		if !Setting_SpriteHP_BarAnimation
 			print "$", hex(!Freeram_SpriteHP_BarAnimationFill), " ", dec(!sprite_slots), " Sprite graphical bar fill amount for animation (\!Freeram_SpriteHP_BarAnimationFill)."
-			print "$", hex(!Freeram_SpriteHP_BarAnimationTimer), " ", dec(!sprite_slots), " Sprite graphical bar fill delay timer (\!Freeram_SpriteHP_BarAnimationTimer)."
+			if !Setting_SpriteHP_BarChangeDelay
+				print "$", hex(!Freeram_SpriteHP_BarAnimationTimer), " ", dec(!sprite_slots), " Sprite graphical bar fill delay timer (\!Freeram_SpriteHP_BarAnimationTimer)."
+			endif
 		endif
 		print "---------------------------------------------------------------------------------"
 	endif
