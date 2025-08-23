@@ -208,7 +208,7 @@
 		endif
 	;Get YXPCCCTT data
 		!Setting_SpriteHP_NumericalProp = GetLayer3YXPCCCTT(0, 0, 1, !Setting_SpriteHP_Numerical_PropPalette, !Setting_SpriteHP_Numerical_PropPage)
-		!Setting_SpriteHP_GraphicalBarProp = GetLayer3YXPCCCTT(0, !Setting_SpriteHP_LeftwardsBar, 1, !Setting_SpriteHP_BarProps_Palette, !Setting_SpriteHP_BarProps_Page)
+		!Setting_SpriteHP_GraphicalBarProp = GetLayer3YXPCCCTT(0, 0, 1, !Setting_SpriteHP_BarProps_Palette, !Setting_SpriteHP_BarProps_Page)
 	;Graphical bar values
 		!Setting_SpriteHP_GraphicalBar_LeftEndExists #= notequal(!Setting_SpriteHP_GraphicalBar_LeftPieces, 0)
 		!Setting_SpriteHP_GraphicalBar_MiddleExists #= !Setting_SpriteHP_GraphicalBarMiddleLength*(notequal(!Setting_SpriteHP_GraphicalBar_MiddlePieces, 0))

@@ -363,7 +363,9 @@ main:
 					
 				endif
 				%UberRoutine(GraphicalBar_DrawGraphicalBarSubtractionLoopEdition)
+				STZ $00									;>Set graphics mode to level layer 3
 				%UberRoutine(GraphicalBar_ConvertBarFillAmountToTiles)
+				
 				LDA.b #!Setting_SpriteHP_GraphicalBarPos_XYPos
 				STA $00
 				LDA.b #!Setting_SpriteHP_GraphicalBarPos_XYPos>>8
@@ -401,10 +403,21 @@ main:
 	BRA .Done
 	.ClearHPDisplay
 		..ClearNumerical
-			if !Setting_SpriteHP_DisplayNumerical != 0
+			if !Setting_SpriteHP_DisplayNumerical
 				%ClearNumerical()
 			endif
-	
+		..ClearGraphicalBar
+			if !Setting_SpriteHP_DisplayGraphicalBar
+				LDX.b #(!Setting_SpriteHP_GraphicalBar_TotalTiles-1)*!StatusbarFormat
+				...Loop
+					LDA.b #!StatusBarBlankTile
+					STA !Setting_SpriteHP_GraphicalBarPos_XYPos,x
+					LDA.b #!Setting_SpriteHP_GraphicalBarProp
+					STA !Setting_SpriteHP_GraphicalBarPos_XYPosProp,x
+					....Next
+						DEX #!StatusbarFormat
+						BPL ...Loop
+			endif
 	.Done
 	PLB
 	RTL
