@@ -57,6 +57,9 @@
 					; - 0 = Digits at fixed location (may have leading spaces)
 					; - 1 = Left-Aligned
 					; - 2 = Right-aligned (if used with !Setting_SpriteHP_DisplayNumerical == 1, will treat this as using fixed location)
+				!Setting_SpriteHP_ExcessDigitProt = 1
+					;^Maximum character write failsafe. If there are longer strings than expected, the number display routine will simply
+					; not display the number.
 			;Position of the numerical HP display, will occupy this position and tiles to the right
 			;when set to. Only used when !Setting_SpriteHP_NumericalTextAlignment < 2.
 				!Setting_SpriteHP_NumericalPos_x = 21
@@ -74,6 +77,10 @@
 			;XY position of the bar (uses this position and tiles to the right, even when leftwards)
 				!Setting_SpriteHP_GraphicalBarPos_x = 23
 				!Setting_SpriteHP_GraphicalBarPos_y = 1
+			;Number of pieces on each tile
+				!Setting_SpriteHP_GraphicalBar_LeftPieces                  = 3             ;\These will by default, set the RAM for the pieces for each section
+				!Setting_SpriteHP_GraphicalBar_MiddlePieces                = 8             ;|(note that these apply for both levels and overworlds)
+				!Setting_SpriteHP_GraphicalBar_RightPieces                 = 3             ;/
 			;Length of bar (number of middle tiles). Full screen width is 32 tiles.
 				!Setting_SpriteHP_GraphicalBarMiddleLength           = 7
 			;Fill direction. 0 = Left-to-right, 1 = Right-to-left
@@ -108,8 +115,8 @@
 				!Setting_SpriteHP_BarChangeDelay				= 30
 					;^How many frames the record effect (transparent effect) hangs
 					; before shrinking down to current HP, up to 255 is allowed.
-					; Set to 0 to disable (will also disable !Freeram_Setting_SpriteHP_BarChangeDelayTmr
-					; from being used,). Remember, the game runs 60 FPS. This also applies
+					; Set to 0 to disable (will also disable !Freeram_SpriteHP_BarAnimationFill
+					; from being used). Remember, the game runs 60 FPS. This also applies
 					; to healing should !Setting_SpriteHP_ShowHealedTransparent be enabled.
 
 				!Setting_SpriteHP_ShowHealedTransparent		= 1
@@ -176,7 +183,13 @@
 		endif
 	;Get YXPCCCTT data
 		!Setting_SpriteHP_NumericalProp = GetLayer3YXPCCCTT(0, 0, 1, !Setting_SpriteHP_Numerical_PropPalette, !Setting_SpriteHP_Numerical_PropPage)
-
+	;Graphical bar values
+		!Setting_SpriteHP_GraphicalBar_LeftEndExists #= notequal(!Setting_SpriteHP_GraphicalBar_LeftPieces, 0)
+		!Setting_SpriteHP_GraphicalBar_MiddleExists #= !Setting_SpriteHP_GraphicalBarMiddleLength*(notequal(!Setting_SpriteHP_GraphicalBar_MiddlePieces, 0))
+		!Setting_SpriteHP_GraphicalBar_RightEndExists #= notequal(!Setting_SpriteHP_GraphicalBar_RightPieces, 0)
+		!Setting_SpriteHP_GraphicalBar_TotalTiles #= !Setting_SpriteHP_GraphicalBar_LeftEndExists+!Setting_SpriteHP_GraphicalBar_MiddleExists+!Setting_SpriteHP_GraphicalBar_RightEndExists
+		!Setting_SpriteHP_GraphicalBar_TotalPieces #= !Setting_SpriteHP_GraphicalBar_LeftPieces+(!Setting_SpriteHP_GraphicalBarMiddleLength*!Setting_SpriteHP_GraphicalBar_MiddlePieces)+!Setting_SpriteHP_GraphicalBar_RightEndExists
+	
 	;Maximum string length failsafe
 		!Setting_SpriteHP_MaxStringLength = !Setting_SpriteHP_MaxDigits
 		if !Setting_SpriteHP_DisplayNumerical == 2
