@@ -338,7 +338,7 @@ main:
 							BNE ....TransperentAnimation				;/>If odd frame, display alternating frames of HP.
 						else
 							if !Setting_SpriteHP_BarChangeDelay != 0
-								LDA !Setting_SpriteHP_BarEmptyPerFrame
+								LDA !Freeram_SpriteHP_BarAnimationTimer,x
 								BNE ....TransperentAnimation
 							endif
 						endif
