@@ -225,17 +225,17 @@ main:
 				TAX
 				LDA !Freeram_SpriteHP_CurrentHPLow,x
 				STA !Scratchram_GraphicalBar_FillByteTbl
-				LDA !Freeram_SpriteHP_MaxHPLow
+				LDA !Freeram_SpriteHP_MaxHPLow,x
 				STA !Scratchram_GraphicalBar_FillByteTbl+2
 				if !Setting_SpriteHP_TwoByte
-					LDA !Freeram_SpriteHP_CurrentHPHi
+					LDA !Freeram_SpriteHP_CurrentHPHi,x
 					STA !Scratchram_GraphicalBar_FillByteTbl+1
-					LDA !Freeram_SpriteHP_MaxHPHi
+					LDA !Freeram_SpriteHP_MaxHPHi,x
 					STA !Scratchram_GraphicalBar_FillByteTbl+3
 				else
 					LDA #$00
-					STA !Scratchram_GraphicalBar_FillByteTbl+1
-					STA !Scratchram_GraphicalBar_FillByteTbl+3
+					STA !Scratchram_GraphicalBar_FillByteTbl+1,x
+					STA !Scratchram_GraphicalBar_FillByteTbl+3,x
 				endif
 				PHX
 				if !Setting_SpriteHP_BarFillRoundDirection == 0

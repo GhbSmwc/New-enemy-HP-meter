@@ -11,11 +11,11 @@
 
 	;This stuff was here due to pixi have the SA-1 values in defines being renamed, so a transfer
 	;was needed:
-	!sa1 = !SA1		;>case sensitive.
-	!sprite_slots = !SprSize
+		!sa1 = !SA1		;>case sensitive.
+		!sprite_slots = !SprSize
 
-	incsrc "EnemyHPDefines/EnemyHP.asm"
-	incsrc "EnemyHPDefines/GraphicalBarDefines.asm"
+	incsrc "../EnemyHPMeterDefines.asm"
+	incsrc "../GraphicalBarDefines.asm"
 	
 	!Setting_StompBounceBack	= 1	;>bounce player away when stomping: 0 = false, 1 = true.
 	!Setting_DamagePlayer		= 1	;>0 = harmless, 1 = damage player on contact (besides stomping)
@@ -84,10 +84,10 @@ print "INIT ",pc
 
 FootYpos:
 	dw $0018,$0028,$0028
-if !Setting_StompBounceBack
-BouncePlayerAway:
-	db $E0,$20 ;>Same as chargin chuck.
-endif
+	if !Setting_StompBounceBack
+		BouncePlayerAway:
+			db $E0,$20 ;>Same as chargin chuck.
+	endif
 
 MainReturn:
 	RTS
@@ -99,7 +99,7 @@ SPRITE_CODE_START:
 		AND.b #%00000010		;|\2 frames show and 2 frames of no-show
 		BNE ..NoGFX			;|/
 		..NoBlink
-		JSR SUB_GFX
+			JSR SUB_GFX
 		..NoGFX
 
 	.FreezeCheck
@@ -111,7 +111,7 @@ SPRITE_CODE_START:
 			TXA					;>Don't worry, this copies X, not just transfer
 			CMP !Freeram_SprHPCurrSlot		;>Compare with the slot the HP bar is using
 			BEQ ..ItsOnThisSprite			;>If HP bar is on this current sprite, don't delete record
-			JSL !DummyJSL_EnemyHP_GetPercentHP	;>Get current percent HP
+			%SpriteHP_RemoveRecordEffect		;>Get current percent HP
 			LDA $00					;\Remove Record effect (make them the same)
 			STA !Freeram_SprTbl_RecordEfft,x	;/
 			..ItsOnThisSprite
@@ -133,7 +133,7 @@ SPRITE_CODE_START:
 		SEP #$20					;|
 		JSR Heal					;/
 		if !Setting_SpriteHP_BarAnimation != 0
-			JSL !DummyJSL_EnemyHP_GetPercentHP	;\remove record effect (without the condition of not selecting this sprite)
+			%SpriteHP_RemoveRecordEffect		;\remove record effect (without the condition of not selecting this sprite)
 			LDA $00					;|
 			STA !Freeram_SprTbl_RecordEfft,x	;/
 		endif
@@ -192,7 +192,7 @@ SPRITE_CODE_START:
 			LDA.w #!StompDamage			;\Amount of damage
 			STA $00					;/
 			SEP #$20
-			JSL !DummyJSL_EnemyHP_LoseHP		;>Lose HP
+			%SpriteLoseHP()				;>Lose HP
 			LDA !Freeram_SprTbl_CurrHPLow,x		;\If HP != 0, don't kill
 			ORA !Freeram_SprTbl_CurrHPHi,x		;|
 			BNE ...NoDeath				;/
@@ -294,11 +294,11 @@ SPRITE_CODE_START:
 						SEP #$20		;/
 
 					....Damage
-						JSL !DummyJSL_EnemyHP_LoseHP	;>Lose HP
-						LDA !Freeram_SprTbl_CurrHPLow,x	;\If HP != 0, don't kill
-						ORA !Freeram_SprTbl_CurrHPHi,x	;|
-						BNE .....NoDeath		;/
-						JSR SpinjumpKillSprite		;>Make sprite die (sets !14C8,x and uses whats marked * to prevent executing multiple times).
+						%SpriteLoseHP()				;>Lose HP
+						LDA !Freeram_SprTbl_CurrHPLow,x		;\If HP != 0, don't kill
+						ORA !Freeram_SprTbl_CurrHPHi,x		;|
+						BNE .....NoDeath			;/
+						JSR SpinjumpKillSprite			;>Make sprite die (sets !14C8,x and uses whats marked * to prevent executing multiple times).
 						BRA .....SkipSfx
 
 						.....NoDeath
@@ -366,7 +366,7 @@ SPRITE_CODE_START:
 					LDA.w #!BounceDamage	;\Damage from bounce blocks
 					STA $00			;/
 					SEP #$20
-					JSL !DummyJSL_EnemyHP_LoseHP	;>Lose HP
+					%SpriteLoseHP()			;>Lose HP
 					LDA !Freeram_SprTbl_CurrHPLow,x	;\If HP != 0, don't kill
 					ORA !Freeram_SprTbl_CurrHPHi,x	;|
 					BNE ....NoDeath			;/
@@ -464,7 +464,7 @@ SPRITE_CODE_START:
 				LDA.w #!CarryableKickedSpr	;\The damage
 				STA $00				;/
 				SEP #$20
-				JSL !DummyJSL_EnemyHP_LoseHP	;>Lose HP
+				%SpriteLoseHP()			;>Lose HP
 				LDA !Freeram_SprTbl_CurrHPLow,x	;\If HP != 0, don't kill
 				ORA !Freeram_SprTbl_CurrHPHi,x	;|
 				BNE ....NoDeath			;/
@@ -529,7 +529,7 @@ SPRITE_CODE_START:
 			LDA.w #!CapeSpinDamage		;\Amount of damage
 			STA $00				;/
 			SEP #$20
-			JSL !DummyJSL_EnemyHP_LoseHP	;>Lose HP
+			%SpriteLoseHP()			;>Lose HP
 			LDA !Freeram_SprTbl_CurrHPLow,x	;\If HP != 0, don't kill
 			ORA !Freeram_SprTbl_CurrHPHi,x	;|
 			BNE ...NoDeath			;/
