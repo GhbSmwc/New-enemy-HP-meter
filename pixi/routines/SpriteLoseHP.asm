@@ -3,7 +3,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;Damage sprite subroutine.
 ;Input:
-; - $00 to $00+!Setting_SpriteHP_TwoByteHP = Amount of damage.
+; - $00 to $00+!Setting_SpriteHP_TwoByte = Amount of damage.
 ;Output:
 ; - HP is already subtracted, if damage > currentHP, HP is
 ;   set to 0.
@@ -15,7 +15,7 @@
 		LDA.b #!Setting_SpriteHP_BarChangeDelay		;\Freeze damage indicator
 		STA !Freeram_SpriteHP_BarAnimationTimer,x	;/
 	endif
-	if !Setting_SpriteHP_TwoByteHP != 0
+	if !Setting_SpriteHP_TwoByte != 0
 		LDA !Freeram_SpriteHP_CurrentHPHi,x	;>HP high byte
 		XBA					;>Transfer to A's high byte
 		LDA !Freeram_SpriteHP_CurrentHPLow,x	;>HP low byte in A's low byte

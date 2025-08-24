@@ -186,21 +186,23 @@
 				!{<Define_Name>} #= !{<Define_Name_Offseter>}
 				!{<Define_Name_Offseter>} #= <Size>+!<Define_Name_Offseter>
 			endmacro
+			
+			;The following also needs to have each of them be calling macros once, else they end up being set again to another,
+			;different RAM address.
+				%MacroDataOneAfterAnother(Freeram_SpriteHP_SlotToDisplayHP, 1, AddressLocator)
+				%MacroDataOneAfterAnother(Freeram_SpriteHP_CurrentHPLow, !sprite_slots, AddressLocator)
+				%MacroDataOneAfterAnother(Freeram_SpriteHP_MaxHPLow, !sprite_slots, AddressLocator)
+				if !Setting_SpriteHP_TwoByte
+					%MacroDataOneAfterAnother(Freeram_SpriteHP_CurrentHPHi, !sprite_slots, AddressLocator)
+					%MacroDataOneAfterAnother(Freeram_SpriteHP_MaxHPHi, !sprite_slots, AddressLocator)
+				endif
+				if !Setting_SpriteHP_BarAnimation
+					%MacroDataOneAfterAnother(Freeram_SpriteHP_BarAnimationFill, !sprite_slots, AddressLocator)
+					if !Setting_SpriteHP_BarChangeDelay
+						%MacroDataOneAfterAnother(Freeram_SpriteHP_BarAnimationTimer, !sprite_slots, AddressLocator)
+					endif
+				endif
 			!MacroGuard_SpriteHPData = 1
-		endif
-		
-		%MacroDataOneAfterAnother(Freeram_SpriteHP_SlotToDisplayHP, 1, AddressLocator)
-		%MacroDataOneAfterAnother(Freeram_SpriteHP_CurrentHPLow, !sprite_slots, AddressLocator)
-		%MacroDataOneAfterAnother(Freeram_SpriteHP_MaxHPLow, !sprite_slots, AddressLocator)
-		if !Setting_SpriteHP_TwoByte
-			%MacroDataOneAfterAnother(Freeram_SpriteHP_CurrentHPHi, !sprite_slots, AddressLocator)
-			%MacroDataOneAfterAnother(Freeram_SpriteHP_MaxHPHi, !sprite_slots, AddressLocator)
-		endif
-		if !Setting_SpriteHP_BarAnimation
-			%MacroDataOneAfterAnother(Freeram_SpriteHP_BarAnimationFill, !sprite_slots, AddressLocator)
-			if !Setting_SpriteHP_BarChangeDelay
-				%MacroDataOneAfterAnother(Freeram_SpriteHP_BarAnimationTimer, !sprite_slots, AddressLocator)
-			endif
 		endif
 	;Get status bar addresses
 		!Setting_SpriteHP_NumericalPos_XYPos = VanillaStatusBarXYToAddress(!Setting_SpriteHP_NumericalPos_x, !Setting_SpriteHP_NumericalPos_y, !RAM_0EF9)

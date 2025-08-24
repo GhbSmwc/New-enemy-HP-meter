@@ -15,7 +15,7 @@ incsrc "../GraphicalBarDefines.asm"
 				LDA !Scratchram_GraphicalBar_TempLength		;|
 				STA $02						;|
 				STZ $03						;/
-				%UberRoutine(MathMul16_16)			;MiddlePieceper8x8 * NumberOfMiddle8x8. Stored into $04-$07 (will read $04-$05 since number of pieces are 16bit, not 32)
+				%MathMul16_16()			;MiddlePieceper8x8 * NumberOfMiddle8x8. Stored into $04-$07 (will read $04-$05 since number of pieces are 16bit, not 32)
 			else
 				LDA !Scratchram_GraphicalBar_MiddlePiece	;\TotalMiddlePieces = MiddlePieces*MiddleLength
 				STA $4202					;|
@@ -56,7 +56,7 @@ incsrc "../GraphicalBarDefines.asm"
 		LDA !Scratchram_GraphicalBar_FillByteTbl	;\Store 16-bit quantity into multiplier
 		STA $02						;/
 		SEP #$20
-		%UberRoutine(MathMul16_16)			;>Multiply together ($04-$07 (32-bit) is product)
+		%MathMul16_16()			;>Multiply together ($04-$07 (32-bit) is product)
 
 		;Okay, the reason why I use the 32x32 bit multiplication is because
 		;it is very easy to exceed the value of #$FFFF (65535) should you
@@ -93,7 +93,7 @@ incsrc "../GraphicalBarDefines.asm"
 		LDA !Scratchram_GraphicalBar_FillByteTbl+2	;\Store MaxQuantity into divisor.
 		STA $04						;/
 		SEP #$20
-		%UberRoutine(MathDiv32_16)			;>;[$00-$03 : Quotient (rounded down), $04-$05 : Remainder], After this division, its impossible to be over #$FFFF.
+		%MathDiv32_16()			;>;[$00-$03 : Quotient (rounded down), $04-$05 : Remainder], After this division, its impossible to be over #$FFFF.
 		?..CheckRoundToZero
 			LDY #$00
 			REP #$20

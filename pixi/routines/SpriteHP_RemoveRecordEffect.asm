@@ -18,6 +18,7 @@ incsrc "../EnemyHPMeterDefines.asm"
 	STA !Scratchram_GraphicalBar_RightEndPiece
 	LDA.b #!Setting_SpriteHP_GraphicalBarMiddleLength
 	STA !Scratchram_GraphicalBar_TempLength
+	PHX
 	LDA !Freeram_SpriteHP_SlotToDisplayHP
 	TAX
 	LDA !Freeram_SpriteHP_CurrentHPLow,x
@@ -34,7 +35,6 @@ incsrc "../EnemyHPMeterDefines.asm"
 		STA !Scratchram_GraphicalBar_FillByteTbl+1
 		STA !Scratchram_GraphicalBar_FillByteTbl+3
 	endif
-	PHX
 	if !Setting_SpriteHP_BarFillRoundDirection == 0
 		%GraphicalBar_CalculatePercentage()
 	elseif !Setting_SpriteHP_BarFillRoundDirection == 1

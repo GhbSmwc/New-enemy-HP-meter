@@ -79,7 +79,7 @@
 ; - $02 to $09: because math routines need that much bytes.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ?CalculateGraphicalBarPercentage:
-	%UberRoutine(GraphicalBar_CalculatePercentageRoundDown)
+	%GraphicalBar_CalculatePercentageRoundDown()
 	?.RoundHalfUp
 	?..Rounding
 		REP #$20
@@ -112,7 +112,7 @@
 				;thus, canceling each other out (so 62 divide by 62 = 1) and left with FullAmount (the
 				;number of pieces in the bar)
 				
-				%UberRoutine(GraphicalBar_GetMaxBarInAForRoundToMaxCheck)
+				%GraphicalBar_GetMaxBarInAForRoundToMaxCheck()
 				
 				LDY #$00					;>Default that the meter didn't round towards empty/full (cannot be before the above subroutine since it overwrites Y).
 				

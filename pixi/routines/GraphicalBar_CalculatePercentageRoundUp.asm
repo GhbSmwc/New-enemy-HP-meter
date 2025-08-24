@@ -1,6 +1,6 @@
 incsrc "../GraphicalBarDefines.asm"
 ?CalculateGraphicalBarPercentageRoundUp:
-	%UberRoutine(GraphicalBar_CalculatePercentageRoundDown)
+	%GraphicalBar_CalculatePercentageRoundDown()
 	REP #$20
 	LDA $04				;\If remainder is zero, (meaning exactly an integer), don't increment
 	BEQ ?.NoRoundUp			;/
@@ -10,7 +10,7 @@ incsrc "../GraphicalBarDefines.asm"
 			LDA $00				;\Preserve rounded quotient
 			PHA				;/
 		endif
-		%UberRoutine(GraphicalBar_GetMaxBarInAForRoundToMaxCheck)
+		%GraphicalBar_GetMaxBarInAForRoundToMaxCheck()
 		if !sa1 != 0
 			REP #$30
 			TAY

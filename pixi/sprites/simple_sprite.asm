@@ -57,11 +57,11 @@ print "INIT ",pc
 	Mainlabel:
 	.StartWithFullHP
 	LDA.b #!HPToStart		;\Full HP (low byte)
-	STA !Freeram_SprTbl_CurrHPLow,x	;|
-	STA !Freeram_SprTbl_MaxHPLow,x	;/
+	STA !Freeram_SpriteHP_CurrentHPLow,x	;|
+	STA !Freeram_SpriteHP_MaxHPLow,x	;/
 	LDA.b #!HPToStart>>8		;\Full HP (High byte)
-	STA !Freeram_SprTbl_CurrHPHi,x	;|
-	STA !Freeram_SprTbl_MaxHPHi,x	;/
+	STA !Freeram_SpriteHP_CurrentHPHi,x	;|
+	STA !Freeram_SpriteHP_MaxHPHi,x	;/
 	RTL
 
 
@@ -105,23 +105,24 @@ SPRITE_CODE_START:
 	.FreezeCheck
 		LDA $9D				;\Don't do anything during freeze.
 		BNE MainReturn			;/
+		LDA #$00
 		%SubOffScreen()
 	if !Setting_SpriteHP_BarAnimation != 0
 		.RemoveRecordWhenSwitchingHPs
 			TXA					;>Don't worry, this copies X, not just transfer
-			CMP !Freeram_SprHPCurrSlot		;>Compare with the slot the HP bar is using
+			CMP !Freeram_SpriteHP_SlotToDisplayHP	;>Compare with the slot the HP bar is using
 			BEQ ..ItsOnThisSprite			;>If HP bar is on this current sprite, don't delete record
-			%SpriteHP_RemoveRecordEffect		;>Get current percent HP
+			%SpriteHP_RemoveRecordEffect()		;>Get current percent HP
 			LDA $00					;\Remove Record effect (make them the same)
-			STA !Freeram_SprTbl_RecordEfft,x	;/
+			STA !Freeram_SpriteHP_BarAnimationFill,x	;/
 			..ItsOnThisSprite
 	endif
 	if !HealingAmount != 0
-		LDA !Freeram_SprTbl_CurrHPLow,x			;\CMP is like SBC. if currentHP - MaxHP results an unsigned underflow (which causes a barrow; carry clear)
-		CMP !Freeram_SprTbl_MaxHPLow,x			;|then allow healing
-		if !Setting_SpriteHP_TwoByteHP != 0
-			LDA !Freeram_SprTbl_CurrHPHi,x
-			SBC !Freeram_SprTbl_MaxHPHi,x
+		LDA !Freeram_SpriteHP_CurrentHPLow,x			;\CMP is like SBC. if currentHP - MaxHP results an unsigned underflow (which causes a barrow; carry clear)
+		CMP !Freeram_SpriteHP_MaxHPLow,x			;|then allow healing
+		if !Setting_SpriteHP_TwoByte != 0
+			LDA !Freeram_SpriteHP_CurrentHPHi,x
+			SBC !Freeram_SpriteHP_MaxHPHi,x
 		endif
 		BCS +						;/
 		LDA $14						;\frame counter modulo by powers of 2 value
@@ -133,9 +134,9 @@ SPRITE_CODE_START:
 		SEP #$20					;|
 		JSR Heal					;/
 		if !Setting_SpriteHP_BarAnimation != 0
-			%SpriteHP_RemoveRecordEffect		;\remove record effect (without the condition of not selecting this sprite)
+			%SpriteHP_RemoveRecordEffect()		;\remove record effect (without the condition of not selecting this sprite)
 			LDA $00					;|
-			STA !Freeram_SprTbl_RecordEfft,x	;/
+			STA !Freeram_SpriteHP_BarAnimationFill,x	;/
 		endif
 		if !HealingSfxNum != 0
 			LDA #!HealingSfxNum
@@ -144,7 +145,6 @@ SPRITE_CODE_START:
 		+
 	endif
 	JSR MainSpriteClipA		;>Get hitbox A of main sprite
-
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;Mario contact (mainly jumping on this sprite)
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -192,9 +192,10 @@ SPRITE_CODE_START:
 			LDA.w #!StompDamage			;\Amount of damage
 			STA $00					;/
 			SEP #$20
+			wdm
 			%SpriteLoseHP()				;>Lose HP
-			LDA !Freeram_SprTbl_CurrHPLow,x		;\If HP != 0, don't kill
-			ORA !Freeram_SprTbl_CurrHPHi,x		;|
+			LDA !Freeram_SpriteHP_CurrentHPLow,x		;\If HP != 0, don't kill
+			ORA !Freeram_SpriteHP_CurrentHPHi,x		;|
 			BNE ...NoDeath				;/
 			JSR SpinjumpKillSprite			;>Kill sprite
 			BRA ...SkipBouncePlayerAwayAndSfx
@@ -261,8 +262,8 @@ SPRITE_CODE_START:
 					;so that in case if 2 fireballs contacts at the same frame, each will run this.
 					;Y = current extended sprite slot.
 					;------------------------------------------------------------------------------
-					LDA !Freeram_SprTbl_CurrHPLow,x		;\If HP is already 0 and another sprite within the same frame
-					ORA !Freeram_SprTbl_CurrHPHi,x		;/hits this boss, make it ignore the boss (pass through already-dead boss)
+					LDA !Freeram_SpriteHP_CurrentHPLow,x		;\If HP is already 0 and another sprite within the same frame
+					ORA !Freeram_SpriteHP_CurrentHPHi,x		;/hits this boss, make it ignore the boss (pass through already-dead boss)
 					ORA !InvulnerabilityTimer,x		;>And also no invulnerabilty timer running.
 					BEQ ...ExitLoop				;
 
@@ -295,8 +296,8 @@ SPRITE_CODE_START:
 
 					....Damage
 						%SpriteLoseHP()				;>Lose HP
-						LDA !Freeram_SprTbl_CurrHPLow,x		;\If HP != 0, don't kill
-						ORA !Freeram_SprTbl_CurrHPHi,x		;|
+						LDA !Freeram_SpriteHP_CurrentHPLow,x		;\If HP != 0, don't kill
+						ORA !Freeram_SpriteHP_CurrentHPHi,x		;|
 						BNE .....NoDeath			;/
 						JSR SpinjumpKillSprite			;>Make sprite die (sets !14C8,x and uses whats marked * to prevent executing multiple times).
 						BRA .....SkipSfx
@@ -367,8 +368,8 @@ SPRITE_CODE_START:
 					STA $00			;/
 					SEP #$20
 					%SpriteLoseHP()			;>Lose HP
-					LDA !Freeram_SprTbl_CurrHPLow,x	;\If HP != 0, don't kill
-					ORA !Freeram_SprTbl_CurrHPHi,x	;|
+					LDA !Freeram_SpriteHP_CurrentHPLow,x	;\If HP != 0, don't kill
+					ORA !Freeram_SpriteHP_CurrentHPHi,x	;|
 					BNE ....NoDeath			;/
 					JSR SpinjumpKillSprite	;>Make sprite die
 					BRA ....SkipSfx
@@ -422,8 +423,8 @@ SPRITE_CODE_START:
 				;
 				;Y = current bounce sprite slot.
 				;------------------------------------------------------------------------------
-				LDA !Freeram_SprTbl_CurrHPLow,x		;\If HP is already 0 and another sprite within the same frame
-				ORA !Freeram_SprTbl_CurrHPHi,x		;|hits this boss, make it ignore the boss (pass through already-dead boss)
+				LDA !Freeram_SpriteHP_CurrentHPLow,x		;\If HP is already 0 and another sprite within the same frame
+				ORA !Freeram_SpriteHP_CurrentHPHi,x		;|hits this boss, make it ignore the boss (pass through already-dead boss)
 				BEQ ...ExitLoop				;/
 			
 				;Accepts states #$08 to #$0B here. My following example only includes carryable/kicked to damage.
@@ -465,8 +466,8 @@ SPRITE_CODE_START:
 				STA $00				;/
 				SEP #$20
 				%SpriteLoseHP()			;>Lose HP
-				LDA !Freeram_SprTbl_CurrHPLow,x	;\If HP != 0, don't kill
-				ORA !Freeram_SprTbl_CurrHPHi,x	;|
+				LDA !Freeram_SpriteHP_CurrentHPLow,x	;\If HP != 0, don't kill
+				ORA !Freeram_SpriteHP_CurrentHPHi,x	;|
 				BNE ....NoDeath			;/
 				JSR SpinjumpKillSprite
 				BRA ....SkipSfx
@@ -530,8 +531,8 @@ SPRITE_CODE_START:
 			STA $00				;/
 			SEP #$20
 			%SpriteLoseHP()			;>Lose HP
-			LDA !Freeram_SprTbl_CurrHPLow,x	;\If HP != 0, don't kill
-			ORA !Freeram_SprTbl_CurrHPHi,x	;|
+			LDA !Freeram_SpriteHP_CurrentHPLow,x	;\If HP != 0, don't kill
+			ORA !Freeram_SpriteHP_CurrentHPHi,x	;|
 			BNE ...NoDeath			;/
 			JSR SpinjumpKillSprite
 			BRA ...SkipSfx
@@ -567,9 +568,9 @@ SUB_GFX:
 		LDA $01			; set y position of the tile
 		STA $0301|!Base2,y
 
-		LDA !Freeram_SprTbl_CurrHPHi,x
+		LDA !Freeram_SpriteHP_CurrentHPHi,x
 		XBA
-		LDA !Freeram_SprTbl_CurrHPLow,x
+		LDA !Freeram_SpriteHP_CurrentHPLow,x
 		REP #$20
 		CMP.w #!HPLowEnoughToShowAltGfx
 		SEP #$20
@@ -918,48 +919,48 @@ SpinjumpKillSprite:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 Heal:
 	.StoreHealedValue
-	if !Setting_SpriteHP_TwoByteHP != 0 ;>maths are different depending if you wanted 2-byte HP or not.
-		LDA !Freeram_SprTbl_CurrHPLow,x		;\low byte
+	if !Setting_SpriteHP_TwoByte != 0 ;>maths are different depending if you wanted 2-byte HP or not.
+		LDA !Freeram_SpriteHP_CurrentHPLow,x		;\low byte
 		CLC					;|
 		ADC $00					;|>ADC sets carry if unsigned overflow happens
 		STA $00					;/
-		LDA !Freeram_SprTbl_CurrHPHi,x		;\high byte
+		LDA !Freeram_SpriteHP_CurrentHPHi,x		;\high byte
 		ADC $01					;|>ADC adds an additional 1 when overflowed
 		STA $01					;/
 		BCS .Maxed				;>if exceeds 65535
 
 		.CompareWithMaxHP
 			LDA $00					;\CMP is like SBC, should underflow happens, carry is clear
-			CMP !Freeram_SprTbl_MaxHPLow,x		;/HealedHPLow - MaxHPLow: carry is cleared if MaxHPLow is bigger
+			CMP !Freeram_SpriteHP_MaxHPLow,x		;/HealedHPLow - MaxHPLow: carry is cleared if MaxHPLow is bigger
 			LDA $01					;\should the above carry is clear, subtract by an additional 1 (4-5 becomes 4-6; borrow)
-			SBC !Freeram_SprTbl_MaxHPHi,x		;/HealedHPHi - MaxHPHi: carry is cleared if MaxHPHi is bigger
+			SBC !Freeram_SpriteHP_MaxHPHi,x		;/HealedHPHi - MaxHPHi: carry is cleared if MaxHPHi is bigger
 			BCC .ValidHP				;>if carry clear (below/equal to max HP), set current HP to healed HP amount.
 
 		.Maxed
-			LDA !Freeram_SprTbl_MaxHPLow,x		;\Set HP to max when carry is set (CurrentHP - MaxHP = positive value)
-			STA !Freeram_SprTbl_CurrHPLow,x		;|
-			LDA !Freeram_SprTbl_MaxHPHi,x		;|
-			STA !Freeram_SprTbl_CurrHPHi,x		;/
+			LDA !Freeram_SpriteHP_MaxHPLow,x		;\Set HP to max when carry is set (CurrentHP - MaxHP = positive value)
+			STA !Freeram_SpriteHP_CurrentHPLow,x		;|
+			LDA !Freeram_SpriteHP_MaxHPHi,x		;|
+			STA !Freeram_SpriteHP_CurrentHPHi,x		;/
 			RTS
 
 		.ValidHP
 			LDA $00					;\Set HP to the amount of HP after healed.
-			STA !Freeram_SprTbl_CurrHPLow,x		;|
+			STA !Freeram_SpriteHP_CurrentHPLow,x		;|
 			LDA $01					;|
-			STA !Freeram_SprTbl_CurrHPHi,x		;/
+			STA !Freeram_SpriteHP_CurrentHPHi,x		;/
 	else ;>when using single-byte HP
-		LDA !Freeram_SprTbl_CurrHPLow,x		;\get HP after being healed
+		LDA !Freeram_SpriteHP_CurrentHPLow,x		;\get HP after being healed
 		CLC					;|
 		ADC $00					;/
 		BCS .Maxed				;>in case HP goes past 255 when max HP is 255.
-		CMP !Freeram_SprTbl_MaxHPLow,x		;\if over the max, cap it also.
+		CMP !Freeram_SpriteHP_MaxHPLow,x		;\if over the max, cap it also.
 		BCS .Maxed				;/
 		BRA .ValidHP
 		
 		.Maxed
-			LDA !Freeram_SprTbl_MaxHPLow,x
+			LDA !Freeram_SpriteHP_MaxHPLow,x
 		
 		.ValidHP
-			STA !Freeram_SprTbl_CurrHPLow,x
+			STA !Freeram_SpriteHP_CurrentHPLow,x
 	endif
 	RTS

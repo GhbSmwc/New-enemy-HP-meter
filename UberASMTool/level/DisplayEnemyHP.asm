@@ -112,30 +112,30 @@ macro ConvertToRightAligned()
 	endif
 endmacro
 
-init:
-	.ClearHPData
-		LDA #$FF
-		STA !Freeram_SpriteHP_SlotToDisplayHP
-		LDX.b #!sprite_slots-1
-		..Loop
-			LDA #$00
-			STA !Freeram_SpriteHP_CurrentHPLow,x
-			if !Setting_SpriteHP_TwoByte
-				STA !Freeram_SpriteHP_CurrentHPHi,x
-				STA !Freeram_SpriteHP_MaxHPHi,x
-			endif
-			if !Setting_SpriteHP_BarAnimation
-				LDA.b #!Setting_SpriteHP_GraphicalBar_TotalPieces
-				STA !Freeram_SpriteHP_BarAnimationFill,x
-				LDA.b #!Setting_SpriteHP_BarChangeDelay
-				STA !Freeram_SpriteHP_BarAnimationTimer,x
-			endif
-			LDA #$01
-			STA !Freeram_SpriteHP_MaxHPLow,x
-			...Next
-				DEX
-				BPL ..Loop
-	RTL
+;init:
+;	.ClearHPData
+;		LDA #$FF
+;		STA !Freeram_SpriteHP_SlotToDisplayHP
+;		LDX.b #!sprite_slots-1
+;		..Loop
+;			LDA #$00
+;			STA !Freeram_SpriteHP_CurrentHPLow,x
+;			if !Setting_SpriteHP_TwoByte
+;				STA !Freeram_SpriteHP_CurrentHPHi,x
+;				STA !Freeram_SpriteHP_MaxHPHi,x
+;			endif
+;			if !Setting_SpriteHP_BarAnimation
+;				LDA.b #!Setting_SpriteHP_GraphicalBar_TotalPieces
+;				STA !Freeram_SpriteHP_BarAnimationFill,x
+;				LDA.b #!Setting_SpriteHP_BarChangeDelay
+;				STA !Freeram_SpriteHP_BarAnimationTimer,x
+;			endif
+;			LDA #$01
+;			STA !Freeram_SpriteHP_MaxHPLow,x
+;			...Next
+;				DEX
+;				BPL ..Loop
+;	RTL
 	
 main:
 	if !sa1
@@ -151,6 +151,19 @@ main:
 	BCC +
 	JMP .ClearHPDisplay
 	+
+	.CheckIfSlotIsCorrect
+		LDA !Freeram_SpriteHP_SlotToDisplayHP
+		CMP.b #!sprite_slots				;\Failsafe. A valid slot number ranges from 0 to !sprite_slots-1.
+		BCC ..DisplayMeter
+		JMP .Done					;/
+		..DisplayMeter
+			TAX
+			LDA !14C8,x
+			BNE ...Exists
+			LDA #$FF
+			STA !Freeram_SpriteHP_SlotToDisplayHP
+			JMP .Done
+			...Exists
 	.DisplayNumerical
 		;Detect user trying to make a right-aligned single number (which avoids unnecessarily uses suppress leading zeroes)
 			!IsUsingRightAlignedSingleNumber = and(equal(!Setting_SpriteHP_NumericalTextAlignment, 2),equal(!Setting_SpriteHP_DisplayNumerical, 1))
@@ -162,10 +175,6 @@ main:
 				%ClearNumerical()
 			endif
 			LDA !Freeram_SpriteHP_SlotToDisplayHP
-			CMP.b #!sprite_slots				;\Failsafe. A valid slot number ranges from 0 to !sprite_slots-1.
-			BCC +
-			JMP .Done					;/
-			+
 			TAX
 			if or(equal(!Setting_SpriteHP_NumericalTextAlignment, 0), equal(!IsUsingRightAlignedSingleNumber, 1)) ;Fixed digit location
 				if !Setting_SpriteHP_TwoByte == 0
@@ -187,11 +196,15 @@ main:
 					LDA #!StatusBarSlashCharacterTileNumb
 					STA !Scratchram_CharacterTileTable,x
 					INX
+					PHX
+					LDA !Freeram_SpriteHP_SlotToDisplayHP
+					TAX
 					if !Setting_SpriteHP_TwoByte == 0
-						%GetHealthDigits8Bit("Freeram_SpriteHP_MaxHPLow")
+						%GetHealthDigits8Bit("Freeram_SpriteHP_MaxHPLow,x")
 					else
-						%GetHealthDigits16Bit("Freeram_SpriteHP_MaxHPLow", "Freeram_SpriteHP_MaxHPHi")
+						%GetHealthDigits16Bit("Freeram_SpriteHP_MaxHPLow,x", "Freeram_SpriteHP_MaxHPHi,x")
 					endif
+					PLX
 					%UberRoutine(SuppressLeadingZeroes)
 				endif
 				if !Setting_SpriteHP_ExcessDigitProt
