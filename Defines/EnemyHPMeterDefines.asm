@@ -151,6 +151,16 @@
 				;See https://www.smwcentral.net/?p=viewthread&t=6665
 					!Setting_SpriteHP_FillingSFXNumb		= $23		;>Sound number (set to 0 to disable SFX)
 					!Setting_SpriteHP_FillingSFXPort		= $1DFC|!addr	;>Use $1DF9, $1DFA, or $1DFC, followed by "|!addr" if you're using SA-1
+	;Patching settings
+		;Apply displaying HP on various vanilla SMW sprites: 0 = no, 1 = yes
+			!Setting_SpriteHP_VanillaSprite_Chuck			= 1
+				;^All the chucks in SMW.
+			!Setting_SpriteHP_VanillaSprite_Bosses			= 1
+				;^Includes:
+				;-Big boo boss
+				;-Wendy and Lemmy (share most of the same code)
+				;-Ludwig, Morton, and Roy (same as above)
+			
 	;Misc settings
 		!Setting_SpriteHP_DisplaySpriteHPDataOnConsole = 1
 			;^0 = no
