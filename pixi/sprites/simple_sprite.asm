@@ -56,12 +56,12 @@
 print "INIT ",pc
 	Mainlabel:
 	.StartWithFullHP
-	LDA.b #!HPToStart		;\Full HP (low byte)
+	LDA.b #!HPToStart			;\Full HP (low byte)
 	STA !Freeram_SpriteHP_CurrentHPLow,x	;|
 	STA !Freeram_SpriteHP_MaxHPLow,x	;/
-	LDA.b #!HPToStart>>8		;\Full HP (High byte)
+	LDA.b #!HPToStart>>8			;\Full HP (High byte)
 	STA !Freeram_SpriteHP_CurrentHPHi,x	;|
-	STA !Freeram_SpriteHP_MaxHPHi,x	;/
+	STA !Freeram_SpriteHP_MaxHPHi,x		;/
 	RTL
 
 
@@ -192,10 +192,9 @@ SPRITE_CODE_START:
 			LDA.w #!StompDamage			;\Amount of damage
 			STA $00					;/
 			SEP #$20
-			wdm
 			%SpriteLoseHP()				;>Lose HP
-			LDA !Freeram_SpriteHP_CurrentHPLow,x		;\If HP != 0, don't kill
-			ORA !Freeram_SpriteHP_CurrentHPHi,x		;|
+			LDA !Freeram_SpriteHP_CurrentHPLow,x	;\If HP != 0, don't kill
+			ORA !Freeram_SpriteHP_CurrentHPHi,x	;|
 			BNE ...NoDeath				;/
 			JSR SpinjumpKillSprite			;>Kill sprite
 			BRA ...SkipBouncePlayerAwayAndSfx

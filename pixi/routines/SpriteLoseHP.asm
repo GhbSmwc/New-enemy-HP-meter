@@ -9,8 +9,32 @@
 ;   set to 0.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ?LoseHP:
-	TXA
-	STA !Freeram_SpriteHP_SlotToDisplayHP
+	if !Setting_SpriteHP_BarAnimation == 0
+		TXA
+		STA !Freeram_SpriteHP_SlotToDisplayHP
+	else
+		LDA $00
+		PHA
+		if !Setting_SpriteHP_TwoByte != 0
+			LDA $01
+			PHA
+		endif
+		TXA
+		CMP !Freeram_SpriteHP_SlotToDisplayHP
+		BEQ ?.SameSpriteSlot
+		STA !Freeram_SpriteHP_SlotToDisplayHP
+		?.Different
+			%SpriteHP_RemoveRecordEffect()
+			LDA $00
+			STA !Freeram_SpriteHP_BarAnimationFill,x
+		?.SameSpriteSlot
+		if !Setting_SpriteHP_TwoByte != 0
+			PLA
+			STA $01
+		endif
+		PLA
+		STA $00
+	endif
 	if !Setting_SpriteHP_BarAnimation != 0 && !Setting_SpriteHP_BarChangeDelay != 0
 		LDA.b #!Setting_SpriteHP_BarChangeDelay		;\Freeze damage indicator
 		STA !Freeram_SpriteHP_BarAnimationTimer,x	;/
