@@ -59,9 +59,11 @@ print "INIT ",pc
 	LDA.b #!HPToStart			;\Full HP (low byte)
 	STA !Freeram_SpriteHP_CurrentHPLow,x	;|
 	STA !Freeram_SpriteHP_MaxHPLow,x	;/
-	LDA.b #!HPToStart>>8			;\Full HP (High byte)
-	STA !Freeram_SpriteHP_CurrentHPHi,x	;|
-	STA !Freeram_SpriteHP_MaxHPHi,x		;/
+	if !Setting_SpriteHP_TwoByte
+		LDA.b #!HPToStart>>8			;\Full HP (High byte)
+		STA !Freeram_SpriteHP_CurrentHPHi,x	;|
+		STA !Freeram_SpriteHP_MaxHPHi,x		;/
+	endif
 	RTL
 
 
@@ -205,7 +207,9 @@ SPRITE_CODE_START:
 			SEP #$20
 			%SpriteLoseHP()				;>Lose HP
 			LDA !Freeram_SpriteHP_CurrentHPLow,x	;\If HP != 0, don't kill
-			ORA !Freeram_SpriteHP_CurrentHPHi,x	;|
+			if !Setting_SpriteHP_TwoByte
+				ORA !Freeram_SpriteHP_CurrentHPHi,x	;|
+			endif
 			BNE ...NoDeath				;/
 			JSR SpinjumpKillSprite			;>Kill sprite
 			BRA ...SkipBouncePlayerAwayAndSfx
@@ -273,7 +277,9 @@ SPRITE_CODE_START:
 					;Y = current extended sprite slot.
 					;------------------------------------------------------------------------------
 					LDA !Freeram_SpriteHP_CurrentHPLow,x		;\If HP is already 0 and another sprite within the same frame
-					ORA !Freeram_SpriteHP_CurrentHPHi,x		;/hits this boss, make it ignore the boss (pass through already-dead boss)
+					if !Setting_SpriteHP_TwoByte
+						ORA !Freeram_SpriteHP_CurrentHPHi,x		;/hits this boss, make it ignore the boss (pass through already-dead boss)
+					endif
 					ORA !InvulnerabilityTimer,x			;>And also no invulnerabilty timer running.
 					BEQ ...ExitLoop					;
 
@@ -307,7 +313,9 @@ SPRITE_CODE_START:
 						STA !InvulnerabilityTimer,x		;/
 						%SpriteLoseHP()				;>Lose HP
 						LDA !Freeram_SpriteHP_CurrentHPLow,x		;\If HP != 0, don't kill
-						ORA !Freeram_SpriteHP_CurrentHPHi,x		;|
+						if !Setting_SpriteHP_TwoByte
+							ORA !Freeram_SpriteHP_CurrentHPHi,x		;|
+						endif
 						BNE .....NoDeath			;/
 						JSR SpinjumpKillSprite			;>Make sprite die (sets !14C8,x and uses whats marked * to prevent executing multiple times).
 						BRA .....SkipSfx
@@ -379,7 +387,9 @@ SPRITE_CODE_START:
 					SEP #$20
 					%SpriteLoseHP()			;>Lose HP
 					LDA !Freeram_SpriteHP_CurrentHPLow,x	;\If HP != 0, don't kill
-					ORA !Freeram_SpriteHP_CurrentHPHi,x	;|
+					if !Setting_SpriteHP_TwoByte
+						ORA !Freeram_SpriteHP_CurrentHPHi,x	;|
+					endif
 					BNE ....NoDeath			;/
 					JSR SpinjumpKillSprite	;>Make sprite die
 					BRA ....SkipSfx
@@ -434,7 +444,9 @@ SPRITE_CODE_START:
 				;Y = current bounce sprite slot.
 				;------------------------------------------------------------------------------
 				LDA !Freeram_SpriteHP_CurrentHPLow,x		;\If HP is already 0 and another sprite within the same frame
-				ORA !Freeram_SpriteHP_CurrentHPHi,x		;|hits this boss, make it ignore the boss (pass through already-dead boss)
+				if !Setting_SpriteHP_TwoByte
+					ORA !Freeram_SpriteHP_CurrentHPHi,x		;|hits this boss, make it ignore the boss (pass through already-dead boss)
+				endif
 				BEQ ...ExitLoop				;/
 			
 				;Accepts states #$08 to #$0B here. My following example only includes carryable/kicked to damage.
@@ -477,7 +489,9 @@ SPRITE_CODE_START:
 				SEP #$20
 				%SpriteLoseHP()			;>Lose HP
 				LDA !Freeram_SpriteHP_CurrentHPLow,x	;\If HP != 0, don't kill
-				ORA !Freeram_SpriteHP_CurrentHPHi,x	;|
+				if !Setting_SpriteHP_TwoByte
+					ORA !Freeram_SpriteHP_CurrentHPHi,x	;|
+				endif
 				BNE ....NoDeath			;/
 				JSR SpinjumpKillSprite
 				BRA ....SkipSfx
@@ -542,7 +556,9 @@ SPRITE_CODE_START:
 			SEP #$20
 			%SpriteLoseHP()			;>Lose HP
 			LDA !Freeram_SpriteHP_CurrentHPLow,x	;\If HP != 0, don't kill
-			ORA !Freeram_SpriteHP_CurrentHPHi,x	;|
+			if !Setting_SpriteHP_TwoByte
+				ORA !Freeram_SpriteHP_CurrentHPHi,x	;|
+			endif
 			BNE ...NoDeath			;/
 			JSR SpinjumpKillSprite
 			BRA ...SkipSfx
@@ -566,42 +582,50 @@ SPRITE_CODE_START:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 SUB_GFX:
-		;JSR GET_DRAW_INFO	; after: Y = index to sprite OAM ($300)
-					;  $00 = sprite x position relative to screen boarder 
-					;  $01 = sprite y position relative to screen boarder  
-					
-		%GetDrawInfo()
+	;JSR GET_DRAW_INFO	; after: Y = index to sprite OAM ($300)
+				;  $00 = sprite x position relative to screen boarder 
+				;  $01 = sprite y position relative to screen boarder  
+				
+	%GetDrawInfo()
 
-		LDA $00			; set x position of the tile
-		STA $0300|!Base2,y
+	LDA $00			; set x position of the tile
+	STA $0300|!Base2,y
 
-		LDA $01			; set y position of the tile
-		STA $0301|!Base2,y
+	LDA $01			; set y position of the tile
+	STA $0301|!Base2,y
 
+	if !Setting_SpriteHP_TwoByte
 		LDA !Freeram_SpriteHP_CurrentHPHi,x
 		XBA
 		LDA !Freeram_SpriteHP_CurrentHPLow,x
 		REP #$20
 		CMP.w #!HPLowEnoughToShowAltGfx
 		SEP #$20
-		BCS HighHP
+		BCS .HighHP
 		;LowHP
 		LDA #!TILE_LowHealth
 		BRA +
-		
-		HighHP:
+	else
+		LDA !Freeram_SpriteHP_CurrentHPLow,x
+		CMP.b #!HPLowEnoughToShowAltGfx
+		BCS .HighHP
+		LDA #!TILE_LowHealth
+		BCS +
+	endif
+	
+	.HighHP:
 		LDA #!TILE
-		+
+	.SetTile
 		STA $0302|!Base2,y
 
-		LDA !15F6,x		; get sprite palette info
-		ORA $64			; add in the priority bits from the level settings
-		STA $0303|!Base2,y	; set properties
+	LDA !15F6,x		; get sprite palette info
+	ORA $64			; add in the priority bits from the level settings
+	STA $0303|!Base2,y	; set properties
 
-		LDY #$02		; #$02 means the tiles are 16x16
-		LDA #$00		; This means we drew one tile
-		JSL $01B7B3|!bank
-		RTS
+	LDY #$02		; #$02 means the tiles are 16x16
+	LDA #$00		; This means we drew one tile
+	JSL $01B7B3|!bank
+	RTS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;My own routines here.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
