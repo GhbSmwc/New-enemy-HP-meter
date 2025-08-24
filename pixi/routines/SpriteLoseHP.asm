@@ -52,7 +52,7 @@
 		LDA #$00				;\Set HP to 0
 		STA !Freeram_SpriteHP_CurrentHPLow,x	;|
 		STA !Freeram_SpriteHP_CurrentHPHi,x	;/
-		RTL
+		BRA ?.Done
 
 		?.NonNegHP
 			STA !Freeram_SpriteHP_CurrentHPLow,x	;>Low byte subtracted HP
@@ -68,5 +68,6 @@
 		?.NonNegHP
 		STA !Freeram_SpriteHP_CurrentHPLow,x
 	endif
+	?.Done
 	PLY
 	RTL
