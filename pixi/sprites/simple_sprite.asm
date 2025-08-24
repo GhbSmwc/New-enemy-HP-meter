@@ -263,11 +263,9 @@ SPRITE_CODE_START:
 					;------------------------------------------------------------------------------
 					LDA !Freeram_SpriteHP_CurrentHPLow,x		;\If HP is already 0 and another sprite within the same frame
 					ORA !Freeram_SpriteHP_CurrentHPHi,x		;/hits this boss, make it ignore the boss (pass through already-dead boss)
-					ORA !InvulnerabilityTimer,x		;>And also no invulnerabilty timer running.
-					BEQ ...ExitLoop				;
+					ORA !InvulnerabilityTimer,x			;>And also no invulnerabilty timer running.
+					BEQ ...ExitLoop					;
 
-					LDA.b #10				;\Just to show the blinking and in case if projectile penetrates.
-					STA !InvulnerabilityTimer,x		;/
 					REP #$20
 					LDA $00			;\Preserve $00 (used for contact checking, about to be used
 					PHA			;/for damage value)
@@ -294,6 +292,8 @@ SPRITE_CODE_START:
 						SEP #$20		;/
 
 					....Damage
+						LDA.b #10				;\Just to show the blinking and in case if projectile penetrates.
+						STA !InvulnerabilityTimer,x		;/
 						%SpriteLoseHP()				;>Lose HP
 						LDA !Freeram_SpriteHP_CurrentHPLow,x		;\If HP != 0, don't kill
 						ORA !Freeram_SpriteHP_CurrentHPHi,x		;|

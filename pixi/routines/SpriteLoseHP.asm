@@ -9,6 +9,7 @@
 ;   set to 0.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ?LoseHP:
+	PHY
 	if !Setting_SpriteHP_BarAnimation == 0
 		TXA
 		STA !Freeram_SpriteHP_SlotToDisplayHP
@@ -67,4 +68,5 @@
 		?.NonNegHP
 		STA !Freeram_SpriteHP_CurrentHPLow,x
 	endif
+	PLY
 	RTL
