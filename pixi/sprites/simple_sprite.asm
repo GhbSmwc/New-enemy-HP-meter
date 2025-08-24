@@ -151,13 +151,17 @@ SPRITE_CODE_START:
 	.HitboxWithMario
 		JSL $03B664|!bank			;>Get clipping with player (B).
 		JSL $03B72B|!bank			;>Check contact
-		BCC .NoContact			;>No interaction if not contacting.
+		BCS ..Contact
+		JMP .NoContact			;>No interaction if not contacting.
+		..Contact
 	;------------------------------------------------------------------------------
 	;Player touching sprite
 	;------------------------------------------------------------------------------
 	.Contact
 		LDA !InvulnerabilityTimer,x	;\Don't drain-damage every frame during touch
-		BNE .NoContact			;/
+		BEQ ..Contact
+		JMP .NoContact			;/
+		..Contact
 		REP #$20
 		LDA $00		;\Protect hitbox data
 		PHA		;/
@@ -180,7 +184,14 @@ SPRITE_CODE_START:
 
 		..SpriteDamageMario
 		if !Setting_DamagePlayer != 0
-			JSL $00F5B7|!bank		;>Hurt player by touching below/sides
+			LDA $187A|!addr
+			BNE ...LoseYoshiInstead
+			
+			...DamageMario
+				JSL $00F5B7|!bank		;>Hurt player by touching below/sides
+				BRA ..Restore
+			...LoseYoshiInstead
+				%LoseYoshi()
 		endif
 		BRA ..Restore
 
