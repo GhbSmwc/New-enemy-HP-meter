@@ -8,26 +8,33 @@
 	;
 	;A series of HP data stored in memory, in this order:
 	;
-	; - [1 byte][!Freeram_SpriteHP_SlotToDisplayHP]:
-	; -- Current sprite slot to display HP of. When ranging from 0 to !sprite_slots-1, will display HP. Any other value
-	;    will not display HP.
+	; - [1 byte][!Freeram_SpriteHP_MeterState]:
+	; -- Current sprite slot index to display HP of. The value here are:
+	; --- When ranging from 0 to (!sprite_slots-1), will display HP. Each value here corresponds to a sprite slot index.
+	; --- When ranging from !sprite_slots to (!sprite_slots*2)-1, is the same as above, but for "IntroFill" mode (when
+	;     bosses appears, meter appears initially empty and fills up). Only used if !Setting_SpriteHP_BarAnimation == 1.
 	; - [BytesUsed = !sprite_slots][!Freeram_SpriteHP_CurrentHPLow]:
-	;    Sprite's current HP, low byte
+	; -- Sprite's current HP, low byte
 	; - [BytesUsed = !sprite_slots][!Freeram_SpriteHP_MaxHPLow]:
-	;    Sprite's max HP, low byte
+	; -- Sprite's max HP, low byte
 	; - [BytesUsed = !sprite_slots * !Setting_SpriteHP_TwoByte][!Freeram_SpriteHP_CurrentHPHi]:
-	;    Sprite's current HP, high byte
+	; -- Sprite's current HP, high byte
 	; - [BytesUsed = !sprite_slots * !Setting_SpriteHP_TwoByte][!Freeram_SpriteHP_MaxHPHi]:
-	;    Sprite's max HP, high byte
+	; -- Sprite's max HP, high byte
 	; - [BytesUsed = !sprite_slots * (!Setting_SpriteHP_DisplayGraphicalBar & !Setting_SpriteHP_BarAnimation)][!Freeram_SpriteHP_BarAnimationFill]:
-	;    Bar fill animation
+	; -- Bar fill animation. This displays the previous and current fill amount in the bar when the sprite takes damage or heals.
 	; - [BytesUsed = !sprite_slots * (!Setting_SpriteHP_DisplayGraphicalBar & !Setting_SpriteHP_BarAnimation & !Setting_SpriteHP_BarChangeDelay)][!Freeram_SpriteHP_BarAnimationTimer]:
 	;    Bar fill animation timer
 		if !sa1 == 0
-			!Setting_SpriteHP_SpriteHPData = $7FACC4
+			!Freeram_SpriteHP_SpriteHPData = $7FACC4
 		else
-			!Setting_SpriteHP_SpriteHPData = $400110
+			!Freeram_SpriteHP_SpriteHPData = $400110
 		endif
+	;Scratch RAM settings (very likely you don't need to change these)
+		!Scratchram_SpriteHP_SpriteSlotToDisplay = $8A
+			;[1 byte]: This holds the current sprite slot used by various codes to determine what sprite slot the HP meter is showing.
+			;This RAM address size must not be 3 bytes long (so $xx and $xxxx are okay, but $xxxxxx are not). It's basically
+			;Value = !Freeram_SpriteHP_MeterState % !sprite_slots.
 ;Settings
 	;HUD settings
 		;Notes:
@@ -83,11 +90,14 @@
 			;XY position of the bar (uses this position and tiles to the right, even when leftwards)
 				!Setting_SpriteHP_GraphicalBarPos_x = 23
 				!Setting_SpriteHP_GraphicalBarPos_y = 1
-			;Number of pieces on each tile
-				!Setting_SpriteHP_GraphicalBar_LeftPieces                  = 3             ;\These will by default, set the RAM for the pieces for each section
-				!Setting_SpriteHP_GraphicalBar_MiddlePieces                = 8             ;|(note that these apply for both levels and overworlds)
-				!Setting_SpriteHP_GraphicalBar_RightPieces                 = 3             ;/
-
+			;These below affect how much fill capacity the bar has. This value is equal to LeftPieces + (MiddlePieces * MiddleLength) + RightPieces.
+			;If you have !Setting_SpriteHP_BarAnimation == 0, up to 255 is safe, otherwise up to 254 (255 is a special value to cancel out the animation).
+				;Number of pieces on each tile
+					!Setting_SpriteHP_GraphicalBar_LeftPieces                  = 3             ;\These will by default, set the RAM for the pieces for each section
+					!Setting_SpriteHP_GraphicalBar_MiddlePieces                = 8             ;|(note that these apply for both levels and overworlds)
+					!Setting_SpriteHP_GraphicalBar_RightPieces                 = 3             ;/
+				;Length of bar (number of middle tiles). Full screen width is 32 tiles.
+					!Setting_SpriteHP_GraphicalBarMiddleLength           = 7
 			;Avoid percentage bar from representing 0 or full when really close but not at those values:
 				!Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull	= 3
 					;^0 = allow bar to display 0% when HP is very close to zero and 100% when close to max.
@@ -99,9 +109,6 @@
 					; 0 = Round to nearest
 					; 1 = Round down (bar may display 0 fill amount when !Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull isn't 1 or 3)
 					; 2 = Round up
-
-			;Length of bar (number of middle tiles). Full screen width is 32 tiles.
-				!Setting_SpriteHP_GraphicalBarMiddleLength           = 7
 			;Fill direction. 0 = Left-to-right, 1 = Right-to-left
 				!Setting_SpriteHP_LeftwardsBar                       = 1
 			;Tile properties (X-flip for leftwards bar is already handled.)
@@ -177,7 +184,7 @@
 			;^Labels, structs, functions, and macros, they cannot be redefined. And includeonce fails if there are two involved
 			; ASM files incsrcs with a different path to the same ASM file in which that file uses includeonce:
 			; https://github.com/RPGHacker/asar/issues/287
-			!AddressLocator #= !Setting_SpriteHP_SpriteHPData
+			!AddressLocator #= !Freeram_SpriteHP_SpriteHPData
 			macro MacroDataOneAfterAnother(Define_Name, Size, Define_Name_Offseter)
 				;This macro assigns Define_Name to an address, then offsets (Plus Size)
 				;to the first byte after the last byte of Define_Name. This is useful
@@ -189,7 +196,7 @@
 			
 			;The following also needs to have each of them be calling macros once, else they end up being set again to another,
 			;different RAM address.
-				%MacroDataOneAfterAnother(Freeram_SpriteHP_SlotToDisplayHP, 1, AddressLocator)
+				%MacroDataOneAfterAnother(Freeram_SpriteHP_MeterState, 1, AddressLocator)
 				%MacroDataOneAfterAnother(Freeram_SpriteHP_CurrentHPLow, !sprite_slots, AddressLocator)
 				%MacroDataOneAfterAnother(Freeram_SpriteHP_MaxHPLow, !sprite_slots, AddressLocator)
 				if !Setting_SpriteHP_TwoByte
@@ -235,12 +242,12 @@
 		endif
 	if !Setting_SpriteHP_DisplaySpriteHPDataOnConsole
 		print "---------------------------------------------------------------------------------"
-		print "\!Setting_SpriteHP_SpriteHPData's Total bytes used: ", dec(!AddressLocator-!Setting_SpriteHP_SpriteHPData)
-		print "Range: $", hex(!Setting_SpriteHP_SpriteHPData), "~$", hex(!AddressLocator-1)
+		print "\!Freeram_SpriteHP_SpriteHPData's Total bytes used: ", dec(!AddressLocator-!Freeram_SpriteHP_SpriteHPData)
+		print "Range: $", hex(!Freeram_SpriteHP_SpriteHPData), "~$", hex(!AddressLocator-1)
 		print "---------------------------------------------------------------------------------"
-		print "\!Setting_SpriteHP_SpriteHPData (Address Tracker format)"
+		print "\!Freeram_SpriteHP_SpriteHPData (Address Tracker format)"
 		print "---------------------------------------------------------------------------------"
-		print "$", hex(!Freeram_SpriteHP_SlotToDisplayHP), " 1 Current index to display sprite's HP (\!Freeram_SpriteHP_SlotToDisplayHP)."
+		print "$", hex(!Freeram_SpriteHP_MeterState), " 1 Current index to display sprite's HP (\!Freeram_SpriteHP_MeterState)."
 		print "$", hex(!Freeram_SpriteHP_CurrentHPLow), " ", dec(!sprite_slots), " Sprite current HP, low byte (\!Freeram_SpriteHP_CurrentHPLow)."
 		print "$", hex(!Freeram_SpriteHP_MaxHPLow), " ", dec(!sprite_slots), " Sprite max HP, low byte (\!Freeram_SpriteHP_MaxHPLow)."
 		if !Setting_SpriteHP_TwoByte

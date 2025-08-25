@@ -111,22 +111,22 @@ SPRITE_CODE_START:
 		%SubOffScreen()
 	if !Setting_SpriteHP_BarAnimation != 0
 		.RemoveRecordWhenSwitchingHPs
-			TXA					;>Don't worry, this copies X, not just transfer
-			CMP !Freeram_SpriteHP_SlotToDisplayHP	;>Compare with the slot the HP bar is using
-			BEQ ..ItsOnThisSprite			;>If HP bar is on this current sprite, don't delete record
-			%SpriteHP_RemoveRecordEffect()		;>Get current percent HP
-			LDA $00					;\Remove Record effect (make them the same)
+			%SpriteHPMeter_GetSlotIndexOfMeterState()	;>We now have !Scratchram_SpriteHP_SpriteSlotToDisplay
+			TXA
+			CMP !Scratchram_SpriteHP_SpriteSlotToDisplay	;>Compare with the slot the HP bar is using
+			BEQ ..ItsOnThisSprite				;>If HP bar is on this current sprite, don't delete record
+			LDA #$FF					;\Remove Record effect (make them the same)
 			STA !Freeram_SpriteHP_BarAnimationFill,x	;/
 			..ItsOnThisSprite
 	endif
-	if !HealingAmount != 0
+	if !HealingAmount
 		LDA !Freeram_SpriteHP_CurrentHPLow,x			;\CMP is like SBC. if currentHP - MaxHP results an unsigned underflow (which causes a barrow; carry clear)
 		CMP !Freeram_SpriteHP_MaxHPLow,x			;|then allow healing
 		if !Setting_SpriteHP_TwoByte != 0
 			LDA !Freeram_SpriteHP_CurrentHPHi,x
 			SBC !Freeram_SpriteHP_MaxHPHi,x
 		endif
-		BCS +						;/
+		BCS +						;/>If HP is full, don't do healing effect.
 		LDA $14						;\frame counter modulo by powers of 2 value
 		AND.b #!HealingPeriodicSpd			;|
 		BNE +						;/>if remainder isn't 0, don't heal on this time
@@ -135,10 +135,9 @@ SPRITE_CODE_START:
 		STA $00						;|
 		SEP #$20					;|
 		JSR Heal					;/
-		if !Setting_SpriteHP_BarAnimation != 0
-			%SpriteHP_RemoveRecordEffect()		;\remove record effect (without the condition of not selecting this sprite)
-			LDA $00					;|
-			STA !Freeram_SpriteHP_BarAnimationFill,x	;/
+		if !Setting_SpriteHP_BarAnimation
+			LDA.b #!Setting_SpriteHP_BarChangeDelay
+			STA !Freeram_SpriteHP_BarAnimationTimer,x
 		endif
 		if !HealingSfxNum != 0
 			LDA #!HealingSfxNum
@@ -604,13 +603,13 @@ SUB_GFX:
 		BCS .HighHP
 		;LowHP
 		LDA #!TILE_LowHealth
-		BRA +
+		BRA .SetTile
 	else
 		LDA !Freeram_SpriteHP_CurrentHPLow,x
 		CMP.b #!HPLowEnoughToShowAltGfx
 		BCS .HighHP
 		LDA #!TILE_LowHealth
-		BCS +
+		BRA .SetTile
 	endif
 	
 	.HighHP:

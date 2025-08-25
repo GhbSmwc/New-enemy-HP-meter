@@ -123,7 +123,7 @@ load:
 	;this code needs to be executed under "load" and not "init".
 	.ClearHPData
 		LDA #$FF								;\Default to not display any HP
-		STA !Freeram_SpriteHP_SlotToDisplayHP					;/
+		STA !Freeram_SpriteHP_MeterState					;/
 		LDX.b #!sprite_slots-1
 		..Loop
 			;This defaults HP for 12 or 22 sprite slots to having 0 HP out of 1 HP.
@@ -157,22 +157,37 @@ main:
 	PHB
 	PHK
 	PLB
-	LDA !Freeram_SpriteHP_SlotToDisplayHP
-	CMP.b #!sprite_slots
-	BCC +
-	JMP .ClearHPDisplay
-	+
+	.SlotStateCheck
+		LDA !Freeram_SpriteHP_MeterState
+		if !Setting_SpriteHP_BarAnimation
+			;LoROM: Index ranging 0 to 11 and 12 to 23 are valid.
+			;SA-1: Index ranging from 0 to 21 and 22 to 43 are valid.
+			CMP.b #!sprite_slots*2
+		else
+			;With no bar animation, then only 0 to 11 or 0 to 21 are valid
+			CMP.b #!sprite_slots
+		endif
+		BCC ..ValidDisplay							;>Valid range, continue
+		JMP .ClearHPDisplay							;>Otherwise, don't display at all.
+		..ValidDisplay
+			if !Setting_SpriteHP_BarAnimation
+				CMP.b #!sprite_slots					;This converts a range representing an intro-fill mode to the regular HP display mode
+				BCC ...NonIntroFillMode
+				...IntroFillMode
+					SEC
+					SBC.b #!sprite_slots
+				...NonIntroFillMode
+					STA !Scratchram_SpriteHP_SpriteSlotToDisplay
+			else
+				STA !Scratchram_SpriteHP_SpriteSlotToDisplay
+			endif
 	.CheckIfSlotIsCorrect
-		LDA !Freeram_SpriteHP_SlotToDisplayHP
-		CMP.b #!sprite_slots				;\Failsafe. A valid slot number ranges from 0 to !sprite_slots-1.
-		BCC ..DisplayMeter
-		JMP .Done					;/
 		..DisplayMeter
-			TAX
-			LDA !14C8,x
-			BNE ...Exists
-			LDA #$FF
-			STA !Freeram_SpriteHP_SlotToDisplayHP
+			LDX !Scratchram_SpriteHP_SpriteSlotToDisplay
+			LDA !14C8,x				;>Sprite status table
+			BNE ...Exists				;>If exists, allow HP to be displayed.
+			LDA #$FF				;\Don't display HP of an enemy that does not exist.
+			STA !Freeram_SpriteHP_MeterState	;/
 			JMP .Done
 			...Exists
 	.DisplayNumerical
@@ -185,8 +200,8 @@ main:
 			if !IsUsingRightAlignedSingleNumber == 0 ;if using suppressed zeroes
 				%ClearNumerical()
 			endif
-			LDA !Freeram_SpriteHP_SlotToDisplayHP
-			TAX
+			..SpriteSlotIndexing
+				LDX !Scratchram_SpriteHP_SpriteSlotToDisplay
 			if or(equal(!Setting_SpriteHP_NumericalTextAlignment, 0), equal(!IsUsingRightAlignedSingleNumber, 1)) ;Fixed digit location
 				if !Setting_SpriteHP_TwoByte == 0
 					%GetHealthDigits8Bit("Freeram_SpriteHP_CurrentHPLow,x")
@@ -208,8 +223,7 @@ main:
 					STA !Scratchram_CharacterTileTable,x
 					INX
 					PHX
-					LDA !Freeram_SpriteHP_SlotToDisplayHP
-					TAX
+					LDX !Scratchram_SpriteHP_SpriteSlotToDisplay
 					if !Setting_SpriteHP_TwoByte == 0
 						%GetHealthDigits8Bit("Freeram_SpriteHP_MaxHPLow,x")
 					else
@@ -245,8 +259,7 @@ main:
 				STA !Scratchram_GraphicalBar_RightEndPiece
 				LDA.b #!Setting_SpriteHP_GraphicalBarMiddleLength
 				STA !Scratchram_GraphicalBar_TempLength
-				LDA !Freeram_SpriteHP_SlotToDisplayHP
-				TAX
+				LDX !Scratchram_SpriteHP_SpriteSlotToDisplay
 				LDA !Freeram_SpriteHP_CurrentHPLow,x
 				STA !Scratchram_GraphicalBar_FillByteTbl
 				LDA !Freeram_SpriteHP_MaxHPLow,x
@@ -286,8 +299,9 @@ main:
 						STA !Freeram_SpriteHP_BarAnimationTimer,x
 						...TimerEnded
 					endif
-					LDA $00
-					CMP !Freeram_SpriteHP_BarAnimationFill,x
+					
+					LDA $00							;>Fill amount of current HP
+					CMP !Freeram_SpriteHP_BarAnimationFill,x		;>Fill amount of previous HP prior damage/recovery
 					BEQ ...PreviousAndCurrentHPEqual
 					BCC ...Damage
 					

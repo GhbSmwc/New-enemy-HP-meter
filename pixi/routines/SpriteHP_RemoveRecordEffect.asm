@@ -9,6 +9,9 @@ incsrc "../EnemyHPMeterDefines.asm"
 ;Output:
 ; - $00 = Amount of fill in the bar of the sprite's
 ;   current HP.
+;Overwritten:
+; - !Scratchram_SpriteHP_SpriteSlotToDisplay: Current
+;   sprite slot to show HP.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	LDA.b #!Setting_SpriteHP_GraphicalBar_LeftPieces
 	STA !Scratchram_GraphicalBar_LeftEndPiece
@@ -19,8 +22,8 @@ incsrc "../EnemyHPMeterDefines.asm"
 	LDA.b #!Setting_SpriteHP_GraphicalBarMiddleLength
 	STA !Scratchram_GraphicalBar_TempLength
 	PHX
-	LDA !Freeram_SpriteHP_SlotToDisplayHP
-	TAX
+	%SpriteHPMeter_GetSlotIndexOfMeterState()
+	LDX !Scratchram_SpriteHP_SpriteSlotToDisplay
 	LDA !Freeram_SpriteHP_CurrentHPLow,x
 	STA !Scratchram_GraphicalBar_FillByteTbl
 	LDA !Freeram_SpriteHP_MaxHPLow,x

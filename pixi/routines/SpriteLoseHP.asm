@@ -12,7 +12,7 @@
 	PHY
 	if !Setting_SpriteHP_BarAnimation == 0
 		TXA
-		STA !Freeram_SpriteHP_SlotToDisplayHP
+		STA !Freeram_SpriteHP_MeterState
 	else
 		LDA $00
 		PHA
@@ -20,10 +20,11 @@
 			LDA $01
 			PHA
 		endif
+		%SpriteHPMeter_GetSlotIndexOfMeterState()
 		TXA
-		CMP !Freeram_SpriteHP_SlotToDisplayHP
+		CMP !Scratchram_SpriteHP_SpriteSlotToDisplay
 		BEQ ?.SameSpriteSlot
-		STA !Freeram_SpriteHP_SlotToDisplayHP
+		STA !Freeram_SpriteHP_MeterState
 		?.Different
 			%SpriteHP_RemoveRecordEffect()
 			LDA $00
