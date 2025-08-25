@@ -32,6 +32,9 @@
 	!BounceDamage		= 2		;>Decimal, amount of damage from bounce blocks.
 	!CarryableKickedSpr	= 6		;>Decimal, amount of damage from other sprites (shell, for example)
 	!CapeSpinDamage		= 4		;>Decimal, amount of damage from cape spin.
+	
+	
+	!IntroFill		= 1		;>Boss intro fill (meter automatically switches to this sprite when it spawns): 0 = nom 1 = yes.
 
 	;symbolic names for ram addresses
 	!SPRITE_Y_SPEED		= !AA
@@ -63,6 +66,15 @@ print "INIT ",pc
 		LDA.b #!HPToStart>>8			;\Full HP (High byte)
 		STA !Freeram_SpriteHP_CurrentHPHi,x	;|
 		STA !Freeram_SpriteHP_MaxHPHi,x		;/
+	endif
+	if !IntroFill
+		TXA
+		CLC
+		ADC.b #!sprite_slots
+		STA !Freeram_SpriteHP_MeterState
+		LDA #$00
+		STA !Freeram_SpriteHP_BarAnimationFill,x
+		STA !Freeram_SpriteHP_BarAnimationTimer,x
 	endif
 	RTL
 

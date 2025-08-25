@@ -302,9 +302,12 @@ main:
 					
 					LDA $00							;>Fill amount of current HP
 					CMP !Freeram_SpriteHP_BarAnimationFill,x		;>Fill amount of previous HP prior damage/recovery
-					BEQ ...PreviousAndCurrentHPEqual
-					BCC ...Damage
-					
+					BNE +
+					JMP ...PreviousAndCurrentHPEqual
+					+
+					BCS +
+					JMP ...Damage
+					+
 					...FillUp
 						if and(notequal(!Setting_SpriteHP_FillDelayFrames, 0), less(!Setting_SpriteHP_BarFillUpPerFrame, 2))
 							LDA $13
@@ -334,17 +337,37 @@ main:
 							STA !Freeram_SpriteHP_BarAnimationFill,x
 						endif
 						....ShowFilllingUp
+							.....TerminateIntroFillIfAtCurrentHP
+								LDA !Freeram_SpriteHP_MeterState
+								CMP.b #!sprite_slots
+								BCC ......NoTerminate
+								LDA !Freeram_SpriteHP_BarAnimationFill,x
+								CMP $00
+								BCC ......NoTerminate
+								
+								LDA !Freeram_SpriteHP_MeterState
+								SEC
+								SBC.b #!sprite_slots
+								STA !Freeram_SpriteHP_MeterState
+								......NoTerminate
 							if !Setting_SpriteHP_ShowHealedTransparent
+								LDA !Freeram_SpriteHP_MeterState
+								CMP.b #!sprite_slots
+								BCS .....IntroFill
 								LDA $13
 								AND.b #%00000001
 								BNE .....FillSoundEffect
+								.....IntroFill
 							endif
-							LDA !Freeram_SpriteHP_BarAnimationFill,x
-							STA $00
+							LDA !Freeram_SpriteHP_BarAnimationFill,x	;\Show animation fill.
+							STA $00						;/
 							.....FillSoundEffect
 								if !Setting_SpriteHP_FillingSFXNumb
-									LDA $13D4|!addr
-									BNE ......NoSfx
+									LDA $13D4|!addr					;>Pause flag
+									if !Setting_SpriteHP_BarChangeDelay
+										ORA !Freeram_SpriteHP_BarAnimationTimer,x	;>Fill freeze timer
+									endif
+									BNE ......NoSfx					;>Only SFX if actually filling upwards.
 									LDA $13
 									AND.b #%00000001
 									BNE ......NoSfx
@@ -352,7 +375,7 @@ main:
 										STA !Setting_SpriteHP_FillingSFXPort
 									......NoSfx
 								endif
-							JMP ...AnimationDone
+									JMP ...AnimationDone
 					...Damage
 						if and(notequal(!Setting_SpriteHP_EmptyDelayFrames, 0), less(!Setting_SpriteHP_BarEmptyPerFrame, 2))
 							LDA $13							;\Decrement every 2^n frames

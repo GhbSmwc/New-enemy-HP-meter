@@ -9,8 +9,9 @@ Thing(s) to fix:
 08/25/2025
  -Redid the code:
  --Makes use of UAT's routines system.
- --ASM codes using JSL/JML to banks $00-$7F now uses fastROM addressing ($xxxxxx|!bank).
+ --ASM codes using JSL/JML to banks $00-$7F now uses fastROM addressing ($xxxxxx|!bank) for LoROM.
  --Uses updated graphical bar and number display routines.
+ --Graphical bar can now display the amount recovered and a boss-intro filling animation separately.
 
 3/27/2019 2.5.24 Moved codes to shared subroutines and new features.
  -Moved major routines to shared subroutines patch due to ease of use and that most of GHB's code (mainly the
