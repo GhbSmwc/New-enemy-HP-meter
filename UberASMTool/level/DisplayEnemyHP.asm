@@ -112,30 +112,41 @@ macro ConvertToRightAligned()
 	endif
 endmacro
 
-;init:
-;	.ClearHPData
-;		LDA #$FF
-;		STA !Freeram_SpriteHP_SlotToDisplayHP
-;		LDX.b #!sprite_slots-1
-;		..Loop
-;			LDA #$00
-;			STA !Freeram_SpriteHP_CurrentHPLow,x
-;			if !Setting_SpriteHP_TwoByte
-;				STA !Freeram_SpriteHP_CurrentHPHi,x
-;				STA !Freeram_SpriteHP_MaxHPHi,x
-;			endif
-;			if !Setting_SpriteHP_BarAnimation
-;				LDA.b #!Setting_SpriteHP_GraphicalBar_TotalPieces
-;				STA !Freeram_SpriteHP_BarAnimationFill,x
-;				LDA.b #!Setting_SpriteHP_BarChangeDelay
-;				STA !Freeram_SpriteHP_BarAnimationTimer,x
-;			endif
-;			LDA #$01
-;			STA !Freeram_SpriteHP_MaxHPLow,x
-;			...Next
-;				DEX
-;				BPL ..Loop
-;	RTL
+load:
+	;To ASM hackers, when a sprite is placed in a level so that the player entering the level
+	;would immediately load the sprite, the codes are executed in this order:
+	;(1) Uberasm tool (UAT)'s level load
+	;(2) Pixi's sprite init
+	;(3) UAT's level init
+	;
+	;therefore to clear out garbage data and then have the sprite's init code set its HP,
+	;this code needs to be executed under "load" and not "init".
+	.ClearHPData
+		LDA #$FF								;\Default to not display any HP
+		STA !Freeram_SpriteHP_SlotToDisplayHP					;/
+		LDX.b #!sprite_slots-1
+		..Loop
+			;This defaults HP for 12 or 22 sprite slots to having 0 HP out of 1 HP.
+			;and with a graphical bar fill value maxed out (so when the meter appears,
+			;shows that it previously have 100% HP).
+			LDA #$00
+			STA !Freeram_SpriteHP_CurrentHPLow,x
+			if !Setting_SpriteHP_TwoByte
+				STA !Freeram_SpriteHP_CurrentHPHi,x
+				STA !Freeram_SpriteHP_MaxHPHi,x
+			endif
+			if !Setting_SpriteHP_BarAnimation
+				LDA.b #!Setting_SpriteHP_GraphicalBar_TotalPieces
+				STA !Freeram_SpriteHP_BarAnimationFill,x
+				LDA.b #!Setting_SpriteHP_BarChangeDelay
+				STA !Freeram_SpriteHP_BarAnimationTimer,x
+			endif
+			LDA #$01
+			STA !Freeram_SpriteHP_MaxHPLow,x
+			...Next
+				DEX
+				BPL ..Loop
+	RTL
 	
 main:
 	if !sa1
