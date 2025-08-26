@@ -349,10 +349,11 @@ main:
 								CMP $00
 								BCC ......NoTerminate
 								
-								LDA !Freeram_SpriteHP_MeterState
-								SEC
-								SBC.b #!sprite_slots
-								STA !Freeram_SpriteHP_MeterState
+								......Terminate
+									LDA !Freeram_SpriteHP_MeterState
+									SEC
+									SBC.b #!sprite_slots
+									STA !Freeram_SpriteHP_MeterState
 								......NoTerminate
 							if !Setting_SpriteHP_ShowHealedTransparent
 								LDA !Freeram_SpriteHP_MeterState
@@ -381,6 +382,18 @@ main:
 								endif
 									JMP ...AnimationDone
 					...Damage
+						....TerminateIntroFill
+							;This is if you damage the sprite so that the current HP fill amount jumps to below
+							;the fill amount during an IntroFill, would immediately terminate the IntroFill.
+							;Without this, if the sprite heals, would not show the healing indicator of the bar
+							;on the first time.
+							LDA !Freeram_SpriteHP_MeterState
+							CMP.b #!sprite_slots
+							BCC .....AlreadyTerminated
+							SEC
+							SBC.b #!sprite_slots
+							STA !Freeram_SpriteHP_MeterState
+							.....AlreadyTerminated
 						if and(notequal(!Setting_SpriteHP_EmptyDelayFrames, 0), less(!Setting_SpriteHP_BarEmptyPerFrame, 2))
 							LDA $13							;\Decrement every 2^n frames
 							AND.b #!Setting_SpriteHP_EmptyDelayFrames		;|
@@ -394,27 +407,28 @@ main:
 								BNE ....TransperentAnimation
 							endif
 						endif
-						if !Setting_SpriteHP_BarEmptyPerFrame >= 2
-							LDA !Freeram_SpriteHP_BarAnimationFill,x	;\Decrement fill
-							SEC						;|
-							SBC.b #!Setting_SpriteHP_BarEmptyPerFrame	;/
-							BCC ....Underflow				;>Underflow check
-							CMP $00						;\Check if record decrements past the current HP.
-							BCS ....Decrement				;/
-							
-							....Underflow
-								LDA $00						;\Set record to current if it did goes past.
+						....DecreaseFill
+							if !Setting_SpriteHP_BarEmptyPerFrame >= 2
+								LDA !Freeram_SpriteHP_BarAnimationFill,x	;\Decrement fill
+								SEC						;|
+								SBC.b #!Setting_SpriteHP_BarEmptyPerFrame	;/
+								BCC .....Underflow				;>Underflow check
+								CMP $00						;\Check if record decrements past the current HP.
+								BCS .....Decrement				;/
+								
+								.....Underflow
+									LDA $00						;\Set record to current if it did goes past.
+									STA !Freeram_SpriteHP_BarAnimationFill,x	;/
+									BRA ...AnimationDone
+								
+								.....Decrement
+									STA !Freeram_SpriteHP_BarAnimationFill,x	;>And set the subtracted value to record
+									BRA ....TransperentAnimation
+							else
+								LDA !Freeram_SpriteHP_BarAnimationFill,x	;\Decrement by 1
+								DEC						;|
 								STA !Freeram_SpriteHP_BarAnimationFill,x	;/
-								BRA ...AnimationDone
-							
-							....Decrement
-								STA !Freeram_SpriteHP_BarAnimationFill,x	;>And set the subtracted value to record
-								BRA ....TransperentAnimation
-						else
-							LDA !Freeram_SpriteHP_BarAnimationFill,x	;\Decrement by 1
-							DEC						;|
-							STA !Freeram_SpriteHP_BarAnimationFill,x	;/
-						endif
+							endif
 						....TransperentAnimation
 							if !Setting_SpriteHP_ShowDamageTransperent != 0
 								LDA $13					;\Alternating frames
