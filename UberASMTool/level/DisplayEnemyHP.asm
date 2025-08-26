@@ -315,27 +315,31 @@ main:
 							BNE ....ShowFilllingUp
 						endif
 						if and(notequal(!Setting_SpriteHP_ShowHealedTransparent, 0), notequal(!Setting_SpriteHP_BarChangeDelay, 0))
+							LDA !Freeram_SpriteHP_MeterState
+							CMP.b #!sprite_slots
+							BCS ....IncreaseFill				;>No pause delays if IntroFill is active
 							LDA !Freeram_SpriteHP_BarAnimationTimer,x
 							BNE ....ShowFilllingUp
 						endif
-						LDA !Freeram_SpriteHP_BarAnimationFill,x
-						if !Setting_SpriteHP_BarFillUpPerFrame >= 2
-							CLC
-							ADC.b #!Setting_SpriteHP_BarFillUpPerFrame
-							BCS ....IncrementPast
-							CMP $00
-							BCC ....Increment
-							
-							....IncrementPast
-								LDA $00
+						....IncreaseFill
+							LDA !Freeram_SpriteHP_BarAnimationFill,x
+							if !Setting_SpriteHP_BarFillUpPerFrame >= 2
+								CLC
+								ADC.b #!Setting_SpriteHP_BarFillUpPerFrame
+								BCS .....IncrementPast
+								CMP $00
+								BCC .....Increment
+								
+								.....IncrementPast
+									LDA $00
+									STA !Freeram_SpriteHP_BarAnimationFill,x
+									BRA ....ShowFilllingUp
+								.....Increment
+									STA !Freeram_SpriteHP_BarAnimationFill,x
+							else
+								INC
 								STA !Freeram_SpriteHP_BarAnimationFill,x
-								BRA ....ShowFilllingUp
-							....Increment
-								STA !Freeram_SpriteHP_BarAnimationFill,x
-						else
-							INC
-							STA !Freeram_SpriteHP_BarAnimationFill,x
-						endif
+							endif
 						....ShowFilllingUp
 							.....TerminateIntroFillIfAtCurrentHP
 								LDA !Freeram_SpriteHP_MeterState

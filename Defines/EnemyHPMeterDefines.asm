@@ -1,30 +1,55 @@
 	incsrc "StatusBarDefines.asm"
 ;Freeram settings
 	;[BytesUsed = 1 + (!sprite_slots*2) + (!sprite_slots * EnabledTables)]
-	;Where "EnabledTables" is how many tables you can optionally have, which is the total:
-	; +!Setting_SpriteHP_TwoByte
-	; +(!Setting_SpriteHP_DisplayGraphicalBar & !Setting_SpriteHP_BarAnimation)*2
-	;
+	;Where "EnabledTables" is how many tables you can optionally have:
+	; - High bytes if you want 16-bit HP: if !Setting_SpriteHP_TwoByte == 1. This
+	;   adds 2 tables, one for current HP, and the other for max HP.
+	; - Bar fill animation. When !Setting_SpriteHP_DisplayGraphicalBar == 1 and
+	;   !Setting_SpriteHP_BarAnimation == 1, this adds 1 table.
+	; - Bar fill delay. If having all these conditions met:
+	; -- !Setting_SpriteHP_DisplayGraphicalBar != 0
+	; -- !Setting_SpriteHP_BarAnimation != 0
+	; -- !Setting_SpriteHP_BarChangeDelay != 0
+	;   then 1 table is added.
 	;
 	;A series of HP data stored in memory, in this order:
 	;
-	; - [1 byte][!Freeram_SpriteHP_MeterState]:
-	; -- Current sprite slot index to display HP of. The value here are:
+	; - Define: !Freeram_SpriteHP_MeterState
+	; -- BytesUsed: 1
+	; -- Description: State of the HP meter display, mainly acting as a sprite slot selector. The values here are:
 	; --- When ranging from 0 to (!sprite_slots-1), will display HP. Each value here corresponds to a sprite slot index.
 	; --- When ranging from !sprite_slots to (!sprite_slots*2)-1, is the same as above, but for "IntroFill" mode (when
 	;     bosses appears, meter appears initially empty and fills up). Only used if !Setting_SpriteHP_BarAnimation == 1.
-	; - [BytesUsed = !sprite_slots][!Freeram_SpriteHP_CurrentHPLow]:
-	; -- Sprite's current HP, low byte
-	; - [BytesUsed = !sprite_slots][!Freeram_SpriteHP_MaxHPLow]:
-	; -- Sprite's max HP, low byte
-	; - [BytesUsed = !sprite_slots * !Setting_SpriteHP_TwoByte][!Freeram_SpriteHP_CurrentHPHi]:
-	; -- Sprite's current HP, high byte
-	; - [BytesUsed = !sprite_slots * !Setting_SpriteHP_TwoByte][!Freeram_SpriteHP_MaxHPHi]:
+	;
+	; - Define: !Freeram_SpriteHP_CurrentHPLow
+	; -- BytesUsed: !sprite_slots
+	; -- Description: Sprite's current HP, low byte
+	;
+	; - Define: !Freeram_SpriteHP_MaxHPLow
+	; -- BytesUsed: !sprite_slots
+	; -- Description: Sprite's max HP, low byte
+	;
+	; - Define: !Freeram_SpriteHP_CurrentHPHi
+	; -- BytesUsed: [BytesUsed = !sprite_slots * !Setting_SpriteHP_TwoByte]
+	; -- Description: Sprite's current HP, high byte
+	;
+	; - Define: !Freeram_SpriteHP_MaxHPHi
+	; -- BytesUsed: [BytesUsed = !sprite_slots * !Setting_SpriteHP_TwoByte]
 	; -- Sprite's max HP, high byte
-	; - [BytesUsed = !sprite_slots * (!Setting_SpriteHP_DisplayGraphicalBar & !Setting_SpriteHP_BarAnimation)][!Freeram_SpriteHP_BarAnimationFill]:
-	; -- Bar fill animation. This displays the previous and current fill amount in the bar when the sprite takes damage or heals.
-	; - [BytesUsed = !sprite_slots * (!Setting_SpriteHP_DisplayGraphicalBar & !Setting_SpriteHP_BarAnimation & !Setting_SpriteHP_BarChangeDelay)][!Freeram_SpriteHP_BarAnimationTimer]:
-	;    Bar fill animation timer
+	;
+	; - Define: !Freeram_SpriteHP_BarAnimationFill
+	; -- BytesUsed: [BytesUsed = !sprite_slots * (!Setting_SpriteHP_DisplayGraphicalBar & !Setting_SpriteHP_BarAnimation)]
+	; -- Description: A secondary fill amount of the bar, apart from the sprite's current HP's fill amount. This is to
+	;    briefly show previous HP fill amount prior to taking damage or healing before gradually increases or decreases
+	;    to the sprite's current HP fill amount. This is also used for IntroFill animation.
+	;
+	; - Define: !Freeram_SpriteHP_BarAnimationTimer
+	; -- BytesUsed: [BytesUsed = !sprite_slots * (!Setting_SpriteHP_DisplayGraphicalBar & !Setting_SpriteHP_BarAnimation & (!Setting_SpriteHP_BarChangeDelay != 0))]
+	; -- Description: delay timer (decreases itself once per frame) before !Freeram_SpriteHP_BarAnimationFill updates to
+	;    the sprite's current HP fill amount. This is ignored if "IntroFill" mode is active.
+	;
+	;If you want to know display the RAM usage of this, have !Setting_SpriteHP_DisplaySpriteHPDataOnConsole set to 1 and
+	;insert via uberasm tool. The console window will show the list of itemized used RAM.
 		if !sa1 == 0
 			!Freeram_SpriteHP_SpriteHPData = $7FACC4
 		else
@@ -185,7 +210,7 @@
 			; ASM files incsrcs with a different path to the same ASM file in which that file uses includeonce:
 			; https://github.com/RPGHacker/asar/issues/287
 			!AddressLocator #= !Freeram_SpriteHP_SpriteHPData
-			macro MacroDataOneAfterAnother(Define_Name, Size, Define_Name_Offseter)
+			macro MacroAssignDefineOneAfterAnother(Define_Name, Size, Define_Name_Offseter)
 				;This macro assigns Define_Name to an address, then offsets (Plus Size)
 				;to the first byte after the last byte of Define_Name. This is useful
 				;for having multiple defines at contiguous regions by repeatedly calling
@@ -196,17 +221,17 @@
 			
 			;The following also needs to have each of them be calling macros once, else they end up being set again to another,
 			;different RAM address.
-				%MacroDataOneAfterAnother(Freeram_SpriteHP_MeterState, 1, AddressLocator)
-				%MacroDataOneAfterAnother(Freeram_SpriteHP_CurrentHPLow, !sprite_slots, AddressLocator)
-				%MacroDataOneAfterAnother(Freeram_SpriteHP_MaxHPLow, !sprite_slots, AddressLocator)
+				%MacroAssignDefineOneAfterAnother(Freeram_SpriteHP_MeterState, 1, AddressLocator)
+				%MacroAssignDefineOneAfterAnother(Freeram_SpriteHP_CurrentHPLow, !sprite_slots, AddressLocator)
+				%MacroAssignDefineOneAfterAnother(Freeram_SpriteHP_MaxHPLow, !sprite_slots, AddressLocator)
 				if !Setting_SpriteHP_TwoByte
-					%MacroDataOneAfterAnother(Freeram_SpriteHP_CurrentHPHi, !sprite_slots, AddressLocator)
-					%MacroDataOneAfterAnother(Freeram_SpriteHP_MaxHPHi, !sprite_slots, AddressLocator)
+					%MacroAssignDefineOneAfterAnother(Freeram_SpriteHP_CurrentHPHi, !sprite_slots, AddressLocator)
+					%MacroAssignDefineOneAfterAnother(Freeram_SpriteHP_MaxHPHi, !sprite_slots, AddressLocator)
 				endif
 				if !Setting_SpriteHP_BarAnimation
-					%MacroDataOneAfterAnother(Freeram_SpriteHP_BarAnimationFill, !sprite_slots, AddressLocator)
+					%MacroAssignDefineOneAfterAnother(Freeram_SpriteHP_BarAnimationFill, !sprite_slots, AddressLocator)
 					if !Setting_SpriteHP_BarChangeDelay
-						%MacroDataOneAfterAnother(Freeram_SpriteHP_BarAnimationTimer, !sprite_slots, AddressLocator)
+						%MacroAssignDefineOneAfterAnother(Freeram_SpriteHP_BarAnimationTimer, !sprite_slots, AddressLocator)
 					endif
 				endif
 			!MacroGuard_SpriteHPData = 1
