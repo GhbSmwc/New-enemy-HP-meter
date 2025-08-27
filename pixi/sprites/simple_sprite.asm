@@ -3,9 +3,10 @@
 ;;
 ;; Description: It's just a 16x16 custom sprite use for testing with the HP meter patch.
 ;;
-;; NOTE: Due to a bug with asar's leaking labels in macros, and that the labels here
-;; uses sublabels, this sprite does NOT use pixi's routines due to them using macros.
-;; Hopefully this bug gets fixed soon, it's really annoying.
+;; NOTE: To make sure it does not use default interaction with other sprites, such as
+;; fireball disappearing with or without killing/damaging the sprite, make sure $167A
+;; bit 1 (i bit, Invincible to star/cape/fire/bouncing bricks) is set. This allows only
+;; custom code to handle fireball and the new damage routine.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 

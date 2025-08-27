@@ -504,32 +504,37 @@ main:
 
 ;This below is a PATCH to be inserted via uberasm tool.
 ;Reason is so that you don't need a shared subroutine patch or have duplicates.
+
+;Notes to self:
+;CODE_02A0AC ("ProcessFireball") is the fireball code, this, not the chuck's code, handles incrementing the hit counter RAM $1528
+;The code that makes fireball disappear in a puff of smoke is in CODE_02A045 (actual deletion is at $02A213)
+
 pushpc
 	;org $123456
 	;JSL/JML LabelToFreespace
 	if !Setting_SpriteHP_ModifySMWSprites
-		;Modify tweaker values for chucks not to use the janky 5 fireballs system
+		;Modify tweaker values for chucks not to use default sprite interaction, by setting $167A bit 1 ("i bit", disable cape/fireball/bounce block, which ignores sprite collision entirely)
 		;see https://www.smwcentral.net/?p=memorymap&game=smw&u=0&address=&sizeOperation=%3D&sizeValue=&region[]=ram&type=*&description=%22tweaker%22#
-		;	Sprite190FVals        wcdj5sDp   Sprite166EVals        lwcfpppg   Sprite1686Vals        dnctswye
-			org $07F659+$46 : db %01000000 : org $07F3FE+$46 : db %10011011 : org $07F590+$46 : db %00011001 ;>$46 = Diggin' chuck
-			org $07F659+$91 : db %01000000 : org $07F3FE+$91 : db %00011011 : org $07F590+$91 : db %00011001 ;>$91 = Regular Chargin chuck
-			org $07F659+$92 : db %01000000 : org $07F3FE+$92 : db %00011011 : org $07F590+$92 : db %00011001 ;>$92 = Splittin' chuck
-			org $07F659+$93 : db %01000000 : org $07F3FE+$93 : db %00011011 : org $07F590+$93 : db %00011001 ;>$93 = Bouncin' Chuck
-			org $07F659+$94 : db %01000000 : org $07F3FE+$94 : db %00011011 : org $07F590+$94 : db %00011001 ;>$94 = Whistlin' chuck
-			org $07F659+$95 : db %01000000 : org $07F3FE+$95 : db %00011011 : org $07F590+$95 : db %00011001 ;>$95 = Clappin' chuck
-			org $07F659+$97 : db %01000000 : org $07F3FE+$97 : db %00011011 : org $07F590+$97 : db %00011001 ;>$97 = Puntin' chuck
-			org $07F659+$98 : db %01000000 : org $07F3FE+$98 : db %00011011 : org $07F590+$98 : db %00011001 ;>$98 = Pitchin' chuck
+		;	Sprite167AVals        dpmksPiS
+			org $07F4C7+$46 : db %10000011 ;>$46 = Diggin' chuck
+			org $07F4C7+$91 : db %11111011 ;>$91 = Regular Chargin chuck
+			org $07F4C7+$92 : db %11111011 ;>$92 = Splittin' chuck
+			org $07F4C7+$93 : db %11111011 ;>$93 = Bouncin' Chuck
+			org $07F4C7+$94 : db %11111011 ;>$94 = Whistlin' chuck
+			org $07F4C7+$95 : db %11111011 ;>$95 = Clappin' chuck
+			org $07F4C7+$97 : db %11111011 ;>$97 = Puntin' chuck
+			org $07F4C7+$98 : db %11111011 ;>$98 = Pitchin' chuck
 	else
 ;		These are default SMW tweaker values
-;			Sprite190FVals        wcdj5sDp   Sprite166EVals        lwcfpppg   Sprite1686Vals        dnctswye
-			org $07F659+$46 : db %01001000 : org $07F3FE+$46 : db %10001011 : org $07F590+$46 : db %00010001 ;>$46 = Diggin' chuck
-			org $07F659+$91 : db %01001000 : org $07F3FE+$91 : db %00001011 : org $07F590+$91 : db %00010001 ;>$91 = Regular Chargin chuck
-			org $07F659+$92 : db %01001000 : org $07F3FE+$92 : db %00001011 : org $07F590+$92 : db %00010001 ;>$92 = Splittin' chuck
-			org $07F659+$93 : db %01001000 : org $07F3FE+$93 : db %00001011 : org $07F590+$93 : db %00010001 ;>$93 = Bouncin' Chuck
-			org $07F659+$94 : db %01001000 : org $07F3FE+$94 : db %00001011 : org $07F590+$94 : db %00010001 ;>$94 = Whistlin' chuck
-			org $07F659+$95 : db %01001000 : org $07F3FE+$95 : db %00001011 : org $07F590+$95 : db %00010001 ;>$95 = Clappin' chuck
-			org $07F659+$97 : db %01001000 : org $07F3FE+$97 : db %00001011 : org $07F590+$97 : db %00010001 ;>$97 = Puntin' chuck
-			org $07F659+$98 : db %01001000 : org $07F3FE+$98 : db %00001011 : org $07F590+$98 : db %00010001 ;>$98 = Pitchin' chuck
+		;	Sprite167AVals        dpmksPiS
+			org $07F4C7+$46 : db %10000001 ;>$46 = Diggin' chuck
+			org $07F4C7+$91 : db %11111001 ;>$91 = Regular Chargin chuck
+			org $07F4C7+$92 : db %11111001 ;>$92 = Splittin' chuck
+			org $07F4C7+$93 : db %11111001 ;>$93 = Bouncin' Chuck
+			org $07F4C7+$94 : db %11111001 ;>$94 = Whistlin' chuck
+			org $07F4C7+$95 : db %11111001 ;>$95 = Clappin' chuck
+			org $07F4C7+$97 : db %11111001 ;>$97 = Puntin' chuck
+			org $07F4C7+$98 : db %11111001 ;>$98 = Pitchin' chuck
 	endif
 	;Code that runs every frame for chucks
 ;		org $02C1F8
