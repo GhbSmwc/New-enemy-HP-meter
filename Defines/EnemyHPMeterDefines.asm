@@ -185,6 +185,7 @@
 					!Setting_SpriteHP_FillingSFXPort		= $1DFC|!addr	;>Use $1DF9, $1DFA, or $1DFC, followed by "|!addr" if you're using SA-1
 	;Patching settings
 		;Apply displaying HP on various vanilla SMW sprites: 0 = no, 1 = yes
+			!Setting_SpriteHP_ModifySMWSprites			= 1
 			!Setting_SpriteHP_VanillaSprite_Chuck			= 1
 				;^All the chucks in SMW.
 			!Setting_SpriteHP_VanillaSprite_Bosses			= 1
