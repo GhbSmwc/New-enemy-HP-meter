@@ -522,14 +522,14 @@ pushpc
 	else
 ;		These are default SMW tweaker values
 ;			Sprite190FVals        wcdj5sDp   Sprite166EVals        lwcfpppg   Sprite1686Vals        dnctswye
-			org $07F659+$46 : db %01001000 : org $07F3FE+$46 : db %10001011 : org $07F590+$46 : db %00010001
-			org $07F659+$91 : db %01001000 : org $07F3FE+$91 : db %00001011 : org $07F590+$91 : db %00010001
-			org $07F659+$92 : db %01001000 : org $07F3FE+$92 : db %00001011 : org $07F590+$92 : db %00010001
-			org $07F659+$93 : db %01001000 : org $07F3FE+$93 : db %00001011 : org $07F590+$93 : db %00010001
-			org $07F659+$94 : db %01001000 : org $07F3FE+$94 : db %00001011 : org $07F590+$94 : db %00010001
-			org $07F659+$95 : db %01001000 : org $07F3FE+$95 : db %00001011 : org $07F590+$95 : db %00010001
-			org $07F659+$97 : db %01001000 : org $07F3FE+$97 : db %00001011 : org $07F590+$97 : db %00010001
-			org $07F659+$98 : db %01001000 : org $07F3FE+$98 : db %00001011 : org $07F590+$98 : db %00010001
+			org $07F659+$46 : db %01001000 : org $07F3FE+$46 : db %10001011 : org $07F590+$46 : db %00010001 ;>$46 = Diggin' chuck
+			org $07F659+$91 : db %01001000 : org $07F3FE+$91 : db %00001011 : org $07F590+$91 : db %00010001 ;>$91 = Regular Chargin chuck
+			org $07F659+$92 : db %01001000 : org $07F3FE+$92 : db %00001011 : org $07F590+$92 : db %00010001 ;>$92 = Splittin' chuck
+			org $07F659+$93 : db %01001000 : org $07F3FE+$93 : db %00001011 : org $07F590+$93 : db %00010001 ;>$93 = Bouncin' Chuck
+			org $07F659+$94 : db %01001000 : org $07F3FE+$94 : db %00001011 : org $07F590+$94 : db %00010001 ;>$94 = Whistlin' chuck
+			org $07F659+$95 : db %01001000 : org $07F3FE+$95 : db %00001011 : org $07F590+$95 : db %00010001 ;>$95 = Clappin' chuck
+			org $07F659+$97 : db %01001000 : org $07F3FE+$97 : db %00001011 : org $07F590+$97 : db %00010001 ;>$97 = Puntin' chuck
+			org $07F659+$98 : db %01001000 : org $07F3FE+$98 : db %00001011 : org $07F590+$98 : db %00010001 ;>$98 = Pitchin' chuck
 	endif
 	;Code that runs every frame for chucks
 ;		org $02C1F8
@@ -550,32 +550,3 @@ pullpc
 ;				PHA
 ;				JML $02C1FC|!bank
 ;	endif
-	
-	
-print "%", bin(read1($07F659+$46))
-print "%", bin(read1($07F659+$91))
-print "%", bin(read1($07F659+$92))
-print "%", bin(read1($07F659+$93))
-print "%", bin(read1($07F659+$94))
-print "%", bin(read1($07F659+$95))
-print "%", bin(read1($07F659+$97))
-print "%", bin(read1($07F659+$98))
-print "-----------------------------"
-print "%", bin(read1($07F3FE+$46))
-print "%", bin(read1($07F3FE+$91))
-print "%", bin(read1($07F3FE+$92))
-print "%", bin(read1($07F3FE+$93))
-print "%", bin(read1($07F3FE+$94))
-print "%", bin(read1($07F3FE+$95))
-print "%", bin(read1($07F3FE+$97))
-print "%", bin(read1($07F3FE+$98))
-print "-----------------------------"
-print "%", bin(read1($07F590+$46))
-print "%", bin(read1($07F590+$91))
-print "%", bin(read1($07F590+$92))
-print "%", bin(read1($07F590+$93))
-print "%", bin(read1($07F590+$94))
-print "%", bin(read1($07F590+$95))
-print "%", bin(read1($07F590+$97))
-print "%", bin(read1($07F590+$98))
-print "-----------------------------"
