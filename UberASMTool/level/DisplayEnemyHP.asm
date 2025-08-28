@@ -537,21 +537,36 @@ pushpc
 			org $07F4C7+$98 : db %11111001 ;>$98 = Pitchin' chuck
 	endif
 	;Code that runs every frame for chucks
-;		org $02C1F8
-;		if !Setting_SpriteHP_ModifySMWSprites
-;			JML CharginChuckHitCountToHP	;>Had to be JML instead JSL because you cannot PHA : RTL [...] PLA.
-;		else
-;			LDA.W !187B,X					;\Restore overwritten code
-;			PHA						;/
-;		endif
+		org $02C1F8
+		if !Setting_SpriteHP_ModifySMWSprites
+			JML CharginChuckHitCountToHP	;>Had to be JML instead JSL because you cannot PHA : RTL [...] PLA.
+		else
+			LDA.W !187B,X					;\Restore overwritten code
+			PHA						;/
+		endif
 pullpc
-;	if !Setting_SpriteHP_ModifySMWSprites
-;		;LabelToFreespace:
-;		
-;		CharginChuckHitCountToHP:
-;		
-;			.Restore
-;				LDA !187B,x
-;				PHA
-;				JML $02C1FC|!bank
-;	endif
+	if !Setting_SpriteHP_ModifySMWSprites
+		!CharginChucks_UnusedSpriteTable = !1504
+			;^Unused sprite table to use for chucks to determine if its the first frame the sprite spawns.
+			; Yes, Chucks do have an init at $01817D ("SpriteInitPtr"), but the codes it jumps to are in
+			; small sections and are prone to cause a butterfly effect and require me to hijack each part.
+			; Therefore I use unused RAM to create a quasi-init code needed so it properly initalizes its
+			; HP data.
+		;LabelToFreespace:
+		
+		CharginChuckHitCountToHP:
+			LDA !CharginChucks_UnusedSpriteTable,x
+			BNE .EveryFrame
+			.QuasiInit
+				INC
+				STA !CharginChucks_UnusedSpriteTable,x
+				..InitializeHP
+					;Code here.
+			.EveryFrame
+				;Code that runs every frame (custom collision and damage routines here)
+			.Restore
+				LDA !187B,x
+				PHA
+				JML $02C1FC|!bank
+	endif
+	
