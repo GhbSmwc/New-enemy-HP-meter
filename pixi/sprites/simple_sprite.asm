@@ -267,7 +267,7 @@ SPRITE_CODE_START:
 		;Extended sprite (Mario and Yoshi's fireball Contact)
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		.HitboxWithExtSpr
-			LDY.b #$10-1			;>Slots 0-9 of extended sprites
+			LDY.b #10-1			;>There are 10 slots, numbered from 0 to 9.
 
 			..Loop
 				LDA $170B|!Base2,y	;>Extended sprite number
@@ -364,7 +364,7 @@ SPRITE_CODE_START:
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 	.HitboxWithBounceBlocks
-		LDY.b #$04-1
+		LDY.b #$04-1	;>There are 4 slots, numbered from 0 to 3.
 
 		..Loop
 			LDA $1699|!Base2,y	;\Non-existent bounce block = next slot
@@ -418,14 +418,14 @@ SPRITE_CODE_START:
 				
 			...NextSlot
 				DEY			;>Next slot
-				BPL ..Loop		;>Loop if current slot is valid
+				BPL ..Loop		;>Loop if there is another slot to run, otherwise terminate
 
 	.SkipBounceBlkDmg
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		;Other (normal) sprites.
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	.HitboxWithOtherSpr
-		LDY.b #!NumOfSprSlot-1
+		LDY.b #!NumOfSprSlot-1		;There are 12 slots in LoROM (ranging from 0 to 11), or 22 in SA-1 (ranging from 0 to 21).
 
 		..Loop
 			TYA			;\Don't interact with its own slot/self.

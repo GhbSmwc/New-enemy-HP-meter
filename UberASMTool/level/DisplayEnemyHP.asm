@@ -564,6 +564,9 @@ pullpc
 					;Code here.
 			.EveryFrame
 				;Code that runs every frame (custom collision and damage routines here)
+				;Notes to self:
+				; - JSL $03B69F|!bank to get sprite's hitbox in A.
+				; - Thinking of having entire sprite collision loop as a subroutine.
 			.Restore
 				LDA !187B,x
 				PHA
