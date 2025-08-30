@@ -186,7 +186,7 @@
 	;Patching settings
 		;Apply displaying HP on various vanilla SMW sprites: 0 = no, 1 = yes, again, use only mentioned values,
 		;unless stated otherwise.
-			!Setting_SpriteHP_ModifySMWSprites			= 1
+			!Setting_SpriteHP_ModifySMWSprites			= 1	;>Universal option if you want to not have HP meters for all vanilla SMW sprites.
 			!Setting_SpriteHP_VanillaSprite_Chuck			= 1
 				;^All the chucks in SMW.
 			!Setting_SpriteHP_VanillaSprite_Bosses			= 1
@@ -201,12 +201,15 @@
 		;This only applies if !Setting_SpriteHP_ModifySMWSprites == 1 and their respective settings being 1.
 			!Setting_SpriteHP_VanillaSprite_ChuckHPAmount		= 15	;>This applies to all chuck varients.
 			!Setting_SpriteHP_VanillaSprite_Chuck_StompDamage	= 5	;>Amount of HP loss when taking damage from stomp attacks
+			
+			!Setting_SpriteHP_VanillaSprite_BigBooBossHPAmount		= 3	;>Amount of HP Big Boo boss have.
+			!Setting_SpriteHP_VanillaSprite_BigBooBossThrownItemDamage	= 1	;>Amount of damage Big Boo boss takes from any thrown sprite.
 		;For any sprite whose tweaker $190F's bit 3 (%wcdj5sDp, takes 5 fireballs to kill) is set:
 			!Setting_SpriteHP_FireballDamageAmount			= 3	;>Amount of damage sprites recieves from fireball damage.
 		;Fixes and additions
 			;Sound effect when the fireball hits chucks. See: https://www.smwcentral.net/?p=viewthread&t=6665
-			!Setting_SpriteHP_VanillaSprite_ChuckFireDamage_SoundNumber	= $28		;>Set to 0 to disable.
-			!Setting_SpriteHP_VanillaSprite_ChuckFireDamage_SoundPort	= $1DFC|!addr
+				!Setting_SpriteHP_VanillaSprite_ChuckFireDamage_SoundNumber	= $28		;>Set to 0 to disable.
+				!Setting_SpriteHP_VanillaSprite_ChuckFireDamage_SoundPort	= $1DFC|!addr
 	;Misc settings
 		!Setting_SpriteHP_DisplaySpriteHPDataOnConsole = 1
 			;^0 = no

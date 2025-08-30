@@ -76,6 +76,44 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			org $02A103
 			db 5
 		endif
+	;Bosses below (only applies to bosses with a HP system, and not bowser)
+		;Big boo boss
+			if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
+				org $038233				;\When Big boo boss takes damage from
+				autoclean JSL DamageBigBooBoss		;|a thrown sprite.
+				NOP #1					;|
+			else
+				if read1($038233) == $22		;|
+					autoclean read3($038233+1)	;|
+				endif					;|
+				org $038233				;|
+				LDA #$28				;|
+				STA $1DFC|!addr				;/
+			endif
+			org $03819B										;\Big Boo's hit counter actually increments
+			if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)	;|when switching state, not the instant the
+				NOP #3										;|boo gits hit.
+			else											;|
+				INC.W !1534,X									;|
+			endif											;/
+		
+			org $0381A2										;\Amount of hits to defeat big boo.
+			if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
+				db !Setting_SpriteHP_VanillaSprite_BigBooBossHPAmount
+			else
+				db 3
+			endif
+			if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
+				org $0380A2				;\Big boo's "HP" is actually a hit counter
+				autoclean JML BigBooBossHitCountToHP	;|that increments (starts at 0) every hit.
+			else
+				if read1($0380A2) == $5C		;|This hijacks converts the value to HP,
+					autoclean read3($0380A2+1)	;|and makes it display its health.
+				endif					;|
+				org $0380A2				;|
+				CMP #$08				;|
+				BNE $2E					;/
+			endif
 ;Freespace code
 	freecode
 	if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Chuck)
@@ -108,7 +146,6 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					TXA
 					CMP !Scratchram_SpriteHP_SpriteSlotToDisplay
 					BEQ ..OnCurrentSprite
-					wdm
 					if !Setting_SpriteHP_BarFillRoundDirection == 0
 						JSL RemoveRecord
 					elseif !Setting_SpriteHP_BarFillRoundDirection == 1
@@ -181,7 +218,45 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			STA !1528,x
 			RTL
 	endif
-
+		
+	if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
+		DamageBigBooBoss:
+			JSL SwitchHPDisplay
+			LDA !1534,x
+			CLC
+			ADC.b #!Setting_SpriteHP_VanillaSprite_BigBooBossThrownItemDamage
+			BCS .CapDamage
+			CMP.b #!Setting_SpriteHP_VanillaSprite_BigBooBossHPAmount
+			BCC .DamageNormally
+			
+			.CapDamage
+				LDA.b #!Setting_SpriteHP_VanillaSprite_BigBooBossHPAmount
+			.DamageNormally
+				STA !1534,x
+			.Restore
+				LDA #$28
+				STA $1DFC|!addr
+				RTL
+		BigBooBossHitCountToHP:
+			LDA.b #!Setting_SpriteHP_VanillaSprite_BigBooBossHPAmount	;\Set max HP
+			STA !Freeram_SpriteHP_MaxHPLow,x				;/
+			SEC								;\RemainingHitsLeft = KillingValue - TotalDamageTaken
+			SBC !1534,x							;/
+			STA !Freeram_SpriteHP_CurrentHPLow,x				;>And display HP correctly
+			if !Setting_SpriteHP_TwoByte != 0
+				LDA #$00						;\Rid high bytes.
+				STA !Freeram_SpriteHP_CurrentHPHi,x			;|
+				STA !Freeram_SpriteHP_MaxHPHi,x				;/
+			endif
+	
+			.Restore
+				LDA !14C8,x
+				CMP #$08
+				BNE ..Return0380D4
+				JML $0380A6|!bank
+				..Return0380D4
+					JML $0380D4|!bank
+	endif
 ;Various subroutines below
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;This essentially takes the value of !Freeram_SpriteHP_MeterState, and modulo by
