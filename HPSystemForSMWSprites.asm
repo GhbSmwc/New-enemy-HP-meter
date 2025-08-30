@@ -38,6 +38,44 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			org $02C7EF
 			db 3
 		endif
+	;Failsafe to prevent a potential bug where a chuck dies and a new sprite spawn on the same slot the dying/despawning chuck
+	;is on causes the HP meter to be transfered over.
+		if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Chuck)
+			org $02C20C
+			autoclean JSL PreventHPDisplayTransferChuck
+			nop
+		else
+			if read1($02C20C) == $22
+				autoclean read3($02C20C+1)
+			endif
+			org $02C20C
+			LDA #$28					;\Restore overwritten code
+			STA.W !163E,X					;/
+		endif
+	;Fireball hitcount hijacks. This modifies the 5 fireballs to kill (when tweaker RAM $190F's bit 3; %0000X000 is set)
+	;to use a damage count system. Chucks are the only sprites that have the tweaker bit being used for the 5 fireballs
+	;system, bosses that (silently) takes damage from fireballs handles these in their sprite code, unlike how chucks
+	;take damage from fireballs.
+		if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Chuck)
+			org $02A0FC
+			autoclean JSL FireballEffect
+			NOP #2
+		else
+			if read1($02A0FC) == $22
+				autoclean read3($02A0FC+1)
+			endif
+			org $02A0FC
+			INC.W !1528,X
+			LDA.W !1528,X
+		endif
+		
+		if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Chuck)
+			org $02A103
+			db !Setting_SpriteHP_VanillaSprite_ChuckHPAmount
+		else
+			org $02A103
+			db 5
+		endif
 ;Freespace code
 	freecode
 	if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Chuck)
@@ -111,7 +149,37 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				STA !1528,x
 			+
 			RTL
+		PreventHPDisplayTransferChuck:
+			.Restore
+				LDA #$28
+				STA !163E,x
+			.HideDisplay
+				LDA !14C8,x
+				BNE ..NotDead
+				LDA #$FF
+				STA !Freeram_SpriteHP_MeterState
+				
+				..NotDead
+			RTL
+		FireballEffect:
+			JSL SwitchHPDisplay
+			if !Setting_SpriteHP_VanillaSprite_ChuckFireDamage_SoundNumber != $00
+				LDA.b #!Setting_SpriteHP_VanillaSprite_ChuckFireDamage_SoundNumber
+				STA !Setting_SpriteHP_VanillaSprite_ChuckFireDamage_SoundPort
+			endif
+			LDA !1528,x
+			CLC
+			ADC.b #!Setting_SpriteHP_FireballDamageAmount		;>Fireball damage count
+			BCS .CapDamage						;>in case if you have the damage exceed 255
+			CMP.b #!Setting_SpriteHP_VanillaSprite_ChuckHPAmount	;>damage count
+			BCC .Alive						;>if damage smaller than max, leave it alive
+			
+			.CapDamage
+				LDA.b #!Setting_SpriteHP_VanillaSprite_ChuckHPAmount
 		
+			.Alive
+			STA !1528,x
+			RTL
 	endif
 
 ;Various subroutines below

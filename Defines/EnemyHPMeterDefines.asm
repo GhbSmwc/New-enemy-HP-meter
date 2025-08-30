@@ -203,7 +203,10 @@
 			!Setting_SpriteHP_VanillaSprite_Chuck_StompDamage	= 5	;>Amount of HP loss when taking damage from stomp attacks
 		;For any sprite whose tweaker $190F's bit 3 (%wcdj5sDp, takes 5 fireballs to kill) is set:
 			!Setting_SpriteHP_FireballDamageAmount			= 3	;>Amount of damage sprites recieves from fireball damage.
-			
+		;Fixes and additions
+			;Sound effect when the fireball hits chucks. See: https://www.smwcentral.net/?p=viewthread&t=6665
+			!Setting_SpriteHP_VanillaSprite_ChuckFireDamage_SoundNumber	= $28		;>Set to 0 to disable.
+			!Setting_SpriteHP_VanillaSprite_ChuckFireDamage_SoundPort	= $1DFC|!addr
 	;Misc settings
 		!Setting_SpriteHP_DisplaySpriteHPDataOnConsole = 1
 			;^0 = no
