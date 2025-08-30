@@ -269,7 +269,7 @@
 		!Setting_SpriteHP_GraphicalBar_MiddleExists #= !Setting_SpriteHP_GraphicalBarMiddleLength*(notequal(!Setting_SpriteHP_GraphicalBar_MiddlePieces, 0))
 		!Setting_SpriteHP_GraphicalBar_RightEndExists #= notequal(!Setting_SpriteHP_GraphicalBar_RightPieces, 0)
 		!Setting_SpriteHP_GraphicalBar_TotalTiles #= !Setting_SpriteHP_GraphicalBar_LeftEndExists+!Setting_SpriteHP_GraphicalBar_MiddleExists+!Setting_SpriteHP_GraphicalBar_RightEndExists
-		!Setting_SpriteHP_GraphicalBar_TotalPieces #= !Setting_SpriteHP_GraphicalBar_LeftEndExists+(!Setting_SpriteHP_GraphicalBarMiddleLength*!Setting_SpriteHP_GraphicalBar_MiddlePieces)+!Setting_SpriteHP_GraphicalBar_RightEndExists
+		!Setting_SpriteHP_GraphicalBar_TotalPieces #= !Setting_SpriteHP_GraphicalBar_LeftPieces+(!Setting_SpriteHP_GraphicalBarMiddleLength*!Setting_SpriteHP_GraphicalBar_MiddlePieces)+!Setting_SpriteHP_GraphicalBar_RightPieces
 	
 	;Maximum string length failsafe
 		!Setting_SpriteHP_MaxStringLength = !Setting_SpriteHP_MaxDigits
