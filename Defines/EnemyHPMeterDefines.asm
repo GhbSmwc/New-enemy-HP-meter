@@ -197,13 +197,16 @@
 				
 				
 		;Amount of HP SMW sprites has. NOTE: SMW only have hit counts being an 8-bit unsigned integer stored
-		;within various sprite tables (chucks: $1528, $1626 for Ludwig/Morton/Roy).
+		;within various sprite tables (chucks: $1528, Ludwig/Morton/Roy: $1626, Big Boo Boss: $1534).
 		;This only applies if !Setting_SpriteHP_ModifySMWSprites == 1 and their respective settings being 1.
 			!Setting_SpriteHP_VanillaSprite_ChuckHPAmount		= 15	;>This applies to all chuck varients.
 			!Setting_SpriteHP_VanillaSprite_Chuck_StompDamage	= 5	;>Amount of HP loss when taking damage from stomp attacks
 			
 			!Setting_SpriteHP_VanillaSprite_BigBooBossHPAmount		= 3	;>Amount of HP Big Boo boss have.
 			!Setting_SpriteHP_VanillaSprite_BigBooBossThrownItemDamage	= 1	;>Amount of damage Big Boo boss takes from any thrown sprite.
+			
+			!Setting_SpriteHP_VanillaSprite_WendyLemmyHPAmount	= 3
+			!Setting_SpriteHP_VanillaSprite_WendyLemmyStompDamage	= 1
 		;For any sprite whose tweaker $190F's bit 3 (%wcdj5sDp, takes 5 fireballs to kill) is set:
 			!Setting_SpriteHP_FireballDamageAmount			= 3	;>Amount of damage sprites recieves from fireball damage.
 		;Fixes and additions

@@ -114,6 +114,53 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				CMP #$08				;|
 				BNE $2E					;/
 			endif
+		;Wendy and Lemmy
+			if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
+				org $03CECB
+				autoclean JSL DamageWendyLemmy
+				NOP #1
+			else
+				if read1($03CECB) == $22
+					autoclean read3($03CECB+1)
+				endif
+				org $03CECB
+				LDA #$28
+				STA $1DFC|!addr
+			endif
+		
+			org $03CE13
+			if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
+				NOP #3					;>Remove delay damage
+			else
+				INC.W !1534,X
+			endif
+			
+			org $03CE1A
+			if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
+				db !Setting_SpriteHP_VanillaSprite_WendyLemmyHPAmount			;>Wendy/Lemmy's HP.
+			else
+				db $03
+			endif
+			
+			org $03CED4
+			if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
+				db !Setting_SpriteHP_VanillaSprite_WendyLemmyHPAmount			;>Number of hits (no longer -1) to make sprites vanish
+			else
+				db $02
+			endif
+		
+			if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
+				org $03CC14
+				autoclean JSL WendyLemmyHitCountToHP
+				NOP #2
+			else
+				if read1($03CC14) == $22
+					autoclean read3($03CC14+1)
+				endif
+				org $03CC14
+				JSR.W $03D484
+				LDA !14C8,X
+			endif
 ;Freespace code
 	freecode
 	if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Chuck)
@@ -256,6 +303,42 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				JML $0380A6|!bank
 				..Return0380D4
 					JML $0380D4|!bank
+		DamageWendyLemmy:
+			JSL SwitchHPDisplay
+			LDA !1534,x							;\Increase damage count
+			CLC								;|
+			ADC.b #!Setting_SpriteHP_VanillaSprite_WendyLemmyStompDamage	;/
+			BCS .CapDamage
+			CMP.b #!Setting_SpriteHP_VanillaSprite_WendyLemmyHPAmount	;\check if damage is over its max
+			BCC .ValidDamage						;/
+			.CapDamage
+				LDA.b #!Setting_SpriteHP_VanillaSprite_WendyLemmyHPAmount
+			.ValidDamage
+				STA !1534,x
+			.Restore
+				LDA #$28
+				STA $1DFC+!addr
+				RTL
+		WendyLemmyHitCountToHP:
+			LDA.b #!Setting_SpriteHP_VanillaSprite_WendyLemmyHPAmount	;\Set max HP
+			STA !Freeram_SpriteHP_MaxHPLow,x				;/
+			SEC								;\RemainingHitsLeft = KillingValue - TotalDamageTaken
+			SBC !1534,x							;/
+			STA !Freeram_SpriteHP_CurrentHPLow,x				;>And display HP correctly
+			if !Setting_SpriteHP_TwoByte != 0
+				LDA #$00						;\Rid high bytes.
+				STA !Freeram_SpriteHP_CurrentHPHi,x			;|
+				STA !Freeram_SpriteHP_MaxHPHi,x				;/
+			endif
+	
+			.Restore
+				PHK				;\JSL-RTS trick.
+				PER $0006
+				PEA $827E
+				JML $03D484|!bank		;>Graphics routines, had to do the JSL-RTS trick because freespace code may be in different banks.
+	
+			LDA !14C8,x
+			RTL
 	endif
 ;Various subroutines below
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
