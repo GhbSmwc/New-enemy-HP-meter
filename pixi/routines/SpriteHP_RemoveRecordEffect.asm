@@ -6,12 +6,14 @@ incsrc "../EnemyHPMeterDefines.asm"
 ;fill value to its current HP fill amount. Effectively
 ;removing the transparent effect of taking damage.
 ;
+;InputL
+; - !Setting_SpriteHP_GraphicalBar_LeftPieces = Number of pieces, to find total pieces of the bar.
+; - !Setting_SpriteHP_GraphicalBar_MiddlePieces = Number of pieces, to find total pieces of the bar.
+; - !Setting_SpriteHP_GraphicalBar_RightPieces = Number of pieces, to find total pieces of the bar.
+; - !Setting_SpriteHP_GraphicalBarMiddleLength = Number of middle tiles, to find total pieces of the bar.
 ;Output:
 ; - $00 = Amount of fill in the bar of the sprite's
 ;   current HP.
-;Overwritten:
-; - !Scratchram_SpriteHP_SpriteSlotToDisplay: Current
-;   sprite slot to show HP.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	LDA.b #!Setting_SpriteHP_GraphicalBar_LeftPieces
 	STA !Scratchram_GraphicalBar_LeftEndPiece

@@ -126,7 +126,7 @@
 			;Avoid percentage bar from representing 0 or full when really close but not at those values:
 				!Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull	= 3
 					;^0 = allow bar to display 0% when HP is very close to zero and 100% when close to max.
-					; 1 = display 1 pixel or piece filled when low on HP and only 0 if HP is 0.
+					; 1 = display 1 pixel of piece filled when low on HP and only 0 if HP is 0.
 					; 2 = display MaxPieces-1 when nearly full.
 					; 3 = Display 1 piece or MaxPieces-1 if close to 0 or MaxPieces.
 			;Rounding the amount of fill settings:
@@ -184,7 +184,8 @@
 					!Setting_SpriteHP_FillingSFXNumb		= $23		;>Sound number (set to 0 to disable SFX)
 					!Setting_SpriteHP_FillingSFXPort		= $1DFC|!addr	;>Use $1DF9, $1DFA, or $1DFC, followed by "|!addr" if you're using SA-1
 	;Patching settings
-		;Apply displaying HP on various vanilla SMW sprites: 0 = no, 1 = yes
+		;Apply displaying HP on various vanilla SMW sprites: 0 = no, 1 = yes, again, use only mentioned values,
+		;unless stated otherwise.
 			!Setting_SpriteHP_ModifySMWSprites			= 1
 			!Setting_SpriteHP_VanillaSprite_Chuck			= 1
 				;^All the chucks in SMW.
@@ -193,6 +194,15 @@
 				;-Big boo boss
 				;-Wendy and Lemmy (share most of the same code)
 				;-Ludwig, Morton, and Roy (same as above)
+				
+				
+		;Amount of HP SMW sprites has. NOTE: SMW only have hit counts being an 8-bit unsigned integer stored
+		;within various sprite tables (chucks: $1528, $1626 for Ludwig/Morton/Roy).
+		;This only applies if !Setting_SpriteHP_ModifySMWSprites == 1 and their respective settings being 1.
+			!Setting_SpriteHP_VanillaSprite_ChuckHPAmount		= 15	;>This applies to all chuck varients.
+			!Setting_SpriteHP_VanillaSprite_Chuck_StompDamage	= 5	;>Amount of HP loss when taking damage from stomp attacks
+		;For any sprite whose tweaker $190F's bit 3 (%wcdj5sDp, takes 5 fireballs to kill) is set:
+			!Setting_SpriteHP_FireballDamageAmount			= 3	;>Amount of damage sprites recieves from fireball damage.
 			
 	;Misc settings
 		!Setting_SpriteHP_DisplaySpriteHPDataOnConsole = 1
@@ -259,7 +269,7 @@
 		!Setting_SpriteHP_GraphicalBar_MiddleExists #= !Setting_SpriteHP_GraphicalBarMiddleLength*(notequal(!Setting_SpriteHP_GraphicalBar_MiddlePieces, 0))
 		!Setting_SpriteHP_GraphicalBar_RightEndExists #= notequal(!Setting_SpriteHP_GraphicalBar_RightPieces, 0)
 		!Setting_SpriteHP_GraphicalBar_TotalTiles #= !Setting_SpriteHP_GraphicalBar_LeftEndExists+!Setting_SpriteHP_GraphicalBar_MiddleExists+!Setting_SpriteHP_GraphicalBar_RightEndExists
-		!Setting_SpriteHP_GraphicalBar_TotalPieces #= !Setting_SpriteHP_GraphicalBar_LeftPieces+(!Setting_SpriteHP_GraphicalBarMiddleLength*!Setting_SpriteHP_GraphicalBar_MiddlePieces)+!Setting_SpriteHP_GraphicalBar_RightEndExists
+		!Setting_SpriteHP_GraphicalBar_TotalPieces #= !Setting_SpriteHP_GraphicalBar_LeftEndExists+(!Setting_SpriteHP_GraphicalBarMiddleLength*!Setting_SpriteHP_GraphicalBar_MiddlePieces)+!Setting_SpriteHP_GraphicalBar_RightEndExists
 	
 	;Maximum string length failsafe
 		!Setting_SpriteHP_MaxStringLength = !Setting_SpriteHP_MaxDigits
