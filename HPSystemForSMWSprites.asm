@@ -43,9 +43,17 @@ incsrc "Defines/GraphicalBarDefines.asm"
 	if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Chuck)
 		CharginChuckHitCountToHP:	;>JML from $02C1F8
 			LDA !14C8,x
-			CMP #$08
-			BNE .Restore
+			CMP #$02
+			BCC .Restore		;>Do nothing if $00~$01
+			CMP #$07
+			BCC .ZeroHP		;>No HP on killed states $02~$06
+			CMP #$0C
+			BCC .ConvertHitCountToHP	;>Other non-killed/transformed states, allow HP display
+			BRA .Restore
 			
+			.ZeroHP
+				LDA.b #!Setting_SpriteHP_VanillaSprite_ChuckHPAmount
+				STA !1528,x
 			.ConvertHitCountToHP
 				LDA.b #!Setting_SpriteHP_VanillaSprite_ChuckHPAmount
 				STA !Freeram_SpriteHP_MaxHPLow,x
@@ -235,6 +243,10 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		STA $00
 		LDA $06
 		STA $02
+		LDA !Freeram_SpriteHP_MaxHPLow,x
+		STA $04
+		LDA !Freeram_SpriteHP_MaxHPHi,x
+		STA $05
 		SEP #$20
 		JSL MathDiv32_16				;>Divided by Max HP. Quotient (at the moment): Fill amount (rounded down), Remainder: A value from 0 to MaxHeath-1 to determine a rounding operation
 		REP #$20
