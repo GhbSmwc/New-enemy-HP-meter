@@ -60,6 +60,18 @@
 			;[1 byte]: This holds the current sprite slot used by various codes to determine what sprite slot the HP meter is showing.
 			;This RAM address size must not be 3 bytes long (so $xx and $xxxx are okay, but $xxxxxx are not). It's basically
 			;Value = !Freeram_SpriteHP_MeterState % !sprite_slots.
+		;[BytesUsed = !Setting_SpriteHP_BarAnimation & UsingWendyOrLemmy]. This RAM is only used when vanilla smw boss Wendy or Lemmy koopa
+		;are running. For some reason, SMW either deletes those sprites temporarily ($14C8,x == $00), or just clear all the sprite tables
+		;including an unused one $1FD6. Therefore using sprite tables to determine if the introfill animation have already been played,
+		;doesn't work and will replay the animation every time the koopa retreats in the pipe.
+		;
+		;By default, this will use the last block in the level map16 data (bottom-right corner). Very unlikely you would need to use the
+		;level dimension for a boss room.
+			if !sa1 == 0
+				!Freeram_WendyLemmyIntroFlag		= $7EFFFF
+			else
+				!Freeram_WendyLemmyIntroFlag		= $40FFFF
+			endif
 ;Settings
 	;HUD settings
 		;Notes:

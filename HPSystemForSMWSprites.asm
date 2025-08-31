@@ -37,8 +37,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			if !Setting_SpriteHP_BarAnimation
 				LDA <IntroStateSpriteTableRAM>,x
 				BNE ?.IntroDone
-				LDA #$01
-				STA <IntroStateSpriteTableRAM>,x
+				INC <IntroStateSpriteTableRAM>,x
 				TXA
 				CLC
 				ADC.b #!sprite_slots
@@ -364,7 +363,22 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				RTL
 		WendyLemmyHitCountToHP:
 			%ConvertDamageAmountToHP(!1534, !Setting_SpriteHP_VanillaSprite_WendyLemmyHPAmount)
-			;%IntroFill(!1FD6) ;>This does not work because Wendy/Lemmy actually delete themselves each time they go back in the pipe.
+			.HandleIntroFill
+				if !Setting_SpriteHP_BarAnimation
+					;%IntroFill(!1FD6) ;>This does not work because Wendy/Lemmy actually delete themselves (or simply reset almost all their sprite tables) each time they go back in the pipe.
+					LDA !Freeram_WendyLemmyIntroFlag
+					CMP #$25
+					BNE ..NoIntroFill
+					LDA #$00
+					STA !Freeram_WendyLemmyIntroFlag
+					TXA
+					CLC
+					ADC.b #!sprite_slots
+					STA !Freeram_SpriteHP_MeterState
+					LDA #$00
+					STA !Freeram_SpriteHP_BarAnimationFill,x
+					..NoIntroFill
+				endif
 			.Restore
 				PHK				;\JSL-RTS trick.
 				PER $0006
