@@ -144,7 +144,7 @@
 				!Setting_SpriteHP_BarAnimation			= 1
 					;^0 = HP bar instantly updates when the enemy heals or take damage
 					;     (!Freeram_SpriteHP_BarRecord is no longer used).
-					; 1 = Shows animation (gradual change, rapid-flick for previous and current HP).
+					; 1 = Shows animation (gradual change, rapid-flicker for previous and current HP).
 
 				!Setting_SpriteHP_FillDelayFrames				= $00
 					;^Speed that the bar fills up. Only use these values:

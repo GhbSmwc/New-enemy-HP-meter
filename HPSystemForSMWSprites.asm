@@ -3,11 +3,11 @@ incsrc "Defines/EnemyHPMeterDefines.asm"
 incsrc "Defines/GraphicalBarDefines.asm"
 
 ;Macro
-	macro ConvertDamageAmountToHP(HitCountRAM, DamageAmountToDie)
+	macro ConvertDamageAmountToHP(HitCountSpriteTableRAM, DamageAmountToDie)
 		LDA.b #<DamageAmountToDie>
 		STA !Freeram_SpriteHP_MaxHPLow,x
 		SEC
-		SBC <HitCountRAM>,x
+		SBC <HitCountSpriteTableRAM>,x
 		STA !Freeram_SpriteHP_CurrentHPLow,x
 		if !Setting_SpriteHP_TwoByte != 0
 			LDA #$00						;\Rid high bytes.
@@ -16,10 +16,10 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		endif
 	endmacro
 	
-	macro IncreaseDamageCounter(HitCountRAM, DamageAmount, DamageAmountToDie)
+	macro IncreaseDamageCounter(HitCountSpriteTableRAM, DamageAmount, DamageAmountToDie)
 		?Damage:
 		JSL SwitchHPDisplay
-		LDA <HitCountRAM>,x
+		LDA <HitCountSpriteTableRAM>,x
 		CLC
 		ADC.b #<DamageAmount>
 		BCS ?.Overflow
@@ -29,7 +29,24 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		?.Overflow
 			LDA.b #<DamageAmountToDie>
 		?.BelowDeathThreshold
-			STA <HitCountRAM>,x
+			STA <HitCountSpriteTableRAM>,x
+	endmacro
+	
+	macro IntroFill(IntroStateSpriteTableRAM)
+		?HandleIntro:
+			if !Setting_SpriteHP_BarAnimation
+				LDA <IntroStateSpriteTableRAM>,x
+				BNE ?.IntroDone
+				LDA #$01
+				STA <IntroStateSpriteTableRAM>,x
+				TXA
+				CLC
+				ADC.b #!sprite_slots
+				STA !Freeram_SpriteHP_MeterState
+				LDA #$00
+				STA !Freeram_SpriteHP_BarAnimationFill,x
+				?.IntroDone
+			endif
 	endmacro
 
 ;Hijacks
@@ -331,6 +348,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				RTL
 		BigBooBossHitCountToHP:
 			%ConvertDamageAmountToHP(!1534, !Setting_SpriteHP_VanillaSprite_BigBooBossHPAmount)
+			%IntroFill(!1594)
 			.Restore
 				LDA !14C8,x
 				CMP #$08
@@ -342,10 +360,11 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			%IncreaseDamageCounter(!1534, !Setting_SpriteHP_VanillaSprite_WendyLemmyStompDamage, !Setting_SpriteHP_VanillaSprite_WendyLemmyHPAmount)
 			.Restore
 				LDA #$28
-				STA $1DFC+!addr
+				STA $1DFC|!addr
 				RTL
 		WendyLemmyHitCountToHP:
 			%ConvertDamageAmountToHP(!1534, !Setting_SpriteHP_VanillaSprite_WendyLemmyHPAmount)
+			;%IntroFill(!1FD6) ;>This does not work because Wendy/Lemmy actually delete themselves each time they go back in the pipe.
 			.Restore
 				PHK				;\JSL-RTS trick.
 				PER $0006
@@ -365,6 +384,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			RTL
 		LudwigMortonRoyHitCountToHP:
 			%ConvertDamageAmountToHP(!1626, !Setting_SpriteHP_VanillaSprite_LudwigMortonRoyHPAmount)
+			%IntroFill(!1510)
 			.Restore
 				STZ $13FB|!addr
 				LDA !1602,x
