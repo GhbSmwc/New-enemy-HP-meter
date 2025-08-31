@@ -251,7 +251,7 @@
 	macro ConvertDamageAmountToHP(HitCountSpriteTableRAM, DamageAmountToDie)
 		LDA.b #&lt;DamageAmountToDie&gt;                                      ;&gt;The amount of damage that would kill the sprite
 		STA !Freeram_SpriteHP_MaxHPLow,x                                ;&gt;This also means its maximum health is this value.
-		SEC                                                             ;\RemainingHP = DamageCount - DamageAmountToDie
+		SEC                                                             ;\RemainingHP = DamageAmountToDie - DamageCount
 		SBC &lt;HitCountSpriteTableRAM&gt;,x                                  ;|
 		STA !Freeram_SpriteHP_CurrentHPLow,x                            ;/
 		if !Setting_SpriteHP_TwoByte != 0
