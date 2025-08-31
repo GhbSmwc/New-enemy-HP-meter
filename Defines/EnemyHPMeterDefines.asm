@@ -197,7 +197,9 @@
 				
 				
 		;Amount of HP SMW sprites has. NOTE: SMW only have hit counts being an 8-bit unsigned integer stored
-		;within various sprite tables (chucks: $1528, Ludwig/Morton/Roy: $1626, Big Boo Boss: $1534).
+		;within various sprite tables (Chucks and any sprites using the 5 fireballs to kill: $1528,
+		;Ludwig/Morton/Roy: $1626, Big Boo Boss, Wendy and Lemmy: $1534). This means up to 255 health and
+		;damage are allowed, and those does not support 16-bit HP system.
 		;This only applies if !Setting_SpriteHP_ModifySMWSprites == 1 and their respective settings being 1.
 			!Setting_SpriteHP_VanillaSprite_ChuckHPAmount		= 15	;>This applies to all chuck varients.
 			!Setting_SpriteHP_VanillaSprite_Chuck_StompDamage	= 5	;>Amount of HP loss when taking damage from stomp attacks
@@ -207,12 +209,24 @@
 			
 			!Setting_SpriteHP_VanillaSprite_WendyLemmyHPAmount	= 3
 			!Setting_SpriteHP_VanillaSprite_WendyLemmyStompDamage	= 1
+			;Following settings are HP and damage values for Ludwig, Morton and Roy.
+			;
+			;Be careful with having too much health and too little damage from stomp attacks for Roy, if its possible to stomp Roy too many times
+			;(from my testing, 7 and higher) before he dies, the pillars of the arena can glitch since Nintendo didn't program a limit on how
+			;far the pillars can move. To know if its possible, do the math: NumberOfStomps = ceiling(Health/StompDamage), where ceiling rounds
+			;the number up to an integer.
+				!Setting_SpriteHP_VanillaSprite_LudwigMortonRoyHPAmount		= 12
+				!Setting_SpriteHP_VanillaSprite_LudwigMortonRoyStompDamage	= 4
+				!Setting_SpriteHP_VanillaSprite_LudwigMortonRoyFireballDamage	= 1
 		;For any sprite whose tweaker $190F's bit 3 (%wcdj5sDp, takes 5 fireballs to kill) is set:
 			!Setting_SpriteHP_FireballDamageAmount			= 3	;>Amount of damage sprites recieves from fireball damage.
 		;Fixes and additions
 			;Sound effect when the fireball hits chucks. See: https://www.smwcentral.net/?p=viewthread&t=6665
 				!Setting_SpriteHP_VanillaSprite_ChuckFireDamage_SoundNumber	= $28		;>Set to 0 to disable.
 				!Setting_SpriteHP_VanillaSprite_ChuckFireDamage_SoundPort	= $1DFC|!addr
+			;Same but when shooting fireballs to Ludwig, Morton, and Roy.
+				!Setting_SpriteHP_VanillaSprite_LudwigMortonRoyDamage_SoundNumber	= $28
+				!Setting_SpriteHP_VanillaSprite_LudwigMortonRoyDamage_SoundPort		= $1DFC|!addr
 	;Misc settings
 		!Setting_SpriteHP_DisplaySpriteHPDataOnConsole = 1
 			;^0 = no

@@ -2,6 +2,35 @@ incsrc "Defines/SA1StuffDefines.asm"
 incsrc "Defines/EnemyHPMeterDefines.asm"
 incsrc "Defines/GraphicalBarDefines.asm"
 
+;Macro
+	macro ConvertDamageAmountToHP(HitCountRAM, DamageAmountToDie)
+		LDA.b #<DamageAmountToDie>
+		STA !Freeram_SpriteHP_MaxHPLow,x
+		SEC
+		SBC <HitCountRAM>,x
+		STA !Freeram_SpriteHP_CurrentHPLow,x
+		if !Setting_SpriteHP_TwoByte != 0
+			LDA #$00						;\Rid high bytes.
+			STA !Freeram_SpriteHP_CurrentHPHi,x			;|
+			STA !Freeram_SpriteHP_MaxHPHi,x				;/
+		endif
+	endmacro
+	
+	macro IncreaseDamageCounter(HitCountRAM, DamageAmount, DamageAmountToDie)
+		?Damage:
+		JSL SwitchHPDisplay
+		LDA <HitCountRAM>,x
+		CLC
+		ADC.b #<DamageAmount>
+		BCS ?.Overflow
+		CMP.b #<DamageAmountToDie>
+		BCC ?.BelowDeathThreshold
+		
+		?.Overflow
+			LDA.b #<DamageAmountToDie>
+		?.BelowDeathThreshold
+			STA <HitCountRAM>,x
+	endmacro
 
 ;Hijacks
 
@@ -130,7 +159,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		
 			org $03CE13
 			if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
-				NOP #3					;>Remove delay damage
+				NOP #3					;>Remove delay damage (HP value only decreases when going back into pope after entering)
 			else
 				INC.W !1534,X
 			endif
@@ -161,6 +190,65 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				JSR.W $03D484
 				LDA !14C8,X
 			endif
+		;Ludwig, Morton, and Roy
+			if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
+				org $01D3F3
+				autoclean JSL FireballDamageLudwigMortonRoy	;>Fireball damage
+				NOP #4 ;>This prevents incrementing hit counter past its maximum to prevent displaying negative HP
+			else
+				if read1($01D3F3) == $22
+					autoclean read3($01D3F3+1)
+				endif
+				org $01D3F3
+				LDA #$01
+				STA $1DF9|!addr
+				INC.W !1626,X
+			endif
+		
+			org $01CFC6
+			if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
+				NOP #3						;>Remove delay damage (stomp)
+			else
+				INC.W !1626,X
+			endif
+		
+			if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
+				org $01CFCD
+				db !Setting_SpriteHP_VanillaSprite_LudwigMortonRoyHPAmount			;>Set HP value
+		
+				org $01D3FF
+				db !Setting_SpriteHP_VanillaSprite_LudwigMortonRoyHPAmount			;>Same as above, but fireball.
+			else
+				org $01CFCD
+				db 3						;>Set HP value
+		
+				org $01D3FF
+				db 12						;>Same as above, but fireball.
+			endif
+			if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
+				org $01CDAB
+				autoclean JSL LudwigMortonRoyHitCountToHP	;>Convert HP
+				NOP #2
+			else
+				if read1($01CDAB) == $22
+					autoclean read3($01CDAB+1)
+				endif
+				org $01CDAB
+				STZ.W $13FB|!addr
+				LDA.W !1602,X
+			endif
+		
+			if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
+				org $01D3AB
+				autoclean JSL StompDamageLudwigMortonRoy	;>Stomp damage.
+			else
+				if read1($01D3AB) == $22
+					autoclean read3($01D3AB+1)
+				endif
+				org $01D3AB
+				LDA #$28
+				STA $1DFC|!addr
+			endif
 ;Freespace code
 	freecode
 	if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Chuck)
@@ -178,16 +266,8 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				LDA.b #!Setting_SpriteHP_VanillaSprite_ChuckHPAmount
 				STA !1528,x
 			.ConvertHitCountToHP
-				LDA.b #!Setting_SpriteHP_VanillaSprite_ChuckHPAmount
-				STA !Freeram_SpriteHP_MaxHPLow,x
-				SEC
-				SBC !1528,x
-				STA !Freeram_SpriteHP_CurrentHPLow,x
-				if !Setting_SpriteHP_TwoByte
-					LDA #$00				;\Zero out high bytes because SMW sprites never have
-					STA !Freeram_SpriteHP_CurrentHPHi,x	;|health/damage counts anywhere near 255.
-					STA !Freeram_SpriteHP_MaxHPHi,x		;/
-				endif
+				%ConvertDamageAmountToHP(!1528, !Setting_SpriteHP_VanillaSprite_ChuckHPAmount)
+				
 				if !Setting_SpriteHP_BarAnimation
 					JSL GetHPMeterSlotIndexNumber
 					TXA
@@ -217,21 +297,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				PHA
 				JML $02C1FC|!bank		;>Again, PHA : RTL : PLA crashes the game because RTL pulls stack.
 		StompCharginChuck:	;>JSL from $02C7E8
-			JSL SwitchHPDisplay
-			.Restore
-				LDA !1528,x							;\add damage count
-				CLC								;|
-				ADC #!Setting_SpriteHP_VanillaSprite_Chuck_StompDamage		;/
-				BCS .CapDamage							;>in case if you have the damage exceed 255
-				CMP.b #!Setting_SpriteHP_VanillaSprite_ChuckHPAmount
-				BCC .Alive
-			
-			.CapDamage
-				LDA.b #!Setting_SpriteHP_VanillaSprite_ChuckHPAmount	;>Prevent damage count going too high
-			
-			.Alive
-				STA !1528,x
-			+
+			%IncreaseDamageCounter(!1528, !Setting_SpriteHP_VanillaSprite_Chuck_StompDamage, !Setting_SpriteHP_VanillaSprite_ChuckHPAmount)
 			RTL
 		PreventHPDisplayTransferChuck:
 			.Restore
@@ -245,57 +311,26 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				
 				..NotDead
 			RTL
-		FireballEffect:
-			JSL SwitchHPDisplay
+		FireballEffect:	;>JSL from $02A0FC
+			%IncreaseDamageCounter(!1528, !Setting_SpriteHP_FireballDamageAmount, !Setting_SpriteHP_VanillaSprite_ChuckHPAmount)
 			if !Setting_SpriteHP_VanillaSprite_ChuckFireDamage_SoundNumber != $00
 				LDA.b #!Setting_SpriteHP_VanillaSprite_ChuckFireDamage_SoundNumber
 				STA !Setting_SpriteHP_VanillaSprite_ChuckFireDamage_SoundPort
+				.Restore
+					LDA !1528,x
 			endif
-			LDA !1528,x
-			CLC
-			ADC.b #!Setting_SpriteHP_FireballDamageAmount		;>Fireball damage count
-			BCS .CapDamage						;>in case if you have the damage exceed 255
-			CMP.b #!Setting_SpriteHP_VanillaSprite_ChuckHPAmount	;>damage count
-			BCC .Alive						;>if damage smaller than max, leave it alive
-			
-			.CapDamage
-				LDA.b #!Setting_SpriteHP_VanillaSprite_ChuckHPAmount
-		
-			.Alive
-			STA !1528,x
 			RTL
 	endif
 		
 	if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
 		DamageBigBooBoss:
-			JSL SwitchHPDisplay
-			LDA !1534,x
-			CLC
-			ADC.b #!Setting_SpriteHP_VanillaSprite_BigBooBossThrownItemDamage
-			BCS .CapDamage
-			CMP.b #!Setting_SpriteHP_VanillaSprite_BigBooBossHPAmount
-			BCC .DamageNormally
-			
-			.CapDamage
-				LDA.b #!Setting_SpriteHP_VanillaSprite_BigBooBossHPAmount
-			.DamageNormally
-				STA !1534,x
+			%IncreaseDamageCounter(!1534, !Setting_SpriteHP_VanillaSprite_BigBooBossThrownItemDamage, !Setting_SpriteHP_VanillaSprite_BigBooBossHPAmount)
 			.Restore
 				LDA #$28
 				STA $1DFC|!addr
 				RTL
 		BigBooBossHitCountToHP:
-			LDA.b #!Setting_SpriteHP_VanillaSprite_BigBooBossHPAmount	;\Set max HP
-			STA !Freeram_SpriteHP_MaxHPLow,x				;/
-			SEC								;\RemainingHitsLeft = KillingValue - TotalDamageTaken
-			SBC !1534,x							;/
-			STA !Freeram_SpriteHP_CurrentHPLow,x				;>And display HP correctly
-			if !Setting_SpriteHP_TwoByte != 0
-				LDA #$00						;\Rid high bytes.
-				STA !Freeram_SpriteHP_CurrentHPHi,x			;|
-				STA !Freeram_SpriteHP_MaxHPHi,x				;/
-			endif
-	
+			%ConvertDamageAmountToHP(!1534, !Setting_SpriteHP_VanillaSprite_BigBooBossHPAmount)
 			.Restore
 				LDA !14C8,x
 				CMP #$08
@@ -304,41 +339,42 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				..Return0380D4
 					JML $0380D4|!bank
 		DamageWendyLemmy:
-			JSL SwitchHPDisplay
-			LDA !1534,x							;\Increase damage count
-			CLC								;|
-			ADC.b #!Setting_SpriteHP_VanillaSprite_WendyLemmyStompDamage	;/
-			BCS .CapDamage
-			CMP.b #!Setting_SpriteHP_VanillaSprite_WendyLemmyHPAmount	;\check if damage is over its max
-			BCC .ValidDamage						;/
-			.CapDamage
-				LDA.b #!Setting_SpriteHP_VanillaSprite_WendyLemmyHPAmount
-			.ValidDamage
-				STA !1534,x
+			%IncreaseDamageCounter(!1534, !Setting_SpriteHP_VanillaSprite_WendyLemmyStompDamage, !Setting_SpriteHP_VanillaSprite_WendyLemmyHPAmount)
 			.Restore
 				LDA #$28
 				STA $1DFC+!addr
 				RTL
 		WendyLemmyHitCountToHP:
-			LDA.b #!Setting_SpriteHP_VanillaSprite_WendyLemmyHPAmount	;\Set max HP
-			STA !Freeram_SpriteHP_MaxHPLow,x				;/
-			SEC								;\RemainingHitsLeft = KillingValue - TotalDamageTaken
-			SBC !1534,x							;/
-			STA !Freeram_SpriteHP_CurrentHPLow,x				;>And display HP correctly
-			if !Setting_SpriteHP_TwoByte != 0
-				LDA #$00						;\Rid high bytes.
-				STA !Freeram_SpriteHP_CurrentHPHi,x			;|
-				STA !Freeram_SpriteHP_MaxHPHi,x				;/
-			endif
-	
+			%ConvertDamageAmountToHP(!1534, !Setting_SpriteHP_VanillaSprite_WendyLemmyHPAmount)
 			.Restore
 				PHK				;\JSL-RTS trick.
 				PER $0006
 				PEA $827E
 				JML $03D484|!bank		;>Graphics routines, had to do the JSL-RTS trick because freespace code may be in different banks.
-	
-			LDA !14C8,x
+				LDA !14C8,x
 			RTL
+		FireballDamageLudwigMortonRoy:
+			;Thankfully, there is no delay damage for fireball damage, since the developers
+			;programmed damage that makes the boss "flinch" or "stun" would apply damage AFTER
+			;the boss "un-stun" itself.
+			%IncreaseDamageCounter(!1626, !Setting_SpriteHP_VanillaSprite_LudwigMortonRoyFireballDamage, !Setting_SpriteHP_VanillaSprite_LudwigMortonRoyHPAmount)
+			if !Setting_SpriteHP_VanillaSprite_LudwigMortonRoyDamage_SoundNumber != $00
+				LDA.b #!Setting_SpriteHP_VanillaSprite_LudwigMortonRoyDamage_SoundNumber	;\SFX
+				STA !Setting_SpriteHP_VanillaSprite_LudwigMortonRoyDamage_SoundPort		;/
+			endif
+			RTL
+		LudwigMortonRoyHitCountToHP:
+			%ConvertDamageAmountToHP(!1626, !Setting_SpriteHP_VanillaSprite_LudwigMortonRoyHPAmount)
+			.Restore
+				STZ $13FB|!addr
+				LDA !1602,x
+				RTL
+		StompDamageLudwigMortonRoy:
+			%IncreaseDamageCounter(!1626, !Setting_SpriteHP_VanillaSprite_LudwigMortonRoyStompDamage, !Setting_SpriteHP_VanillaSprite_LudwigMortonRoyHPAmount)
+			.Restore
+				LDA #$28
+				STA $1DFC|!addr
+				RTL
 	endif
 ;Various subroutines below
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
