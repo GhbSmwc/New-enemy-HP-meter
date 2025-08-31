@@ -44,6 +44,9 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				STA !Freeram_SpriteHP_MeterState
 				LDA #$00
 				STA !Freeram_SpriteHP_BarAnimationFill,x
+				if !Setting_SpriteHP_BarChangeDelay
+					STA !Freeram_SpriteHP_BarAnimationTimer,x
+				endif
 				?.IntroDone
 			endif
 	endmacro
@@ -377,6 +380,9 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					STA !Freeram_SpriteHP_MeterState
 					LDA #$00
 					STA !Freeram_SpriteHP_BarAnimationFill,x
+					if !Setting_SpriteHP_BarChangeDelay
+						STA !Freeram_SpriteHP_BarAnimationTimer,x
+					endif
 					..NoIntroFill
 				endif
 			.Restore

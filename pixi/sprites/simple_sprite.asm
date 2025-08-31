@@ -75,7 +75,9 @@ print "INIT ",pc
 		STA !Freeram_SpriteHP_MeterState
 		LDA #$00
 		STA !Freeram_SpriteHP_BarAnimationFill,x
-		STA !Freeram_SpriteHP_BarAnimationTimer,x
+		if !Setting_SpriteHP_BarChangeDelay
+			STA !Freeram_SpriteHP_BarAnimationTimer,x
+		endif
 	endif
 	RTL
 
