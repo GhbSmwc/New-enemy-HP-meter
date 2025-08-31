@@ -7,6 +7,9 @@
 ;Output:
 ; - HP is already subtracted, if damage > currentHP, HP is
 ;   set to 0.
+;
+;Note that this DOES NOT handle death sequence, only
+;subtracts HP.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ?LoseHP:
 	PHY
@@ -26,7 +29,7 @@
 		BEQ ?.SameSpriteSlot
 		STA !Freeram_SpriteHP_MeterState
 		?.Different
-			%SpriteHP_RemoveRecordEffect()
+			%SpriteHP_RemoveRecordEffect()		;>Get fill amount of current HP *before* the damage (and not before even that) to properly show how much fill loss when switching slots.
 			LDA $00
 			STA !Freeram_SpriteHP_BarAnimationFill,x
 		?.SameSpriteSlot
@@ -38,7 +41,7 @@
 		STA $00
 	endif
 	if !Setting_SpriteHP_BarAnimation != 0 && !Setting_SpriteHP_BarChangeDelay != 0
-		LDA.b #!Setting_SpriteHP_BarChangeDelay		;\Freeze damage indicator
+		LDA.b #!Setting_SpriteHP_BarChangeDelay		;\Freeze damage indicator (this makes the bar animation hangs before decreasing towards current HP fill amount)
 		STA !Freeram_SpriteHP_BarAnimationTimer,x	;/
 	endif
 	if !Setting_SpriteHP_TwoByte != 0

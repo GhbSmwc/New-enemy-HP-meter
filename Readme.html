@@ -82,6 +82,7 @@
 		<ul>
 			<li><a href="#JMPTo_ProgrammingHPForCustomSprites_BossIntroFill" id="ToC_ProgrammingHPForCustomSprites_BossIntroFill">Boss intro-fill</a></li>
 			<li><a href="#JMPTo_ProgrammingHPForCustomSprites_ConvertTotalDamageToHP" id="ToC_ProgrammingHPForCustomSprites_ConvertTotalDamageToHP">Convert Damage Counter to HP</a></li>
+			<li><a href="#JMPTo_ProgrammingHPForCustomSprites_TakingDamage" id="ToC_ProgrammingHPForCustomSprites_TakingDamage">Damage handler</a></li>
 		</ul>
 	</ul>
 </div>
@@ -222,6 +223,8 @@
 	remaining health (starts at any nonzero value and decreases each damage) else the sprite will never die or dies in one hit. Because each sprite is different, documenting every one of them would make
 	this tutorial very long. So I'll explain the principals and with some examples.</p>
 	
+	<p>I provided an example test sprite under <kbd>pixi/sprites/simple_sprite.asm</kbd> for testing the HP system.</p>
+	
 	<h3><a href="#ToC_ProgrammingHPForCustomSprites_BossIntroFill" id="JMPTo_ProgrammingHPForCustomSprites_BossIntroFill">^</a>Boss intro-fill</h3>
 	<p>For boss sprites, to have an &ldquo;intro-fill&rdquo; effect (meter appears empty and fills up at the start of a fight), run this code under a sprite init (or under main after a cutscene have finished if you have one
 	but make sure it does not execute every frame). Note that you must have <kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd> and <kbd>!Setting_SpriteHP_BarAnimation</kbd> be set to 1:
@@ -281,6 +284,12 @@
 	By default, Chucks needed 15 or more points of damage to defeat, fireballs deal 3 damage and stomps deal 5. And for Ludwig, Morton, and Roy, they needed 12 points to defeat, with fireballs dealing 1 damage, and Stomp attacks dealing 4.
 	All of these preserves the amount of same-attack-types hits to be the same as vanilla.
 	</p>
+	<h2><a href="#ToC_ProgrammingHPForCustomSprites_TakingDamage" id="JMPTo_ProgrammingHPForCustomSprites_TakingDamage">^</a>Damage handler.</h2>
+	<p>Like I said before, the sprite having HP/Damage system must have something that would track the amount health or damage when a hit occurs, else it would take one hit to kill or have infinute HP. Thankfully most sprites have comments in their
+	ASM codes that tell you what the codes do. However, this isn't just changing the HP amounts when the sprite takes damage or heals, if you want the meter to have animation (<kbd>!Setting_SpriteHP_BarAnimation</kbd> set to <kbd>1</kbd>), you also
+	need to handle the meter animation. Thankfully, all that logic is handled in a subroutine called <kbd>SpriteLoseHP</kbd> along with that calling <kbd>SpriteHP_RemoveRecordEffect</kbd>. Feel free to check out the subroutines as you wish.</p>
+	
+	<p>If you want to know how it works, just open the provided custom sprite's asm file.</p>
 </div>
 
 <script>

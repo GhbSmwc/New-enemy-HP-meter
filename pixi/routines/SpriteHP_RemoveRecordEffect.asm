@@ -6,7 +6,15 @@ incsrc "../EnemyHPMeterDefines.asm"
 ;fill value to its current HP fill amount. Effectively
 ;removing the transparent effect of taking damage.
 ;
-;InputL
+;This is used to instantly get the fill amount prior
+;to taking damage, when the HP meter switches sprite
+;slots (including from $FF of a null-sprite). That way
+;the bar always show its before-damage fill amount
+;but not before even that if the player damages the
+;this sprite, then the other sprite, than this sprite
+;quickly.
+;
+;Input:
 ; - !Setting_SpriteHP_GraphicalBar_LeftPieces = Number of pieces, to find total pieces of the bar.
 ; - !Setting_SpriteHP_GraphicalBar_MiddlePieces = Number of pieces, to find total pieces of the bar.
 ; - !Setting_SpriteHP_GraphicalBar_RightPieces = Number of pieces, to find total pieces of the bar.

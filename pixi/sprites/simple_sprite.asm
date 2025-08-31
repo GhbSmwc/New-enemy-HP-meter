@@ -124,16 +124,6 @@ SPRITE_CODE_START:
 		BNE MainReturn			;/
 		LDA #$00
 		%SubOffScreen()
-	if !Setting_SpriteHP_BarAnimation != 0
-		.RemoveRecordWhenSwitchingHPs
-			%SpriteHPMeter_GetSlotIndexOfMeterState()	;>We now have !Scratchram_SpriteHP_SpriteSlotToDisplay
-			TXA
-			CMP !Scratchram_SpriteHP_SpriteSlotToDisplay	;>Compare with the slot the HP bar is using
-			BEQ ..ItsOnThisSprite				;>If HP bar is on this current sprite, don't delete record
-			LDA #$FF					;\Remove Record effect (make them the same)
-			STA !Freeram_SpriteHP_BarAnimationFill,x	;/
-			..ItsOnThisSprite
-	endif
 	if !HealingAmount
 		LDA !Freeram_SpriteHP_CurrentHPLow,x			;\CMP is like SBC. if currentHP - MaxHP results an unsigned underflow (which causes a barrow; carry clear)
 		CMP !Freeram_SpriteHP_MaxHPLow,x			;|then allow healing
@@ -219,7 +209,7 @@ SPRITE_CODE_START:
 			LDA.w #!StompDamage			;\Amount of damage
 			STA $00					;/
 			SEP #$20
-			%SpriteLoseHP()				;>Lose HP
+			%SpriteLoseHP()				;>Lose HP (handles bar animation and other effects). Note that this alone only subtracts HP, does not handle death sequence.
 			LDA !Freeram_SpriteHP_CurrentHPLow,x	;\If HP != 0, don't kill
 			if !Setting_SpriteHP_TwoByte
 				ORA !Freeram_SpriteHP_CurrentHPHi,x	;|
