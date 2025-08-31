@@ -51,6 +51,9 @@
 			li {
 				padding: 5px;
 			}
+			tr.RedBackground {
+				background-color: #400000;
+			}
 		</style>
 	</head>
 <body style="max-width: 1000px; margin: auto; padding: 15px">
@@ -71,31 +74,243 @@
 </div>
 <hr>
 <div>
+	Table of contents
+	<ul>
+		<li><a href="#JMPTo_HowtoInsert" id="ToC_HowtoInsert">How to insert</a></li>
+		<li><a href="#JMPTo_RAMUsage" id="ToC_RAMUsage">RAM usage documentation</a></li>
+		<li><a href="#JMPTo_ProgrammingHPForCustomSprites" id="ToC_ProgrammingHPForCustomSprites">How to program the HP system to your custom sprites</a></li>
+		<ul>
+			<li><a href="#JMPTo_ProgrammingHPForCustomSprites_BossIntroFill" id="ToC_ProgrammingHPForCustomSprites_BossIntroFill">Boss intro-fill</a></li>
+			<li><a href="#JMPTo_ProgrammingHPForCustomSprites_ConvertTotalDamageToHP" id="ToC_ProgrammingHPForCustomSprites_ConvertTotalDamageToHP">Convert Damage Counter to HP</a></li>
+		</ul>
+	</ul>
+</div>
+<div>
 	<h2>What you need</h2>
 	<ul>
 		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=17109">Lunar magic</a></li>
 		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=14560">Asar</a></li>
 		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=39036">Uberasm tool version 2.0 or higher</a> (latest version recommended)</li>
+		<li>Status bar patches, this ASM package by default assumes you are using the <a href="https://www.smwcentral.net/?p=section&a=details&id=19247">super status bar patch</a>.</li>
 	</ul>
 	<h2>Recommended</h2>
 	<ul>
 		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=37432">Pixi</a></li>
 	</ul>
+	<h2>Documentations of other ASM resources</h2>
+	<ul>
+		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=38296">Status bar tutorial (contains string system and number display)</a></li>
+		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=38297">Graphical Bar</a></li>
+	</ul>
 </div>
 <hr>
 <div>
-	<h2>How to insert</h2>
+	<h2><a href="#ToC_HowtoInsert" id="JMPTo_HowtoInsert">^</a>How to insert</h2>
 	<ol>
-		<li>
-			<p>Make any changes necessary on the defines, especially freeram data. It is likely that you would have them take up a large amount of bytes due to
+		<li>ASM stuff</li>
+		<ol>
+			<li>Make any changes necessary on the defines, especially freeram data. It is likely that you would have them take up a large amount of bytes due to
 			them being sprite tables. There are multiple files due to some resources are general-purpose, such as the graphical bar can be used for player's HP
 			or other meters besides HP. The defines specific to sprite HP are in <kbd>EnemyHPMeterDefines.asm</kbd>. For editing what tiles used by general-purpose
-			subroutines, they're in <kbd>NumberDisplayRoutinesDefines.asm</kbd>.</p>
+			subroutines, they're in <kbd>NumberDisplayRoutinesDefines.asm</kbd>.<br><br>
 			
-			<p>Once you are done, you'll need to have copies of these txt files (not the folder itself containing the texts) in same directory as the tools'
-			<kbd>.exe</kbd> programs are at (pixi and uberasm tool).</p>
+			Once you are done, you'll need to have copies of these txt files (not the folder itself containing the texts) in same directory as the tools'
+			<kbd>.exe</kbd> programs are at (pixi and uberasm tool). Do not have them in any subfolders beyond that area. Make sure you do not move the define files
+			as the patch will include those define files (better to copy than to cut them).<br><br>
 			
-			<p>If you later make changes in any of the defines, make sure you update its existing copies elsewhere.</p>
-		</li>
+			If you later make changes in any of the defines and reinsert in one tool, make sure you update all others and reinsert in other tools.</li>
+			
+			<li>Patch <kbd>HPSystemForSMWSprites.asm</kbd> to your game. This adds a proper health system for some sprites and bosses and fixes an anomoly for SMW*.
+			This alone does not display meter, but will write to various RAM for the uberasm tool code to display it.<br><br>
+			
+			*The anomoly is that while SMW does stores a number representing how many hits enemies have taken, the fact that all attack types (specifically, fireballs and stomp)
+			increases this counter by the same amount, 1, and when this value hits various values <i>depending what attack type as the last hit</i>, would trigger the death sequence.</li>
+			
+			<li>Insert the ASM files to Uberasm tool. The provided folders should be obvious.</li>
+			
+			<li>Same with pixi, if you want custom sprites. I provided a test sprite in the foloder for demonstration.</li>
+		</ol>
+		<li>Lunar Magic stuff</li>
+		<ol>
+			<li>In all levels accessible by the player, insert the layer 3 status bar ExGFX by &ldquo;Quick Extract ExGFX from ROM&rdquo; (blue mushroom icon) to spawn a <kbd>ExGraphics</kbd> (unless you did so already), then,
+			inside this ASM resource, navigate to <kbd>LM stuff/ExGraphics</kbd>. Here you'll find a graphic file (uses ExGFX slot $80 by default, rename to have it at a different slot number). This file should
+			be pasted in the ExGraphics of your game file. To insert into your game, &ldquo;Quick Insert ExGFX to ROM&rdquo; (golden mushroom). Finally, &ldquo;Open "Layer 3 GFX/Tilemap Bypass" Dialog&rdquo; (green
+			poison mushrrom), and set LG1 to use your inserted graphics file (by default, should be $80 if you didn't change the slot number)<br><br>
+			
+			This graphic is for layer 3 status bar, since some symbols needed for the display are missing. The tiles used are the slash (&ldquo;/&rdquo;) and graphical bar tiles.
+			
+			</li>
+		</ol>
 	</ol>
 </div>
+<hr>
+<div>
+	<h2><a href="#ToC_RAMUsage" id="JMPTo_RAMUsage">^</a>RAM usage documentation</h2>
+		<p>
+			Notes:
+			<ul>
+				<li>Define <kbd>!sprite_slots</kbd> is the number of sprite slots that exists. For LoROM, its 12, if SA-1, its 22.</li>
+			</ul>
+		</p>
+		<p>Other than the RAM data for graphical bar and HexDec routines (defines are in <kbd>GraphicalBarDefines.asm</kbd> and <kbd>NumberDisplayRoutinesDefines.asm</kbd>), the sprite HP data and display handler are in <kbd>EnemyHPMeterDefines.asm</kbd>,
+		defined as <kbd>!Freeram_SpriteHP_SpriteHPData</kbd>. It's layout are (in this order, starting at an address defined as <kbd>!Freeram_SpriteHP_SpriteHPData</kbd>, and advancing to higher-addressees):
+		<table>
+			<tr>
+				<th>Define</th>
+				<th><abbr title="&ldquo;State&rdquo; refers to an individual value representing the state of something, &ldquo;Sprite slots&rdquo; are tables that each byte correspond to a sprite slot, which is how multiple entities can exists.">Type</abbr></th>
+				<th>Number of bytes</th>
+				<th>Description</th>
+				<th>Use condition</th>
+			</tr>
+			<tr>
+				<th><kbd>!Freeram_SpriteHP_MeterState</kbd></th>
+				<td class="Center">State</td>
+				<td class="NoLineBreak Center">1</td>
+				<td>Sprite slot number (ranges from <kbd>$00</kbd> to <kbd>!sprite_slots-1</kbd>) to represent HP of that sprite. <kbd>$FF</kbd> will not display the meter. When having both <kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd> and <kbd>!Setting_SpriteHP_BarAnimation</kbd> set to <kbd>1</kbd>,
+				more values of that RAM are used (ranging from <kbd>!sprite_slots</kbd> to <kbd>(!sprite_slots*2)-1</kbd>, each value here corresponds to slot like the range before) for the &ldquo;into-fill&rdquo; mode (used for an animation that plays when a boss appears, the bar appears with it filling from 0% to 100%)</td>
+				<td>Always</td>
+			</tr>
+			<tr>
+				<th><kbd>!Freeram_SpriteHP_CurrentHPLow</kbd></th>
+				<td class="Center">Sprite slot</td>
+				<td class="NoLineBreak Center">!sprite_slots</td>
+				<td>Sprite's current HP, low byte.</td>
+				<td>Always</td>
+			</tr>
+			<tr>
+				<th><kbd>!Freeram_SpriteHP_MaxHPLow</kbd></th>
+				<td class="Center">Sprite slot</td>
+				<td class="NoLineBreak Center">!sprite_slots</td>
+				<td>Sprite's maximum HP, low byte.</td>
+				<td>Always</td>
+			</tr>
+			<tr class="RedBackground">
+				<th><kbd>!Freeram_SpriteHP_CurrentHPHi</kbd></th>
+				<td class="Center">Sprite slot</td>
+				<td class="NoLineBreak Center">!sprite_slots</td>
+				<td>Sprite's current HP, high byte.</td>
+				<td>if <kbd>!Setting_SpriteHP_TwoByte</kbd> is set to <kbd>1</kbd></td>
+			</tr>
+			<tr class="RedBackground">
+				<th><kbd>!Freeram_SpriteHP_MaxHPHi</kbd></th>
+				<td class="Center">Sprite slot</td>
+				<td class="NoLineBreak Center">!sprite_slots</td>
+				<td>Sprite's maximum HP, high byte.</td>
+				<td>if <kbd>!Setting_SpriteHP_TwoByte</kbd> is set to <kbd>1</kbd></td>
+			</tr>
+			<tr class="RedBackground">
+				<th><kbd>!Freeram_SpriteHP_BarAnimationFill</kbd></th>
+				<td class="Center">Sprite slot</td>
+				<td class="NoLineBreak Center">!sprite_slots</td>
+				<td>animation of the bar fill going up and down.</td>
+				<td>if <kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd> and <kbd>!Setting_SpriteHP_BarAnimation</kbd> is set to <kbd>1</kbd></td>
+			</tr>
+			<tr class="RedBackground">
+				<th><kbd>!Freeram_SpriteHP_BarAnimationTimer</kbd></th>
+				<td class="Center">Sprite slot</td>
+				<td class="NoLineBreak Center">!sprite_slots</td>
+				<td>Delay timer that decreases itself once per frame. When nonzero, <kbd>!Freeram_SpriteHP_BarAnimationFill</kbd> briefly freezes
+				before incrementing or decrementing to its current HP fill amount.</td>
+				<td>if <kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd>, <kbd>!Setting_SpriteHP_BarAnimation</kbd>, and <kbd>!Setting_SpriteHP_BarChangeDelay</kbd> is set to nonzero values.</td>
+			</tr>
+		</table><br>
+		Anything with a red background indicates those are optional features you can disable and will not be used.
+		</p>
+	<hr>
+	<h2><a href="#ToC_ProgrammingHPForCustomSprites" id="JMPTo_ProgrammingHPForCustomSprites">^</a>How to program the HP system to your custom sprites</h2>
+	<p>To program a health system for existing custom sprites, they should store a value representing how much damage (can be any value it increases), hits (counts up by one reguardless of an attack), or
+	remaining health (starts at any nonzero value and decreases each damage) else the sprite will never die or dies in one hit. Because each sprite is different, documenting every one of them would make
+	this tutorial very long. So I'll explain the principals and with some examples.</p>
+	
+	<h3><a href="#ToC_ProgrammingHPForCustomSprites_BossIntroFill" id="JMPTo_ProgrammingHPForCustomSprites_BossIntroFill">^</a>Boss intro-fill</h3>
+	<p>For boss sprites, to have an &ldquo;intro-fill&rdquo; effect (meter appears empty and fills up at the start of a fight), run this code under a sprite init (or under main after a cutscene have finished if you have one
+	but make sure it does not execute every frame). Note that you must have <kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd> and <kbd>!Setting_SpriteHP_BarAnimation</kbd> be set to 1:
+<div class="CodeBlock" style="height: 250px;"><pre>
+	!IntroFill = 1
+	
+
+	if !IntroFill
+		TXA                                                 ;\Take the sprite slot number of the currently processed sprite, add by #!SprSize (12 for LoROM or 22 for SA-1),
+		CLC                                                 ;|to set the meter state to the corresponding slot number but in "intro-fill" mode (not to show rapid-flicker healing animation)
+		ADC.b #!SprSize                                     ;|&gt;Pixi stores the number of sprite slots as a define !SprSize
+		STA !Freeram_SpriteHP_MeterState                    ;/
+		LDA #$00                                            ;\Set the bar to initally show empty
+		STA !Freeram_SpriteHP_BarAnimationFill,x            ;/
+		if !Setting_SpriteHP_BarChangeDelay
+			STA !Freeram_SpriteHP_BarAnimationTimer,x   ;&gt;Zero out the pause timer of the animation so that it plays the SFX of the filling animation properly.
+		endif
+	endif</pre></div>
+	</p>
+	<h3><a href="#ToC_ProgrammingHPForCustomSprites_ConvertTotalDamageToHP" id="JMPTo_ProgrammingHPForCustomSprites_ConvertTotalDamageToHP">^</a>Convert Damage Counter to HP</h3>
+	<p>When a custom sprite stores a number (<kbd>DamageCount</kbd>) that starts at 0, and increases (commonly by 1 as a hit counter) for each hit the sprite recieves, HP can be found by
+	taking the amount of damage needed to defeat the enemy, and subtract that by <kbd>DamageCount</kbd> to obtain the remaining damage needed to defeat the sprite:
+<div class="CodeBlock" style="height: 250px;"><pre>
+	macro ConvertDamageAmountToHP(HitCountSpriteTableRAM, DamageAmountToDie)
+		LDA.b #&lt;DamageAmountToDie&gt;                                      ;&gt;The amount of damage that would kill the sprite
+		STA !Freeram_SpriteHP_MaxHPLow,x                                ;&gt;This also means its maximum health is this value.
+		SEC                                                             ;\RemainingHP = DamageCount - DamageAmountToDie
+		SBC &lt;HitCountSpriteTableRAM&gt;,x                                  ;|
+		STA !Freeram_SpriteHP_CurrentHPLow,x                            ;/
+		if !Setting_SpriteHP_TwoByte != 0
+			LDA #$00                                                ;\Rid high bytes.
+			STA !Freeram_SpriteHP_CurrentHPHi,x                     ;|(So far, there is never a sprite that stores a 16-bit damage counter)
+			STA !Freeram_SpriteHP_MaxHPHi,x                         ;/
+		endif
+	endmacro
+	
+	;In anywhere on the sprite's code that runs every frame (prefebly at the start of its "main" code)
+	;you call the macro that contains code calculating its remaining HP, for example, for Chargin Chucks,
+	;It's hit count is RAM $1528 (used as !1528,x for SA-1 and LoROM compatibility), so it's called like
+	;this:
+		%ConvertDamageAmountToHP(!1528, 15)
+</pre></div>
+	Now note, this is assuming you've patched <kbd>HPSystemForSMWSprites.asm</kbd> into your game. Reason for modifying the Chuck's HP system like that is because of the janky way of how SMW
+	handles the multi-hits to die when there are multiple ways (specifically taking damage from fireballs and stomp attacks).<br><br>
+	
+	Logically, it taking 5 fireballs to kill or 3 stomps to kill, you'd think the fireballs would deal less damage than a stomp attack (because more hits to kill means it deals
+	less damage on the same amount of HP). But it doesn't work like that, internally, SMW will always increases the damage counter by 1 reguardless if the attack is a fireball or a stomp
+	attack, and to tell if it reaches the amount of damage needed to kill the sprite, that amount itself depends on the last hit being a fireball (5 or more) or stomp attack (3 or more).
+	Therefore techinically Chucks will take the same amount of damage of either the fireball or stomp, and the death condition is if after the last hit, the damage counter is 5 from a
+	fireball, or 3 from the stomp attack.<br><br>
+	
+	The same also applies to Ludwig, Morton, and Roy. 12 fireballs or 3 stomps.<br><br>
+	
+	As a speedrunner trick, you can quickly kill Chucks, Ludwig, Morton, and Roy by shooting 2 fireballs (which ignores the temporary invulnerability state after taking damage), then jumping on them.<br><br>
+	
+	The patch modifies this to work as an actual damage system. Damages from fireballs and stomps deal different amounts, and there is only one value (reguardless of attack type) that if the damage counter reaches or exceeds it, kills the sprite.
+	By default, Chucks needed 15 or more points of damage to defeat, fireballs deal 3 damage and stomps deal 5. And for Ludwig, Morton, and Roy, they needed 12 points to defeat, with fireballs dealing 1 damage, and Stomp attacks dealing 4.
+	All of these preserves the amount of same-attack-types hits to be the same as vanilla.
+	</p>
+</div>
+
+<script>
+//These makes all <pre>...</pre> have an effect that double-clicking will select all the text
+//in it, to make it easy to copy code and paste it in your ASM stuff.
+//
+//Credit:
+// https://keestalkstech.com/2014/04/click-to-select-all-on-the-pre-element/
+// https://www.sanwebe.com/2014/04/select-all-text-in-element-on-click
+document.addEventListener('dblclick', e => {
+  let pre = getClosest(e.target, "PRE");
+  if (pre && e.ctrlKey) {
+    let range = new Range();
+    range.selectNodeContents(pre);
+    document.getSelection().removeAllRanges();
+    document.getSelection().addRange(range);
+  }
+});
+
+function getClosest(el, tagName) {
+  tagName = tagName && tagName.toUpperCase();
+
+  if (!tagName || !el)
+    return null;
+
+  do
+    if (el.nodeName === tagName)
+      return el;
+  while (el = el.parentNode);
+
+  return null;
+}
+</script>
