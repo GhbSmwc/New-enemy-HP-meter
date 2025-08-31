@@ -547,8 +547,12 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		STA $02
 		LDA !Freeram_SpriteHP_MaxHPLow,x
 		STA $04
-		LDA !Freeram_SpriteHP_MaxHPHi,x
-		STA $05
+		if !Setting_SpriteHP_TwoByte
+			LDA !Freeram_SpriteHP_MaxHPHi,x
+			STA $05
+		else
+			STZ $05
+		endif
 		SEP #$20
 		JSL MathDiv32_16				;>Divided by Max HP. Quotient (at the moment): Fill amount (rounded down), Remainder: A value from 0 to MaxHeath-1 to determine a rounding operation
 		REP #$20

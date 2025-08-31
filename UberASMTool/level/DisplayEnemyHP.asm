@@ -271,8 +271,8 @@ main:
 					STA !Scratchram_GraphicalBar_FillByteTbl+3
 				else
 					LDA #$00
-					STA !Scratchram_GraphicalBar_FillByteTbl+1,x
-					STA !Scratchram_GraphicalBar_FillByteTbl+3,x
+					STA !Scratchram_GraphicalBar_FillByteTbl+1
+					STA !Scratchram_GraphicalBar_FillByteTbl+3
 				endif
 				PHX
 				if !Setting_SpriteHP_BarFillRoundDirection == 0

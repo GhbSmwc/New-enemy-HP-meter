@@ -26,11 +26,11 @@
 	!HealingSfxNum		= $0A		;\sound effects played when healing.
 	!HealingSfxRam		= $1DF9|!Base2	;/
 
-	!HPToStart		= 300		;>Decimal, amount of HP the enemy has.
+	!HPToStart		= 100		;>Decimal, amount of HP the enemy has.
 	!StompDamage		= 5		;>Decimal, amount of damage from stomping.
 	!FireballDmg		= 3		;>Decimal, amount of damage from player's fireball.
-	!YoshiFireball		= 50		;>Decimal, amount of damage from yoshi's fireball.
-	!BounceDamage		= 2		;>Decimal, amount of damage from bounce blocks.
+	!YoshiFireball		= 25		;>Decimal, amount of damage from yoshi's fireball.
+	!BounceDamage		= 15		;>Decimal, amount of damage from bounce blocks.
 	!CarryableKickedSpr	= 6		;>Decimal, amount of damage from other sprites (shell, for example)
 	!CapeSpinDamage		= 4		;>Decimal, amount of damage from cape spin.
 	
