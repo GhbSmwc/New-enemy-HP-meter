@@ -8,13 +8,16 @@ Thing(s) to fix:
 
 08/25/2025
  -Redid the code:
+ --fixed asar-related depreciated features.
  --Makes use of UAT's routines system.
  --ASM codes using JSL/JML to banks $00-$7F now uses fastROM addressing ($xxxxxx|!bank) for LoROM.
  --Fixed issues where if the user sets HP to be 8-bit, there are several codes that utilizes the high byte
    despite the user opted for 8-bit, causing errors.
- --Uses updated graphical bar and number display routines.
+ --Code now uses updated graphical bar and number display routines.
  --Graphical bar can now display the amount recovered and a boss-intro filling animation separately.
- -Fixed the test sprite's loop with extended sprites looping starting at index $10-1 instead of 10-1.
+ --Fixed a bug with the test sprite not interacting with other sprites due to still using 12 sprite slots
+   instead of 22 in sa-1.
+ -Fixed the test sprite's loop with extended sprites looping starting at index "$10-1" instead of "10-1".
 
 3/27/2019 2.5.24 Moved codes to shared subroutines and new features.
  -Moved major routines to shared subroutines patch due to ease of use and that most of GHB's code (mainly the
