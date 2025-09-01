@@ -148,7 +148,7 @@ SPRITE_CODE_START:
 		STA $00						;|
 		SEP #$20					;|
 		JSR Heal					;/
-		if !Setting_SpriteHP_BarAnimation
+		if and(!Setting_SpriteHP_BarAnimation, notequal(!Setting_SpriteHP_BarChangeDelay, 0))
 			LDA.b #!Setting_SpriteHP_BarChangeDelay
 			STA !Freeram_SpriteHP_BarAnimationTimer,x
 		endif

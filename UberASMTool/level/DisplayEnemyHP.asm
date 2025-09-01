@@ -138,8 +138,10 @@ load:
 			if !Setting_SpriteHP_BarAnimation
 				LDA.b #!Setting_SpriteHP_GraphicalBar_TotalPieces
 				STA !Freeram_SpriteHP_BarAnimationFill,x
-				LDA.b #!Setting_SpriteHP_BarChangeDelay
-				STA !Freeram_SpriteHP_BarAnimationTimer,x
+				if !Setting_SpriteHP_BarChangeDelay != 0
+					LDA.b #!Setting_SpriteHP_BarChangeDelay
+					STA !Freeram_SpriteHP_BarAnimationTimer,x
+				endif
 			endif
 			LDA #$01
 			STA !Freeram_SpriteHP_MaxHPLow,x
