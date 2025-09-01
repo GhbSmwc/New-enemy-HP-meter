@@ -40,7 +40,7 @@
 		PLA
 		STA $00
 	endif
-	if !Setting_SpriteHP_BarAnimation != 0 && !Setting_SpriteHP_BarChangeDelay != 0
+	if and(notequal(!Setting_SpriteHP_BarAnimation, 0), notequal(!Setting_SpriteHP_BarChangeDelay, 0))
 		LDA.b #!Setting_SpriteHP_BarChangeDelay		;\Freeze damage indicator (this makes the bar animation hangs before decreasing towards current HP fill amount)
 		STA !Freeram_SpriteHP_BarAnimationTimer,x	;/
 	endif
