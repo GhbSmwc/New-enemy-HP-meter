@@ -64,5 +64,9 @@ incsrc "../EnemyHPMeterDefines.asm"
 		%GraphicalBar_RoundAwayEmptyFull()
 	endif
 	PLX
+	if !Setting_SpriteHP_BarAnimation
+		LDA $00
+		STA !Freeram_SpriteHP_BarAnimationFill,x
+	endif
 	RTL
 	

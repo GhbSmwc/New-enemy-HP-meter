@@ -30,8 +30,6 @@
 		STA !Freeram_SpriteHP_MeterState
 		?.Different
 			%SpriteHP_RemoveRecordEffect()		;>Get fill amount of current HP *before* the damage (and not before even that) to properly show how much fill loss when switching slots.
-			LDA $00
-			STA !Freeram_SpriteHP_BarAnimationFill,x
 		?.SameSpriteSlot
 		if !Setting_SpriteHP_TwoByte != 0
 			PLA
