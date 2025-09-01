@@ -291,7 +291,7 @@
 	All of these preserves the amount of same-attack-types hits to be the same as vanilla.
 	</p>
 	<h2><a href="#ToC_ProgrammingHPForCustomSprites_TakingDamage" id="JMPTo_ProgrammingHPForCustomSprites_TakingDamage">^</a>Damage handler.</h2>
-	<p>Like I said before, the sprite having HP/Damage system must have something that would track the amount health or damage when a hit occurs, else it would take one hit to kill or have infinute HP. Thankfully most sprites have comments in their
+	<p>Like I said before, the sprite having HP/Damage system must have something that would track the amount health or damage when a hit occurs, else it would take one hit to kill or have infinite HP. Thankfully most sprites have comments in their
 	ASM codes that tell you what the codes do. However, this isn't just changing the HP amounts when the sprite takes damage or heals, if you want the meter to have animation (<kbd>!Setting_SpriteHP_BarAnimation</kbd> set to <kbd>1</kbd>), you also
 	need to handle the meter animation. Thankfully, all that logic is handled in a subroutine called <kbd>SpriteLoseHP</kbd> along with that calling <kbd>SpriteHP_RemoveRecordEffect</kbd> and other stuff to show to the player the damage amount.
 	Feel free to check out the subroutines as you wish.</p>
