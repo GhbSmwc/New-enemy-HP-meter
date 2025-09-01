@@ -4,16 +4,21 @@ incsrc "Defines/GraphicalBarDefines.asm"
 
 ;Macro
 	macro ConvertDamageAmountToHP(HitCountSpriteTableRAM, DamageAmountToDie)
-		LDA.b #<DamageAmountToDie>
-		STA !Freeram_SpriteHP_MaxHPLow,x
-		SEC
-		SBC <HitCountSpriteTableRAM>,x
-		STA !Freeram_SpriteHP_CurrentHPLow,x
-		if !Setting_SpriteHP_TwoByte != 0
-			LDA #$00						;\Rid high bytes.
-			STA !Freeram_SpriteHP_CurrentHPHi,x			;|
-			STA !Freeram_SpriteHP_MaxHPHi,x				;/
-		endif
+		?HitCountToHP:
+			LDA.b #<DamageAmountToDie>                                      ;>The amount of damage that would kill the sprite
+			STA !Freeram_SpriteHP_MaxHPLow,x                                ;>This also means its maximum health is this value.
+			SEC                                                             ;\RemainingHP = DamageAmountToDie - DamageCount
+			SBC <HitCountSpriteTableRAM>,x                                  ;/
+			BCS ?.NotMoreThanEnoughDamage                                   ;>Failsafe, if DamageCount is greater than DamageAmountToDie, remaining HP cannot go negative, so...
+			?.MoreThanEnough
+				LDA #$00                                                ;>...Set it to 0.
+			?.NotMoreThanEnoughDamage
+				STA !Freeram_SpriteHP_CurrentHPLow,x                    ;>otherwise just write the non-negative difference as HP.
+			if !Setting_SpriteHP_TwoByte != 0
+				LDA #$00                                                ;\Rid high bytes.
+				STA !Freeram_SpriteHP_CurrentHPHi,x                     ;|(So far, there is never a sprite that stores a 16-bit damage counter)
+				STA !Freeram_SpriteHP_MaxHPHi,x                         ;/
+			endif
 	endmacro
 	
 	macro IncreaseDamageCounter(HitCountSpriteTableRAM, DamageAmount, DamageAmountToDie)
