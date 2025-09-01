@@ -21,18 +21,21 @@
 	!Setting_StompBounceBack	= 1	;>bounce player away when stomping: 0 = false, 1 = true.
 	!Setting_DamagePlayer		= 1	;>0 = harmless, 1 = damage player on contact (besides stomping)
 	
-	!HealingAmount		= 3		;>amount of HP recovered periodically (0 = no heal). The periods are on the following define.
 	!HealingPeriodicSpd	= $7F		;>pick ONLY these values: $00 (frequent), $01, $03, $07, $0F, $1F, $3F,$7F, $FF (not as frequent). This uses $7E0014.
 	!HealingSfxNum		= $0A		;\sound effects played when healing.
 	!HealingSfxRam		= $1DF9|!Base2	;/
-
-	!HPToStart		= 100		;>Decimal, amount of HP the enemy has.
-	!StompDamage		= 5		;>Decimal, amount of damage from stomping.
-	!FireballDmg		= 3		;>Decimal, amount of damage from player's fireball.
-	!YoshiFireball		= 25		;>Decimal, amount of damage from yoshi's fireball.
-	!BounceDamage		= 15		;>Decimal, amount of damage from bounce blocks.
-	!CarryableKickedSpr	= 6		;>Decimal, amount of damage from other sprites (shell, for example)
-	!CapeSpinDamage		= 4		;>Decimal, amount of damage from cape spin.
+	;These below here are recovery and damages.
+	;Make sure these numbers are not greater than SizeLimit, where SizeLimit is...
+	; - 255 if you have !Setting_SpriteHP_TwoByte set to 0
+	; - 65535 if !Setting_SpriteHP_TwoByte set to 1.
+		!HealingAmount		= 3		;>amount of HP recovered periodically (0 = no heal). The periods are on the following define.
+		!HPToStart		= 100		;>Decimal, amount of HP the enemy has.
+		!StompDamage		= 5		;>Decimal, amount of damage from stomping.
+		!FireballDmg		= 3		;>Decimal, amount of damage from player's fireball.
+		!YoshiFireball		= 25		;>Decimal, amount of damage from yoshi's fireball.
+		!BounceDamage		= 15		;>Decimal, amount of damage from bounce blocks.
+		!CarryableKickedSpr	= 6		;>Decimal, amount of damage from other sprites (shell, for example)
+		!CapeSpinDamage		= 4		;>Decimal, amount of damage from cape spin.
 	
 	
 	!IntroFill		= 1		;>Boss intro fill (meter automatically switches to this sprite when it spawns): 0 = nom 1 = yes.
@@ -69,14 +72,19 @@ print "INIT ",pc
 		STA !Freeram_SpriteHP_MaxHPHi,x		;/
 	endif
 	if !IntroFill
-		TXA
-		CLC
-		ADC.b #!sprite_slots
-		STA !Freeram_SpriteHP_MeterState
-		LDA #$00
-		STA !Freeram_SpriteHP_BarAnimationFill,x
-		if !Setting_SpriteHP_BarChangeDelay
-			STA !Freeram_SpriteHP_BarAnimationTimer,x
+		if and(!Setting_SpriteHP_DisplayGraphicalBar, !Setting_SpriteHP_BarAnimation)
+			TXA
+			CLC
+			ADC.b #!sprite_slots
+			STA !Freeram_SpriteHP_MeterState
+			LDA #$00
+			STA !Freeram_SpriteHP_BarAnimationFill,x
+			if !Setting_SpriteHP_BarChangeDelay
+				STA !Freeram_SpriteHP_BarAnimationTimer,x
+			endif
+		else
+			TXA
+			STA !Freeram_SpriteHP_MeterState
 		endif
 	endif
 	RTL
@@ -227,8 +235,8 @@ SPRITE_CODE_START:
 					LDA !14E0,x		;|
 					SBC $95			;/
 					BPL ....MarioRight	;>mario is on the right side of the sprite
-					INY
-					
+					....MarioLeft
+						INY
 					....MarioRight
 					LDA BouncePlayerAway,y
 					STA $7B

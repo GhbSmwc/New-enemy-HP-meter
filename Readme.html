@@ -219,6 +219,8 @@
 		</p>
 	<hr>
 	<h2><a href="#ToC_ProgrammingHPForCustomSprites" id="JMPTo_ProgrammingHPForCustomSprites">^</a>How to program the HP system to your custom sprites</h2>
+	<p>Note that this section assumes you know how to program in 65c816 assembly language. <a href="https://www.smwcentral.net/?p=section&a=details&id=14268">See this tutorial</a> on how to get started.</p>
+	
 	<p>To program a health system for existing custom sprites, they should store a value representing how much damage (can be any value it increases), hits (counts up by one reguardless of an attack), or
 	remaining health (starts at any nonzero value and decreases each damage) else the sprite will never die or dies in one hit. Because each sprite is different, documenting every one of them would make
 	this tutorial very long. So I'll explain the principals and with some examples.</p>
@@ -226,21 +228,26 @@
 	<p>I provided an example test sprite under <kbd>pixi/sprites/simple_sprite.asm</kbd> for testing the HP system.</p>
 	
 	<h3><a href="#ToC_ProgrammingHPForCustomSprites_BossIntroFill" id="JMPTo_ProgrammingHPForCustomSprites_BossIntroFill">^</a>Boss intro-fill</h3>
-	<p>For boss sprites, to have an &ldquo;intro-fill&rdquo; effect (meter appears empty and fills up at the start of a fight), run this code under a sprite init (or under main after a cutscene have finished if you have one
+	<p>For boss sprites, to have an &ldquo;intro-fill&rdquo; effect (meter automatically appears empty and fills up at the start of a fight), run this code under a sprite init (or under main after a cutscene have finished if you have one
 	but make sure it does not execute every frame). Note that you must have <kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd> and <kbd>!Setting_SpriteHP_BarAnimation</kbd> be set to 1:
 <div class="CodeBlock" style="height: 250px;"><pre>
-	!IntroFill = 1
+	!IntroFill = 1                                                      ;&gt;0 = no, 1 = yes (switch display to boss sprite with filling animation or simply a full bar if animation disabled).
 	
 
 	if !IntroFill
-		TXA                                                 ;\Take the sprite slot number of the currently processed sprite, add by #!SprSize (12 for LoROM or 22 for SA-1),
-		CLC                                                 ;|to set the meter state to the corresponding slot number but in "intro-fill" mode (not to show rapid-flicker healing animation)
-		ADC.b #!SprSize                                     ;|&gt;Pixi stores the number of sprite slots as a define !SprSize
-		STA !Freeram_SpriteHP_MeterState                    ;/
-		LDA #$00                                            ;\Set the bar to initally show empty
-		STA !Freeram_SpriteHP_BarAnimationFill,x            ;/
-		if !Setting_SpriteHP_BarChangeDelay
-			STA !Freeram_SpriteHP_BarAnimationTimer,x   ;&gt;Zero out the pause timer of the animation so that it plays the SFX of the filling animation properly.
+		if and(!Setting_SpriteHP_DisplayGraphicalBar, !Setting_SpriteHP_BarAnimation)
+			TXA                                                 ;\Take the sprite slot number of the currently processed sprite, add by #!SprSize (12 for LoROM or 22 for SA-1),
+			CLC                                                 ;|to set the meter state to the corresponding slot number but in "intro-fill" mode (not to show rapid-flicker healing animation)
+			ADC.b #!SprSize                                     ;|&gt;Pixi stores the number of sprite slots as a define !SprSize
+			STA !Freeram_SpriteHP_MeterState                    ;/
+			LDA #$00                                            ;\Set the bar to initally show empty
+			STA !Freeram_SpriteHP_BarAnimationFill,x            ;/
+			if !Setting_SpriteHP_BarChangeDelay
+				STA !Freeram_SpriteHP_BarAnimationTimer,x   ;&gt;Zero out the pause timer of the animation so that it plays the SFX of the filling animation properly.
+			endif
+		else
+			TXA                                                 ;\If no animation, just simply switch to the boss's HP meter automatically.
+			STA !Freeram_SpriteHP_MeterState                    ;/
 		endif
 	endif</pre></div>
 	</p>
@@ -267,14 +274,13 @@
 	;this:
 		%ConvertDamageAmountToHP(!1528, 15)
 </pre></div>
-	Now note, this is assuming you've patched <kbd>HPSystemForSMWSprites.asm</kbd> into your game. Reason for modifying the Chuck's HP system like that is because of the janky way of how SMW
-	handles the multi-hits to die when there are multiple ways (specifically taking damage from fireballs and stomp attacks).<br><br>
+	Now note, this is assuming you've patched <kbd>HPSystemForSMWSprites.asm</kbd> into your game. Reason for modifying bosses and enemies that take damage from fireballs and stomps is because of how janky it is.<br><br>
 	
-	Logically, it taking 5 fireballs to kill or 3 stomps to kill, you'd think the fireballs would deal less damage than a stomp attack (because more hits to kill means it deals
+	Take for example, Chargin Chucks. Logically, it takes 5 fireballs to kill or 3 stomps to kill, you'd think the fireballs would deal less damage than a stomp attack (because more hits to kill means it deals
 	less damage on the same amount of HP). But it doesn't work like that, internally, SMW will always increases the damage counter by 1 reguardless if the attack is a fireball or a stomp
 	attack, and to tell if it reaches the amount of damage needed to kill the sprite, that amount itself depends on the last hit being a fireball (5 or more) or stomp attack (3 or more).
-	Therefore techinically Chucks will take the same amount of damage of either the fireball or stomp, and the death condition is if after the last hit, the damage counter is 5 from a
-	fireball, or 3 from the stomp attack.<br><br>
+	Therefore techinically Chucks will take the same amount of damage of either the fireball or stomp, and the death condition is if after the last hit, the damage counter is 5 or more from a
+	fireball, or 3 or more from the stomp attack.<br><br>
 	
 	The same also applies to Ludwig, Morton, and Roy. 12 fireballs or 3 stomps.<br><br>
 	
@@ -287,9 +293,10 @@
 	<h2><a href="#ToC_ProgrammingHPForCustomSprites_TakingDamage" id="JMPTo_ProgrammingHPForCustomSprites_TakingDamage">^</a>Damage handler.</h2>
 	<p>Like I said before, the sprite having HP/Damage system must have something that would track the amount health or damage when a hit occurs, else it would take one hit to kill or have infinute HP. Thankfully most sprites have comments in their
 	ASM codes that tell you what the codes do. However, this isn't just changing the HP amounts when the sprite takes damage or heals, if you want the meter to have animation (<kbd>!Setting_SpriteHP_BarAnimation</kbd> set to <kbd>1</kbd>), you also
-	need to handle the meter animation. Thankfully, all that logic is handled in a subroutine called <kbd>SpriteLoseHP</kbd> along with that calling <kbd>SpriteHP_RemoveRecordEffect</kbd>. Feel free to check out the subroutines as you wish.</p>
+	need to handle the meter animation. Thankfully, all that logic is handled in a subroutine called <kbd>SpriteLoseHP</kbd> along with that calling <kbd>SpriteHP_RemoveRecordEffect</kbd> and other stuff to show to the player the damage amount.
+	Feel free to check out the subroutines as you wish.</p>
 	
-	<p>If you want to know how it works, just open the provided custom sprite's asm file.</p>
+	<p>If you want to know how it works, just open the provided custom sprite's asm file or view the provided patch and seeing the SMW disassembly.</p>
 </div>
 
 <script>

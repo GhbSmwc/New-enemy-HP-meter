@@ -48,6 +48,9 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					STA !Freeram_SpriteHP_BarAnimationTimer,x
 				endif
 				?.IntroDone
+			else
+				TXA
+				STA !Freeram_SpriteHP_MeterState
 			endif
 	endmacro
 
@@ -383,6 +386,17 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					if !Setting_SpriteHP_BarChangeDelay
 						STA !Freeram_SpriteHP_BarAnimationTimer,x
 					endif
+					..NoIntroFill
+				else
+					;%IntroFill(!1FD6) ;>This does not work because Wendy/Lemmy actually delete themselves (or simply reset almost all their sprite tables) each time they go back in the pipe.
+					LDA !Freeram_WendyLemmyIntroFlag
+					CMP #$25
+					BNE ..NoIntroFill
+					LDA #$00
+					STA !Freeram_WendyLemmyIntroFlag
+					TXA
+					STA !Freeram_SpriteHP_MeterState
+					
 					..NoIntroFill
 				endif
 			.Restore
