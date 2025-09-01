@@ -222,11 +222,16 @@
 	<h2><a href="#ToC_ProgrammingHPForCustomSprites" id="JMPTo_ProgrammingHPForCustomSprites">^</a>How to program the HP system to your custom sprites</h2>
 	<p>Note that this section assumes you know how to program in 65c816 assembly language. <a href="https://www.smwcentral.net/?p=section&a=details&id=14268">See this tutorial</a> on how to get started.</p>
 	
-	<p>To program a health system for existing custom sprites, they should store a value representing how much damage (can be any value it increases), hits (counts up by one reguardless of an attack), or
+	<p>To program a health system for existing custom sprites, they should store a value representing how much damage (can be any value it increases), hits (counts up by one regardless of an attack), or
 	remaining health (starts at any nonzero value and decreases each damage) else the sprite will never die or dies in one hit. Because each sprite is different, documenting every one of them would make
 	this tutorial very long. So I'll explain the principals and with some examples.</p>
 	
 	<p>I provided an example test sprite under <kbd>pixi/sprites/simple_sprite.asm</kbd> for testing the HP system.</p>
+	
+	<p>Because HP-related defines are heavily involved here, it's important to include the define files at the top of your sprite's ASM file, like this:
+<div class="CodeBlock" style="height: 40px;"><pre>	incsrc "../EnemyHPMeterDefines.asm"
+	incsrc "../GraphicalBarDefines.asm"</pre></div><br>
+	Else you get define not being defined errors.</p>
 	
 	<h3><a href="#ToC_ProgrammingHPForCustomSprites_BossIntroFill" id="JMPTo_ProgrammingHPForCustomSprites_BossIntroFill">^</a>Boss intro-fill</h3>
 	<p>For boss sprites, to have an &ldquo;intro-fill&rdquo; effect (meter automatically appears empty and fills up at the start of a fight), run this code under a sprite init (or under main but make sure

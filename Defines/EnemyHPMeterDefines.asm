@@ -265,6 +265,15 @@
 				!{<Define_Name_Offseter>} #= <Size>+!<Define_Name_Offseter>
 			endmacro
 			
+			;Pixi does not have "!sprite_slots" but have "!SprSize" ("asm/sa1def.asm") instead at the time of making this.
+				if not(defined("sprite_slots"))
+					if !sa1 == 0
+						!sprite_slots = 12
+					else
+						!sprite_slots = 22
+					endif
+				endif
+			
 			;The following also needs to have each of them be calling macros once, else they end up being set again to another,
 			;different RAM address.
 				%MacroAssignDefineOneAfterAnother(Freeram_SpriteHP_MeterState, 1, AddressLocator)
