@@ -67,10 +67,10 @@
 		updates with a gradual decrease without showing the previous HP percentage.</li>
 		
 		<li>Touching enemies will not display the meter, in K&tAM, it is possible to make it show its HP without damaging the enemy
-		by having Sone Kirby in his stone form (not moving or rolling down slopes) and an enemy passes by.</li>
+		by having Sone Kirby in his stone form (not moving or rolling down slopes) and an enemy passes through you.</li>
 	</ul>
 	<p>So few enemies in SMW can take damage without being one-shotted, they are Chucks, Wendy/Lemmy, Ludwig, Morton/Roy, Big Boo boss,
-	and Bowser (although the status bar in that battle is disabled)</p>
+	and Bowser (although the status bar in that battle is disabled).</p>
 </div>
 <hr>
 <div>
@@ -92,16 +92,20 @@
 		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=17109">Lunar magic</a></li>
 		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=14560">Asar</a></li>
 		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=39036">Uberasm tool version 2.0 or higher</a> (latest version recommended)</li>
-		<li>Status bar patches, this ASM package by default assumes you are using the <a href="https://www.smwcentral.net/?p=section&a=details&id=19247">super status bar patch</a>.</li>
 	</ul>
 	<h2>Recommended</h2>
 	<ul>
 		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=37432">Pixi</a></li>
+		<li>
+			Status bar/HUD enhancement patches, this ASM package by default assumes you are using the <a href="https://www.smwcentral.net/?p=section&a=details&id=19247">Super Status Bar patch</a>.
+			Vanilla status bar is way-too limited
+		</li>
 	</ul>
 	<h2>Documentations of other ASM resources</h2>
 	<ul>
 		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=38296">Status bar tutorial (contains string system and number display)</a></li>
 		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=38297">Graphical Bar</a></li>
+		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=39887">Address Tracker</a></li>
 	</ul>
 </div>
 <hr>
@@ -117,31 +121,33 @@
 			
 			Once you are done, you'll need to have copies of these txt files (not the folder itself containing the texts) in same directory as the tools'
 			<kbd>.exe</kbd> programs are at (pixi and uberasm tool). Do not have them in any subfolders beyond that area. Make sure you do not move the define files
-			as the patch will include those define files (better to copy than to cut them).<br><br>
+			as the patch will include those define files (better to copy than to cut/move them).<br><br>
 			
-			If you later make changes in any of the defines and reinsert in one tool, make sure you update all others and reinsert in other tools.</li>
+			If you later make changes in any of the defines and reinsert by one tool, make sure you update all others and reinsert by other tools.</li>
 			
-			<li>Patch <kbd>HPSystemForSMWSprites.asm</kbd> to your game. This adds a proper health system for some sprites and bosses and fixes an anomoly for SMW*.
-			This alone does not display meter, but will write to various RAM for the uberasm tool code to display it.<br><br>
+			<li>Patch a status bar/HUD enhancement patch into your game. Note that this ASM resource by default, assumes you are using the Super Status Bar patch. If this is not the case, you need to open <kbd>StatusBarDefines.asm</kbd>
+			of this package and change the base address to match with whatever status bar patch you're using that are the tile data, then reinsert UAT and pixi if you have inserted prior.</li>
 			
-			*The anomoly is that while SMW does stores a number representing how many hits enemies have taken, the fact that all attack types (specifically, fireballs and stomp)
-			increases this counter by the same amount, 1, and when this value hits various values <i>depending what attack type as the last hit</i>, would trigger the death sequence.</li>
+			<li>Patch <kbd>HPSystemForSMWSprites.asm</kbd> to your game. This adds a proper health system for some sprites and bosses and fixes <a href="#HitCountJank">an anomaly for SMW</a>.
+			This alone does not display meter, but will write to various RAM for the uberasm tool code to display it.</li>
 			
 			<li>Insert the ASM files to Uberasm tool. The provided folders should be obvious.</li>
 			
-			<li>Same with pixi, if you want custom sprites. I provided a test sprite in the foloder for demonstration.</li>
+			<li>Same with pixi, if you want custom sprites. I provided a test sprite in the folder for demonstration.</li>
 		</ol>
 		<li>Lunar Magic stuff</li>
 		<ol>
 			<li>In all levels accessible by the player, insert the layer 3 status bar ExGFX by &ldquo;Quick Extract ExGFX from ROM&rdquo; (blue mushroom icon) to spawn a <kbd>ExGraphics</kbd> (unless you did so already), then,
 			inside this ASM resource, navigate to <kbd>LM stuff/ExGraphics</kbd>. Here you'll find a graphic file (uses ExGFX slot $80 by default, rename to have it at a different slot number). This file should
 			be pasted in the ExGraphics of your game file. To insert into your game, &ldquo;Quick Insert ExGFX to ROM&rdquo; (golden mushroom). Finally, &ldquo;Open "Layer 3 GFX/Tilemap Bypass" Dialog&rdquo; (green
-			poison mushrrom), and set LG1 to use your inserted graphics file (by default, should be $80 if you didn't change the slot number)<br><br>
+			poison mushroom), and set LG1 to use your inserted graphics file (by default, should be $80 if you didn't change the slot number)<br><br>
 			
-			This graphic is for layer 3 status bar, since some symbols needed for the display are missing. The tiles used are the slash (&ldquo;/&rdquo;) and graphical bar tiles.
+			This graphic is for layer 3 status bar, since some symbols needed for the display are missing. The tiles used are the slash (&ldquo;/&rdquo;, if you have <kbd>!Setting_SpriteHP_DisplayNumerical</kbd> set to <kbd>2</kbd>) and graphical bar tiles (if you have
+			<kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd> set to <kbd>1</kbd>).
 			
 			</li>
 		</ol>
+		<li>And now you are done.</li>
 	</ol>
 </div>
 <hr>
@@ -153,70 +159,77 @@
 				<li>Define <kbd>!sprite_slots</kbd> is the number of sprite slots that exists. For LoROM, its 12, if SA-1, its 22.</li>
 			</ul>
 		</p>
-		<p>Other than the RAM data for graphical bar and HexDec routines (defines are in <kbd>GraphicalBarDefines.asm</kbd> and <kbd>NumberDisplayRoutinesDefines.asm</kbd>), the sprite HP data and display handler are in <kbd>EnemyHPMeterDefines.asm</kbd>,
-		defined as <kbd>!Freeram_SpriteHP_SpriteHPData</kbd>. It's layout are (in this order, starting at an address defined as <kbd>!Freeram_SpriteHP_SpriteHPData</kbd>, and advancing to higher-addressees):
-		<table>
-			<tr>
-				<th>Define</th>
-				<th><abbr title="&ldquo;State&rdquo; refers to an individual value representing the state of something, &ldquo;Sprite slots&rdquo; are tables that each byte correspond to a sprite slot, which is how multiple entities can exists.">Type</abbr></th>
-				<th>Number of bytes</th>
-				<th>Description</th>
-				<th>Use condition</th>
-			</tr>
-			<tr>
-				<th><kbd>!Freeram_SpriteHP_MeterState</kbd></th>
-				<td class="Center">State</td>
-				<td class="NoLineBreak Center">1</td>
-				<td>Sprite slot number (ranges from <kbd>$00</kbd> to <kbd>!sprite_slots-1</kbd>) to represent HP of that sprite. <kbd>$FF</kbd> will not display the meter. When having both <kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd> and <kbd>!Setting_SpriteHP_BarAnimation</kbd> set to <kbd>1</kbd>,
-				more values of that RAM are used (ranging from <kbd>!sprite_slots</kbd> to <kbd>(!sprite_slots*2)-1</kbd>, each value here corresponds to slot like the range before) for the &ldquo;intro-fill&rdquo; mode (used for an animation that plays when a boss appears, the bar appears with it filling from 0% to 100%)</td>
-				<td>Always</td>
-			</tr>
-			<tr>
-				<th><kbd>!Freeram_SpriteHP_CurrentHPLow</kbd></th>
-				<td class="Center">Sprite slots</td>
-				<td class="NoLineBreak Center">!sprite_slots</td>
-				<td>Sprite's current HP, low byte.</td>
-				<td>Always</td>
-			</tr>
-			<tr>
-				<th><kbd>!Freeram_SpriteHP_MaxHPLow</kbd></th>
-				<td class="Center">Sprite slots</td>
-				<td class="NoLineBreak Center">!sprite_slots</td>
-				<td>Sprite's maximum HP, low byte.</td>
-				<td>Always</td>
-			</tr>
-			<tr class="RedBackground">
-				<th><kbd>!Freeram_SpriteHP_CurrentHPHi</kbd></th>
-				<td class="Center">Sprite slots</td>
-				<td class="NoLineBreak Center">!sprite_slots</td>
-				<td>Sprite's current HP, high byte.</td>
-				<td>if <kbd>!Setting_SpriteHP_TwoByte</kbd> is set to <kbd>1</kbd></td>
-			</tr>
-			<tr class="RedBackground">
-				<th><kbd>!Freeram_SpriteHP_MaxHPHi</kbd></th>
-				<td class="Center">Sprite slots</td>
-				<td class="NoLineBreak Center">!sprite_slots</td>
-				<td>Sprite's maximum HP, high byte.</td>
-				<td>if <kbd>!Setting_SpriteHP_TwoByte</kbd> is set to <kbd>1</kbd></td>
-			</tr>
-			<tr class="RedBackground">
-				<th><kbd>!Freeram_SpriteHP_BarAnimationFill</kbd></th>
-				<td class="Center">Sprite slots</td>
-				<td class="NoLineBreak Center">!sprite_slots</td>
-				<td>The secondary fill amount used for the animation of the bar fill going up and down. This does so by using a rapid-flicker to show the difference between current HP fill and previous HP fill. If intro-fill mode is
-				active, will only show the filling up animation.</td>
-				<td>if <kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd> and <kbd>!Setting_SpriteHP_BarAnimation</kbd> is set to <kbd>1</kbd></td>
-			</tr>
-			<tr class="RedBackground">
-				<th><kbd>!Freeram_SpriteHP_BarAnimationTimer</kbd></th>
-				<td class="Center">Sprite slots</td>
-				<td class="NoLineBreak Center">!sprite_slots</td>
-				<td>Delay timer that decreases itself once per frame. When nonzero, <kbd>!Freeram_SpriteHP_BarAnimationFill</kbd> briefly freezes
-				before incrementing or decrementing to its current HP fill amount.</td>
-				<td>if <kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd>, <kbd>!Setting_SpriteHP_BarAnimation</kbd>, and <kbd>!Setting_SpriteHP_BarChangeDelay</kbd> is set to nonzero values.</td>
-			</tr>
-		</table><br>
-		Anything with a red background indicates those are optional features you can disable and will not be used.
+		<p>
+			Other than the RAM data for graphical bar and HexDec routines (defines are in <kbd>GraphicalBarDefines.asm</kbd> and <kbd>NumberDisplayRoutinesDefines.asm</kbd>), the sprite HP data and display handler are in <kbd>EnemyHPMeterDefines.asm</kbd>,
+			defined as <kbd>!Freeram_SpriteHP_SpriteHPData</kbd>. It's layout are (in this order, starting at an address defined as <kbd>!Freeram_SpriteHP_SpriteHPData</kbd>, and advancing to higher-addressees, placed contiguously):
+			<table>
+				<tr>
+					<th>Define</th>
+					<th><abbr title="&ldquo;State&rdquo; refers to an individual value representing the state of something, &ldquo;Sprite slots&rdquo; are tables that each byte correspond to a sprite slot, which is how multiple entities can exists.">Type</abbr></th>
+					<th>Number of bytes</th>
+					<th>Description</th>
+					<th>Use condition</th>
+				</tr>
+				<tr>
+					<th><kbd>!Freeram_SpriteHP_MeterState</kbd></th>
+					<td class="Center">State</td>
+					<td class="NoLineBreak Center">1</td>
+					<td>Sprite slot number (ranges from <kbd>$00</kbd> to <kbd>!sprite_slots-1</kbd>) to represent HP of that sprite. <kbd>$FF</kbd> will not display the meter. When having both <kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd> and <kbd>!Setting_SpriteHP_BarAnimation</kbd> set to <kbd>1</kbd>,
+					more values of that RAM are used (a new range, ranging from <kbd>!sprite_slots</kbd> to <kbd>(!sprite_slots*2)-1</kbd>, each value here corresponds to slot like the range before) for the &ldquo;intro-fill&rdquo; mode (used for an animation that plays when a boss appears, the bar appears with it filling from 0% to 100%).</td>
+					<td>Always</td>
+				</tr>
+				<tr>
+					<th><kbd>!Freeram_SpriteHP_CurrentHPLow</kbd></th>
+					<td class="Center">Sprite slots</td>
+					<td class="NoLineBreak Center">!sprite_slots</td>
+					<td>Sprite's current HP, low byte.</td>
+					<td>Always</td>
+				</tr>
+				<tr>
+					<th><kbd>!Freeram_SpriteHP_MaxHPLow</kbd></th>
+					<td class="Center">Sprite slots</td>
+					<td class="NoLineBreak Center">!sprite_slots</td>
+					<td>Sprite's maximum HP, low byte.</td>
+					<td>Always</td>
+				</tr>
+				<tr class="RedBackground">
+					<th><kbd>!Freeram_SpriteHP_CurrentHPHi</kbd></th>
+					<td class="Center">Sprite slots</td>
+					<td class="NoLineBreak Center">!sprite_slots</td>
+					<td>Sprite's current HP, high byte.</td>
+					<td>if <kbd>!Setting_SpriteHP_TwoByte</kbd> is set to <kbd>1</kbd></td>
+				</tr>
+				<tr class="RedBackground">
+					<th><kbd>!Freeram_SpriteHP_MaxHPHi</kbd></th>
+					<td class="Center">Sprite slots</td>
+					<td class="NoLineBreak Center">!sprite_slots</td>
+					<td>Sprite's maximum HP, high byte.</td>
+					<td>if <kbd>!Setting_SpriteHP_TwoByte</kbd> is set to <kbd>1</kbd></td>
+				</tr>
+				<tr class="RedBackground">
+					<th><kbd>!Freeram_SpriteHP_BarAnimationFill</kbd></th>
+					<td class="Center">Sprite slots</td>
+					<td class="NoLineBreak Center">!sprite_slots</td>
+					<td>The secondary fill amount used for the animation of the bar fill going up and down. This does so by using a rapid-flicker to show the difference between current HP fill and previous HP fill. If intro-fill mode is
+					active, will only show the filling up animation.</td>
+					<td>if <kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd> and <kbd>!Setting_SpriteHP_BarAnimation</kbd> is set to <kbd>1</kbd></td>
+				</tr>
+				<tr class="RedBackground">
+					<th><kbd>!Freeram_SpriteHP_BarAnimationTimer</kbd></th>
+					<td class="Center">Sprite slots</td>
+					<td class="NoLineBreak Center">!sprite_slots</td>
+					<td>Delay timer that decreases itself once per frame. When nonzero, <kbd>!Freeram_SpriteHP_BarAnimationFill</kbd> briefly freezes
+					before incrementing or decrementing to its current HP fill amount.</td>
+					<td>if <kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd>, <kbd>!Setting_SpriteHP_BarAnimation</kbd>, and <kbd>!Setting_SpriteHP_BarChangeDelay</kbd> is set to nonzero values.</td>
+				</tr>
+			</table><br>
+			Anything with a red background indicates those are optional features you can disable and will not be used. The total number of bytes ranging are:
+			<ul>
+				<li>25 to 73 bytes on LoROM.</li>
+				<li>45 to 133 bytes on SA-1.</li>
+			</ul>
+			If you want to know exactly where they are located, open <kbd>EnemyHPMeterDefines.asm</kbd> and set <kbd>!Setting_SpriteHP_DisplaySpriteHPDataOnConsole</kbd> to <kbd>1</kbd> and reinsert. On the asar
+			console window, will display the address of each subsection of the sprite HP data (this is in <a href="https://www.smwcentral.net/?p=section&a=details&id=39887">address tracker format</a> along with other summaries.).
 		</p>
 	<hr>
 	<h2><a href="#ToC_ProgrammingHPForCustomSprites" id="JMPTo_ProgrammingHPForCustomSprites">^</a>How to program the HP system to your custom sprites</h2>
@@ -284,11 +297,11 @@
 </pre></div>
 	Now note, this is assuming you've patched <kbd>HPSystemForSMWSprites.asm</kbd> into your game. Reason for modifying bosses and enemies that take damage from fireballs and stomps is because of how janky it is.<br><br>
 	
-	Take for example, Chargin Chucks. Logically, it takes 5 fireballs to kill or 3 stomps to kill, you'd think the fireballs would deal less damage than a stomp attack (because more hits to kill means it deals
+	<span id="HitCountJank">Take for example, Chargin Chucks. Logically, it takes 5 fireballs to kill or 3 stomps to kill, you'd think the fireballs would deal less damage than a stomp attack (because more hits to kill means it deals
 	less damage on the same amount of HP). But it doesn't work like that, internally, SMW will always increases the damage counter by 1 reguardless if the attack is a fireball or a stomp
 	attack, and to tell if it reaches the amount of damage needed to kill the sprite, that amount itself depends on the last hit being a fireball (5 or more) or stomp attack (3 or more).
 	Therefore techinically Chucks will take the same amount of damage of either the fireball or stomp, and the death condition is if after the last hit, the damage counter is 5 or more from a
-	fireball, or 3 or more from the stomp attack.<br><br>
+	fireball, or 3 or more from the stomp attack.</span><br><br>
 	
 	The same also applies to Ludwig, Morton, and Roy. 12 fireballs or 3 stomps.<br><br>
 	
