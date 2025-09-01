@@ -48,12 +48,16 @@
 	; -- Description: delay timer (decreases itself once per frame) before !Freeram_SpriteHP_BarAnimationFill updates to
 	;    the sprite's current HP fill amount. This is ignored if "IntroFill" mode is active.
 	;
+	; Summary:
+	; - LoROM number of bytes used: 25 to 73 bytes used.
+	; - SA-1 version number of bytes used: 45 to 133 bytes used.
+	;
 	;If you want to know display the RAM usage of this, have !Setting_SpriteHP_DisplaySpriteHPDataOnConsole set to 1 and
 	;insert via uberasm tool. The console window will show the list of itemized used RAM.
 		if !sa1 == 0
 			!Freeram_SpriteHP_SpriteHPData = $7FACC4
 		else
-			!Freeram_SpriteHP_SpriteHPData = $400110
+			!Freeram_SpriteHP_SpriteHPData = $418AFF
 		endif
 	;Scratch RAM settings (very likely you don't need to change these)
 		!Scratchram_SpriteHP_SpriteSlotToDisplay = $8A

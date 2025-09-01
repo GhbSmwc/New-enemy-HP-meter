@@ -51,8 +51,6 @@
 	!HPLowEnoughToShowAltGfx	= !HPToStart/2		;>HP to get below to start showing alternative graphics
 	!TILE				= $00
 	!TILE_LowHealth			= $02			;>16x16 tile to use when HP is below !HPLowEnoughToShowAltGfx.
-;Other define(s) below:
-	!NumOfSprSlot	= 12	;>In case of SA-1
 
 	!DmgSfxNumb		= $28
 	!DmgSfxRam		= $1DFC|!Base2
@@ -425,7 +423,7 @@ SPRITE_CODE_START:
 		;Other (normal) sprites.
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	.HitboxWithOtherSpr
-		LDY.b #!NumOfSprSlot-1		;There are 12 slots in LoROM (ranging from 0 to 11), or 22 in SA-1 (ranging from 0 to 21).
+		LDY.b #!sprite_slots-1		;There are 12 slots in LoROM (ranging from 0 to 11), or 22 in SA-1 (ranging from 0 to 21).
 
 		..Loop
 			TYA			;\Don't interact with its own slot/self.
