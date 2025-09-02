@@ -9,12 +9,12 @@ incsrc "Defines/GraphicalBarDefines.asm"
 ; - Ludwig, Morton, and Roy.
 
 ;Macro
-	macro ConvertDamageAmountToHP(HitCountSpriteTableRAM, DamageAmountToDie)
+	macro ConvertDamageAmountToHP(DamageCountSpriteTableRAM, DamageAmountToDie)
 		?HitCountToHP:
 			LDA.b #<DamageAmountToDie>                                      ;>The amount of damage that would kill the sprite
 			STA !Freeram_SpriteHP_MaxHPLow,x                                ;>This also means its maximum health is this value.
 			SEC                                                             ;\RemainingHP = DamageAmountToDie - DamageCount
-			SBC <HitCountSpriteTableRAM>,x                                  ;/
+			SBC <DamageCountSpriteTableRAM>,x                                  ;/
 			BCS ?.NotMoreThanEnoughDamage                                   ;>Failsafe, if DamageCount is greater than DamageAmountToDie, remaining HP cannot go negative, so...
 			?.MoreThanEnough
 				LDA #$00                                                ;>...Set it to 0.
@@ -27,10 +27,10 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			endif
 	endmacro
 	
-	macro IncreaseDamageCounter(HitCountSpriteTableRAM, DamageAmount, DamageAmountToDie)
+	macro IncreaseDamageCounter(DamageCountSpriteTableRAM, DamageAmount, DamageAmountToDie)
 		?Damage:
 		JSL SwitchHPDisplay
-		LDA <HitCountSpriteTableRAM>,x
+		LDA <DamageCountSpriteTableRAM>,x
 		CLC
 		ADC.b #<DamageAmount>
 		BCS ?.Overflow
@@ -40,7 +40,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		?.Overflow
 			LDA.b #<DamageAmountToDie>
 		?.BelowDeathThreshold
-			STA <HitCountSpriteTableRAM>,x
+			STA <DamageCountSpriteTableRAM>,x
 	endmacro
 	
 	macro IntroFill(IntroStateSpriteTableRAM)
