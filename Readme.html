@@ -404,7 +404,7 @@
     
 	Be careful that if scratch RAM <kbd>$00~$01</kbd> was used before and after here and needs to be retained, you need to preserve it before you write to <kbd>$00~$01</kbd> and restore it after <kbd>%SpriteLoseHP()</kbd>, or place it in an area where <kbd>$00~$01</kbd> is not used at all. For preserving values
 	it shoud look like this:
-<div class="CodeBlock" style="height: 200px"><pre>    ;[...]
+<div class="CodeBlock" style="height: 390px"><pre>    ;[...]
     if !Setting_SpriteHP_TwoByte
         REP #$20
         LDA $00                 ;\Push RAM $00~$01 into stack
@@ -429,7 +429,9 @@
         STA $00                 ;/
     endif
     ;[...]</pre></div><br>
-
+	Now, if the sprite <b>takes multiple points of damage</b> instead of <kbd>1</kbd> point (and often have multiple ways to deal damage than just stomp), such as the <a href="https://www.smwcentral.net/?p=section&a=details&id=30909">Wreckin' Chuck</a> by Sonikku,
+	then you should also have those damages reflected into RAM $00.
+<div class="CodeBlock"><pre>;Code here</pre></div>
 	</p>
 	<hr>
 	<h2><a href="#ToC_Notes" id="JMPTo_Notes">^</a>Notes</h2>
@@ -445,8 +447,8 @@
 	<ul>
 		<li>
 			Q: &ldquo;When the HP meter appears, and despite the setting <kbd>!Setting_SpriteHP_DisplayNumerical</kbd> set to <kbd>1</kbd> or <kbd>2</kbd>, the numbers won't appear anyway.&rdquo;<br><br>
-			A: That's intentional, as a failsafe to avoid writing too many symbols onto the status bar that some tiles that supposed to disappear (when the string gets shorter) failed to do so. You can turn it off (may come with such a risk) by setting
-			<kbd>!Setting_SpriteHP_ExcessDigitProt</kbd> to <kbd>0</kbd>.
+			A: The sprite have too much HP digits, either have lower HP values or set <kbd>!Setting_SpriteHP_MaxDigits</kbd> to a higher value. Not showing the text is a failsafe if the string gets too long. That failsafe is intended to avoid writing too many symbols
+			onto the status bar that some tiles that supposed to disappear failed to do so (when the string gets shorter). You can turn it off (may come with such a risk) by setting <kbd>!Setting_SpriteHP_ExcessDigitProt</kbd> to <kbd>0</kbd>.
 		</li>
 		<li>
 			Q: &ldquo;When I damage an enemy that uses the HP system, it's HP shown won't go down!&rdquo;<br><br>
@@ -454,7 +456,7 @@
 			<ul>
 				<li>Numbers not showing (either because you have them disabled or too many symbols in the text display of the numbers), and it's HP is set above its maximum.</li>
 				<li>The amount of damage it receives was set to 0 damage, causing no changes on its HP value.</li>
-				<li>You forgot to modify the sprite to write its own HP data into this ASM resource' HP data.</li>
+				<li>You forgot to modify the sprite's code to write its own HP data into this ASM resource' HP data to display properly.</li>
 				<li>With the numbers not showing, if you have more max HP than the number of pieces the bar has, small damages can result in the bar visibly not updating. This is because a range of current HP values get rounded to the
 				same amount of fill in the bar.</li>
 			</ul>
