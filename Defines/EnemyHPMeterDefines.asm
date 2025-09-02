@@ -217,7 +217,7 @@
 		;Ludwig/Morton/Roy: $1626, Big Boo Boss, Wendy and Lemmy: $1534). This means up to 255 health and
 		;damage are allowed, and those does not support 16-bit HP system.
 		;This only applies if !Setting_SpriteHP_ModifySMWSprites == 1 and their respective settings being 1.
-			!Setting_SpriteHP_VanillaSprite_ChuckHPAmount		= 15	;>This applies to all chuck varients.
+			!Setting_SpriteHP_VanillaSprite_ChuckHPAmount		= 15	;>This applies to all chuck variants.
 			!Setting_SpriteHP_VanillaSprite_Chuck_StompDamage	= 5	;>Amount of HP loss when taking damage from stomp attacks
 			
 			!Setting_SpriteHP_VanillaSprite_BigBooBossHPAmount		= 3	;>Amount of HP Big Boo boss have.
@@ -235,7 +235,7 @@
 				!Setting_SpriteHP_VanillaSprite_LudwigMortonRoyStompDamage	= 4
 				!Setting_SpriteHP_VanillaSprite_LudwigMortonRoyFireballDamage	= 1
 		;For any sprite whose tweaker $190F's bit 3 (%wcdj5sDp, takes 5 fireballs to kill) is set:
-			!Setting_SpriteHP_FireballDamageAmount			= 3	;>Amount of damage sprites recieves from fireball damage.
+			!Setting_SpriteHP_FireballDamageAmount			= 3	;>Amount of damage sprites receives from fireball damage.
 		;Fixes and additions
 			;Sound effect when the fireball hits chucks. See: https://www.smwcentral.net/?p=viewthread&t=6665
 				!Setting_SpriteHP_VanillaSprite_ChuckFireDamage_SoundNumber	= $28		;>Set to 0 to disable.

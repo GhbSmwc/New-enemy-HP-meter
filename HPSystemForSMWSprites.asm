@@ -2,6 +2,12 @@ incsrc "Defines/SA1StuffDefines.asm"
 incsrc "Defines/EnemyHPMeterDefines.asm"
 incsrc "Defines/GraphicalBarDefines.asm"
 
+;This patch modifies vanilla SMW sprites to utilizes the HP system. What are modified are:
+; - Chargin chucks (all variants) when taking stomp damage
+; - Any sprite (vanilla or custom) that have the "takes 5 fireballs to kill" tweaker bit set
+; - Big Boo Boss
+; - Ludwig, Morton, and Roy.
+
 ;Macro
 	macro ConvertDamageAmountToHP(HitCountSpriteTableRAM, DamageAmountToDie)
 		?HitCountToHP:

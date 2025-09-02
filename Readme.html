@@ -12,10 +12,6 @@
 			border-collapse: collapse;
 			}
 			
-			span.NoLineBreak {
-				white-space: nowrap;
-			}
-			
 			abbr{cursor: help;}
 			img.img-hor {
 				-moz-transform: scaleX(-1);
@@ -72,6 +68,9 @@
 	<p>So few enemies in SMW can take damage without being one-shotted, they are Chucks, Wendy/Lemmy, Ludwig, Morton/Roy, Big Boo boss,
 	and Bowser (although the status bar in that battle is disabled).</p>
 </div>
+<div>
+	<p>Note that code blocks here can be easily copied by holding down CTRL and double-clicking the text.</p>
+</div>
 <hr>
 <div>
 	<h2>Table of contents</h2>
@@ -82,8 +81,11 @@
 		<ul>
 			<li><a href="#JMPTo_ProgrammingHPForCustomSprites_BossIntroFill" id="ToC_ProgrammingHPForCustomSprites_BossIntroFill">Boss intro-fill</a></li>
 			<li><a href="#JMPTo_ProgrammingHPForCustomSprites_ConvertTotalDamageToHP" id="ToC_ProgrammingHPForCustomSprites_ConvertTotalDamageToHP">Convert Damage Counter to HP</a></li>
+			<li><a href="#JMPTo_ProgrammingHPForCustomSprites_TransferOwnHPToThisResourceHP" id="ToC_ProgrammingHPForCustomSprites_TransferOwnHPToThisResourceHP">Migrating it's own HP data to this ASM resource's data</a></li>
 			<li><a href="#JMPTo_ProgrammingHPForCustomSprites_TakingDamage" id="ToC_ProgrammingHPForCustomSprites_TakingDamage">Damage handler</a></li>
 		</ul>
+		<li><a href="#JMPTo_Notes" id="ToC_Notes">Notes</a></li>
+		<li><a href="#JMPTo_Troubleshooting" id="ToC_Troubleshooting">Troubleshooting</a></li>
 	</ul>
 </div>
 <div>
@@ -100,12 +102,12 @@
 			Status bar/HUD enhancement patches, this ASM package by default assumes you are using the <a href="https://www.smwcentral.net/?p=section&a=details&id=19247">Super Status Bar patch</a>.
 			Vanilla status bar is way-too limited
 		</li>
+		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=39887">Address Tracker</a>, if you have trouble knowing if there are RAM conflicts.</li>
 	</ul>
 	<h2>Documentations of other ASM resources</h2>
 	<ul>
 		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=38296">Status bar tutorial (contains string system and number display)</a></li>
 		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=38297">Graphical Bar</a></li>
-		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=39887">Address Tracker</a></li>
 	</ul>
 </div>
 <hr>
@@ -123,7 +125,14 @@
 			<kbd>.exe</kbd> programs are at (pixi and uberasm tool). Do not have them in any subfolders beyond that area. Make sure you do not move the define files
 			as the patch will include those define files (better to copy than to cut/move them).<br><br>
 			
-			If you later make changes in any of the defines and reinsert by one tool, make sure you update all others and reinsert by other tools.</li>
+			If you later make changes in any of the defines and reinsert by one tool, make sure you update all others and reinsert by other tools.<br><br>
+			
+			The freeram defines are in <kbd>EnemyHPMeterDefines.asm</kbd> for the main part of the resource, in <kbd>GraphicalBarDefines.asm</kbd> for handling
+			graphical bar codes, and <kbd>NumberDisplayRoutinesDefines.asm</kbd> for handling left/right aligned number display (suppresses leading zeros). Other defines
+			aren't technically freeram (<kbd>StatusBarDefines.asm</kbd> is meant to re-use the same RAM as the status bar enhancement patch for tile data, and <kbd>SA1StuffDefines.asm</kbd>
+			is used so that the other define files can recognize which alternate RAM to use depending on LoROM or SA-1).
+			
+			</li>
 			
 			<li>Patch a status bar/HUD enhancement patch into your game. Note that this ASM resource by default, assumes you are using the Super Status Bar patch. If this is not the case, you need to open <kbd>StatusBarDefines.asm</kbd>
 			of this package and change the base address to match with whatever status bar patch you're using that are the tile data, then reinsert UAT and pixi if you have inserted prior.</li>
@@ -316,7 +325,26 @@
 	By default, Chucks needed 15 or more points of damage to defeat, fireballs deal 3 damage and stomps deal 5. And for Ludwig, Morton, and Roy, they needed 12 points to defeat, with fireballs dealing 1 damage, and Stomp attacks dealing 4.
 	All of these preserves the amount of same-attack-types hits to be the same as vanilla.
 	</p>
-	<h2><a href="#ToC_ProgrammingHPForCustomSprites_TakingDamage" id="JMPTo_ProgrammingHPForCustomSprites_TakingDamage">^</a>Damage handler</h2>
+	<h3><a href="#ToC_ProgrammingHPForCustomSprites_TransferOwnHPToThisResourceHP" id="JMPTo_ProgrammingHPForCustomSprites_TransferOwnHPToThisResourceHP">^</a>Migrating it's own HP data to this ASM resource's data</h3>
+	<p>
+		This assumes that the custom sprite you have stores the health amount (a number starting at some nonzero value, and decreases when taking damage) rather than a damage/hit counter. This, is in fact, even easier than having to invert
+		the damage counter. All you have to do is simply load its source HP data, and store it directly into the HP data of this ASM resource:
+<div class="CodeBlock" style="height: 200px;"><pre>
+	macro TransferHealthToHPData(HealthSpriteTableRAM, MaxHealth)
+		LDA &lt;HealthSpriteTableRAM&gt;,x                              ;\Transfer its own HP data to this ASM resource's HP data
+		STA !Freeram_SpriteHP_CurrentHPLow,x                            ;/
+		LDA.b #&lt;MaxHealth&gt;                                        ;&gt;Warning, make sure the define being set to a value does not have the hash symbol (must be !HitPoints = $03, not !HitPoints = #$03), else asar will complain
+		STA !Freeram_SpriteHP_MaxHPLow,x
+		if !Setting_SpriteHP_TwoByte != 0
+			LDA #$00                                                ;\Rid high bytes.
+			STA !Freeram_SpriteHP_CurrentHPHi,x                     ;|(So far, there is never a sprite that stores a 16-bit health amount)
+			STA !Freeram_SpriteHP_MaxHPHi,x                         ;/
+		endif
+	endmacro</pre></div>
+	One sprite that does this is the <a href="https://www.smwcentral.net/?p=section&a=details&id=3723">Spiny Boss</a> from SMWCP1. It stores its HP data in RAM <kbd>$1528</kbd> (defined as <kbd>!sprite_health</kbd>). In that case, you simply have to
+	do this: <span class="NoLineBreak">%TransferHealthToHPData(!sprite_health, !MaxHP)</span> under its &ldquo;<kbd>SpriteCode</kbd>&rdquo; before any code.
+	</p>
+	<h3><a href="#ToC_ProgrammingHPForCustomSprites_TakingDamage" id="JMPTo_ProgrammingHPForCustomSprites_TakingDamage">^</a>Damage handler</h3>
 	<p>Like I said before, the sprite having HP/Damage system must have something that would track the amount health or damage when a hit occurs, else it would take one hit to kill or have infinite HP. Thankfully most sprites have comments in their
 	ASM codes that tell you what the codes do. However, this isn't just changing the HP amounts when the sprite takes damage or heals, if you want the meter to have animation (<kbd>!Setting_SpriteHP_BarAnimation</kbd> set to <kbd>1</kbd>), you also
 	need to handle the meter animation. Thankfully, all that logic is handled in a subroutine called <kbd>SpriteLoseHP</kbd> along with that calling <kbd>SpriteHP_RemoveRecordEffect</kbd> and other stuff to show to the player the damage amount.
@@ -351,6 +379,50 @@
     BEQ SpriteDead              ;/
 </pre></div>
 	</p>
+	<hr>
+	<h2><a href="#ToC_Notes" id="JMPTo_Notes">^</a>Notes</h2>
+	<ul>
+		<li>Any sprite (most likely custom sprites) with 6th tweaker byte's (RAM <a href="https://smwc.me/m/smw/ram/7E190F"><kbd>$190F</kbd></a>) bit 3 (<kbd>Takes 5 fireballs to kill</kbd>) being set will also be affected by this patch. In the original game, this feature was only used by Chargin' Chucks and
+		all its variants. Instead of counting RAM <a href="https://smwc.me/m/smw/ram/7E1528"><kbd>$1528</kbd></a> up by 1 and killing the sprite when reaches 5 or more, it counts up by a value defined as <kbd>!Setting_SpriteHP_FireballDamageAmount</kbd>,
+		and dies if this number reaches or exceeds a value defined as <kbd>!Setting_SpriteHP_VanillaSprite_ChuckHPAmount</kbd> (these are found in <kbd>EnemyHPMeterDefines.asm</kbd>). The code checking if enough damage have been made by the fireballs is
+		processed by the fireballs' code (at <kbd>$02A0FC</kbd>) rather than the sprite's code.</li>
+		<li>Ludwig, Morton, and Roy, however, their sprite code processes the fireball damage manually, and does not utilizes the 5 fireballs tweaker bit.</li>
+	</ul>
+	<hr>
+	<h2><a href="#ToC_Troubleshooting" id="JMPTo_Troubleshooting">^</a>Troubleshooting</h2>
+	<ul>
+		<li>
+			Q: &ldquo;When the HP meter appears, and despite the setting <kbd>!Setting_SpriteHP_DisplayNumerical</kbd> set to <kbd>1</kbd> or <kbd>2</kbd>, the numbers won't appear anyway.&rdquo;<br><br>
+			A: That's intentional, as a failsafe to avoid writing too many symbols onto the status bar that some tiles that supposed to disappear (when the string gets shorter) failed to do so. You can turn it off (may come with such a risk) by setting
+			<kbd>!Setting_SpriteHP_ExcessDigitProt</kbd> to <kbd>0</kbd>.
+		</li>
+		<li>
+			Q: &ldquo;When I damage an enemy that uses the HP system, it's HP shown won't go down!&rdquo;<br><br>
+			A: There are possible cases that have occurred:
+			<ul>
+				<li>Numbers not showing (either because you have them disabled or too many symbols in the text display of the numbers), and it's HP is set above its maximum.</li>
+				<li>The amount of damage it receives was set to 0 damage, causing no changes on its HP value.</li>
+				<li>You forgot to modify the sprite to write its own HP data into this ASM resource' HP data.</li>
+				<li>With the numbers not showing, if you have more max HP than the number of pieces the bar has, small damages can result in the bar visibly not updating. This is because a range of current HP values get rounded to the
+				same amount of fill in the bar.</li>
+			</ul>
+		
+		</li>
+		<li>
+			Q: &ldquo;My game crashed! What happened?&rdquo;<br><br>
+			A: Possible causes:
+			<ul>
+				<li>RAM conflicts. The RAM usage on this package alone are the sprite HP data, a byte used for Wendy/Lemmy to tell if the intro-fill have been played (by default, it is the address of the last block of the level map16 data; which you are
+				unlikely to use in a 1-screen wide boss room), graphical bar input and outputs, and the character tile table for displaying aligned text for leading-zero suppression. While &ldquo;<kbd>!Scratchram_&lt;ResourceName&gt;...</kbd>&rdquo; can be reused as another scratch RAM (as
+				long as after the code finish using it you can re-use it for something else), the same can't be said if they are named &ldquo;<kbd>!Freeram_&lt;ResourceName&gt;...</kbd>. Make sure you pay attention on every installed ASM resource
+				on what RAMs are being used. If you have trouble knowing if a RAM conflicts, use the Address Tracker as mentioned in the recommended at the top of this readme.</li>
+				<li>Hijack conflicts. This should only be possible if you patch <kbd>HPSystemForSMWSprites.asm</kbd> along with 3rd party patches that also modifies SMW's sprites with overlapping hijacks with those said patches (such as
+				<a href="https://www.smwcentral.net/?p=section&a=details&id=20847">&ldquo;FireBall HP&rdquo;</a> patch by Bio).</li>
+				<li>Faulty code that you have found that I didn't catch. PM me or the moderators on fixing a newly discovered bug.</li>
+			</ul>
+		
+		</li>
+	</ul>
 </div>
 <script>
 //These makes all <pre>...</pre> have an effect that double-clicking will select all the text
