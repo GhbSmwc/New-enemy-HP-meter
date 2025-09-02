@@ -400,7 +400,36 @@
     endif
     %SpriteLoseHP()
     LDA !sprite_health,x        ; \ Check if the sprite has been hit 3 times
-    BNE .justHit</pre></div>
+    BNE .justHit</pre></div><br>
+    
+	Be careful that if scratch RAM <kbd>$00~$01</kbd> was used before and after here and needs to be retained, you need to preserve it before you write to <kbd>$00~$01</kbd> and restore it after <kbd>%SpriteLoseHP()</kbd>, or place it in an area where <kbd>$00~$01</kbd> is not used at all. For preserving values
+	it shoud look like this:
+<div class="CodeBlock" style="height: 200px"><pre>    ;[...]
+    if !Setting_SpriteHP_TwoByte
+        REP #$20
+        LDA $00                 ;\Push RAM $00~$01 into stack
+        PHA                     ;/
+        LDA #$0001
+        STA $00
+        SEP #$20
+    else
+        LDA $00                 ;\Push RAM $00 into stack
+        PHA                     ;/
+        LDA #$01
+        STA $00
+    endif
+    %SpriteLoseHP()
+    if !Setting_SpriteHP_TwoByte
+        REP #$20
+        PLA                     ;\Restore $00~$01 from the stack
+        STA $00                 ;/
+        SEP #$20
+    else
+        PLA                     ;\Restore $00 from the stack
+        STA $00                 ;/
+    endif
+    ;[...]</pre></div><br>
+
 	</p>
 	<hr>
 	<h2><a href="#ToC_Notes" id="JMPTo_Notes">^</a>Notes</h2>
