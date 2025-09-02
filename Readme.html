@@ -77,12 +77,12 @@
 	<ul>
 		<li><a href="#JMPTo_HowtoInsert" id="ToC_HowtoInsert">How to insert</a></li>
 		<li><a href="#JMPTo_RAMUsage" id="ToC_RAMUsage">RAM usage documentation</a></li>
-		<li><a href="#JMPTo_ProgrammingHPForCustomSprites" id="ToC_ProgrammingHPForCustomSprites">How to program the HP system to your custom sprites</a></li>
+		<li><a href="#JMPTo_MakeSpritesDisplayHP" id="ToC_MakeSpritesDisplayHP">Making sprites display their HP</a></li>
 		<ul>
-			<li><a href="#JMPTo_ProgrammingHPForCustomSprites_BossIntroFill" id="ToC_ProgrammingHPForCustomSprites_BossIntroFill">Boss intro-fill</a></li>
-			<li><a href="#JMPTo_ProgrammingHPForCustomSprites_ConvertTotalDamageToHP" id="ToC_ProgrammingHPForCustomSprites_ConvertTotalDamageToHP">Convert Damage Counter to HP</a></li>
-			<li><a href="#JMPTo_ProgrammingHPForCustomSprites_TransferOwnHPToThisResourceHP" id="ToC_ProgrammingHPForCustomSprites_TransferOwnHPToThisResourceHP">Migrating it's own HP data to this ASM resource's data</a></li>
-			<li><a href="#JMPTo_ProgrammingHPForCustomSprites_TakingDamage" id="ToC_ProgrammingHPForCustomSprites_TakingDamage">Damage handler</a></li>
+			<li><a href="#JMPTo_MakeSpritesDisplayHP_BossIntroFill" id="ToC_MakeSpritesDisplayHP_BossIntroFill">Boss intro-fill</a></li>
+			<li><a href="#JMPTo_MakeSpritesDisplayHP_ConvertTotalDamageToHP" id="ToC_MakeSpritesDisplayHP_ConvertTotalDamageToHP">Convert Damage Counter to HP</a></li>
+			<li><a href="#JMPTo_MakeSpritesDisplayHP_TransferOwnHPToThisResourceHP" id="ToC_MakeSpritesDisplayHP_TransferOwnHPToThisResourceHP">Migrating it's own HP data to this ASM resource's data</a></li>
+			<li><a href="#JMPTo_MakeSpritesDisplayHP_TakingDamage" id="ToC_MakeSpritesDisplayHP_TakingDamage">Damage handler</a></li>
 		</ul>
 		<li><a href="#JMPTo_Notes" id="ToC_Notes">Notes</a></li>
 		<li><a href="#JMPTo_Troubleshooting" id="ToC_Troubleshooting">Troubleshooting</a></li>
@@ -241,8 +241,10 @@
 			console window, will display the address of each subsection of the sprite HP data (this is in <a href="https://www.smwcentral.net/?p=section&a=details&id=39887">address tracker format</a> along with other summaries.).
 		</p>
 	<hr>
-	<h2><a href="#ToC_ProgrammingHPForCustomSprites" id="JMPTo_ProgrammingHPForCustomSprites">^</a>How to program the HP system to your custom sprites</h2>
+	<h2><a href="#ToC_MakeSpritesDisplayHP" id="JMPTo_MakeSpritesDisplayHP">^</a>Making sprites display their HP</h2>
 	<p>Note that this section assumes you know how to program in 65c816 assembly language. <a href="https://www.smwcentral.net/?p=section&a=details&id=14268">See this tutorial</a> on how to get started.</p>
+	
+	<p>This section covers on how to <b>display</b> the sprite's HP.</p>
 	
 	<p>To program a health system for existing custom sprites, they should store a value representing how much damage (can be any value it increases), hits (counts up by one regardless of an attack), or
 	remaining health (starts at any nonzero value and decreases each damage) else the sprite will never die or dies in one hit. Because each sprite is different, documenting every one of them would make
@@ -255,10 +257,10 @@
 	incsrc "../GraphicalBarDefines.asm"</pre></div><br>
 	Else you get define not being defined errors.</p>
 	
-	<h3><a href="#ToC_ProgrammingHPForCustomSprites_BossIntroFill" id="JMPTo_ProgrammingHPForCustomSprites_BossIntroFill">^</a>Boss intro-fill</h3>
+	<h3><a href="#ToC_MakeSpritesDisplayHP_BossIntroFill" id="JMPTo_MakeSpritesDisplayHP_BossIntroFill">^</a>Boss intro-fill</h3>
 	<p>For boss sprites, to have an &ldquo;intro-fill&rdquo; effect (meter automatically appears empty and fills up at the start of a fight), run this code under a sprite init (or under main but make sure
 	it does not execute every frame, this method is useful if you want the animation after a cutscene after the sprite spawns). Note that you must have <kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd> and
-	<kbd>!Setting_SpriteHP_BarAnimation</kbd> be set to 1:
+	<kbd>!Setting_SpriteHP_BarAnimation</kbd> be set to 1 (else it just appears full without animation):
 <div class="CodeBlock" style="height: 250px;"><pre>
 	;Have the following as an option on your custom sprite if you are willing to submit it to SMWC.
 		!IntroFill = 1                                                      ;&gt;0 = no, 1 = yes (switch display to boss sprite with filling animation or simply a full bar if animation disabled).
@@ -281,7 +283,7 @@
 		endif
 	endif</pre></div>
 	</p>
-	<h3><a href="#ToC_ProgrammingHPForCustomSprites_ConvertTotalDamageToHP" id="JMPTo_ProgrammingHPForCustomSprites_ConvertTotalDamageToHP">^</a>Convert Damage Counter to HP</h3>
+	<h3><a href="#ToC_MakeSpritesDisplayHP_ConvertTotalDamageToHP" id="JMPTo_MakeSpritesDisplayHP_ConvertTotalDamageToHP">^</a>Convert Damage Counter to HP</h3>
 	<p>When a custom sprite stores a number (<kbd>DamageCount</kbd>) that starts at 0, and increases (commonly by 1 as a hit counter) for each hit the sprite recieves, HP can be found by
 	taking the amount of damage needed to defeat the enemy, and subtract that by <kbd>DamageCount</kbd> to obtain the remaining damage needed to defeat the sprite:
 <div class="CodeBlock" style="height: 250px;"><pre>
@@ -325,7 +327,7 @@
 	By default, Chucks needed 15 or more points of damage to defeat, fireballs deal 3 damage and stomps deal 5. And for Ludwig, Morton, and Roy, they needed 12 points to defeat, with fireballs dealing 1 damage, and Stomp attacks dealing 4.
 	All of these preserves the amount of same-attack-types hits to be the same as vanilla.
 	</p>
-	<h3><a href="#ToC_ProgrammingHPForCustomSprites_TransferOwnHPToThisResourceHP" id="JMPTo_ProgrammingHPForCustomSprites_TransferOwnHPToThisResourceHP">^</a>Migrating it's own HP data to this ASM resource's data</h3>
+	<h3><a href="#ToC_MakeSpritesDisplayHP_TransferOwnHPToThisResourceHP" id="JMPTo_MakeSpritesDisplayHP_TransferOwnHPToThisResourceHP">^</a>Migrating it's own HP data to this ASM resource's data</h3>
 	<p>
 		This assumes that the custom sprite you have stores the health amount (a number starting at some nonzero value, and decreases when taking damage) rather than a damage/hit counter. This, is in fact, even easier than having to invert
 		the damage counter. All you have to do is simply load its source HP data, and store it directly into the HP data of this ASM resource:
@@ -344,11 +346,14 @@
 	One sprite that does this is the <a href="https://www.smwcentral.net/?p=section&a=details&id=3723">Spiny Boss</a> from SMWCP1. It stores its HP data in RAM <kbd>$1528</kbd> (defined as <kbd>!sprite_health</kbd>). In that case, you simply have to
 	do this: <span class="NoLineBreak">%TransferHealthToHPData(!sprite_health, !MaxHP)</span> under its &ldquo;<kbd>SpriteCode</kbd>&rdquo; before any code.
 	</p>
-	<h3><a href="#ToC_ProgrammingHPForCustomSprites_TakingDamage" id="JMPTo_ProgrammingHPForCustomSprites_TakingDamage">^</a>Damage handler</h3>
+	<h3><a href="#ToC_MakeSpritesDisplayHP_TakingDamage" id="JMPTo_MakeSpritesDisplayHP_TakingDamage">^</a>Damage handler</h3>
 	<p>Like I said before, the sprite having HP/Damage system must have something that would track the amount health or damage when a hit occurs, else it would take one hit to kill or have infinite HP. Thankfully most sprites have comments in their
-	ASM codes that tell you what the codes do. However, this isn't just changing the HP amounts when the sprite takes damage or heals, if you want the meter to have animation (<kbd>!Setting_SpriteHP_BarAnimation</kbd> set to <kbd>1</kbd>), you also
-	need to handle the meter animation. Thankfully, all that logic is handled in a subroutine called <kbd>SpriteLoseHP</kbd> along with that calling <kbd>SpriteHP_RemoveRecordEffect</kbd> and other stuff to show to the player the damage amount.
-	Feel free to check out the subroutines as you wish.</p>
+	ASM codes that tell you what the codes do. However, this isn't just changing the HP amounts when the sprite takes damage or heals, you also to do in addition:
+	<ul>
+		<li>If you have animation enabled (<kbd>!Setting_SpriteHP_BarAnimation</kbd> set to <kbd>1</kbd>), you need to set some values of that</li>
+		<li>Ensure that the health meter switches to that damaged enemy when hit.</li>
+	</ul>
+	Thankfully, all that logic is handled automatically in a subroutine called <kbd>SpriteLoseHP</kbd>. Feel free to check out the subroutines as you wish.</p>
 	
 	<p>If you want to know how it works, just open the provided custom sprite's asm file or view the provided patch and seeing the SMW disassembly. Please note that, because patches, uberasm tool, and pixi have their own isolated subroutines system,
 	and I don't want to have duplicate subroutines, the patch version on handling the bar animation is very different, it does not calculate via RAM on how many pieces are in the bar to determine, rather a pre-calculated number of pieces in the bar.</p>
@@ -360,8 +365,8 @@
     LDA !1534,x                 ;\ If it has incremented to the "max", do death animation.
     CMP.b #!HitPoints           ; |
     BEQ SpriteDead              ;/
-</pre></div>
-	Should be changed to:
+</pre></div><br>
+	Should be changed to:<br>
 <div class="CodeBlock" style="height: 230px;"><pre>
     INC !1534,x                 ; increment sprite hit counter (this counts the damage up by 1)
     if !Setting_SpriteHP_TwoByte
@@ -377,7 +382,25 @@
     LDA !1534,x                 ;\ If it has incremented to the "max", do death animation.
     CMP.b #!HitPoints           ; |
     BEQ SpriteDead              ;/
-</pre></div>
+</pre></div><br>
+	The same goes with if it have a health counter rather than a damage counter. For example, the Spiny Boss's damage code (yeah, some of the comments are incorrect, such as &ldquo;Increase&rdquo; when it supposed to say &ldquo;Decrease&rdquo;.):<br>
+<div class="CodeBlock" style="height: 60px"><pre>    DEC !sprite_health,x        ; Increase hit counter and...
+    LDA !sprite_health,x        ; \ Check if the sprite has been hit 3 times
+    BNE .justHit</pre></div><br>
+	To be changed to:<br>
+<div class="CodeBlock" style="height: 200px"><pre>    DEC !sprite_health,x        ; Increase hit counter and...
+    if !Setting_SpriteHP_TwoByte
+        REP #$20
+        LDA #$0001
+        STA $00
+        SEP #$20
+    else
+        LDA #$01
+        STA $00
+    endif
+    %SpriteLoseHP()
+    LDA !sprite_health,x        ; \ Check if the sprite has been hit 3 times
+    BNE .justHit</pre></div>
 	</p>
 	<hr>
 	<h2><a href="#ToC_Notes" id="JMPTo_Notes">^</a>Notes</h2>
