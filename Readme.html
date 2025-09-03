@@ -257,6 +257,21 @@
 	incsrc "../GraphicalBarDefines.asm"</pre></div><br>
 	Else you get define not being defined errors.</p>
 	
+	<p>The following stuff is transferring its health and damage RAM to this resource's HP RAM so that it gets displayed. Yes you can modify the custom sprite not to use its own vanilla sprite table RAM
+	at all and instead use this ASM resources' current and max HP RAM (in a way similar to the provided example sprite), however that comes with caveats and may need further edits:
+	<ul>
+		<li>
+			If the sprite utilizes a damage counter (starts at 0 and hits increases this value), you need to reverse it. If there are damage amount thresholds to trigger different phases, that also needs to be
+			reversed (for example, 10 points of damage to defeat an enemy, and 7 or more points trigger phase 2. That needs to be changed to a 10 HP sprite, and triggers phase 2 with its HP drops to 3 or lower).
+		</li>
+		<li>
+			Most sprites with a health system don't have 16-bit health. If you have <kbd>!Setting_SpriteHP_TwoByte == 1</kbd>, you need to either always set their <kbd>!Freeram_SpriteHP_MaxHPHi</kbd> to always zero,
+			or every code that reads and set their HP to account the high byte when their HP value can go greater than 255.
+		</li>
+	</ul>
+	
+	</p>
+	
 	<h3><a href="#ToC_MakeSpritesDisplayHP_BossIntroFill" id="JMPTo_MakeSpritesDisplayHP_BossIntroFill">^</a>(Optional) Boss intro-fill</h3>
 	<p>For boss sprites, to have an optional &ldquo;intro-fill&rdquo; effect (meter automatically appears empty and fills up at the start of a fight), run this code under a sprite init (or under main but make sure
 	it does not execute every frame, (for if you want the animation after a cutscene after the sprite spawns)). Note that you must have <kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd> and
