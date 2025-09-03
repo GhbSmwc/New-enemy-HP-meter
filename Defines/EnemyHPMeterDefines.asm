@@ -200,9 +200,9 @@
 					!Setting_SpriteHP_FillingSFXNumb		= $23		;>Sound number (set to 0 to disable SFX)
 					!Setting_SpriteHP_FillingSFXPort		= $1DFC|!addr	;>Use $1DF9, $1DFA, or $1DFC, followed by "|!addr" if you're using SA-1
 	;Patching settings
-		;Apply displaying HP on various vanilla SMW sprites: 0 = no, 1 = yes, again, use only mentioned values,
+		;Apply (proper) HP system on various vanilla SMW sprites: 0 = no, 1 = yes, again, use only mentioned values,
 		;unless stated otherwise.
-			!Setting_SpriteHP_ModifySMWSprites			= 1	;>Universal option if you want to not have HP meters for all vanilla SMW sprites.
+			!Setting_SpriteHP_ModifySMWSprites			= 1	;>Universal option if you want to not have HP meters for all vanilla SMW sprites (this also undo the patching if you have already).
 			!Setting_SpriteHP_VanillaSprite_Chuck			= 1
 				;^All the chucks in SMW.
 			!Setting_SpriteHP_VanillaSprite_Bosses			= 1
@@ -211,7 +211,17 @@
 				;-Wendy and Lemmy (share most of the same code)
 				;-Ludwig, Morton, and Roy (same as above)
 				
-				
+		;Disable displaying HP but keep the fireball and stomp damage jank fix?
+			!Setting_SpriteHP_NoDisplaySMWSpriteHP			= 0
+				;^0 = Will display the HP meter along with the jank fix.
+				; 1 = will not display HP, but keep the jank fix.
+				;
+				; The jank is that damages from stomps and fireballs
+				; increases the damage count by 1 and they die at
+				; certain values depending on what last hit them.
+				;
+				; This only affects the display of the meter of HP
+				; of SMW's vanilla sprites.
 		;Amount of HP SMW sprites has. NOTE: SMW only have hit counts being an 8-bit unsigned integer stored
 		;within various sprite tables (Chucks and any sprites using the 5 fireballs to kill: $1528,
 		;Ludwig/Morton/Roy: $1626, Big Boo Boss, Wendy and Lemmy: $1534). This means up to 255 health and

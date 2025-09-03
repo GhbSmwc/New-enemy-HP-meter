@@ -80,8 +80,11 @@
 		<li><a href="#JMPTo_MakeSpritesDisplayHP" id="ToC_MakeSpritesDisplayHP">Making sprites display their HP</a></li>
 		<ul>
 			<li><a href="#JMPTo_MakeSpritesDisplayHP_BossIntroFill" id="ToC_MakeSpritesDisplayHP_BossIntroFill">(Optional) Boss intro-fill</a></li>
-			<li><a href="#JMPTo_MakeSpritesDisplayHP_ConvertTotalDamageToHP" id="ToC_MakeSpritesDisplayHP_ConvertTotalDamageToHP">Obtaining HP value from a damage counter</a></li>
-			<li><a href="#JMPTo_MakeSpritesDisplayHP_TransferOwnHPToThisResourceHP" id="ToC_MakeSpritesDisplayHP_TransferOwnHPToThisResourceHP">Obtaining HP value from its own sprite table as HP</a></li>
+			<li><a href="#JMPTo_MakeSpritesDisplayHP_GetHPValue" id="ToC_MakeSpritesDisplayHP_GetHPValue">Obtaining HP value...</a></li>
+			<ul>
+				<li><a href="#JMPTo_MakeSpritesDisplayHP_GetHPValue_ConvertDamageToHP" id="ToC_MakeSpritesDisplayHP_GetHPValue_ConvertDamageToHP">...from a damage counter</a></li>
+				<li><a href="#JMPTo_MakeSpritesDisplayHP_GetHPValue_GetStraightFromHPSprTbl" id="ToC_MakeSpritesDisplayHP_GetHPValue_GetStraightFromHPSprTbl">...from its own sprite table as HP</a></li>
+			</ul>
 			<li><a href="#JMPTo_MakeSpritesDisplayHP_TakingDamage" id="ToC_MakeSpritesDisplayHP_TakingDamage">Damage handler</a></li>
 		</ul>
 		<li><a href="#JMPTo_Notes" id="ToC_Notes">Notes</a></li>
@@ -255,10 +258,10 @@
 	<p>Because HP-related defines are heavily involved here, it's important to include the define files at the top of your sprite's ASM file, like this:
 <div class="CodeBlock" style="height: 40px;"><pre>	incsrc "../EnemyHPMeterDefines.asm"
 	incsrc "../GraphicalBarDefines.asm"</pre></div><br>
-	Else you get define not being defined errors.</p>
+	Else you get define not being defined errors. Then after the include-defines, have the macros being set/defined (anything with a <span class="NoLineBreak">macro MacroName(Pram1, Pram2...) ... endmacro</span>).</p>
 	
 	<p>The following stuff is transferring its health and damage RAM to this resource's HP RAM so that it gets displayed. Yes you can modify the custom sprite not to use its own vanilla sprite table RAM
-	at all and instead use this ASM resources' current and max HP RAM (in a way similar to the provided example sprite), however that comes with caveats and may need further edits:
+	at all and instead directly use this ASM resources' current and max HP RAM (in a way similar to the provided example sprite), however that comes with caveats and may need further edits:
 	<ul>
 		<li>
 			If the sprite utilizes a damage counter (starts at 0 and hits increases this value), you need to reverse it. If there are damage amount thresholds to trigger different phases, that also needs to be
@@ -298,8 +301,12 @@
 		endif
 	endif</pre></div>
 	</p>
-	<h3><a href="#ToC_MakeSpritesDisplayHP_ConvertTotalDamageToHP" id="JMPTo_MakeSpritesDisplayHP_ConvertTotalDamageToHP">^</a>Obtaining HP value from a damage counter</h3>
-	<p>When a custom sprite stores a number (<kbd>DamageCount</kbd>) that starts at 0, and increases (commonly by 1 as a hit counter) for each hit the sprite recieves, HP can be found by
+	<h3><a href="#ToC_MakeSpritesDisplayHP_GetHPValue" id="JMPTo_MakeSpritesDisplayHP_GetHPValue">^</a>Obtaining HP value...</h3>
+	<p>This covers on how to extract data from a sprite table that is being used to track the amount of damage or health, then storing that data to <kbd>!Freeram_SpriteHP_CurrentHPLow</kbd>, <kbd>!Freeram_SpriteHP_MaxHPLow</kbd>
+	(<kbd>!Freeram_SpriteHP_CurrentHPHi</kbd> and <kbd>!Freeram_SpriteHP_MaxHPHi</kbd> in addition if <kbd>!Setting_SpriteHP_TwoByte == 1</kbd>) so that it gets displayed on the HUD. This must run every frame (as a failsafe in
+	case if the sprite's real health sprite table changes without that being shown) on the sprite main (preferably at the start). Note that the following code uses a macro that doesn't get used unless you call it.</p>
+	<h4><a href="#ToC_MakeSpritesDisplayHP_GetHPValue_ConvertDamageToHP" id="JMPTo_MakeSpritesDisplayHP_GetHPValue_ConvertDamageToHP">^</a>...from a damage counter</h4>
+	<p>When a custom sprite stores a number (<kbd>DamageCount</kbd>) that starts at 0, and increases (commonly by 1 as a hit counter) for each hit the sprite receives, HP can be found by
 	taking the amount of damage needed to defeat the enemy, and subtract that by <kbd>DamageCount</kbd> to obtain the remaining damage needed to defeat the sprite:
 <div class="CodeBlock" style="height: 250px;"><pre>
 	macro ConvertDamageAmountToHP(DamageCountSpriteTableRAM, DamageAmountToDie)
@@ -319,13 +326,9 @@
 				STA !Freeram_SpriteHP_MaxHPHi,x                         ;/
 			endif
 	endmacro
-	
-	;In anywhere on the sprite's code that runs every frame (prefebly at the start of its "main" code)
-	;you call the macro that contains code calculating its remaining HP, for example, for Chargin Chucks,
-	;It's hit count is RAM $1528 (used as !1528,x for SA-1 and LoROM compatibility), so it's called like
-	;this:
-		%ConvertDamageAmountToHP(!1528, 15)
 </pre></div>
+	For example, Chargin' Chucks have their damage counter stored at sprite table <kbd>$1528</kbd>. This means to call the macro with the <kbd>DamageCountSpriteTableRAM</kbd> set to <kbd>!1528</kbd> (address changed to a define for SA-1 hybrid support).
+	With the patch installed, the sprite dies if the damage counter reaches 15 or more. So the <kbd>DamageAmountToDie</kbd> should be 15. With this, the macro should be called like this: <span class="NoLineBreak">%ConvertDamageAmountToHP(!1528, 15)</span>.
 	Now note, this is assuming you've patched <kbd>HPSystemForSMWSprites.asm</kbd> into your game. Reason for modifying bosses and enemies that take damage from fireballs and stomps is because of how janky it is.<br><br>
 	
 	<span id="HitCountJank">Take for example, Chargin Chucks. Logically, it takes 5 fireballs to kill or 3 stomps to kill, you'd think the fireballs would deal less damage than a stomp attack (because more hits to kill means it deals
@@ -342,7 +345,7 @@
 	By default, Chucks needed 15 or more points of damage to defeat, fireballs deal 3 damage and stomps deal 5. And for Ludwig, Morton, and Roy, they needed 12 points to defeat, with fireballs dealing 1 damage, and Stomp attacks dealing 4.
 	All of these preserves the amount of same-attack-types hits to be the same as vanilla.
 	</p>
-	<h3><a href="#ToC_MakeSpritesDisplayHP_TransferOwnHPToThisResourceHP" id="JMPTo_MakeSpritesDisplayHP_TransferOwnHPToThisResourceHP">^</a>Obtaining HP value from its own sprite table as HP</h3>
+	<h4><a href="#ToC_MakeSpritesDisplayHP_GetHPValue_GetStraightFromHPSprTbl" id="JMPTo_MakeSpritesDisplayHP_GetHPValue_GetStraightFromHPSprTbl">^</a>...from its own sprite table as HP</h4>
 	<p>
 		This assumes that the custom sprite you have stores the health amount (a number starting at some nonzero value, and decreases when taking damage) rather than a damage/hit counter. This, is in fact, even easier than having to invert
 		the damage counter. All you have to do is simply load its source HP data, and store it directly into the HP data of this ASM resource:

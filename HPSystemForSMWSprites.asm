@@ -6,30 +6,34 @@ incsrc "Defines/GraphicalBarDefines.asm"
 ; - Chargin chucks (all variants) when taking stomp damage
 ; - Any sprite (vanilla or custom) that have the "takes 5 fireballs to kill" tweaker bit set
 ; - Big Boo Boss
-; - Ludwig, Morton, and Roy.
+; - Wendy, Lemmy, Ludwig, Morton, and Roy.
 
 ;Macro
 	macro ConvertDamageAmountToHP(DamageCountSpriteTableRAM, DamageAmountToDie)
 		?HitCountToHP:
-			LDA.b #<DamageAmountToDie>                                      ;>The amount of damage that would kill the sprite
-			STA !Freeram_SpriteHP_MaxHPLow,x                                ;>This also means its maximum health is this value.
-			SEC                                                             ;\RemainingHP = DamageAmountToDie - DamageCount
-			SBC <DamageCountSpriteTableRAM>,x                                  ;/
-			BCS ?.NotMoreThanEnoughDamage                                   ;>Failsafe, if DamageCount is greater than DamageAmountToDie, remaining HP cannot go negative, so...
-			?.MoreThanEnough
-				LDA #$00                                                ;>...Set it to 0.
-			?.NotMoreThanEnoughDamage
-				STA !Freeram_SpriteHP_CurrentHPLow,x                    ;>otherwise just write the non-negative difference as HP.
-			if !Setting_SpriteHP_TwoByte != 0
-				LDA #$00                                                ;\Rid high bytes.
-				STA !Freeram_SpriteHP_CurrentHPHi,x                     ;|(So far, there is never a sprite that stores a 16-bit damage counter)
-				STA !Freeram_SpriteHP_MaxHPHi,x                         ;/
+			if !Setting_SpriteHP_NoDisplaySMWSpriteHP == 0
+				LDA.b #<DamageAmountToDie>                                      ;>The amount of damage that would kill the sprite
+				STA !Freeram_SpriteHP_MaxHPLow,x                                ;>This also means its maximum health is this value.
+				SEC                                                             ;\RemainingHP = DamageAmountToDie - DamageCount
+				SBC <DamageCountSpriteTableRAM>,x                                  ;/
+				BCS ?.NotMoreThanEnoughDamage                                   ;>Failsafe, if DamageCount is greater than DamageAmountToDie, remaining HP cannot go negative, so...
+				?.MoreThanEnough
+					LDA #$00                                                ;>...Set it to 0.
+				?.NotMoreThanEnoughDamage
+					STA !Freeram_SpriteHP_CurrentHPLow,x                    ;>otherwise just write the non-negative difference as HP.
+				if !Setting_SpriteHP_TwoByte != 0
+					LDA #$00                                                ;\Rid high bytes.
+					STA !Freeram_SpriteHP_CurrentHPHi,x                     ;|(So far, there is never a sprite that stores a 16-bit damage counter)
+					STA !Freeram_SpriteHP_MaxHPHi,x                         ;/
+				endif
 			endif
 	endmacro
 	
 	macro IncreaseDamageCounter(DamageCountSpriteTableRAM, DamageAmount, DamageAmountToDie)
 		?Damage:
-		JSL SwitchHPDisplay
+		if !Setting_SpriteHP_NoDisplaySMWSpriteHP == 0
+			JSL SwitchHPDisplay
+		endif
 		LDA <DamageCountSpriteTableRAM>,x
 		CLC
 		ADC.b #<DamageAmount>
@@ -45,23 +49,25 @@ incsrc "Defines/GraphicalBarDefines.asm"
 	
 	macro IntroFill(IntroStateSpriteTableRAM)
 		?HandleIntro:
-			if !Setting_SpriteHP_BarAnimation
-				LDA <IntroStateSpriteTableRAM>,x
-				BNE ?.IntroDone
-				INC <IntroStateSpriteTableRAM>,x
-				TXA
-				CLC
-				ADC.b #!sprite_slots
-				STA !Freeram_SpriteHP_MeterState
-				LDA #$00
-				STA !Freeram_SpriteHP_BarAnimationFill,x
-				if !Setting_SpriteHP_BarChangeDelay
-					STA !Freeram_SpriteHP_BarAnimationTimer,x
+			if !Setting_SpriteHP_NoDisplaySMWSpriteHP == 0
+				if !Setting_SpriteHP_BarAnimation
+					LDA <IntroStateSpriteTableRAM>,x
+					BNE ?.IntroDone
+					INC <IntroStateSpriteTableRAM>,x
+					TXA
+					CLC
+					ADC.b #!sprite_slots
+					STA !Freeram_SpriteHP_MeterState
+					LDA #$00
+					STA !Freeram_SpriteHP_BarAnimationFill,x
+					if !Setting_SpriteHP_BarChangeDelay
+						STA !Freeram_SpriteHP_BarAnimationTimer,x
+					endif
+					?.IntroDone
+				else
+					TXA
+					STA !Freeram_SpriteHP_MeterState
 				endif
-				?.IntroDone
-			else
-				TXA
-				STA !Freeram_SpriteHP_MeterState
 			endif
 	endmacro
 
@@ -192,7 +198,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		
 			org $03CE13
 			if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
-				NOP #3					;>Remove delay damage (HP value only decreases when going back into pope after entering)
+				NOP #3					;>Remove delay damage (HP value only decreases when going back into pipe after entering)
 			else
 				INC.W !1534,X
 			endif
@@ -469,14 +475,16 @@ incsrc "Defines/GraphicalBarDefines.asm"
 	;Input:
 	; - X: current sprite slot
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	SwitchHPDisplay:
-		TXA
-		STA !Freeram_SpriteHP_MeterState
-		if and(!Setting_SpriteHP_BarAnimation, notequal(!Setting_SpriteHP_BarChangeDelay, 0))
-			LDA.b #!Setting_SpriteHP_BarChangeDelay
-			STA !Freeram_SpriteHP_BarAnimationTimer,x
-		endif
-		RTL
+	if !Setting_SpriteHP_NoDisplaySMWSpriteHP == 0
+		SwitchHPDisplay:
+			TXA
+			STA !Freeram_SpriteHP_MeterState
+			if and(!Setting_SpriteHP_BarAnimation, notequal(!Setting_SpriteHP_BarChangeDelay, 0))
+				LDA.b #!Setting_SpriteHP_BarChangeDelay
+				STA !Freeram_SpriteHP_BarAnimationTimer,x
+			endif
+			RTL
+	endif
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;Remove record effect, lesser-RAM-based and shorter edition
 	;
