@@ -168,7 +168,7 @@
 		<p>
 			Notes:
 			<ul>
-				<li>Define <kbd>!sprite_slots</kbd> is the number of sprite slots that exists. For LoROM, its 12, if SA-1, its 22.</li>
+				<li>Define <kbd>!sprite_slots</kbd> is the number of sprite slots that exists. For LoROM, its 12, if SA-1, its 22. Note that at the time of writing this, Pixi have <kbd>!SprSize</kbd> and not <kbd>!sprite_Slots</kbd>.</li>
 			</ul>
 		</p>
 		<p>
@@ -307,7 +307,7 @@
 			if and(!Setting_SpriteHP_DisplayGraphicalBar, !Setting_SpriteHP_BarAnimation)
 				TXA                                                                         ;\Set HP bar to intro-fill state of its corresponding sprite slot
 				CLC                                                                         ;|
-				ADC.b #!sprite_slots                                                        ;|
+				ADC.b #!SprSize                                                             ;|
 				STA !Freeram_SpriteHP_MeterState                                            ;/
 				LDA #$00                                                                    ;\Start the meter at 0%
 				STA !Freeram_SpriteHP_BarAnimationFill,x                                    ;/
