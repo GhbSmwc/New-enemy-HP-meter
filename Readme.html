@@ -194,7 +194,7 @@
 								From <kbd>!sprite_slots</kbd> to <kbd>(!sprite_slots*2)-1</kbd> is the same as above (subtract by <kbd>!sprite_slots</kbd> to obtain the sprite slot number) but for the <kbd>intro-fill</kbd> animation (bar appears empty, and fills up like a start of a boss fight). This only applies
 								if <kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd> and <kbd>!Setting_SpriteHP_BarAnimation</kbd> set to <kbd>1</kbd>.
 							</li>
-							<li><kbd>$FF</kbd> Means don't display the meter at all, note that this will write blank tiles every frame</li>
+							<li><kbd>$FF</kbd> Means don't display the meter at all, note that this will write blank tiles every frame.</li>
 							<li><kbd>$FE</kbd> is &ldquo;disabled&rdquo;, will only write blank tiles to clear the HP meter display once, then set itself to <kbd>$FD</kbd>. Make sure you do not set this to <kbd>$FE</kbd> every frame though.</li>
 							<li><kbd>$FD</kbd> is also &ldquo;disabled&rdquo;, but will not write anything on the spot the meter occupies (stops writing tiles here every frame, including blank tiles).</li>
 						</ul>
