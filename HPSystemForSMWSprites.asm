@@ -387,34 +387,36 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		WendyLemmyHitCountToHP:
 			%ConvertDamageAmountToHP(!1534, !Setting_SpriteHP_VanillaSprite_WendyLemmyHPAmount)
 			.HandleIntroFill
-				if !Setting_SpriteHP_BarAnimation
-					;%IntroFill(!1FD6) ;>This does not work because Wendy/Lemmy actually delete themselves (or simply reset almost all their sprite tables) each time they go back in the pipe.
-					LDA !Freeram_WendyLemmyIntroFlag
-					CMP #$25
-					BNE ..NoIntroFill
-					LDA #$00
-					STA !Freeram_WendyLemmyIntroFlag
-					TXA
-					CLC
-					ADC.b #!sprite_slots
-					STA !Freeram_SpriteHP_MeterState
-					LDA #$00
-					STA !Freeram_SpriteHP_BarAnimationFill,x
-					if !Setting_SpriteHP_BarChangeDelay
-						STA !Freeram_SpriteHP_BarAnimationTimer,x
+				if !Setting_SpriteHP_NoDisplaySMWSpriteHP == 0
+					if !Setting_SpriteHP_BarAnimation
+						;%IntroFill(!1FD6) ;>This does not work because Wendy/Lemmy actually delete themselves (or simply reset almost all their sprite tables) each time they go back in the pipe.
+						LDA !Freeram_WendyLemmyIntroFlag
+						CMP #$25
+						BNE ..NoIntroFill
+						LDA #$00
+						STA !Freeram_WendyLemmyIntroFlag
+						TXA
+						CLC
+						ADC.b #!sprite_slots
+						STA !Freeram_SpriteHP_MeterState
+						LDA #$00
+						STA !Freeram_SpriteHP_BarAnimationFill,x
+						if !Setting_SpriteHP_BarChangeDelay
+							STA !Freeram_SpriteHP_BarAnimationTimer,x
+						endif
+						..NoIntroFill
+					else
+						;%IntroFill(!1FD6) ;>This does not work because Wendy/Lemmy actually delete themselves (or simply reset almost all their sprite tables) each time they go back in the pipe.
+						LDA !Freeram_WendyLemmyIntroFlag
+						CMP #$25
+						BNE ..NoIntroFill
+						LDA #$00
+						STA !Freeram_WendyLemmyIntroFlag
+						TXA
+						STA !Freeram_SpriteHP_MeterState
+						
+						..NoIntroFill
 					endif
-					..NoIntroFill
-				else
-					;%IntroFill(!1FD6) ;>This does not work because Wendy/Lemmy actually delete themselves (or simply reset almost all their sprite tables) each time they go back in the pipe.
-					LDA !Freeram_WendyLemmyIntroFlag
-					CMP #$25
-					BNE ..NoIntroFill
-					LDA #$00
-					STA !Freeram_WendyLemmyIntroFlag
-					TXA
-					STA !Freeram_SpriteHP_MeterState
-					
-					..NoIntroFill
 				endif
 			.Restore
 				PHK				;\JSL-RTS trick.

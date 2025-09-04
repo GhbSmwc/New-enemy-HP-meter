@@ -79,7 +79,7 @@
 ;Settings
 	;HUD settings
 		;Notes:
-		;About XY positions:
+		;About XY tile positions:
 		;Position are in units of tiles, not pixels. XY must be integers with X ranging from 0-31.
 		;X increases when going rightwards, and Y increases when going downwards.
 		;Y ranges depending on status bar type you using:
@@ -91,6 +91,8 @@
 		; -- Top or Bottom: Y is always 0 as there is only a single row
 		; -- For double, then Y is either 0 for top or 1 for bottom.
 		; - For SMB3 status bar, Y is 0-3.
+		;
+		;XY positions are calculated to an address in StatusBarDefines.asm
 		
 		;Size of the HP:
 			;Size of the HP data:
@@ -118,7 +120,8 @@
 			;when set to. Only used when !Setting_SpriteHP_NumericalTextAlignment < 2.
 				!Setting_SpriteHP_NumericalPos_x = 21
 				!Setting_SpriteHP_NumericalPos_y = 0
-			;Position for right-aligned, when !Setting_SpriteHP_NumericalTextAlignment == 2.
+			;Position for right-aligned, when !Setting_SpriteHP_NumericalTextAlignment == 2. This occupies
+			;tiles at this position, and to the left.
 				!Setting_SpriteHP_NumericalPosRightAligned_x = 31
 				!Setting_SpriteHP_NumericalPosRightAligned_y = 0
 			;Tile properties for numbers
@@ -132,10 +135,10 @@
 				!Setting_SpriteHP_GraphicalBarPos_x = 23
 				!Setting_SpriteHP_GraphicalBarPos_y = 1
 			;These below affect how much fill capacity the bar has. This value is equal to LeftPieces + (MiddlePieces * MiddleLength) + RightPieces.
-			;If you have !Setting_SpriteHP_BarAnimation == 0, up to 255 is safe, otherwise up to 254 (255 is a special value to cancel out the animation).
+			;If you have !Setting_SpriteHP_BarAnimation == 0, up to 255 is safe.
 				;Number of pieces on each tile
-					!Setting_SpriteHP_GraphicalBar_LeftPieces                  = 3             ;\These will by default, set the RAM for the pieces for each section
-					!Setting_SpriteHP_GraphicalBar_MiddlePieces                = 8             ;|(note that these apply for both levels and overworlds)
+					!Setting_SpriteHP_GraphicalBar_LeftPieces                  = 3             ;\These are the amount of fill capacity of each part of the bar.
+					!Setting_SpriteHP_GraphicalBar_MiddlePieces                = 8             ;|
 					!Setting_SpriteHP_GraphicalBar_RightPieces                 = 3             ;/
 				;Length of bar (number of middle tiles). Full screen width is 32 tiles.
 					!Setting_SpriteHP_GraphicalBarMiddleLength           = 7
@@ -150,7 +153,7 @@
 					; 0 = Round to nearest
 					; 1 = Round down (bar may display 0 fill amount when !Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull isn't 1 or 3)
 					; 2 = Round up
-			;Fill direction. 0 = Left-to-right, 1 = Right-to-left
+			;Fill direction. 0 = Left-to-right, 1 = Right-to-left. Note that the XY position remains extending to the right reguardless of direction.
 				!Setting_SpriteHP_LeftwardsBar                       = 1
 			;Tile properties (X-flip for leftwards bar is already handled.)
 				!Setting_SpriteHP_BarProps_Page                      = 0  ;>Use only values 0-3
@@ -160,7 +163,8 @@
 				!Setting_SpriteHP_BarAnimation			= 1
 					;^0 = HP bar instantly updates when the enemy heals or take damage
 					;     (!Freeram_SpriteHP_BarRecord is no longer used).
-					; 1 = Shows animation (gradual change, rapid-flicker for previous and current HP).
+					; 1 = Shows animation (gradual change, rapid-flicker, transparent
+					;     effect to display previous and current HP fill amounts).
 
 				!Setting_SpriteHP_FillDelayFrames				= $00
 					;^Speed that the bar fills up. Only use these values:
@@ -182,6 +186,8 @@
 				!Setting_SpriteHP_BarChangeDelay				= 30
 					;^How many frames the record effect (transparent effect) hangs
 					; before shrinking down to current HP, up to 255 is allowed.
+					; Also applies to healing animation, where the meter shows
+					; a transparent part before filling that area up when enabled.
 					; Set to 0 to disable (will also disable !Freeram_SpriteHP_BarAnimationTimer
 					; from being used). Remember, the game runs 60 FPS. This also applies
 					; to healing should !Setting_SpriteHP_ShowHealedTransparent be enabled.
