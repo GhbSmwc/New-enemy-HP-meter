@@ -479,12 +479,18 @@ incsrc "Defines/GraphicalBarDefines.asm"
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	if !Setting_SpriteHP_NoDisplaySMWSpriteHP == 0
 		SwitchHPDisplay:
+			LDA !Freeram_SpriteHP_MeterState
+			CMP #$FE
+			BEQ .Locked
+			CMP #$FD
+			BEQ .Locked
 			TXA
 			STA !Freeram_SpriteHP_MeterState
 			if and(!Setting_SpriteHP_BarAnimation, notequal(!Setting_SpriteHP_BarChangeDelay, 0))
 				LDA.b #!Setting_SpriteHP_BarChangeDelay
 				STA !Freeram_SpriteHP_BarAnimationTimer,x
 			endif
+			.Locked
 			RTL
 	endif
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

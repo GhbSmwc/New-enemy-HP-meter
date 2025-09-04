@@ -20,6 +20,14 @@
 	; --- When ranging from 0 to (!sprite_slots-1), will display HP. Each value here corresponds to a sprite slot index.
 	; --- When ranging from !sprite_slots to (!sprite_slots*2)-1, is the same as above, but for "IntroFill" mode (when
 	;     bosses appears, meter appears initially empty and fills up). Only used if !Setting_SpriteHP_BarAnimation == 1.
+	; --- When equal to $FF, will not display at all (will write blank tiles every frame)
+	; --- When equal to $FE, will be "disabled", it will clear the tiles only this current frame, then sets itself to
+	;     $FD*. Make sure you don't set this to $FE every frame though.
+	; --- When equal to $FD, will also be "disabled", this will not write anything on the spot the HP meter occupies
+	;     (stops writing tiles here every frame, including blank tiles).
+	;
+	;  Disable mode is useful if you need a HUD element on that spot where the HP meter is placed on. This also prevents
+	;  IntroFill and enemy damage from displaying the HP meter.
 	;
 	; - Define: !Freeram_SpriteHP_CurrentHPLow
 	; -- BytesUsed: !sprite_slots

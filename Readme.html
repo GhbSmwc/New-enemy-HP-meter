@@ -105,7 +105,7 @@
 			Status bar/HUD enhancement patches, this ASM package by default assumes you are using the <a href="https://www.smwcentral.net/?p=section&a=details&id=19247">Super Status Bar patch</a>.
 			Vanilla status bar is way-too limited.
 		</li>
-		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=39887">Address Tracker</a>, if you have trouble knowing if there are RAM conflicts.</li>
+		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=39887">Address Tracker</a>, if you have trouble knowing if there are RAM conflicts (two unrelated resources uses the same addresses at the same time).</li>
 	</ul>
 	<h2>Documentations of other ASM resources</h2>
 	<ul>
@@ -186,8 +186,20 @@
 					<th><kbd>!Freeram_SpriteHP_MeterState</kbd></th>
 					<td class="Center">State</td>
 					<td class="NoLineBreak Center">1</td>
-					<td>Sprite slot number (ranges from <kbd>$00</kbd> to <kbd>!sprite_slots-1</kbd>) to represent HP of that sprite. <kbd>$FF</kbd> will not display the meter. When having both <kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd> and <kbd>!Setting_SpriteHP_BarAnimation</kbd> set to <kbd>1</kbd>,
-					more values of that RAM are used (a new range, ranging from <kbd>!sprite_slots</kbd> to <kbd>(!sprite_slots*2)-1</kbd>, each value here corresponds to slot like the range before) for the &ldquo;intro-fill&rdquo; mode (used for an animation that plays when a boss appears, the bar appears with it filling from 0% to 100%).</td>
+					<td>
+						HP meter state, the values are:
+						<ul>
+							<li>From <kbd>$00</kbd> to <kbd>!sprite_slots-1</kbd> will make the bar visible and display HP of the sprite of the slot corresponding to this value.</li>
+							<li>
+								From <kbd>!sprite_slots</kbd> to <kbd>(!sprite_slots*2)-1</kbd> is the same as above (subtract by <kbd>!sprite_slots</kbd> to obtain the sprite slot number) but for the <kbd>intro-fill</kbd> animation (bar appears empty, and fills up like a start of a boss fight). This only applies
+								if <kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd> and <kbd>!Setting_SpriteHP_BarAnimation</kbd> set to <kbd>1</kbd>.
+							</li>
+							<li><kbd>$FF</kbd> Means don't display the meter at all, note that this will write blank tiles every frame</li>
+							<li><kbd>$FE</kbd> is &ldquo;disabled&rdquo;, will only write blank tiles to clear the HP meter display once, then set itself to <kbd>$FD</kbd>. Make sure you do not set this to <kbd>$FE</kbd> every frame though.</li>
+							<li><kbd>$FD</kbd> is also &ldquo;disabled&rdquo;, but will not write anything on the spot the meter occupies (stops writing tiles here every frame, including blank tiles).</li>
+						</ul>
+						Note that when disabled, you can use that spot where the meter occupies without it being overwritten. It also prevents displaying the meter if the intro-fill animation plays, as well as displaying the meter when damaging enemies.
+					</td>
 					<td>Always</td>
 				</tr>
 				<tr>
@@ -258,7 +270,7 @@
 	<p>Because HP-related defines are heavily involved here, it's important to include the define files at the top of your sprite's ASM file, like this:
 <div class="CodeBlock" style="height: 40px;"><pre>	incsrc "../EnemyHPMeterDefines.asm"
 	incsrc "../GraphicalBarDefines.asm"</pre></div><br>
-	Else you get define not being defined errors. Then after the include-defines, have the macros being set/defined (anything with a <span class="NoLineBreak">macro MacroName(Pram1, Pram2...) ... endmacro</span>).</p>
+	Else you get define not being defined errors. Then after the include-defines, have the macros (the ones on this HTML file) being set/defined (anything with a <span class="NoLineBreak">macro MacroName(Pram1, Pram2...) ... endmacro</span>).</p>
 	
 	<p>The following stuff is transferring its health and damage RAM to this resource's HP RAM so that it gets displayed. Yes you can modify the custom sprite not to use its own vanilla sprite table RAM
 	at all and instead directly use this ASM resources' current and max HP RAM (in a way similar to the provided example sprite), however that comes with caveats and may need further edits:
@@ -276,30 +288,39 @@
 	</p>
 	
 	<h3><a href="#ToC_MakeSpritesDisplayHP_BossIntroFill" id="JMPTo_MakeSpritesDisplayHP_BossIntroFill">^</a>(Optional) Boss intro-fill</h3>
-	<p>For boss sprites, to have an optional &ldquo;intro-fill&rdquo; effect (meter automatically appears empty and fills up at the start of a fight), run this code under a sprite init (or under main but make sure
-	it does not execute every frame, (for if you want the animation after a cutscene after the sprite spawns)). Note that you must have <kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd> and
+	<p>For boss sprites, to have an optional &ldquo;intro-fill&rdquo; effect (meter automatically appears empty and fills up at the start of a fight), run this code under a sprite init, or under main (if you want the
+	animation after a cutscene after the sprite spawns, but make sure it does not execute every frame) by calling it like this: <kbd>%IntroHPBarFillAnimation()</kbd>. Note that you must have <kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd> and
 	<kbd>!Setting_SpriteHP_BarAnimation</kbd> be set to 1 (else it just appears full without animation):
-<div class="CodeBlock" style="height: 250px;"><pre>
+<div class="CodeBlock" style="height: 460px;"><pre>
 	;Have the following as an option on your custom sprite if you are willing to submit it to SMWC.
 		!IntroFill = 1                                                      ;&gt;0 = no, 1 = yes (switch display to boss sprite with filling animation or simply a full bar if animation disabled).
 	
 
-	if !IntroFill
-		if and(!Setting_SpriteHP_DisplayGraphicalBar, !Setting_SpriteHP_BarAnimation)
-			TXA                                                 ;\Take the sprite slot number of the currently processed sprite, add by #!SprSize (12 for LoROM or 22 for SA-1),
-			CLC                                                 ;|to set the meter state to the corresponding slot number but in "intro-fill" mode (not to show rapid-flicker healing animation)
-			ADC.b #!SprSize                                     ;|&gt;Pixi stores the number of sprite slots as a define !SprSize
-			STA !Freeram_SpriteHP_MeterState                    ;/
-			LDA #$00                                            ;\Set the bar to initally show empty
-			STA !Freeram_SpriteHP_BarAnimationFill,x            ;/
-			if !Setting_SpriteHP_BarChangeDelay
-				STA !Freeram_SpriteHP_BarAnimationTimer,x   ;&gt;Zero out the pause timer of the animation so that it plays the SFX of the filling animation properly.
+	macro IntroHPBarFillAnimation()
+		?IntroHPBarFill:
+		if !IntroFill
+			LDA !Freeram_SpriteHP_MeterState                                                    ;\First check if the meter is locked from displaying
+			CMP #$FE                                                                            ;|if so, then don't set the meter state
+			BEQ ?.Disabled                                                                      ;|
+			CMP #$FD                                                                            ;|
+			BEQ ?.Disabled                                                                      ;/
+			if and(!Setting_SpriteHP_DisplayGraphicalBar, !Setting_SpriteHP_BarAnimation)
+				TXA                                                                         ;\Set HP bar to intro-fill state of its corresponding sprite slot
+				CLC                                                                         ;|
+				ADC.b #!sprite_slots                                                        ;|
+				STA !Freeram_SpriteHP_MeterState                                            ;/
+				LDA #$00                                                                    ;\Start the meter at 0%
+				STA !Freeram_SpriteHP_BarAnimationFill,x                                    ;/
+				if !Setting_SpriteHP_BarChangeDelay                                         ;
+					STA !Freeram_SpriteHP_BarAnimationTimer,x                           ;&gt;Set timer to 0 to make sure the animation plays correctly (allow SFX)
+				endif                                                                       ;
+			else
+				TXA
+				STA !Freeram_SpriteHP_MeterState
 			endif
-		else
-			TXA                                                 ;\If no animation, just simply switch to the boss's HP meter automatically.
-			STA !Freeram_SpriteHP_MeterState                    ;/
+			?.Disabled
 		endif
-	endif</pre></div>
+	endmacro</pre></div>
 	</p>
 	<h3><a href="#ToC_MakeSpritesDisplayHP_GetHPValue" id="JMPTo_MakeSpritesDisplayHP_GetHPValue">^</a>Obtaining HP value...</h3>
 	<p>This covers on how to extract data from a sprite table that is being used to track the amount of damage or health, then storing that data to <kbd>!Freeram_SpriteHP_CurrentHPLow</kbd>, <kbd>!Freeram_SpriteHP_MaxHPLow</kbd>
@@ -524,7 +545,7 @@ Change that to this:
 				on what RAMs are being used. If you have trouble knowing if a RAM conflicts, use the Address Tracker as mentioned in the recommended at the top of this readme.</li>
 				<li>Hijack conflicts. This should only be possible if you patch <kbd>HPSystemForSMWSprites.asm</kbd> along with 3rd party patches that also modifies SMW's sprites with overlapping hijacks with those said patches (such as
 				<a href="https://www.smwcentral.net/?p=section&a=details&id=20847">&ldquo;FireBall HP&rdquo;</a> patch by Bio).</li>
-				<li>Faulty code that you have found that I didn't catch (most likely if you haven't installed any other ASM resource). PM me or the moderators on fixing a newly discovered bug.</li>
+				<li>Faulty code that you have found that I didn't catch (most likely if you haven't installed any other ASM resource). PM me or the moderators on fixing a newly discovered bug. If I'm inactive, feel free to update it.</li>
 			</ul>
 		
 		</li>

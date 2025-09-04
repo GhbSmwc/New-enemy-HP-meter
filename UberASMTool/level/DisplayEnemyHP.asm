@@ -483,6 +483,19 @@ main:
 		endif
 	BRA .Done
 	.ClearHPDisplay
+		LDA !Freeram_SpriteHP_MeterState
+		CMP #$FF
+		BEQ ..ClearEveryFrame
+		CMP #$FE
+		BEQ ..ClearItselfOnlyOnce
+		CMP #$FD
+		BEQ ..AlreadyClearedOnce
+		
+		..ClearItselfOnlyOnce
+			LDA #$FD
+			STA !Freeram_SpriteHP_MeterState
+		..ClearEveryFrame
+		
 		..ClearNumerical
 			if !Setting_SpriteHP_DisplayNumerical
 				%ClearNumerical()
@@ -499,6 +512,7 @@ main:
 						DEX #!StatusbarFormat
 						BPL ...Loop
 			endif
+		..AlreadyClearedOnce
 	.Done
 	PLB
 	RTL

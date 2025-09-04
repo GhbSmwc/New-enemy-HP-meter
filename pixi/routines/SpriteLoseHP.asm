@@ -13,6 +13,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ?LoseHP:
 	PHY
+	LDA !Freeram_SpriteHP_MeterState
+	CMP #$FE
+	BEQ ?.Disabled
+	CMP #$FD
+	BEQ ?.Disabled
 	if !Setting_SpriteHP_BarAnimation == 0
 		TXA
 		STA !Freeram_SpriteHP_MeterState
@@ -38,6 +43,7 @@
 		PLA
 		STA $00
 	endif
+	?.Disabled
 	if and(notequal(!Setting_SpriteHP_BarAnimation, 0), notequal(!Setting_SpriteHP_BarChangeDelay, 0))
 		LDA.b #!Setting_SpriteHP_BarChangeDelay		;\Freeze damage indicator (this makes the bar animation hangs before decreasing towards current HP fill amount)
 		STA !Freeram_SpriteHP_BarAnimationTimer,x	;/
