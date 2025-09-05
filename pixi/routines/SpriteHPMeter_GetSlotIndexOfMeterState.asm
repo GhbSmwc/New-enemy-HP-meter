@@ -5,18 +5,20 @@
 ;on is on the same slot number as the currently processed sprite.
 ;
 ;Output:
-; - !Scratchram_SpriteHP_SpriteSlotToDisplay: Sprite slot index number
+; - !Scratchram_SpriteHP_SpriteSlotToDisplay: Sprite slot index number. $FF means invalid.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	?GetHPMeterSlotIndexNumber:
-		LDA #$FF
-		CMP !Freeram_SpriteHP_MeterState
-		BEQ ?.NonIntroFillMode
 		LDA !Freeram_SpriteHP_MeterState
 		CMP.b #!SprSize
-		BCC ?.NonIntroFillMode
+		BCC ?.Normal				;0 to 11 or 0 to 21
+		CMP.b #(!SprSize*2)
+		BCC ?.IntroFillMode			;12 to 23 or 22 to 43
+		LDA #$FF
+		STA !Scratchram_SpriteHP_SpriteSlotToDisplay
+		RTL
 		?.IntroFillMode
 			SEC
 			SBC.b #!SprSize
-		?.NonIntroFillMode
+		?.Normal
 		STA !Scratchram_SpriteHP_SpriteSlotToDisplay
 		RTL

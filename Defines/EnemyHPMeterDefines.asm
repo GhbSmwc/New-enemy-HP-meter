@@ -283,7 +283,7 @@
 			;^Labels, structs, functions, and macros, they cannot be redefined. And includeonce fails if there are two involved
 			; ASM files incsrcs with a different path to the same ASM file in which that file uses includeonce:
 			; https://github.com/RPGHacker/asar/issues/287
-			!AddressLocator #= !Freeram_SpriteHP_SpriteHPData
+			!AddressLocator_SpriteHPData #= !Freeram_SpriteHP_SpriteHPData
 			macro MacroAssignDefineOneAfterAnother(Define_Name, Size, Define_Name_Offseter)
 				;This macro assigns Define_Name to an address, then offsets (Plus Size)
 				;to the first byte after the last byte of Define_Name. This is useful
@@ -304,20 +304,21 @@
 			
 			;The following also needs to have each of them be calling macros once, else they end up being set again to another,
 			;different RAM address.
-				%MacroAssignDefineOneAfterAnother(Freeram_SpriteHP_MeterState, 1, AddressLocator)
-				%MacroAssignDefineOneAfterAnother(Freeram_SpriteHP_CurrentHPLow, !sprite_slots, AddressLocator)
-				%MacroAssignDefineOneAfterAnother(Freeram_SpriteHP_MaxHPLow, !sprite_slots, AddressLocator)
+				%MacroAssignDefineOneAfterAnother(Freeram_SpriteHP_MeterState, 1, AddressLocator_SpriteHPData)
+				%MacroAssignDefineOneAfterAnother(Freeram_SpriteHP_CurrentHPLow, !sprite_slots, AddressLocator_SpriteHPData)
+				%MacroAssignDefineOneAfterAnother(Freeram_SpriteHP_MaxHPLow, !sprite_slots, AddressLocator_SpriteHPData)
 				if !Setting_SpriteHP_TwoByte
-					%MacroAssignDefineOneAfterAnother(Freeram_SpriteHP_CurrentHPHi, !sprite_slots, AddressLocator)
-					%MacroAssignDefineOneAfterAnother(Freeram_SpriteHP_MaxHPHi, !sprite_slots, AddressLocator)
+					%MacroAssignDefineOneAfterAnother(Freeram_SpriteHP_CurrentHPHi, !sprite_slots, AddressLocator_SpriteHPData)
+					%MacroAssignDefineOneAfterAnother(Freeram_SpriteHP_MaxHPHi, !sprite_slots, AddressLocator_SpriteHPData)
 				endif
 				if !Setting_SpriteHP_BarAnimation
-					%MacroAssignDefineOneAfterAnother(Freeram_SpriteHP_BarAnimationFill, !sprite_slots, AddressLocator)
+					%MacroAssignDefineOneAfterAnother(Freeram_SpriteHP_BarAnimationFill, !sprite_slots, AddressLocator_SpriteHPData)
 					if !Setting_SpriteHP_BarChangeDelay
-						%MacroAssignDefineOneAfterAnother(Freeram_SpriteHP_BarAnimationTimer, !sprite_slots, AddressLocator)
+						%MacroAssignDefineOneAfterAnother(Freeram_SpriteHP_BarAnimationTimer, !sprite_slots, AddressLocator_SpriteHPData)
 					endif
 				endif
-			!MacroGuard_SpriteHPData = 1
+			;This tells asar that setting these defines are done, since includeonce fails if two ASMs calls this same define file from different incsrc paths.
+				!MacroGuard_SpriteHPData = 1
 		endif
 	;Get status bar addresses
 		!Setting_SpriteHP_NumericalPos_XYPos = VanillaStatusBarXYToAddress(!Setting_SpriteHP_NumericalPos_x, !Setting_SpriteHP_NumericalPos_y, !RAM_0EF9)
@@ -350,8 +351,8 @@
 		endif
 	if !Setting_SpriteHP_DisplaySpriteHPDataOnConsole
 		print "---------------------------------------------------------------------------------"
-		print "\!Freeram_SpriteHP_SpriteHPData's Total bytes used: ", dec(!AddressLocator-!Freeram_SpriteHP_SpriteHPData)
-		print "Range: $", hex(!Freeram_SpriteHP_SpriteHPData), "~$", hex(!AddressLocator-1)
+		print "\!Freeram_SpriteHP_SpriteHPData's Total bytes used: ", dec(!AddressLocator_SpriteHPData-!Freeram_SpriteHP_SpriteHPData)
+		print "Range: $", hex(!Freeram_SpriteHP_SpriteHPData), "~$", hex(!AddressLocator_SpriteHPData-1)
 		print "---------------------------------------------------------------------------------"
 		print "\!Freeram_SpriteHP_SpriteHPData (Address Tracker format)"
 		print "---------------------------------------------------------------------------------"
