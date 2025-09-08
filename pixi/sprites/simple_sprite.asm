@@ -21,7 +21,7 @@
 	!Setting_StompBounceBack	= 1	;>bounce player away when stomping: 0 = false, 1 = true.
 	!Setting_DamagePlayer		= 1	;>0 = harmless, 1 = damage player on contact (besides stomping)
 	
-	!HealingPeriodicSpd	= $7F		;>pick ONLY these values: $00 (frequent), $01, $03, $07, $0F, $1F, $3F,$7F, $FF (not as frequent). This uses $7E0014.
+	!HealCooldownAmount	= 120		;>Heal cooldown, in frames (1/60th of a second). Up to 4.25 seconds (255 frames) of cooldown allowed.
 	!HealingSfxNum		= $0A		;\sound effects played when healing.
 	!HealingSfxRam		= $1DF9|!Base2	;/
 	;These below here are recovery and damages.
@@ -47,6 +47,7 @@
 	!SPRITE_STATUS		= !14C8
 	!InvulnerabilityTimer	= !1540		;>flashing animation + invulnerability timer.
 	!SPR_OBJ_STATUS		= !1588
+	!SPR_HealCooldown	= !1558
 
 	!HPLowEnoughToShowAltGfx	= !HPToStart/2		;>HP to get below to start showing alternative graphics
 	!TILE				= $00
@@ -81,10 +82,16 @@
 			?.Disabled
 		endif
 	endmacro
+	macro SpriteDamage()
+		%SpriteLoseHP()
+		if !HealingAmount
+			LDA.b #!HealCooldownAmount
+			STA !SPR_HealCooldown,x
+		endif
+	endmacro
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; sprite init JSL
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 print "INIT ",pc
 	Mainlabel:
 	.StartWithFullHP
@@ -151,9 +158,13 @@ SPRITE_CODE_START:
 			SBC !Freeram_SpriteHP_MaxHPHi,x
 		endif
 		BCS +						;/>If HP is full, don't do healing effect.
-		LDA $14						;\frame counter modulo by powers of 2 value
-		AND.b #!HealingPeriodicSpd			;|
-		BNE +						;/>if remainder isn't 0, don't heal on this time
+;		LDA $14						;\frame counter modulo by powers of 2 value
+;		AND.b #!HealingPeriodicSpd			;|
+;		BNE +						;/>if remainder isn't 0, don't heal on this time
+		LDA !SPR_HealCooldown,x
+		BNE +
+		LDA.b #!HealCooldownAmount
+		STA !SPR_HealCooldown,x
 		REP #$20					;\heal sprite
 		LDA.w #!HealingAmount				;|
 		STA $00						;|
@@ -228,7 +239,7 @@ SPRITE_CODE_START:
 			LDA.w #!StompDamage			;\Amount of damage
 			STA $00					;/
 			SEP #$20
-			%SpriteLoseHP()				;>Lose HP (handles bar animation and other effects). Note that this alone only subtracts HP, does not handle death sequence.
+			%SpriteDamage()				;>Lose HP (handles bar animation and other effects). Note that this alone only subtracts HP, does not handle death sequence.
 			LDA !Freeram_SpriteHP_CurrentHPLow,x	;\If HP != 0, don't kill
 			if !Setting_SpriteHP_TwoByte
 				ORA !Freeram_SpriteHP_CurrentHPHi,x	;|
@@ -282,7 +293,10 @@ SPRITE_CODE_START:
 
 			..Loop
 				LDA $170B|!Base2,y	;>Extended sprite number
-				BEQ ...NextSlot		;>next if not-existent
+;				BEQ ...NextSlot		;>next if not-existent
+				BNE +
+				JMP ...NextSlot
+				+
 				CMP #$05		;\Player's fireball
 				BEQ ...Fireball		;/
 				CMP #$11		;\Yoshi's fireball after eating
@@ -334,7 +348,7 @@ SPRITE_CODE_START:
 					....Damage
 						LDA.b #10				;\Just to show the blinking and in case if projectile penetrates.
 						STA !InvulnerabilityTimer,x		;/
-						%SpriteLoseHP()				;>Lose HP
+						%SpriteDamage()				;>Lose HP
 						LDA !Freeram_SpriteHP_CurrentHPLow,x		;\If HP != 0, don't kill
 						if !Setting_SpriteHP_TwoByte
 							ORA !Freeram_SpriteHP_CurrentHPHi,x		;|
@@ -408,7 +422,7 @@ SPRITE_CODE_START:
 					LDA.w #!BounceDamage	;\Damage from bounce blocks
 					STA $00			;/
 					SEP #$20
-					%SpriteLoseHP()			;>Lose HP
+					%SpriteDamage()			;>Lose HP
 					LDA !Freeram_SpriteHP_CurrentHPLow,x	;\If HP != 0, don't kill
 					if !Setting_SpriteHP_TwoByte
 						ORA !Freeram_SpriteHP_CurrentHPHi,x	;|
@@ -510,7 +524,7 @@ SPRITE_CODE_START:
 				LDA.w #!CarryableKickedSpr	;\The damage
 				STA $00				;/
 				SEP #$20
-				%SpriteLoseHP()			;>Lose HP
+				%SpriteDamage()			;>Lose HP
 				LDA !Freeram_SpriteHP_CurrentHPLow,x	;\If HP != 0, don't kill
 				if !Setting_SpriteHP_TwoByte
 					ORA !Freeram_SpriteHP_CurrentHPHi,x	;|
@@ -577,7 +591,7 @@ SPRITE_CODE_START:
 			LDA.w #!CapeSpinDamage		;\Amount of damage
 			STA $00				;/
 			SEP #$20
-			%SpriteLoseHP()			;>Lose HP
+			%SpriteDamage()			;>Lose HP
 			LDA !Freeram_SpriteHP_CurrentHPLow,x	;\If HP != 0, don't kill
 			if !Setting_SpriteHP_TwoByte
 				ORA !Freeram_SpriteHP_CurrentHPHi,x	;|
@@ -861,11 +875,11 @@ SpinjumpKillSprite:
 Heal:
 	.StoreHealedValue
 	if !Setting_SpriteHP_TwoByte != 0 ;>maths are different depending if you wanted 2-byte HP or not.
-		LDA !Freeram_SpriteHP_CurrentHPLow,x		;\low byte
+		LDA !Freeram_SpriteHP_CurrentHPLow,x	;\low byte
 		CLC					;|
 		ADC $00					;|>ADC sets carry if unsigned overflow happens
 		STA $00					;/
-		LDA !Freeram_SpriteHP_CurrentHPHi,x		;\high byte
+		LDA !Freeram_SpriteHP_CurrentHPHi,x	;\high byte
 		ADC $01					;|>ADC adds an additional 1 when overflowed
 		STA $01					;/
 		BCS .Maxed				;>if exceeds 65535

@@ -20,6 +20,10 @@ Thing(s) to fix:
  --Added a new state for the HP meter - disabled, to allow re-using the space where the HP meter is at
    and preventing intro-fill and enemy damages from displaying the meter.
  -Fixed the test sprite's loop with extended sprites looping starting at index "$10-1" instead of "10-1".
+ -Fixed a bug with the test sprite could double-heal if $9D is set on the frame $14 is on a value the sprite
+  would heal. This happens when the player takes damage on the frame it heals, presumably because when the
+  damage animation ends, $9D is cleared while $14 hasn't been incremented yet, so the sprite code runs after
+  this and healed again.
 
 3/27/2019 2.5.24 Moved codes to shared subroutines and new features.
  -Moved major routines to shared subroutines patch due to ease of use and that most of GHB's code (mainly the
