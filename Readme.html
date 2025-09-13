@@ -500,10 +500,10 @@ Test:
         LDA #$01
         STA $00
     endif
-    %SpriteLoseHP()             ;Reflect the damage over to the sprite HP data (yes, the HP data is already synced via macro call of "ConvertDamageAmountToHP", however this may only happen before this code, which may cause 1-frame off-sync)
-    LDA !1534,x                 ;\ If it has incremented to the "max", do death animation.
-    CMP.b #!HitPoints           ; |
-    BEQ SpriteDead              ;/
+    JSL !SharedSub_SpriteHPDamage             ;Reflect the damage over to the sprite HP data (yes, the HP data is already synced via macro call of "ConvertDamageAmountToHP", however this may only happen before this code, which may cause 1-frame off-sync)
+    LDA !1534,x                               ;\ If it has incremented to the "max", do death animation.
+    CMP.b #!HitPoints                         ; |
+    BEQ SpriteDead                            ;/
 </pre></div><br>
 	The same goes with if it have a health counter rather than a damage counter. For example, the Spiny Boss's damage code (yeah, some of the comments are incorrect, such as &ldquo;Increase&rdquo; when it supposed to say &ldquo;Decrease&rdquo;.):<br>
 <div class="CodeBlock" style="height: 60px"><pre>    DEC !sprite_health,x        ; Increase hit counter and...
@@ -520,11 +520,11 @@ Test:
         LDA #$01
         STA $00
     endif
-    %SpriteLoseHP()
+    JSL !SharedSub_SpriteHPDamage
     LDA !sprite_health,x        ; \ Check if the sprite has been hit 3 times
     BNE .justHit</pre></div><br>
     
-	Be careful that if scratch RAM <kbd>$00~$01</kbd> was used before and after here and needs to be retained, you need to preserve it before you write to <kbd>$00~$01</kbd> and restore it after <kbd>%SpriteLoseHP()</kbd>, or place it in an area where <kbd>$00~$01</kbd> is not used at all. For preserving values
+	Be careful that if scratch RAM <kbd>$00~$01</kbd> was used before and after here and needs to be retained, you need to preserve it before you write to <kbd>$00~$01</kbd> and restore it after <kbd>JSL !SharedSub_SpriteHPDamage</kbd>, or place it in an area where <kbd>$00~$01</kbd> is not used at all. For preserving values
 	it shoud look like this:
 <div class="CodeBlock" style="height: 390px"><pre>    ;[...]
     if !Setting_SpriteHP_TwoByte
@@ -540,7 +540,7 @@ Test:
         LDA #$01
         STA $00
     endif
-    %SpriteLoseHP()
+    JSL !SharedSub_SpriteHPDamage
     if !Setting_SpriteHP_TwoByte
         REP #$20
         PLA                     ;\Restore $00~$01 from the stack
@@ -578,7 +578,7 @@ Change that to this:
 	if !Setting_SpriteHP_TwoByte
 		STZ $01
 	endif
-	%SpriteLoseHP()
+	JSL !SharedSub_SpriteHPDamage
 	TYA
 	CLC
 	ADC !1528,x
@@ -587,7 +587,7 @@ Change that to this:
 	;[...]
 </pre></div><br>
 	If there are multiple instances of increasing/decreasing the RAM (espically if it doesn't utilizes a subroutine to merge them into one), then every one of them should be changed to include setting RAM <kbd>$00</kbd> (<kbd>$00~$01</kbd> if <kbd>!Setting_SpriteHP_TwoByte</kbd> is set to <kbd>1</kbd>)
-	and then calling <kbd>%SpriteLoseHP()</kbd> so all damage types will perform the animation (if you enabled it) and other effects (such as switching the health meter to the sprite you dealt damage to).
+	and then calling <kbd>JSL !SharedSub_SpriteHPDamage</kbd> so all damage types will perform the animation (if you enabled it) and other effects (such as switching the health meter to the sprite you dealt damage to).
 	</p>
 	<hr>
 	<h2><a href="#ToC_Notes" id="JMPTo_Notes">^</a>Notes</h2>
