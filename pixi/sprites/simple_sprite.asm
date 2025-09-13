@@ -14,7 +14,7 @@
 	;was needed:
 		!sa1 = !SA1		;>case sensitive.
 		!sprite_slots = !SprSize
-
+	incsrc "../SubroutineDefs.asm"
 	incsrc "../EnemyHPMeterDefines.asm"
 	incsrc "../GraphicalBarDefines.asm"
 	
@@ -83,7 +83,7 @@
 		endif
 	endmacro
 	macro SpriteDamage()
-		%SpriteLoseHP()
+		JSL !SharedSub_SpriteHPDamage
 		if !HealingAmount
 			LDA.b #!HealCooldownAmount
 			STA !SPR_HealCooldown,x
@@ -239,7 +239,7 @@ SPRITE_CODE_START:
 			LDA.w #!StompDamage			;\Amount of damage
 			STA $00					;/
 			SEP #$20
-			%SpriteDamage()				;>Lose HP (handles bar animation and other effects). Note that this alone only subtracts HP, does not handle death sequence.
+			JSL !SharedSub_SpriteHPDamage				;>Lose HP (handles bar animation and other effects). Note that this alone only subtracts HP, does not handle death sequence.
 			LDA !Freeram_SpriteHP_CurrentHPLow,x	;\If HP != 0, don't kill
 			if !Setting_SpriteHP_TwoByte
 				ORA !Freeram_SpriteHP_CurrentHPHi,x	;|
@@ -348,7 +348,7 @@ SPRITE_CODE_START:
 					....Damage
 						LDA.b #10				;\Just to show the blinking and in case if projectile penetrates.
 						STA !InvulnerabilityTimer,x		;/
-						%SpriteDamage()				;>Lose HP
+						JSL !SharedSub_SpriteHPDamage				;>Lose HP
 						LDA !Freeram_SpriteHP_CurrentHPLow,x		;\If HP != 0, don't kill
 						if !Setting_SpriteHP_TwoByte
 							ORA !Freeram_SpriteHP_CurrentHPHi,x		;|
@@ -422,7 +422,7 @@ SPRITE_CODE_START:
 					LDA.w #!BounceDamage	;\Damage from bounce blocks
 					STA $00			;/
 					SEP #$20
-					%SpriteDamage()			;>Lose HP
+					JSL !SharedSub_SpriteHPDamage			;>Lose HP
 					LDA !Freeram_SpriteHP_CurrentHPLow,x	;\If HP != 0, don't kill
 					if !Setting_SpriteHP_TwoByte
 						ORA !Freeram_SpriteHP_CurrentHPHi,x	;|
@@ -524,7 +524,7 @@ SPRITE_CODE_START:
 				LDA.w #!CarryableKickedSpr	;\The damage
 				STA $00				;/
 				SEP #$20
-				%SpriteDamage()			;>Lose HP
+				JSL !SharedSub_SpriteHPDamage			;>Lose HP
 				LDA !Freeram_SpriteHP_CurrentHPLow,x	;\If HP != 0, don't kill
 				if !Setting_SpriteHP_TwoByte
 					ORA !Freeram_SpriteHP_CurrentHPHi,x	;|
@@ -591,7 +591,7 @@ SPRITE_CODE_START:
 			LDA.w #!CapeSpinDamage		;\Amount of damage
 			STA $00				;/
 			SEP #$20
-			%SpriteDamage()			;>Lose HP
+			JSL !SharedSub_SpriteHPDamage		;>Lose HP
 			LDA !Freeram_SpriteHP_CurrentHPLow,x	;\If HP != 0, don't kill
 			if !Setting_SpriteHP_TwoByte
 				ORA !Freeram_SpriteHP_CurrentHPHi,x	;|

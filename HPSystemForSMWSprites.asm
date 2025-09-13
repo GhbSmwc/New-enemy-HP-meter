@@ -1,3 +1,4 @@
+incsrc "Defines/SubroutineDefs.asm"
 incsrc "Defines/SA1StuffDefines.asm"
 incsrc "Defines/EnemyHPMeterDefines.asm"
 incsrc "Defines/GraphicalBarDefines.asm"

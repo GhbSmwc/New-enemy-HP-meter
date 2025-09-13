@@ -2,6 +2,34 @@
 	incsrc "SharedSub_Defines/NumberDisplayRoutinesDefines.asm"
 	incsrc "SharedSub_Defines/StatusBarDefines.asm"
 	incsrc "SharedSub_Defines/EnemyHPMeterDefines.asm"
+	
+	
+;Subroutine list:
+; - MathDiv
+; - MathDiv32_16
+; - MathMul16_16
+; - SixteenBitHexDecDivision
+; - RemoveLeadingZeroes16Bit
+; - SuppressLeadingZeros
+; - WriteStringDigitsToHUD
+; - WriteStringDigitsToHUDFormat2
+; - ConvertToRightAligned
+; - ConvertToRightAlignedFormat2
+; - CalculateGraphicalBarPercentage
+; - CalculateGraphicalBarPercentageRoundUp
+; - CalculateGraphicalBarPercentageRoundDown
+; - ConvertBarFillAmountToTiles
+; - DrawGraphicalBarSubtractionLoopEdition
+; - GraphicalBarRoundAwayEmpty
+; - GraphicalBarRoundAwayFull
+; - GraphicalBarRoundAwayEmptyFull
+; - WriteBarToHUD
+; - WriteBarToHUDFormat2
+; - WriteBarToHUDLeftwards
+; - WriteBarToHUDLeftwardsFormat2
+; - GetMaxBarInAForRoundToMaxCheck
+; - GraphicalBarNumberOfTiles
+; - 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;General math routines.
 ;Due to the fact that registers have limitations and such.
@@ -1144,7 +1172,7 @@ ConvertToRightAlignedFormat2:
 ;   bottom)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	WriteBarToHUD:
-		JSL CountNumberOfTiles
+		JSL GraphicalBarNumberOfTiles
 		CPX #$FF				;\If 0-1 = (-1), there is no tile to write.
 		BEQ .Done				;/(non-existent bar)
 		TXY					;>STA [$xx],x does not exist! Only STA [$xx,x] does but functions differently!
@@ -1166,7 +1194,7 @@ ConvertToRightAlignedFormat2:
 			RTL
 	
 	WriteBarToHUDFormat2:
-		JSL CountNumberOfTiles
+		JSL GraphicalBarNumberOfTiles
 		CPX #$FF				;\If 0-1 = (-1), there is no tile to write.
 		BEQ .Done				;/(non-existent bar)
 		TXA					;\Have Y = X*2 due to SSB/OWB+ patch formated for 2 contiguous bytes per tile.
@@ -1203,7 +1231,7 @@ ConvertToRightAlignedFormat2:
 	;   (right to left) and vertical (bottom to top).
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		WriteBarToHUDLeftwards:
-			JSL CountNumberOfTiles
+			JSL GraphicalBarNumberOfTiles
 			CPX #$FF
 			BEQ .Done
 			LDY #$00
@@ -1225,7 +1253,7 @@ ConvertToRightAlignedFormat2:
 				RTL
 		
 		WriteBarToHUDLeftwardsFormat2:
-			JSL CountNumberOfTiles
+			JSL GraphicalBarNumberOfTiles
 			CPX #$FF
 			BEQ .Done
 			LDY #$00
@@ -1308,7 +1336,7 @@ GetMaxBarInAForRoundToMaxCheck:
 ;   For example: 9 total bytes, this routine would output X=$08.
 ;   Returns X=$FF should not a single tile exist.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-CountNumberOfTiles:
+GraphicalBarNumberOfTiles:
 	LDX #$00
 	LDA !Scratchram_GraphicalBar_LeftEndPiece
 	BEQ +
@@ -1326,4 +1354,175 @@ CountNumberOfTiles:
 	INX
 	+
 	DEX					;>Subtract by 1 because index 0 exists.
+	RTL
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Damage sprite subroutine.
+;Input:
+; - $00 to $00+!Setting_SpriteHP_TwoByte = Amount of damage.
+;Output:
+; - HP is already subtracted, if damage > currentHP, HP is
+;   set to 0.
+;
+;Note that this DOES NOT handle death sequence, only
+;subtracts HP.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+SpriteHPDamage:
+	PHY
+	LDA !Freeram_SpriteHP_MeterState
+	CMP #$FE
+	BEQ .Disabled
+	CMP #$FD
+	BEQ .Disabled
+	if !Setting_SpriteHP_BarAnimation == 0
+		TXA
+		STA !Freeram_SpriteHP_MeterState
+	else
+		LDA $00
+		PHA
+		if !Setting_SpriteHP_TwoByte != 0
+			LDA $01
+			PHA
+		endif
+		JSL SpriteHPGetSlotIndex
+		TXA
+		CMP !Scratchram_SpriteHP_SpriteSlotToDisplay
+		BEQ .SameSpriteSlot
+		STA !Freeram_SpriteHP_MeterState
+		.Different
+			JSL SpriteHPRemoveRecordEffect		;>Get fill amount of current HP *before* the damage (and not before even that) to properly show how much fill loss when switching slots.
+		.SameSpriteSlot
+		if !Setting_SpriteHP_TwoByte != 0
+			PLA
+			STA $01
+		endif
+		PLA
+		STA $00
+	endif
+	.Disabled
+	if and(notequal(!Setting_SpriteHP_BarAnimation, 0), notequal(!Setting_SpriteHP_BarChangeDelay, 0))
+		LDA.b #!Setting_SpriteHP_BarChangeDelay		;\Freeze damage indicator (this makes the bar animation hangs before decreasing towards current HP fill amount)
+		STA !Freeram_SpriteHP_BarAnimationTimer,x	;/
+	endif
+	if !Setting_SpriteHP_TwoByte != 0
+		LDA !Freeram_SpriteHP_CurrentHPHi,x	;>HP high byte
+		XBA					;>Transfer to A's high byte
+		LDA !Freeram_SpriteHP_CurrentHPLow,x	;>HP low byte in A's low byte
+		REP #$20				;>Make A read also the high byte.
+		SEC					;\Subtract by damage.
+		SBC $00					;/
+		SEP #$20				;>8-bit A (low byte)
+		BCS .NonNegHP				;>if HP value didn't underflow, set HP to subtracted value.
+		LDA #$00				;\Set HP to 0
+		STA !Freeram_SpriteHP_CurrentHPLow,x	;|
+		STA !Freeram_SpriteHP_CurrentHPHi,x	;/
+		BRA .Done
+
+		.NonNegHP
+			STA !Freeram_SpriteHP_CurrentHPLow,x	;>Low byte subtracted HP
+			XBA					;>Switch to high byte
+			STA !Freeram_SpriteHP_CurrentHPHi,x	;>High byte subtracted HP
+	else
+		LDA !Freeram_SpriteHP_CurrentHPLow,x	;\if HP subtracted by damage didn't underflow (carry set), write HP
+		SEC					;|
+		SBC $00					;|
+		BCS .NonNegHP				;/
+		LDA #$00				;>otherwise if underflow (carry clear; borrow needed), set HP to 0.
+		
+		.NonNegHP
+		STA !Freeram_SpriteHP_CurrentHPLow,x
+	endif
+	.Done
+	PLY
+	RTL
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;This essentially takes the value of !Freeram_SpriteHP_MeterState, and modulo by
+;!sprite_slots, which can be used to detect if what sprite slot index number the meter is
+;on is on the same slot number as the currently processed sprite.
+;
+;Output:
+; - !Scratchram_SpriteHP_SpriteSlotToDisplay: Sprite slot index number. $FF means invalid.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	SpriteHPGetSlotIndex:
+		LDA !Freeram_SpriteHP_MeterState
+		CMP.b #!sprite_slots
+		BCC .Normal				;0 to 11 or 0 to 21
+		CMP.b #(!sprite_slots*2)
+		BCC .IntroFillMode			;12 to 23 or 22 to 43
+		LDA #$FF
+		STA !Scratchram_SpriteHP_SpriteSlotToDisplay
+		RTL
+		.IntroFillMode
+			SEC
+			SBC.b #!sprite_slots
+		.Normal
+		STA !Scratchram_SpriteHP_SpriteSlotToDisplay
+		RTL
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;This subroutine sets the graphical bar animation
+;fill value to its current HP fill amount. Effectively
+;removing the transparent effect of taking damage.
+;
+;This is used to instantly get the fill amount prior
+;to taking damage, when the HP meter switches sprite
+;slots (including from $FF of a null-sprite). That way
+;the bar always show its before-damage fill amount
+;but not before even that if the player damages the
+;this sprite, then the other sprite, than this sprite
+;quickly.
+;
+;Input:
+; - !Setting_SpriteHP_GraphicalBar_LeftPieces = Number of pieces, to find total pieces of the bar.
+; - !Setting_SpriteHP_GraphicalBar_MiddlePieces = Number of pieces, to find total pieces of the bar.
+; - !Setting_SpriteHP_GraphicalBar_RightPieces = Number of pieces, to find total pieces of the bar.
+; - !Setting_SpriteHP_GraphicalBarMiddleLength = Number of middle tiles, to find total pieces of the bar.
+;Output:
+; - $00 = Amount of fill in the bar of the sprite's
+;   current HP.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+SpriteHPRemoveRecordEffect:
+	LDA.b #!Setting_SpriteHP_GraphicalBar_LeftPieces
+	STA !Scratchram_GraphicalBar_LeftEndPiece
+	LDA.b #!Setting_SpriteHP_GraphicalBar_MiddlePieces
+	STA !Scratchram_GraphicalBar_MiddlePiece
+	LDA.b #!Setting_SpriteHP_GraphicalBar_RightPieces
+	STA !Scratchram_GraphicalBar_RightEndPiece
+	LDA.b #!Setting_SpriteHP_GraphicalBarMiddleLength
+	STA !Scratchram_GraphicalBar_TempLength
+	PHX
+	JSL SpriteHPGetSlotIndex
+	LDX !Scratchram_SpriteHP_SpriteSlotToDisplay
+	LDA !Freeram_SpriteHP_CurrentHPLow,x
+	STA !Scratchram_GraphicalBar_FillByteTbl
+	LDA !Freeram_SpriteHP_MaxHPLow,x
+	STA !Scratchram_GraphicalBar_FillByteTbl+2
+	if !Setting_SpriteHP_TwoByte
+		LDA !Freeram_SpriteHP_CurrentHPHi,x
+		STA !Scratchram_GraphicalBar_FillByteTbl+1
+		LDA !Freeram_SpriteHP_MaxHPHi,x
+		STA !Scratchram_GraphicalBar_FillByteTbl+3
+	else
+		LDA #$00
+		STA !Scratchram_GraphicalBar_FillByteTbl+1
+		STA !Scratchram_GraphicalBar_FillByteTbl+3
+	endif
+	if !Setting_SpriteHP_BarFillRoundDirection == 0
+		JSL CalculateGraphicalBarPercentage
+	elseif !Setting_SpriteHP_BarFillRoundDirection == 1
+		JSL CalculateGraphicalBarPercentageRoundDown
+	elseif !Setting_SpriteHP_BarFillRoundDirection == 2
+		JSL CalculateGraphicalBarPercentageRoundUp
+	endif
+	;$00~$01 = percentage
+	if !Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull == 1
+		JSL GraphicalBarRoundAwayEmpty
+	elseif !Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull == 2
+		JSL GraphicalBarRoundAwayFull
+	elseif !Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull == 3
+		JSL GraphicalBarRoundAwayEmptyFull
+	endif
+	PLX
+	if !Setting_SpriteHP_BarAnimation
+		LDA $00
+		STA !Freeram_SpriteHP_BarAnimationFill,x
+	endif
 	RTL
