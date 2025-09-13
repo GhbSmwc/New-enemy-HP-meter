@@ -1,0 +1,51 @@
+;These are JML list, copy that and paste it the main patch file
+
+autoclean JML CalculateGraphicalBarPercentage
+autoclean JML CalculateGraphicalBarPercentageRoundDown
+autoclean JML CalculateGraphicalBarPercentageRoundUp
+autoclean JML ConvertBarFillAmountToTiles
+autoclean JML ConvertToRightAligned
+autoclean JML ConvertToRightAlignedFormat2
+autoclean JML DrawGraphicalBarSubtractionLoopEdition
+autoclean JML MathDiv32_16
+autoclean JML MathDiv
+autoclean JML MathMul16_16
+autoclean JML RemoveLeadingZeroes16Bit
+autoclean JML GraphicalBarRoundAwayEmpty
+autoclean JML GraphicalBarRoundAwayEmptyFull
+autoclean JML GraphicalBarRoundAwayFull
+autoclean JML SixteenBitHexDecDivision
+autoclean JML SuppressLeadingZeros
+autoclean JML WriteBarToHUD
+autoclean JML WriteBarToHUDFormat2
+autoclean JML WriteBarToHUDLeftwards
+autoclean JML WriteBarToHUDLeftwardsFormat2
+autoclean JML WriteStringDigitsToHUD
+autoclean JML WriteStringDigitsToHUDFormat2
+
+;These are macro call define list. Paste that in SharedSub's define file.
+;Don't forget to have the shared subroutines define FOLDER copied to anywhere
+;that uses shared subroutine's patch.
+
+%SetSharedSubDefine(SharedSub_CalculateGraphicalBarPercentage)
+%SetSharedSubDefine(SharedSub_CalculateGraphicalBarPercentageRoundDown)
+%SetSharedSubDefine(SharedSub_CalculateGraphicalBarPercentageRoundUp)
+%SetSharedSubDefine(SharedSub_ConvertBarFillAmountToTiles)
+%SetSharedSubDefine(SharedSub_ConvertToRightAligned)
+%SetSharedSubDefine(SharedSub_ConvertToRightAlignedFormat2)
+%SetSharedSubDefine(SharedSub_DrawGraphicalBarSubtractionLoopEdition)
+%SetSharedSubDefine(SharedSub_MathDiv32_16)
+%SetSharedSubDefine(SharedSub_MathDiv)
+%SetSharedSubDefine(SharedSub_MathMul16_16)
+%SetSharedSubDefine(SharedSub_RemoveLeadingZeroes16Bit)
+%SetSharedSubDefine(SharedSub_GraphicalBarRoundAwayEmpty)
+%SetSharedSubDefine(SharedSub_GraphicalBarRoundAwayEmptyFull)
+%SetSharedSubDefine(SharedSub_GraphicalBarRoundAwayFull)
+%SetSharedSubDefine(SharedSub_SixteenBitHexDecDivision)
+%SetSharedSubDefine(SharedSub_SuppressLeadingZeros)
+%SetSharedSubDefine(SharedSub_WriteBarToHUD)
+%SetSharedSubDefine(SharedSub_WriteBarToHUDFormat2)
+%SetSharedSubDefine(SharedSub_WriteBarToHUDLeftwards)
+%SetSharedSubDefine(SharedSub_WriteBarToHUDLeftwardsFormat2)
+%SetSharedSubDefine(SharedSub_WriteStringDigitsToHUD)
+%SetSharedSubDefine(SharedSub_WriteStringDigitsToHUDFormat2)

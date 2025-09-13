@@ -1,4 +1,24 @@
 	incsrc "StatusBarDefines.asm"
+;Fixed freespace settings
+	!Setting_InstallOwnSharedSubroutine = 0
+		;Install a list of JMLs into the ROM at a fixed location which those
+		;JMLs jump to freespace code (varying location each time you insert):
+		; 0 = No (you'll need a separate patch: Shared Subroutines that is including those routines)
+		; 1 = Yes
+		;Reason for either of these to install an easily accessible subroutines
+	!Freespace_SpriteHP_SharedSub_JMLList = $128000
+		;^[BytesUsed = (RatsIfNeeded+(NumberOfJMLs*4)) * !Setting_InstallOwnSharedSubroutine]
+		; This is only used if !Setting_InstallOwnSharedSubroutine == 1.
+		; RatsIfNeeded = 0 if you have [BankNumber & $7F] less than $10
+		;  (so if you are in banks $00-$7F, its $10-$7F, for $80-$FF, its $90-$FF).
+		; RatsIfNeeded = 8 otherwise.
+		;
+		; The fixed location where the JMLs list to be inserted to.
+		; Must be a freespace location. Be careful that editing
+		; this address and re-inserting does NOT remove the old JML
+		; list. Use a debugger or some hex editor to erase it.
+		; Don't forget to remove stuff in the freespace code as
+		; well.
 ;Freeram settings
 	;[BytesUsed = 1 + (!sprite_slots*2) + (!sprite_slots * EnabledTables)]
 	;Where "EnabledTables" is how many tables you can optionally have:

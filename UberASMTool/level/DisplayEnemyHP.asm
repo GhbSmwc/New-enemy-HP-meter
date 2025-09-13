@@ -3,6 +3,7 @@
 ;This ASM code displays the enemy's HP on the HUD of the most recent enemy the player
 ;have dealt damage to.
 
+incsrc "../SubroutineDefs.asm"
 incsrc "../StatusBarDefines.asm"
 incsrc "../EnemyHPMeterDefines.asm"
 incsrc "../GraphicalBarDefines.asm"
@@ -43,9 +44,9 @@ endmacro
 
 macro WriteAlignedDigitsToLayer3()
 	if !StatusbarFormat == $01
-		%UberRoutine(WriteStringDigitsToHUD)
+		JSL !SharedSub_WriteStringDigitsToHUD
 	else
-		%UberRoutine(WriteStringDigitsToHUDFormat2)
+		JSL !SharedSub_WriteStringDigitsToHUDFormat2
 	endif
 endmacro
 
@@ -93,7 +94,7 @@ macro GetHealthDigits8Bit(ValueToDisplay)
 		LDA !<ValueToDisplay>
 		STA $00
 		STZ $01
-		%UberRoutine(SixteenBitHexDecDivision)
+		JSL !SharedSub_SixteenBitHexDecDivision
 endmacro
 
 macro GetHealthDigits16Bit(ValueToDisplayLo, ValueToDisplayHi)
@@ -101,14 +102,14 @@ macro GetHealthDigits16Bit(ValueToDisplayLo, ValueToDisplayHi)
 		STA $00
 		LDA !<ValueToDisplayHi>
 		STA $01
-		%UberRoutine(SixteenBitHexDecDivision)
+		JSL !SharedSub_SixteenBitHexDecDivision
 endmacro
 
 macro ConvertToRightAligned()
 	if !StatusbarFormat == $01
-		%UberRoutine(ConvertToRightAligned)
+		JSL !SharedSub_ConvertToRightAligned
 	else
-		%UberRoutine(ConvertToRightAlignedFormat2)
+		JSL !SharedSub_ConvertToRightAlignedFormat2
 	endif
 endmacro
 
@@ -210,7 +211,7 @@ main:
 				else
 					%GetHealthDigits16Bit("Freeram_SpriteHP_CurrentHPLow,x", "Freeram_SpriteHP_CurrentHPHi,x")
 				endif
-				%UberRoutine(RemoveLeadingZeroes16Bit)
+				JSL !SharedSub_RemoveLeadingZeroes16Bit
 				%WriteFixedDigitsToLayer3(!Setting_SpriteHP_NumericalPos_XYPos, !Setting_SpriteHP_NumericalPos_XYPosProp)
 			elseif and(greaterequal(!Setting_SpriteHP_NumericalTextAlignment, 1), lessequal(!Setting_SpriteHP_NumericalTextAlignment, 2)) ;left/right aligned
 				if !Setting_SpriteHP_TwoByte == 0
@@ -219,7 +220,7 @@ main:
 					%GetHealthDigits16Bit("Freeram_SpriteHP_CurrentHPLow,x", "Freeram_SpriteHP_CurrentHPHi,x")
 				endif
 				LDX #$00
-				%UberRoutine(SuppressLeadingZeroes)
+				JSL !SharedSub_SuppressLeadingZeros
 				if !Setting_SpriteHP_DisplayNumerical == 2
 					LDA #!StatusBarSlashCharacterTileNumb
 					STA !Scratchram_CharacterTileTable,x
@@ -232,7 +233,7 @@ main:
 						%GetHealthDigits16Bit("Freeram_SpriteHP_MaxHPLow,x", "Freeram_SpriteHP_MaxHPHi,x")
 					endif
 					PLX
-					%UberRoutine(SuppressLeadingZeroes)
+					JSL !SharedSub_SuppressLeadingZeros
 				endif
 				if !Setting_SpriteHP_ExcessDigitProt
 					CPX.b #(!Setting_SpriteHP_MaxStringLength+1)
@@ -278,19 +279,19 @@ main:
 				endif
 				PHX
 				if !Setting_SpriteHP_BarFillRoundDirection == 0
-					%UberRoutine(GraphicalBar_CalculatePercentage)
+					JSL !SharedSub_CalculateGraphicalBarPercentage
 				elseif !Setting_SpriteHP_BarFillRoundDirection == 1
-					%UberRoutine(GraphicalBar_CalculatePercentageRoundDown)
+					JSL !SharedSub_CalculateGraphicalBarPercentageRoundDown
 				elseif !Setting_SpriteHP_BarFillRoundDirection == 2
-					%UberRoutine(GraphicalBar_CalculatePercentageRoundUp)
+					JSL !SharedSub_CalculateGraphicalBarPercentageRoundUp
 				endif
 				;$00~$01 = percentage
 				if !Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull == 1
-					%UberRoutine(GraphicalBar_RoundAwayEmpty)
+					JSL !SharedSub_GraphicalBarRoundAwayEmpty
 				elseif !Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull == 2
-					%UberRoutine(GraphicalBar_RoundAwayFull)
+					JSL !SharedSub_GraphicalBarRoundAwayEmptyFull
 				elseif !Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull == 3
-					%UberRoutine(GraphicalBar_RoundAwayEmptyFull)
+					JSL !SharedSub_GraphicalBarRoundAwayFull
 				endif
 				PLX
 				if !Setting_SpriteHP_BarAnimation
@@ -443,9 +444,9 @@ main:
 					...AnimationDone
 					
 				endif
-				%UberRoutine(GraphicalBar_DrawGraphicalBarSubtractionLoopEdition)
+				JSL !SharedSub_DrawGraphicalBarSubtractionLoopEdition
 				STZ $00									;>Set graphics mode to level layer 3
-				%UberRoutine(GraphicalBar_ConvertBarFillAmountToTiles)
+				JSL !SharedSub_ConvertBarFillAmountToTiles
 				
 				LDA.b #!Setting_SpriteHP_GraphicalBarPos_XYPos
 				STA $00
@@ -469,15 +470,15 @@ main:
 				endif
 				if !Setting_SpriteHP_LeftwardsBar == 0
 					if !StatusbarFormat == $01
-						%UberRoutine(GraphicalBar_WriteToStatusBar)
+						JSL !SharedSub_WriteBarToHUD
 					else
-						%UberRoutine(GraphicalBar_WriteToStatusBar_Format2)
+						JSL !SharedSub_WriteBarToHUDFormat2
 					endif
 				else
 					if !StatusbarFormat == $01
-						%UberRoutine(GraphicalBar_WriteToStatusBarLeftwards)
+						JSL !SharedSub_WriteBarToHUDLeftwards
 					else
-						%UberRoutine(GraphicalBar_WriteToStatusBarLeftwards_Format2)
+						JSL !SharedSub_WriteBarToHUDLeftwardsFormat2
 					endif
 				endif
 		endif

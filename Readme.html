@@ -97,6 +97,8 @@
 		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=17109">Lunar magic</a></li>
 		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=14560">Asar</a></li>
 		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=39036">Uberasm tool version 2.0 or higher</a> (latest version recommended)</li>
+		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=19545">Shared Subroutines</a> (latest version recommended). Needed because there are subroutines that may be needed for pixi sprites, SMW sprites, and uberasm tool code, and
+		their subroutines are isolated from one another.</li>
 	</ul>
 	<h2>Recommended</h2>
 	<ul>
@@ -109,7 +111,7 @@
 	</ul>
 	<h2>Documentations of other ASM resources</h2>
 	<ul>
-		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=38296">Status bar tutorial (contains string system and number display)</a></li>
+		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=38296">Status bar tutorial (mainly on the string and number system used here)</a></li>
 		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=38297">Graphical Bar</a></li>
 	</ul>
 </div>
@@ -124,8 +126,8 @@
 			or other meters besides HP. The defines specific to sprite HP are in <kbd>EnemyHPMeterDefines.asm</kbd>. For editing what tiles used by general-purpose
 			subroutines, they're in <kbd>NumberDisplayRoutinesDefines.asm</kbd>.<br><br>
 			
-			Once you are done, you'll need to have copies of these txt files (not the folder itself containing the texts) in same directory as the tools'
-			<kbd>.exe</kbd> programs are at (pixi and uberasm tool). Do not have them in any subfolders beyond that area. Make sure you do not move the define files
+			Once you are done, you'll need to have copies of these txt files (not the folders itself containing them) in same directory as the tools'
+			<kbd>.exe</kbd> programs are at (pixi and uberasm tool). This also applies to <kbd>SubroutineDefs.asm</kbd>. Do not have them in any subfolders beyond that area. Make sure you do not move the define files
 			as the patch will include those define files (better to copy than to cut/move them).<br><br>
 			
 			If you later make changes in any of the defines and reinsert by one tool, make sure you update all others and reinsert by other tools.<br><br>
