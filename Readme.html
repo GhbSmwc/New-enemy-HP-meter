@@ -168,7 +168,9 @@ autoclean JML WriteBarToHUDLeftwards
 autoclean JML WriteBarToHUDLeftwardsFormat2
 autoclean JML WriteStringDigitsToHUD
 autoclean JML WriteStringDigitsToHUDFormat2
-autoclean JML SpriteHPDamage</pre>
+autoclean JML SpriteHPDamage
+autoclean JML SpriteHPRemoveRecordEffect
+autoclean JML SpriteHPGetSlotIndex</pre>
 </div>
 					</li>
 					<li>
@@ -195,7 +197,9 @@ autoclean JML SpriteHPDamage</pre>
 		%SetSharedSubDefine(SharedSub_WriteBarToHUDLeftwardsFormat2)
 		%SetSharedSubDefine(SharedSub_WriteStringDigitsToHUD)
 		%SetSharedSubDefine(SharedSub_WriteStringDigitsToHUDFormat2)
-		%SetSharedSubDefine(SharedSub_SpriteHPDamage)</pre>
+		%SetSharedSubDefine(SharedSub_SpriteHPDamage)
+		%SetSharedSubDefine(SharedSub_SpriteHPRemoveRecordEffect)
+		%SetSharedSubDefine(SharedSub_SpriteHPGetSlotIndex)</pre>
 </div>
 					Now make sure their order and positions in the list of the entire JML and define list matches (if you paste the JML list starting at the 51st item, then the define list must also be placed starting at the 51st item),
 					else define names gets assigned to the wrong subroutine label, which causes glitches or crashes.</li>
