@@ -143,7 +143,7 @@
 				<ol>
 					<li>First thing first, make a restore point or a backup of your game file before applying shared subroutines in case of a crash if you set the freespace incorrectly.</li>
 					<li>Have the enemy HP meter's defines inside Shared Subroutines' folder <kbd>SharedSub_Defines</kbd>.</li>
-					<li>In the folder <kbd>SharedSubroutines</kbd> of this package, copy the entire code and paste it in <kbd>subroutinecode.asm</kbd>. It can be anywhere, but not in the middle of a subroutine code.</li>
+					<li>In the folder <kbd>SharedSubroutines</kbd> of this package, copy the entire code and paste it in Shared Subroutines' <kbd>subroutinecode.asm</kbd>. It can be anywhere, but not in the middle of a subroutine code.</li>
 					<li>
 						Any subroutines you don't use (for your entire hack, no ASM from anywhere in your ROM using it, not just the enemy HP system), feel free to omit them (remove the subroutine code, the JML and define list item) to save ROM space. Just to let you know that you can use some of these subroutines for other than sprite HP, as many of them are general-purpose.
 						Subroutines that you likely not need are:
@@ -169,13 +169,17 @@
 								Bar animation routines, not used by the sprite HP system if <kbd class="NoLineBreak">!Setting_SpriteHP_DisplayGraphicalBar == 0</kbd> OR <kbd class="NoLineBreak">!Setting_SpriteHP_BarAnimation == 0</kbd>
 								<ul>
 									<li><kbd>SpriteHPRemoveRecordEffect</kbd></li>
-									<li><kbd>SpriteHPGetSlotIndex</kbd></li>
 								</ul>
 							</li>
 							<li>
 								Number display routines, not used if <kbd class="NoLineBreak">!Setting_SpriteHP_DisplayNumerical == 0</kbd>. Note that any subroutine with 2 versions with and without <kbd>Format2</kbd> will and will not be used
 								depending on <kbd>!StatusbarFormat</kbd> in <kbd>StatusBarDefines.asm</kbd>. When <kbd>!StatusbarFormat</kbd> is set to <kbd>$01</kbd>, then only versions without the <kbd>Format2</kbd> will be used, otherwise (<kbd>$02</kbd>)
-								means only <kbd>Format2</kbd> will be used.
+								means only <kbd>Format2</kbd> will be used.<br><br>
+								
+								The reason for the dual-formats is because there are 2 types of status bar tile data formatting: 2 tables; <kbd>%TTTTTTTT, %TTTTTTTT, ...</kbd> and <kbd>%YXPCCCTT, %YXPCCCTT, ...</kbd> for the non-<kbd>Format2</kbd>
+								(which are most of Ladida's status bar patches, <a href="https://www.smwcentral.net/?p=section&a=details&id=35718">Minimalist</a>, and <a href="https://www.smwcentral.net/?p=section&a=details&id=21573">SMB3</a>), and the
+								<kbd>Format2</kbd> version have one table interleaved: <kbd>%TTTTTTTT, %YXPCCCTT, (repeats the two)</kbd> (which are Kaijyuu's <a href="https://www.smwcentral.net/?p=section&a=details&id=19247">Super Status Bar</a> and MarioFanGamer's
+								<a href="https://www.smwcentral.net/?p=section&a=details&id=21665">Overworld Border Plus</a> patch).
 								<ul>
 									<li><kbd>ConvertToRightAligned</kbd> (only used if <kbd class="NoLineBreak">!Setting_SpriteHP_NumericalTextAlignment == 2</kbd>)</li>
 									<li><kbd>ConvertToRightAlignedFormat2</kbd> (same as above)</li>
@@ -268,7 +272,7 @@ autoclean JML SpriteHPGetSlotIndex</pre>
 		</ol>
 		<li>Lunar Magic stuff</li>
 		<ol>
-			<li>In all levels accessible by the player, insert the layer 3 status bar ExGFX by &ldquo;Quick Extract ExGFX from ROM&rdquo; (blue mushroom icon) to spawn a <kbd>ExGraphics</kbd> (unless you did so already), then,
+			<li>In all levels accessible by the player, insert the layer 3 status bar ExGFX by &ldquo;Quick Extract ExGFX from ROM&rdquo; (blue mushroom icon) to spawn a <kbd>ExGraphics</kbd> folder (unless you did so already), then,
 			inside this ASM resource, navigate to <kbd>LM stuff/ExGraphics</kbd>. Here you'll find a graphic file (uses ExGFX slot $80 by default, rename to have it at a different slot number). This file should
 			be pasted in the ExGraphics of your game file. To insert into your game, &ldquo;Quick Insert ExGFX to ROM&rdquo; (golden mushroom). Finally, &ldquo;Open "Layer 3 GFX/Tilemap Bypass" Dialog&rdquo; (green
 			poison mushroom), and set LG1 to use your inserted graphics file (by default, should be $80 if you didn't change the slot number)<br><br>
