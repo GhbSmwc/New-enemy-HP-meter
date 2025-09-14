@@ -190,7 +190,7 @@
 						
 					</li>
 					<li>
-						In Shared Subroutine's <kbd>sharedsub.asm</kbd> in the JML list, paste the following (remove routines you won't be using for your entire hack):
+						In Shared Subroutine's <kbd>sharedsub.asm</kbd> in the JML list, paste the following (remove JML list items you won't be using for your entire hack):
 <div class="CodeBlock" style="height: 340px;"><pre>autoclean JML CalculateGraphicalBarPercentage
 autoclean JML CalculateGraphicalBarPercentageRoundDown
 autoclean JML CalculateGraphicalBarPercentageRoundUp
@@ -219,7 +219,7 @@ autoclean JML SpriteHPGetSlotIndex</pre>
 </div>
 					</li>
 					<li>
-						Open Shared Subroutines' <kbd>SharedSub_Defines/SubroutineDefs.asm</kbd> and paste the following (same as above, remove ones you don't use):
+						Open Shared Subroutines' <kbd>SharedSub_Defines/SubroutineDefs.asm</kbd> and paste the following (same as above, remove define list items you don't use):
 <div class="CodeBlock" style="height: 340px;"><pre>		%SetSharedSubDefine(SharedSub_CalculateGraphicalBarPercentage)
 		%SetSharedSubDefine(SharedSub_CalculateGraphicalBarPercentageRoundDown)
 		%SetSharedSubDefine(SharedSub_CalculateGraphicalBarPercentageRoundUp)
@@ -262,6 +262,7 @@ Test:
 </div>
 						When patching that, asar will report a freespace leak due to a lack of an autoclean, along with the text outputted by the <kbd>print command</kbd>. Copy the address displayed and use that for <kbd>!Freespace_SharedSub_JMLList</kbd>. Type <kbd>no</kbd> to avoid your game having wasted freespace.
 					</li>
+					<li>Now patch <kbd>sharedsub.asm</kbd> to your game.</li>
 				</ol>
 			</li>
 			
@@ -674,6 +675,10 @@ Change that to this:
 				on what RAMs are being used. If you have trouble knowing if a RAM conflicts, use the Address Tracker as mentioned in the recommended at the top of this readme.</li>
 				<li>Hijack conflicts. This should only be possible if you patch <kbd>HPSystemForSMWSprites.asm</kbd> along with 3rd party patches that also modifies SMW's sprites with overlapping hijacks with those said patches (such as
 				<a href="https://www.smwcentral.net/?p=section&a=details&id=20847">&ldquo;FireBall HP&rdquo;</a> patch by Bio).</li>
+				<li>
+					Using an Incorrect address for Shared Subroutines JML list. Make sure you place it at an actual freespace and not address occupied by the original game, other patches, including by other tools and Lunar Magic. Best way to fix is to revert your game to a previous
+					state before patching Shared Subroutines, correct the address for the JML list, re-patch, and update every copy of the Shared Subroutine defines for all ASM resources using the Shared Subroutines and re-insert them.
+				</li>
 				<li>Faulty code that you have found that I didn't catch (most likely if you haven't installed any other ASM resource). PM me or the moderators on fixing a newly discovered bug. If I'm inactive, feel free to update it.</li>
 			</ul>
 		
