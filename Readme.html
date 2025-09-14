@@ -145,6 +145,51 @@
 					<li>Have the enemy HP meter's defines inside Shared Subroutines' folder <kbd>SharedSub_Defines</kbd>.</li>
 					<li>In the folder <kbd>SharedSubroutines</kbd> of this package, copy the entire code and paste it in <kbd>subroutinecode.asm</kbd>. It can be anywhere, but not in the middle of a subroutine code.</li>
 					<li>
+						Any subroutines you don't use (for your entire hack, no ASM from anywhere in your ROM using it, not just the enemy HP system), feel free to omit them (remove the subroutine code, the JML and define list item) to save ROM space. Just to let you know that you can use some of these subroutines for other than sprite HP, as many of them are general-purpose.
+						Subroutines that you likely not need are:
+						<ul>
+							<li>
+								Graphical bar routines. Not used by the sprite HP system if <kbd>!Setting_SpriteHP_DisplayGraphicalBar == 0</kbd>
+								<ul>
+									<li><kbd>CalculateGraphicalBarPercentage</kbd></li>
+									<li><kbd>CalculateGraphicalBarPercentageRoundDown</kbd></li>
+									<li><kbd>CalculateGraphicalBarPercentageRoundUp</kbd></li>
+									<li><kbd>ConvertBarFillAmountToTiles</kbd></li>
+									<li><kbd>DrawGraphicalBarSubtractionLoopEdition</kbd></li>
+									<li><kbd>GraphicalBarRoundAwayEmpty</kbd></li>
+									<li><kbd>GraphicalBarRoundAwayEmptyFull</kbd></li>
+									<li><kbd>GraphicalBarRoundAwayFull</kbd></li>
+									<li><kbd>WriteBarToHUD</kbd></li>
+									<li><kbd>WriteBarToHUDFormat2</kbd></li>
+									<li><kbd>WriteBarToHUDLeftwards</kbd></li>
+									<li><kbd>WriteBarToHUDLeftwardsFormat2</kbd></li>
+								</ul>
+							</li>
+							<li>
+								Bar animation routines, not used by the sprite HP system if <kbd class="NoLineBreak">!Setting_SpriteHP_DisplayGraphicalBar == 0</kbd> OR <kbd class="NoLineBreak">!Setting_SpriteHP_BarAnimation == 0</kbd>
+								<ul>
+									<li><kbd>SpriteHPRemoveRecordEffect</kbd></li>
+									<li><kbd>SpriteHPGetSlotIndex</kbd></li>
+								</ul>
+							</li>
+							<li>
+								Number display routines, not used if <kbd class="NoLineBreak">!Setting_SpriteHP_DisplayNumerical == 0</kbd>. Note that any subroutine with 2 versions with and without <kbd>Format2</kbd> will and will not be used
+								depending on <kbd>!StatusbarFormat</kbd> in <kbd>StatusBarDefines.asm</kbd>. When <kbd>!StatusbarFormat</kbd> is set to <kbd>$01</kbd>, then only versions without the <kbd>Format2</kbd> will be used, otherwise (<kbd>$02</kbd>)
+								means only <kbd>Format2</kbd> will be used.
+								<ul>
+									<li><kbd>ConvertToRightAligned</kbd> (only used if <kbd class="NoLineBreak">!Setting_SpriteHP_NumericalTextAlignment == 2</kbd>)</li>
+									<li><kbd>ConvertToRightAlignedFormat2</kbd> (same as above)</li>
+									<li><kbd>RemoveLeadingZeroes16Bit</kbd> (only used if <kbd class="NoLineBreak">!Setting_SpriteHP_NumericalTextAlignment == 0</kbd> or when you have <kbd class="NoLineBreak">!Setting_SpriteHP_DisplayNumerical == 1</kbd> and <kbd class="NoLineBreak">!Setting_SpriteHP_NumericalTextAlignment == 2</kbd>, which is a right-aligned single number)</li>
+									<li><kbd>SixteenBitHexDecDivision</kbd></li>
+									<li><kbd>SuppressLeadingZeros</kbd> (used if <kbd>!Setting_SpriteHP_NumericalTextAlignment</kbd> is set to <kbd>1</kbd> or <kbd>2</kbd>), left or right aligned</li>
+									<li><kbd>WriteStringDigitsToHUD</kbd></li>
+									<li><kbd>WriteStringDigitsToHUDFormat2</kbd></li>
+								</ul>
+							</li>
+						</ul>
+						
+					</li>
+					<li>
 						In Shared Subroutine's <kbd>sharedsub.asm</kbd> in the JML list, paste the following:
 <div class="CodeBlock" style="height: 340px;"><pre>autoclean JML CalculateGraphicalBarPercentage
 autoclean JML CalculateGraphicalBarPercentageRoundDown
