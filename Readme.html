@@ -97,7 +97,7 @@
 		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=17109">Lunar magic</a></li>
 		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=14560">Asar</a></li>
 		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=39036">Uberasm tool version 2.0 or higher</a> (latest version recommended)</li>
-		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=19545">Shared Subroutines</a> (version 4.2.1 or later). Needed because there are subroutines that may be needed for pixi sprites, SMW sprites, and uberasm tool code, and
+		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=40579">Shared Subroutines</a> (version 4.2.1 or later). Needed because there are subroutines that may be needed for pixi sprites, SMW sprites, and uberasm tool code, and
 		their subroutines are isolated from one another.</li>
 	</ul>
 	<h2>Recommended</h2>
@@ -249,18 +249,8 @@ autoclean JML SpriteHPGetSlotIndex</pre>
 					Now make sure their order and positions in the list of the entire JML and define list matches (if you paste the JML list starting at the 51st item, then the define list must also be placed starting at the 51st item),
 					else define names gets assigned to the wrong subroutine label, which causes glitches or crashes.</li>
 					<li>
-						Now in the define file of the previous set, you must set <kbd>!Freespace_SharedSub_JMLList</kbd> to be at an address that is the start of a freespace. This is the fixed location to place your list of JMLs.
-						To find freespace, you could use slogger, a hex editor, or some other methods to find them. In SA-1 a trick I found was having a test ASM patch that prints out the address on the console window of a located freespace having
-						enough space to fit the JML list:
-<div class="CodeBlock" style="height: 115px;"><pre>freecode
-Test:
-	fillbyte $00
-	fill 408
-		;^408 bytes, because there are 100 JMLs (including dummy JMLs to reserve space for future JMLs,
-		;each JML consumes 4 bytes), and there are 8 bytes consumed by the RATS tag 408 = (100 * 4) + 8
-	print "Freespace with enough bytes is at $", hex(Test-8) ;Minus 8 because the address would be at the beginning of the RATS tag.</pre>
-</div>
-						When patching that, asar will report a freespace leak due to a lack of an autoclean, along with the text outputted by the <kbd>print command</kbd>. Copy the address displayed and use that for <kbd>!Freespace_SharedSub_JMLList</kbd>. Type <kbd>no</kbd> to avoid your game having wasted freespace.
+						Now in the define file of the previous set, you must set <kbd>!Freespace_SharedSub_JMLList</kbd> to be at an address that is the start of a freespace. Follow the instructions in Shared Subroutine's Readme on how to
+						locate freespace.
 					</li>
 					<li>Now patch <kbd>sharedsub.asm</kbd> to your game.</li>
 				</ol>

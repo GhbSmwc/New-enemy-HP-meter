@@ -89,6 +89,13 @@
 			STA !SPR_HealCooldown,x
 		endif
 	endmacro
+	
+	macro SetHealCooldown()
+		if !HealingAmount
+			LDA.b #!HealCooldownAmount
+			STA !SPR_HealCooldown,x
+		endif
+	endmacro
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; sprite init JSL
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -151,34 +158,35 @@ SPRITE_CODE_START:
 		LDA #$00
 		%SubOffScreen()
 	if !HealingAmount
-		LDA !Freeram_SpriteHP_CurrentHPLow,x			;\CMP is like SBC. if currentHP - MaxHP results an unsigned underflow (which causes a barrow; carry clear)
-		CMP !Freeram_SpriteHP_MaxHPLow,x			;|then allow healing
-		if !Setting_SpriteHP_TwoByte != 0
-			LDA !Freeram_SpriteHP_CurrentHPHi,x
-			SBC !Freeram_SpriteHP_MaxHPHi,x
-		endif
-		BCS +						;/>If HP is full, don't do healing effect.
-;		LDA $14						;\frame counter modulo by powers of 2 value
-;		AND.b #!HealingPeriodicSpd			;|
-;		BNE +						;/>if remainder isn't 0, don't heal on this time
-		LDA !SPR_HealCooldown,x
-		BNE +
-		LDA.b #!HealCooldownAmount
-		STA !SPR_HealCooldown,x
-		REP #$20					;\heal sprite
-		LDA.w #!HealingAmount				;|
-		STA $00						;|
-		SEP #$20					;|
-		JSR Heal					;/
-		if and(!Setting_SpriteHP_BarAnimation, notequal(!Setting_SpriteHP_BarChangeDelay, 0))
-			LDA.b #!Setting_SpriteHP_BarChangeDelay
-			STA !Freeram_SpriteHP_BarAnimationTimer,x
-		endif
-		if !HealingSfxNum != 0
-			LDA #!HealingSfxNum
-			STA !HealingSfxRam
-		endif
-		+
+		.Healing
+			LDA !Freeram_SpriteHP_CurrentHPLow,x			;\CMP is like SBC. if currentHP - MaxHP results an unsigned underflow (which causes a barrow; carry clear)
+			CMP !Freeram_SpriteHP_MaxHPLow,x			;|then allow healing
+			if !Setting_SpriteHP_TwoByte != 0
+				LDA !Freeram_SpriteHP_CurrentHPHi,x
+				SBC !Freeram_SpriteHP_MaxHPHi,x
+			endif
+			BCS ..FullHealth				;/>If HP is full, don't do healing effect.
+			LDA !SPR_HealCooldown,x
+			BNE ..HealDone
+			LDA.b #!HealCooldownAmount
+			STA !SPR_HealCooldown,x
+			REP #$20					;\heal sprite
+			LDA.w #!HealingAmount				;|
+			STA $00						;|
+			SEP #$20					;|
+			JSR Heal					;/
+			if and(!Setting_SpriteHP_BarAnimation, notequal(!Setting_SpriteHP_BarChangeDelay, 0))
+				LDA.b #!Setting_SpriteHP_BarChangeDelay
+				STA !Freeram_SpriteHP_BarAnimationTimer,x
+			endif
+			if !HealingSfxNum != 0
+				LDA #!HealingSfxNum
+				STA !HealingSfxRam
+			endif
+			BRA ..HealDone
+			..FullHealth
+				%SetHealCooldown()
+			..HealDone
 	endif
 	JSR MainSpriteClipA		;>Get hitbox A of main sprite
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -240,6 +248,7 @@ SPRITE_CODE_START:
 			STA $00					;/
 			SEP #$20
 			JSL !SharedSub_SpriteHPDamage				;>Lose HP (handles bar animation and other effects). Note that this alone only subtracts HP, does not handle death sequence.
+			%SetHealCooldown()
 			LDA !Freeram_SpriteHP_CurrentHPLow,x	;\If HP != 0, don't kill
 			if !Setting_SpriteHP_TwoByte
 				ORA !Freeram_SpriteHP_CurrentHPHi,x	;|
@@ -349,6 +358,7 @@ SPRITE_CODE_START:
 						LDA.b #10				;\Just to show the blinking and in case if projectile penetrates.
 						STA !InvulnerabilityTimer,x		;/
 						JSL !SharedSub_SpriteHPDamage				;>Lose HP
+						%SetHealCooldown()
 						LDA !Freeram_SpriteHP_CurrentHPLow,x		;\If HP != 0, don't kill
 						if !Setting_SpriteHP_TwoByte
 							ORA !Freeram_SpriteHP_CurrentHPHi,x		;|
@@ -423,6 +433,7 @@ SPRITE_CODE_START:
 					STA $00			;/
 					SEP #$20
 					JSL !SharedSub_SpriteHPDamage			;>Lose HP
+					%SetHealCooldown()
 					LDA !Freeram_SpriteHP_CurrentHPLow,x	;\If HP != 0, don't kill
 					if !Setting_SpriteHP_TwoByte
 						ORA !Freeram_SpriteHP_CurrentHPHi,x	;|
@@ -525,6 +536,7 @@ SPRITE_CODE_START:
 				STA $00				;/
 				SEP #$20
 				JSL !SharedSub_SpriteHPDamage			;>Lose HP
+				%SetHealCooldown()
 				LDA !Freeram_SpriteHP_CurrentHPLow,x	;\If HP != 0, don't kill
 				if !Setting_SpriteHP_TwoByte
 					ORA !Freeram_SpriteHP_CurrentHPHi,x	;|
@@ -592,6 +604,7 @@ SPRITE_CODE_START:
 			STA $00				;/
 			SEP #$20
 			JSL !SharedSub_SpriteHPDamage		;>Lose HP
+			%SetHealCooldown()
 			LDA !Freeram_SpriteHP_CurrentHPLow,x	;\If HP != 0, don't kill
 			if !Setting_SpriteHP_TwoByte
 				ORA !Freeram_SpriteHP_CurrentHPHi,x	;|

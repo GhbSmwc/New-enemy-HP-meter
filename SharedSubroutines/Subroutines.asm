@@ -29,7 +29,9 @@
 ; - WriteBarToHUDLeftwardsFormat2
 ; - GetMaxBarInAForRoundToMaxCheck
 ; - GraphicalBarNumberOfTiles
-; - 
+; - SpriteHPDamage
+; - SpriteHPGetSlotIndex
+; - SpriteHPRemoveRecordEffect
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;General math routines.
 ;Due to the fact that registers have limitations and such.
