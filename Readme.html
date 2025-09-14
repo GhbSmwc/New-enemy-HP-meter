@@ -351,7 +351,8 @@ Test:
 	<p>I provided an example test sprite under <kbd>pixi/sprites/simple_sprite.asm</kbd> for testing the HP system.</p>
 	
 	<p>Because HP-related defines are heavily involved here, it's important to include the define files at the top of your sprite's ASM file, like this:
-<div class="CodeBlock" style="height: 40px;"><pre>	incsrc "../EnemyHPMeterDefines.asm"
+<div class="CodeBlock" style="height: 50px;"><pre>	incsrc "../SubroutineDefs.asm"
+	incsrc "../EnemyHPMeterDefines.asm"
 	incsrc "../GraphicalBarDefines.asm"</pre></div><br>
 	Else you get define not being defined errors. Then after the include-defines, have the macros (the ones on this HTML file) being set/defined (anything with a <span class="NoLineBreak">macro MacroName(Pram1, Pram2...) ... endmacro</span>).</p>
 	
@@ -475,7 +476,7 @@ Test:
 		<li>If you have animation enabled (<kbd>!Setting_SpriteHP_BarAnimation</kbd> set to <kbd>1</kbd>), you need to set some values for that.</li>
 		<li>Ensure that the health meter switches to that damaged enemy when hit.</li>
 	</ul>
-	Thankfully, all that logic is handled automatically in a subroutine called <kbd>SpriteLoseHP</kbd>, with the inputs stored in <kbd>$00</kbd> (2 bytes if <kbd>!Setting_SpriteHP_TwoByte == 1</kbd>). Feel free to check out the subroutines as you wish.</p>
+	Thankfully, all that logic is handled automatically in a subroutine defined as <kbd>!SharedSub_SpriteHPDamage</kbd>, with the inputs stored in <kbd>$00</kbd> (2 bytes if <kbd>!Setting_SpriteHP_TwoByte == 1</kbd>). Feel free to check out the subroutines as you wish.</p>
 	
 	<p>If you want to know how it works, just open the provided custom sprite's asm file or view the provided patch and seeing the SMW disassembly. Please note that, because patches, uberasm tool, and pixi have their own isolated subroutines system,
 	and I don't want to have duplicate subroutines, the patch version on handling the bar animation is very different, it does not calculate via RAM on how many pieces are in the bar to determine, rather a pre-calculated number of pieces in the bar.</p>
