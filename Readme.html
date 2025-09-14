@@ -190,7 +190,7 @@
 						
 					</li>
 					<li>
-						In Shared Subroutine's <kbd>sharedsub.asm</kbd> in the JML list, paste the following:
+						In Shared Subroutine's <kbd>sharedsub.asm</kbd> in the JML list, paste the following (remove routines you won't be using for your entire hack):
 <div class="CodeBlock" style="height: 340px;"><pre>autoclean JML CalculateGraphicalBarPercentage
 autoclean JML CalculateGraphicalBarPercentageRoundDown
 autoclean JML CalculateGraphicalBarPercentageRoundUp
@@ -219,7 +219,7 @@ autoclean JML SpriteHPGetSlotIndex</pre>
 </div>
 					</li>
 					<li>
-						Open Shared Subroutines' <kbd>SharedSub_Defines/SubroutineDefs.asm</kbd> and paste the following:
+						Open Shared Subroutines' <kbd>SharedSub_Defines/SubroutineDefs.asm</kbd> and paste the following (same as above, remove ones you don't use):
 <div class="CodeBlock" style="height: 340px;"><pre>		%SetSharedSubDefine(SharedSub_CalculateGraphicalBarPercentage)
 		%SetSharedSubDefine(SharedSub_CalculateGraphicalBarPercentageRoundDown)
 		%SetSharedSubDefine(SharedSub_CalculateGraphicalBarPercentageRoundUp)
