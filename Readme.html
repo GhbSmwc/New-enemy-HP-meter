@@ -422,7 +422,7 @@ autoclean JML SpriteHPIntroEffect</pre>
 	
 	<h3><a href="#ToC_MakeSpritesDisplayHP_BossIntroFill" id="JMPTo_MakeSpritesDisplayHP_BossIntroFill">^</a>(Optional) Boss intro-fill</h3>
 	<p>For boss sprites, to have an optional &ldquo;intro-fill&rdquo; effect (meter automatically appears empty and fills up at the start of a fight), run this code under a sprite init, or under main (if you want the
-	animation after a cutscene after the sprite spawns, but make sure it does not execute every frame) by calling it like this: <kbd>%IntroHPBarFillAnimation()</kbd>. Note that you must have <kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd> and
+	animation after a cutscene after the sprite spawns, but make sure it does not execute every frame) by calling it like this: <kbd>JSL !SharedSub_SpriteHPIntroEffect</kbd>. Note that you must have <kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd> and
 	<kbd>!Setting_SpriteHP_BarAnimation</kbd> be set to 1 (else it just appears full without animation):
 <div class="CodeBlock" style="height: 110px;"><pre>
 	;Have the following as an option on your custom sprite if you are willing to submit it to SMWC.
