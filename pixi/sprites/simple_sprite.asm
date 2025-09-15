@@ -57,31 +57,6 @@
 	!DmgSfxRam		= $1DFC|!Base2
 	
 ;Don't touch
-	macro IntroHPBarFillAnimation()
-		?IntroHPBarFill:
-		if !IntroFill
-			LDA !Freeram_SpriteHP_MeterState                                                    ;\First check if the meter is locked from displaying
-			CMP #$FE                                                                            ;|if so, then don't set the meter state
-			BEQ ?.Disabled                                                                      ;|
-			CMP #$FD                                                                            ;|
-			BEQ ?.Disabled                                                                      ;/
-			if and(!Setting_SpriteHP_DisplayGraphicalBar, !Setting_SpriteHP_BarAnimation)
-				TXA                                                                         ;\Set HP bar to intro-fill state of its corresponding sprite slot
-				CLC                                                                         ;|
-				ADC.b #!sprite_slots                                                        ;|
-				STA !Freeram_SpriteHP_MeterState                                            ;/
-				LDA #$00                                                                    ;\Start the meter at 0%
-				STA !Freeram_SpriteHP_BarAnimationFill,x                                    ;/
-				if !Setting_SpriteHP_BarChangeDelay                                         ;
-					STA !Freeram_SpriteHP_BarAnimationTimer,x                           ;>Set timer to 0 to make sure the animation plays correctly (allow SFX)
-				endif                                                                       ;
-			else
-				TXA
-				STA !Freeram_SpriteHP_MeterState
-			endif
-			?.Disabled
-		endif
-	endmacro
 	macro SpriteDamage()
 		JSL !SharedSub_SpriteHPDamage
 		if !HealingAmount
@@ -110,8 +85,9 @@ print "INIT ",pc
 		STA !Freeram_SpriteHP_CurrentHPHi,x	;|
 		STA !Freeram_SpriteHP_MaxHPHi,x		;/
 	endif
-	
-	%IntroHPBarFillAnimation()
+	if !IntroFill
+		JSL !SharedSub_SpriteHPIntroEffect
+	endif
 	RTL
 
 

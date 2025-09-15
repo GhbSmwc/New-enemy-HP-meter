@@ -190,6 +190,12 @@
 									<li><kbd>WriteStringDigitsToHUDFormat2</kbd></li>
 								</ul>
 							</li>
+							<li>
+								Other:
+								<ul>
+									<li><kbd>SpriteHPIntroEffect</kbd> (delete this if you don't want to have a boss intro-fill effect)</li>
+								</ul>
+							</li>
 						</ul>
 						
 					</li>
@@ -219,7 +225,8 @@ autoclean JML WriteStringDigitsToHUD
 autoclean JML WriteStringDigitsToHUDFormat2
 autoclean JML SpriteHPDamage
 autoclean JML SpriteHPRemoveRecordEffect
-autoclean JML SpriteHPGetSlotIndex</pre>
+autoclean JML SpriteHPGetSlotIndex
+autoclean JML SpriteHPIntroEffect</pre>
 </div>
 					</li>
 					<li>
@@ -248,7 +255,8 @@ autoclean JML SpriteHPGetSlotIndex</pre>
 		%SetSharedSubDefine(SharedSub_WriteStringDigitsToHUDFormat2)
 		%SetSharedSubDefine(SharedSub_SpriteHPDamage)
 		%SetSharedSubDefine(SharedSub_SpriteHPRemoveRecordEffect)
-		%SetSharedSubDefine(SharedSub_SpriteHPGetSlotIndex)</pre>
+		%SetSharedSubDefine(SharedSub_SpriteHPGetSlotIndex)
+		%SetSharedSubDefine(SharedSub_SpriteHPIntroEffect)</pre>
 </div>
 					Now make sure their order and positions in the list of the entire JML and define list matches (if you paste the JML list starting at the 51st item, then the define list must also be placed starting at the 51st item),
 					else define names gets assigned to the wrong subroutine label, which causes glitches or crashes.</li>
@@ -314,10 +322,10 @@ autoclean JML SpriteHPGetSlotIndex</pre>
 						<ul>
 							<li>From <kbd>$00</kbd> to <kbd>!sprite_slots-1</kbd> will make the bar visible and display HP of the sprite of the slot corresponding to this value.</li>
 							<li>
-								From <kbd>!sprite_slots</kbd> to <kbd>(!sprite_slots*2)-1</kbd> is the same as above (subtract by <kbd>!sprite_slots</kbd> to obtain the sprite slot number) but for the <kbd>intro-fill</kbd> animation (bar appears empty, and fills up like a start of a boss fight). This only applies
+								From <kbd>!sprite_slots</kbd> to <kbd>(!sprite_slots*2)-1</kbd> is the same as above (subtract by <kbd>!sprite_slots</kbd> to obtain the sprite slot number) but for the <kbd>intro-fill</kbd> animation (bar appears empty, and fills up, useful for boss fight). This only applies
 								if <kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd> and <kbd>!Setting_SpriteHP_BarAnimation</kbd> set to <kbd>1</kbd>.
 							</li>
-							<li><kbd>$FF</kbd> Means don't display the meter, which occurs when the enemy despawns or dies. Note that this will write blank tiles every frame.</li>
+							<li><kbd>$FF</kbd> Means don't display the meter, which occurs when the enemy despawns or dies the meter is displaying for. Note that this will write blank tiles every frame.</li>
 							<li><kbd>$FE</kbd> is &ldquo;disabled&rdquo;, will only write blank tiles to clear the HP meter display once, then set itself to <kbd>$FD</kbd>. Make sure you do not set this to <kbd>$FE</kbd> every frame though.</li>
 							<li><kbd>$FD</kbd> is also &ldquo;disabled&rdquo;, but will not write anything on the spot the meter occupies (stops writing tiles here every frame, including blank tiles).</li>
 						</ul>
@@ -416,36 +424,14 @@ autoclean JML SpriteHPGetSlotIndex</pre>
 	<p>For boss sprites, to have an optional &ldquo;intro-fill&rdquo; effect (meter automatically appears empty and fills up at the start of a fight), run this code under a sprite init, or under main (if you want the
 	animation after a cutscene after the sprite spawns, but make sure it does not execute every frame) by calling it like this: <kbd>%IntroHPBarFillAnimation()</kbd>. Note that you must have <kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd> and
 	<kbd>!Setting_SpriteHP_BarAnimation</kbd> be set to 1 (else it just appears full without animation):
-<div class="CodeBlock" style="height: 460px;"><pre>
+<div class="CodeBlock" style="height: 110px;"><pre>
 	;Have the following as an option on your custom sprite if you are willing to submit it to SMWC.
 		!IntroFill = 1                                                      ;&gt;0 = no, 1 = yes (switch display to boss sprite with filling animation or simply a full bar if animation disabled).
 	
-
-	macro IntroHPBarFillAnimation()
-		?IntroHPBarFill:
-		if !IntroFill
-			LDA !Freeram_SpriteHP_MeterState                                                    ;\First check if the meter is locked from displaying
-			CMP #$FE                                                                            ;|if so, then don't set the meter state
-			BEQ ?.Disabled                                                                      ;|
-			CMP #$FD                                                                            ;|
-			BEQ ?.Disabled                                                                      ;/
-			if and(!Setting_SpriteHP_DisplayGraphicalBar, !Setting_SpriteHP_BarAnimation)
-				TXA                                                                         ;\Set HP bar to intro-fill state of its corresponding sprite slot
-				CLC                                                                         ;|
-				ADC.b #!SprSize                                                             ;|
-				STA !Freeram_SpriteHP_MeterState                                            ;/
-				LDA #$00                                                                    ;\Start the meter at 0%
-				STA !Freeram_SpriteHP_BarAnimationFill,x                                    ;/
-				if !Setting_SpriteHP_BarChangeDelay                                         ;
-					STA !Freeram_SpriteHP_BarAnimationTimer,x                           ;&gt;Set timer to 0 to make sure the animation plays correctly (allow SFX)
-				endif                                                                       ;
-			else
-				TXA
-				STA !Freeram_SpriteHP_MeterState
-			endif
-			?.Disabled
-		endif
-	endmacro</pre></div>
+	if !IntroFill
+		JSL !SharedSub_SpriteHPIntroEffect
+	endif
+</pre></div>
 	</p>
 	<h3><a href="#ToC_MakeSpritesDisplayHP_GetHPValue" id="JMPTo_MakeSpritesDisplayHP_GetHPValue">^</a>Obtaining HP value...</h3>
 	<p>This covers on how to extract data from a sprite table that is being used to track the amount of damage or health, then storing that data to <kbd>!Freeram_SpriteHP_CurrentHPLow</kbd>, <kbd>!Freeram_SpriteHP_MaxHPLow</kbd>
