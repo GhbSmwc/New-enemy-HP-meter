@@ -179,7 +179,7 @@
 								The reason for the dual-formats is because there are 2 types of status bar tile data formatting: 2 tables; <kbd>%TTTTTTTT, %TTTTTTTT, ...</kbd> and <kbd>%YXPCCCTT, %YXPCCCTT, ...</kbd> for the non-<kbd>Format2</kbd>
 								(which are most of Ladida's status bar patches, <a href="https://www.smwcentral.net/?p=section&a=details&id=35718">Minimalist</a>, and <a href="https://www.smwcentral.net/?p=section&a=details&id=21573">SMB3</a>), and the
 								<kbd>Format2</kbd> version have one table interleaved: <kbd>%TTTTTTTT, %YXPCCCTT, (repeats the two)</kbd> (which are Kaijyuu's <a href="https://www.smwcentral.net/?p=section&a=details&id=19247">Super Status Bar</a> and MarioFanGamer's
-								<a href="https://www.smwcentral.net/?p=section&a=details&id=21665">Overworld Border Plus</a> patch).
+								<a href="https://www.smwcentral.net/?p=section&a=details&id=21665">Overworld Border Plus</a> (OWB+) patch). It's possible you'll want to have both formats if you have OWB+ for "Overworld HUD" and using non-<kbd>Format2</kbd> status bars for levels.
 								<ul>
 									<li><kbd>ConvertToRightAligned</kbd> (only used if <kbd class="NoLineBreak">!Setting_SpriteHP_NumericalTextAlignment == 2</kbd>)</li>
 									<li><kbd>ConvertToRightAlignedFormat2</kbd> (same as above)</li>
@@ -622,7 +622,7 @@ Change that to this:
 	<ul>
 		<li>Any sprite (most likely custom sprites) with 6th tweaker byte's (RAM <a href="https://smwc.me/m/smw/ram/7E190F"><kbd>$190F</kbd></a>) bit 3 (<kbd>Takes 5 fireballs to kill</kbd>) being set will also be affected by this patch. In the original game, this feature was only used by Chargin' Chucks and
 		all its variants. Instead of counting RAM <a href="https://smwc.me/m/smw/ram/7E1528"><kbd>$1528</kbd></a> up by 1 and killing the sprite when reaches 5 or more, it counts up by a value defined as <kbd>!Setting_SpriteHP_FireballDamageAmount</kbd>,
-		and dies if this number reaches or exceeds a value defined as <kbd>!Setting_SpriteHP_VanillaSprite_ChuckHPAmount</kbd> (these are found in <kbd>EnemyHPMeterDefines.asm</kbd>). The code checking if enough damage have been made by the fireballs is
+		and dies if this number reaches or exceeds a value defined as <kbd>!Setting_SpriteHP_VanillaSprite_Chucks_HPAmount</kbd> (these are found in <kbd>EnemyHPMeterDefines.asm</kbd>). The code checking if enough damage have been made by the fireballs is
 		processed by the fireballs' code (at <kbd>$02A0FC</kbd>) rather than the sprite's code.</li>
 		<li>Ludwig, Morton, and Roy, however, their sprite code processes the fireball damage manually, and does not utilizes the 5 fireballs tweaker bit.</li>
 	</ul>
@@ -641,7 +641,7 @@ Change that to this:
 				<li>Numbers not showing (either because you have them disabled or too many symbols in the text display of the numbers), and it's HP is set above its maximum.</li>
 				<li>The amount of damage it receives was set to 0 damage, causing no changes on its HP value.</li>
 				<li>You forgot to modify the sprite's code to write its own HP data into this ASM resource' HP data to display properly.</li>
-				<li>With the numbers not showing, if you have more max HP than the number of pieces the bar has, small damages can result in the bar visibly not updating. This is because a range of current HP values get rounded to the
+				<li>With the numbers not showing, if you have more max HP than the number of pieces the bar has, small damages can result in the bar visibly not updating. This is because a range of current HP values get approximated (rounded) to the
 				same amount of fill in the bar.</li>
 			</ul>
 		
@@ -657,8 +657,15 @@ Change that to this:
 				<li>Hijack conflicts. This should only be possible if you patch <kbd>HPSystemForSMWSprites.asm</kbd> along with 3rd party patches that also modifies SMW's sprites with overlapping hijacks with those said patches (such as
 				<a href="https://www.smwcentral.net/?p=section&a=details&id=20847">&ldquo;FireBall HP&rdquo;</a> patch by Bio).</li>
 				<li>
-					Using an Incorrect address for Shared Subroutines JML list. Make sure you place it at an actual freespace and not address occupied by the original game, other patches, including by other tools and Lunar Magic. Best way to fix is to revert your game to a previous
-					state before patching Shared Subroutines, correct the address for the JML list, re-patch, and update every copy of the Shared Subroutine defines for all ASM resources using the Shared Subroutines and re-insert them.
+					Incorrect use of Shared Subroutines:
+					<ul>
+						<li>
+							Using an Incorrect address for Shared Subroutines JML list. Make sure you place it at an actual freespace and not address occupied by the original game, other patches, including by other tools and Lunar Magic. Best way to fix is to revert your game to a previous
+							state before patching Shared Subroutines, correct the address for the JML list, re-patch, and update every copy of the Shared Subroutine defines for all ASM resources using the Shared Subroutines and re-insert them.
+						</li>
+						<li>You've relocated the JML list but not updated the defines that references the JML list in other ASM stuff, causing the game's code to jump to an old outdated area that is invalid.</li>
+					</ul>
+				
 				</li>
 				<li>Faulty code that you have found that I didn't catch (most likely if you haven't installed any other ASM resource). PM me or the moderators on fixing a newly discovered bug. If I'm inactive, feel free to update it.</li>
 			</ul>

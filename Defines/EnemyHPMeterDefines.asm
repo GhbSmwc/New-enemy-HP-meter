@@ -236,8 +236,9 @@
 					!Setting_SpriteHP_FillingSFXPort		= $1DFC|!addr	;>Use $1DF9, $1DFA, or $1DFC, followed by "|!addr" if you're using SA-1
 	;Patching settings
 		;Apply (proper) HP system on various vanilla SMW sprites: 0 = no, 1 = yes, again, use only mentioned values,
-		;unless stated otherwise.
-			!Setting_SpriteHP_ModifySMWSprites			= 1	;>Universal option if you want to not have HP meters for all vanilla SMW sprites (this also undo the patching if you have already).
+		;unless stated otherwise. Having these turned off will COMPLETELY revert back to original format including
+		;the fireball and stomp damage jank.
+			!Setting_SpriteHP_ModifySMWSprites			= 1	;>Universal option if you want to have all SMW sprites unaffected (this also undo the patching if you have already).
 			!Setting_SpriteHP_VanillaSprite_Chuck			= 1
 				;^All the chucks in SMW.
 			!Setting_SpriteHP_VanillaSprite_Bosses			= 1
@@ -246,14 +247,10 @@
 				;-Wendy and Lemmy (share most of the same code)
 				;-Ludwig, Morton, and Roy (same as above)
 				
-		;Disable displaying HP but keep the fireball and stomp damage jank fix?
+		;Disable displaying HP but keep the proper fireball and stomp damage and the hurt SFX?
 			!Setting_SpriteHP_NoDisplaySMWSpriteHP			= 0
-				;^0 = Will display the HP meter along with the jank fix.
-				; 1 = will not display HP, but keep the jank fix.
-				;
-				; The jank is that damages from stomps and fireballs
-				; increases the damage count by 1 and they die at
-				; certain values depending on what last hit them.
+				;^0 = Will display the HP meter along with the jank fix + fireball hurt SFX.
+				; 1 = will not display HP, but keep the jank fix and fireball hurt sound.
 				;
 				; This only affects the display of the meter of HP
 				; of SMW's vanilla sprites.
@@ -262,32 +259,33 @@
 		;Ludwig/Morton/Roy: $1626, Big Boo Boss, Wendy and Lemmy: $1534). This means up to 255 health and
 		;damage are allowed, and those does not support 16-bit HP system.
 		;This only applies if !Setting_SpriteHP_ModifySMWSprites == 1 and their respective settings being 1.
-			!Setting_SpriteHP_VanillaSprite_ChuckHPAmount		= 15	;>This applies to all chuck variants.
-			!Setting_SpriteHP_VanillaSprite_Chuck_StompDamage	= 5	;>Amount of HP loss when taking damage from stomp attacks
+			!Setting_SpriteHP_VanillaSprite_Chucks_HPAmount		= 15	;>This applies to all chuck variants and all sprites with "Take 5 fireballs to kill" of $190F's bit 3.
+			!Setting_SpriteHP_VanillaSprite_Chucks_StompDamage	= 5	;>Amount of HP loss when taking damage from stomp attacks
 			
-			!Setting_SpriteHP_VanillaSprite_BigBooBossHPAmount		= 3	;>Amount of HP Big Boo boss have.
-			!Setting_SpriteHP_VanillaSprite_BigBooBossThrownItemDamage	= 1	;>Amount of damage Big Boo boss takes from any thrown sprite.
+			!Setting_SpriteHP_VanillaSprite_BigBooBoss_HPAmount		= 3	;>Amount of HP Big Boo boss have.
+			!Setting_SpriteHP_VanillaSprite_BigBooBoss_ThrownItemDamage	= 1	;>Amount of damage Big Boo boss takes from any thrown sprite.
 			
-			!Setting_SpriteHP_VanillaSprite_WendyLemmyHPAmount	= 3
-			!Setting_SpriteHP_VanillaSprite_WendyLemmyStompDamage	= 1
+			!Setting_SpriteHP_VanillaSprite_WendyLemmy_HPAmount	= 3
+			!Setting_SpriteHP_VanillaSprite_WendyLemmy_StompDamage	= 1
 			;Following settings are HP and damage values for Ludwig, Morton and Roy.
 			;
 			;Be careful with having too much health and too little damage from stomp attacks for Roy, if its possible to stomp Roy too many times
 			;(from my testing, 7 and higher) before he dies, the pillars of the arena can glitch since Nintendo didn't program a limit on how
 			;far the pillars can move. To know if its possible, do the math: NumberOfStomps = ceiling(Health/StompDamage), where ceiling rounds
 			;the number up to an integer.
-				!Setting_SpriteHP_VanillaSprite_LudwigMortonRoyHPAmount		= 12
-				!Setting_SpriteHP_VanillaSprite_LudwigMortonRoyStompDamage	= 4
-				!Setting_SpriteHP_VanillaSprite_LudwigMortonRoyFireballDamage	= 1
-		;For any sprite whose tweaker $190F's bit 3 (%wcdj5sDp, takes 5 fireballs to kill) is set:
+				!Setting_SpriteHP_VanillaSprite_LudwigMortonRoy_HPAmount	= 12
+				!Setting_SpriteHP_VanillaSprite_LudwigMortonRoy_StompDamage	= 4
+				!Setting_SpriteHP_VanillaSprite_LudwigMortonRoy_FireballDamage	= 1
+		;For any sprite whose tweaker $190F's bit 3 (%wcdj5sDp, takes 5 fireballs to kill; bit 3) is set:
 			!Setting_SpriteHP_FireballDamageAmount			= 3	;>Amount of damage sprites receives from fireball damage.
 		;Fixes and additions
-			;Sound effect when the fireball hits chucks. See: https://www.smwcentral.net/?p=viewthread&t=6665
-				!Setting_SpriteHP_VanillaSprite_ChuckFireDamage_SoundNumber	= $28		;>Set to 0 to disable.
-				!Setting_SpriteHP_VanillaSprite_ChuckFireDamage_SoundPort	= $1DFC|!addr
+			;Sound effect when the fireball damages enemies with the "take 5 fireballs to kill" bit being set.
+			;See: https://www.smwcentral.net/?p=viewthread&t=6665
+				!Setting_SpriteHP_VanillaSprite_5FireballsToKill_SoundNumber	= $28		;>Set to 0 to disable.
+				!Setting_SpriteHP_VanillaSprite_5FireballsToKill_SoundPort	= $1DFC|!addr
 			;Same but when shooting fireballs to Ludwig, Morton, and Roy.
-				!Setting_SpriteHP_VanillaSprite_LudwigMortonRoyDamage_SoundNumber	= $28
-				!Setting_SpriteHP_VanillaSprite_LudwigMortonRoyDamage_SoundPort		= $1DFC|!addr
+				!Setting_SpriteHP_VanillaSprite_LudwigMortonRoy_Damage_SoundNumber	= $28
+				!Setting_SpriteHP_VanillaSprite_LudwigMortonRoy_Damage_SoundPort	= $1DFC|!addr
 	;Misc settings
 		!Setting_SpriteHP_DisplaySpriteHPDataOnConsole = 0
 			;^0 = no
