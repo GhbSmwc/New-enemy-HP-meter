@@ -352,14 +352,10 @@ SPRITE_CODE_START:
 							PLA			;\Restore hitbox data.
 							STA $00			;/
 							SEP #$20
-							LDA #$00		;\Delete fireball (no penetrate).
-							STA $170B|!Base2,y	;/there is no STZ $XXXX,y
-							PHX			;>Protect main sprite slot
-							PHY			;>Protect extended sprite slot
-							TYX			;>Transfer extended sprite slot number to X (Y will be smoke sprite number)
-							%SpawnSmokeByExtSpr()
-							PLY			;>Restore Y
-							PLX			;>Restore X
+							LDA #$01		;\Turn fireball into smoke the same way it interacts with enemies and solid blocks in vanilla.
+							STA $170B|!Base2,y	;|
+							LDA #$0F		;|
+							STA $176F|!Base2,y	;/
 
 				...NextSlot
 					DEY			;>Next slot

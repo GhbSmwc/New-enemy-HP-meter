@@ -506,7 +506,7 @@ autoclean JML SpriteHPIntroEffect</pre>
 	Thankfully, all that logic is handled automatically in a subroutine defined as <kbd>!SharedSub_SpriteHPDamage</kbd>, with the inputs stored in <kbd>$00</kbd> (2 bytes if <kbd>!Setting_SpriteHP_TwoByte == 1</kbd>). Feel free to check out the subroutines as you wish.</p>
 	
 	<p>If you want to know how it works, just open the provided custom sprite's asm file or view the provided patch and seeing the SMW disassembly. Please note that, because patches, uberasm tool, and pixi have their own isolated subroutines system,
-	and I don't want to have duplicate subroutines, the patch version on handling the bar animation is very different, it does not calculate via RAM on how many pieces are in the bar to determine, rather a pre-calculated number of pieces in the bar.</p>
+	and I don't want to have duplicate subroutines, I had to use Shared Subroutines to make this work.</p>
 	
 	<p>If you're dealing with an incremental damage counter-type HP for bosses and wanted a damage animation, you would do the same thing, just make sure the how much it increases are stored in <kbd>$00</kbd> (<kbd>$00~$01</kbd> if <kbd>!Setting_SpriteHP_TwoByte == 1</kbd>), for example,
 	the <a href="https://www.smwcentral.net/?p=section&a=details&id=13144">Giant Masked Koopa boss</a>:
@@ -579,7 +579,7 @@ autoclean JML SpriteHPIntroEffect</pre>
         STA $00                 ;/
     endif
     ;[...]</pre></div><br>
-	Now, if the sprite can take <b>multiple points of damage</b> instead of <kbd>1</kbd> point (and often have multiple ways to deal damage than just stomp), such as the <a href="https://www.smwcentral.net/?p=section&a=details&id=30909">Wreckin' Chuck</a> by Sonikku,
+	Now, if the sprite can take <b>multiple points and different amounts of damage</b> instead of <kbd>1</kbd> point (and often have multiple ways to deal damage than just stomp), such as the <a href="https://www.smwcentral.net/?p=section&a=details&id=30909">Wreckin' Chuck</a> by Sonikku,
 	then you should also have those damages reflected into RAM <kbd>$00</kbd>. Here is the code that handles increasing the damage count:
 <div class="CodeBlock" style="height: 190px;"><pre>	;[...]
 .DealDamage
@@ -624,7 +624,7 @@ Change that to this:
 		all its variants. Instead of counting RAM <a href="https://smwc.me/m/smw/ram/7E1528"><kbd>$1528</kbd></a> up by 1 and killing the sprite when reaches 5 or more, it counts up by a value defined as <kbd>!Setting_SpriteHP_FireballDamageAmount</kbd>,
 		and dies if this number reaches or exceeds a value defined as <kbd>!Setting_SpriteHP_VanillaSprite_Chucks_HPAmount</kbd> (these are found in <kbd>EnemyHPMeterDefines.asm</kbd>). The code checking if enough damage have been made by the fireballs is
 		processed by the fireballs' code (at <kbd>$02A0FC</kbd>) rather than the sprite's code.</li>
-		<li>Ludwig, Morton, and Roy, however, their sprite code processes the fireball damage manually, and does not utilizes the 5 fireballs tweaker bit.</li>
+		<li>Ludwig, Morton, and Roy, however, their sprite code processes the fireball damage manually and in their own sprite code, and does not utilizes the 5 fireballs tweaker bit.</li>
 	</ul>
 	<hr>
 	<h2><a href="#ToC_Troubleshooting" id="JMPTo_Troubleshooting">^</a>Troubleshooting</h2>
