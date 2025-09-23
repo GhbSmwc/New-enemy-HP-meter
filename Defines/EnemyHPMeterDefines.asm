@@ -260,7 +260,7 @@
 				!Setting_SpriteHP_VanillaSprite_LudwigMortonRoy_Damage_SoundNumber	= $28
 				!Setting_SpriteHP_VanillaSprite_LudwigMortonRoy_Damage_SoundPort	= $1DFC|!addr
 	;Misc settings
-		!Setting_SpriteHP_DisplaySpriteHPDataOnConsole = 1
+		!Setting_SpriteHP_DisplaySpriteHPDataOnConsole = 0
 			;^0 = no
 			; 1 = yes, display the HP data RAM usage on asar console.
 
