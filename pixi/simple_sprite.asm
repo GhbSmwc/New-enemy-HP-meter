@@ -153,7 +153,7 @@ SPRITE_CODE_START:
 			JSR Heal					;/
 			if and(!Setting_SpriteHP_BarAnimation, notequal(!Setting_SpriteHP_BarChangeDelay, 0))
 				LDA.b #!Setting_SpriteHP_BarChangeDelay
-				STA !Freeram_SpriteHP_BarAnimationTimer,x
+				STA !Freeram_SpriteHP_BarAnimationTimer
 			endif
 			if !HealingSfxNum != 0
 				LDA #!HealingSfxNum

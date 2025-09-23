@@ -75,9 +75,9 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					ADC.b #!sprite_slots
 					STA !Freeram_SpriteHP_MeterState
 					LDA #$00
-					STA !Freeram_SpriteHP_BarAnimationFill,x
+					STA !Freeram_SpriteHP_BarAnimationFill
 					if !Setting_SpriteHP_BarChangeDelay
-						STA !Freeram_SpriteHP_BarAnimationTimer,x
+						STA !Freeram_SpriteHP_BarAnimationTimer
 					endif
 					?.IntroDone
 				else
@@ -300,15 +300,6 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				STA !1528,x
 			.ConvertHitCountToHP
 				%ConvertDamageAmountToHP(!1528, !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount)
-				
-				if !Setting_SpriteHP_BarAnimation
-					JSL !SharedSub_SpriteHPGetSlotIndex
-					TXA
-					CMP !Scratchram_SpriteHP_SpriteSlotToDisplay
-					BEQ ..OnCurrentSprite
-					JSL !SharedSub_SpriteHPRemoveRecordEffect
-					..OnCurrentSprite
-				endif
 			
 			.Restore
 				LDA !187B,x
@@ -379,9 +370,9 @@ incsrc "Defines/GraphicalBarDefines.asm"
 						ADC.b #!sprite_slots
 						STA !Freeram_SpriteHP_MeterState
 						LDA #$00
-						STA !Freeram_SpriteHP_BarAnimationFill,x
+						STA !Freeram_SpriteHP_BarAnimationFill
 						if !Setting_SpriteHP_BarChangeDelay
-							STA !Freeram_SpriteHP_BarAnimationTimer,x
+							STA !Freeram_SpriteHP_BarAnimationTimer
 						endif
 						..NoIntroFill
 					else

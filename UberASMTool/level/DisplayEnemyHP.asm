@@ -125,6 +125,14 @@ load:
 	.ClearHPData
 		LDA #$FF								;\Default to not display any HP
 		STA !Freeram_SpriteHP_MeterState					;/
+		if !Setting_SpriteHP_BarAnimation
+			LDA.b #!Setting_SpriteHP_GraphicalBar_TotalPieces
+			STA !Freeram_SpriteHP_BarAnimationFill
+			if !Setting_SpriteHP_BarChangeDelay != 0
+				LDA.b #!Setting_SpriteHP_BarChangeDelay
+				STA !Freeram_SpriteHP_BarAnimationTimer
+			endif
+		endif
 		LDX.b #!sprite_slots-1
 		..Loop
 			;This defaults HP for 12 or 22 sprite slots to having 0 HP out of 1 HP.
@@ -135,14 +143,6 @@ load:
 			if !Setting_SpriteHP_TwoByte
 				STA !Freeram_SpriteHP_CurrentHPHi,x
 				STA !Freeram_SpriteHP_MaxHPHi,x
-			endif
-			if !Setting_SpriteHP_BarAnimation
-				LDA.b #!Setting_SpriteHP_GraphicalBar_TotalPieces
-				STA !Freeram_SpriteHP_BarAnimationFill,x
-				if !Setting_SpriteHP_BarChangeDelay != 0
-					LDA.b #!Setting_SpriteHP_BarChangeDelay
-					STA !Freeram_SpriteHP_BarAnimationTimer,x
-				endif
 			endif
 			LDA #$01
 			STA !Freeram_SpriteHP_MaxHPLow,x
@@ -296,15 +296,15 @@ main:
 				PLX
 				if !Setting_SpriteHP_BarAnimation
 					if !Setting_SpriteHP_BarChangeDelay
-						LDA !Freeram_SpriteHP_BarAnimationTimer,x
+						LDA !Freeram_SpriteHP_BarAnimationTimer
 						BEQ ...TimerEnded
 						DEC
-						STA !Freeram_SpriteHP_BarAnimationTimer,x
+						STA !Freeram_SpriteHP_BarAnimationTimer
 						...TimerEnded
 					endif
 					
 					LDA $00							;>Fill amount of current HP
-					CMP !Freeram_SpriteHP_BarAnimationFill,x		;>Fill amount of previous HP prior damage/recovery
+					CMP !Freeram_SpriteHP_BarAnimationFill			;>Fill amount of previous HP prior damage/recovery
 					BNE +
 					JMP ...PreviousAndCurrentHPEqual
 					+
@@ -321,11 +321,11 @@ main:
 							LDA !Freeram_SpriteHP_MeterState
 							CMP.b #!sprite_slots
 							BCS ....IncreaseFill				;>No pause delays if IntroFill is active
-							LDA !Freeram_SpriteHP_BarAnimationTimer,x
+							LDA !Freeram_SpriteHP_BarAnimationTimer
 							BNE ....ShowFilllingUp
 						endif
 						....IncreaseFill
-							LDA !Freeram_SpriteHP_BarAnimationFill,x
+							LDA !Freeram_SpriteHP_BarAnimationFill
 							if !Setting_SpriteHP_BarFillUpPerFrame >= 2
 								CLC
 								ADC.b #!Setting_SpriteHP_BarFillUpPerFrame
@@ -335,20 +335,20 @@ main:
 								
 								.....IncrementPast
 									LDA $00
-									STA !Freeram_SpriteHP_BarAnimationFill,x
+									STA !Freeram_SpriteHP_BarAnimationFill
 									BRA ....ShowFilllingUp
 								.....Increment
-									STA !Freeram_SpriteHP_BarAnimationFill,x
+									STA !Freeram_SpriteHP_BarAnimationFill
 							else
 								INC
-								STA !Freeram_SpriteHP_BarAnimationFill,x
+								STA !Freeram_SpriteHP_BarAnimationFill
 							endif
 						....ShowFilllingUp
 							.....TerminateIntroFillIfAtCurrentHP
 								LDA !Freeram_SpriteHP_MeterState
 								CMP.b #!sprite_slots
 								BCC ......NoTerminate
-								LDA !Freeram_SpriteHP_BarAnimationFill,x
+								LDA !Freeram_SpriteHP_BarAnimationFill
 								CMP $00
 								BCC ......NoTerminate
 								
@@ -367,13 +367,13 @@ main:
 								BNE .....FillSoundEffect
 								.....IntroFill
 							endif
-							LDA !Freeram_SpriteHP_BarAnimationFill,x	;\Show animation fill.
+							LDA !Freeram_SpriteHP_BarAnimationFill		;\Show animation fill.
 							STA $00						;/
 							.....FillSoundEffect
 								if !Setting_SpriteHP_FillingSFXNumb
 									LDA $13D4|!addr					;>Pause flag
 									if !Setting_SpriteHP_BarChangeDelay
-										ORA !Freeram_SpriteHP_BarAnimationTimer,x	;>Fill freeze timer
+										ORA !Freeram_SpriteHP_BarAnimationTimer	;>Fill freeze timer
 									endif
 									BNE ......NoSfx					;>Only SFX if actually filling upwards.
 									LDA $13
@@ -406,13 +406,13 @@ main:
 							BNE ....TransperentAnimation				;/>If odd frame, display alternating frames of HP.
 						else
 							if !Setting_SpriteHP_BarChangeDelay != 0
-								LDA !Freeram_SpriteHP_BarAnimationTimer,x
+								LDA !Freeram_SpriteHP_BarAnimationTimer
 								BNE ....TransperentAnimation
 							endif
 						endif
 						....DecreaseFill
 							if !Setting_SpriteHP_BarEmptyPerFrame >= 2
-								LDA !Freeram_SpriteHP_BarAnimationFill,x	;\Decrement fill
+								LDA !Freeram_SpriteHP_BarAnimationFill		;\Decrement fill
 								SEC						;|
 								SBC.b #!Setting_SpriteHP_BarEmptyPerFrame	;/
 								BCC .....Underflow				;>Underflow check
@@ -421,16 +421,16 @@ main:
 								
 								.....Underflow
 									LDA $00						;\Set record to current if it did goes past.
-									STA !Freeram_SpriteHP_BarAnimationFill,x	;/
+									STA !Freeram_SpriteHP_BarAnimationFill		;/
 									BRA ...AnimationDone
 								
 								.....Decrement
-									STA !Freeram_SpriteHP_BarAnimationFill,x	;>And set the subtracted value to record
+									STA !Freeram_SpriteHP_BarAnimationFill		;>And set the subtracted value to record
 									BRA ....TransperentAnimation
 							else
-								LDA !Freeram_SpriteHP_BarAnimationFill,x	;\Decrement by 1
+								LDA !Freeram_SpriteHP_BarAnimationFill		;\Decrement by 1
 								DEC						;|
-								STA !Freeram_SpriteHP_BarAnimationFill,x	;/
+								STA !Freeram_SpriteHP_BarAnimationFill		;/
 							endif
 						....TransperentAnimation
 							if !Setting_SpriteHP_ShowDamageTransperent != 0
@@ -438,7 +438,7 @@ main:
 								AND.b #%00000001			;/
 								BNE ...AnimationDone			;>If odd frame, display current HP.
 							endif
-							LDA !Freeram_SpriteHP_BarAnimationFill,x	;\Otherwise if even, display previous HP
+							LDA !Freeram_SpriteHP_BarAnimationFill		;\Otherwise if even, display previous HP
 							STA $00						;/
 					...PreviousAndCurrentHPEqual
 					...AnimationDone

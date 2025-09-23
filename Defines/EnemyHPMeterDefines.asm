@@ -1,38 +1,11 @@
 	incsrc "StatusBarDefines.asm"
-;Fixed freespace settings
-	!Setting_InstallOwnSharedSubroutine = 0
-		;Install a list of JMLs into the ROM at a fixed location which those
-		;JMLs jump to freespace code (varying location each time you insert):
-		; 0 = No (you'll need a separate patch: Shared Subroutines that is including those routines)
-		; 1 = Yes
-		;Reason for either of these to install an easily accessible subroutines
-	!Freespace_SpriteHP_SharedSub_JMLList = $128000
-		;^[BytesUsed = (RatsIfNeeded+(NumberOfJMLs*4)) * !Setting_InstallOwnSharedSubroutine]
-		; This is only used if !Setting_InstallOwnSharedSubroutine == 1.
-		; RatsIfNeeded = 0 if you have [BankNumber & $7F] less than $10
-		;  (so if you are in banks $00-$7F, its $10-$7F, for $80-$FF, its $90-$FF).
-		; RatsIfNeeded = 8 otherwise.
-		;
-		; The fixed location where the JMLs list to be inserted to.
-		; Must be a freespace location. Be careful that editing
-		; this address and re-inserting does NOT remove the old JML
-		; list. Use a debugger or some hex editor to erase it.
-		; Don't forget to remove stuff in the freespace code as
-		; well.
 ;Freeram settings
-	;[BytesUsed = 1 + (!sprite_slots*2) + (!sprite_slots * EnabledTables)]
-	;Where "EnabledTables" is how many tables you can optionally have:
-	; - High bytes if you want 16-bit HP: if !Setting_SpriteHP_TwoByte == 1. This
-	;   adds 2 tables, one for current HP, and the other for max HP.
-	; - Bar fill animation. When !Setting_SpriteHP_DisplayGraphicalBar == 1 and
-	;   !Setting_SpriteHP_BarAnimation == 1, this adds 1 table.
-	; - Bar fill delay. If having all these conditions met:
-	; -- !Setting_SpriteHP_DisplayGraphicalBar != 0
-	; -- !Setting_SpriteHP_BarAnimation != 0
-	; -- !Setting_SpriteHP_BarChangeDelay != 0
-	;   then 1 table is added.
+	;[BytesUsed = 1 + (!sprite_slots*2) + ((!sprite_slots*2) * !Setting_SpriteHP_TwoByte) +
+	; (!Setting_SpriteHP_DisplayGraphicalBar * !Setting_SpriteHP_BarAnimation) +
+	; (!Setting_SpriteHP_DisplayGraphicalBar * !Setting_SpriteHP_BarAnimation) *
+	; (!Setting_SpriteHP_BarAnimation != 0)]
 	;
-	;A series of HP data stored in memory, in this order:
+	;A series of HP data stored in memory, in this order (placed contiguously):
 	;
 	; - Define: !Freeram_SpriteHP_MeterState
 	; -- BytesUsed: 1
@@ -67,19 +40,19 @@
 	; -- Sprite's max HP, high byte
 	;
 	; - Define: !Freeram_SpriteHP_BarAnimationFill
-	; -- BytesUsed: [BytesUsed = !sprite_slots * (!Setting_SpriteHP_DisplayGraphicalBar & !Setting_SpriteHP_BarAnimation)]
+	; -- BytesUsed: [BytesUsed = (!Setting_SpriteHP_DisplayGraphicalBar & !Setting_SpriteHP_BarAnimation)]
 	; -- Description: A secondary fill amount of the bar, apart from the sprite's current HP's fill amount. This is to
 	;    briefly show previous HP fill amount prior to taking damage or healing before gradually increases or decreases
 	;    to the sprite's current HP fill amount. This is also used for IntroFill animation.
 	;
 	; - Define: !Freeram_SpriteHP_BarAnimationTimer
-	; -- BytesUsed: [BytesUsed = !sprite_slots * (!Setting_SpriteHP_DisplayGraphicalBar & !Setting_SpriteHP_BarAnimation & (!Setting_SpriteHP_BarChangeDelay != 0))]
+	; -- BytesUsed: [BytesUsed = (!Setting_SpriteHP_DisplayGraphicalBar & !Setting_SpriteHP_BarAnimation & (!Setting_SpriteHP_BarChangeDelay != 0))]
 	; -- Description: delay timer (decreases itself once per frame) before !Freeram_SpriteHP_BarAnimationFill updates to
 	;    the sprite's current HP fill amount. This is ignored if "IntroFill" mode is active.
 	;
 	; Summary:
 	; - LoROM number of bytes used: 25 to 73 bytes used.
-	; - SA-1 version number of bytes used: 45 to 133 bytes used.
+	; - SA-1 version number of bytes used: 45 to 91 bytes used.
 	;
 	;If you want to know display the RAM usage of this, have !Setting_SpriteHP_DisplaySpriteHPDataOnConsole set to 1 and
 	;insert via uberasm tool. The console window will show the list of itemized used RAM.
@@ -287,7 +260,7 @@
 				!Setting_SpriteHP_VanillaSprite_LudwigMortonRoy_Damage_SoundNumber	= $28
 				!Setting_SpriteHP_VanillaSprite_LudwigMortonRoy_Damage_SoundPort	= $1DFC|!addr
 	;Misc settings
-		!Setting_SpriteHP_DisplaySpriteHPDataOnConsole = 0
+		!Setting_SpriteHP_DisplaySpriteHPDataOnConsole = 1
 			;^0 = no
 			; 1 = yes, display the HP data RAM usage on asar console.
 
@@ -333,9 +306,9 @@
 					%MacroAssignDefineOneAfterAnother(Freeram_SpriteHP_MaxHPHi, !sprite_slots, CurrentAddressToAssignDefine_SpriteHPData)
 				endif
 				if !Setting_SpriteHP_BarAnimation
-					%MacroAssignDefineOneAfterAnother(Freeram_SpriteHP_BarAnimationFill, !sprite_slots, CurrentAddressToAssignDefine_SpriteHPData)
+					%MacroAssignDefineOneAfterAnother(Freeram_SpriteHP_BarAnimationFill, 1, CurrentAddressToAssignDefine_SpriteHPData)
 					if !Setting_SpriteHP_BarChangeDelay
-						%MacroAssignDefineOneAfterAnother(Freeram_SpriteHP_BarAnimationTimer, !sprite_slots, CurrentAddressToAssignDefine_SpriteHPData)
+						%MacroAssignDefineOneAfterAnother(Freeram_SpriteHP_BarAnimationTimer, 1, CurrentAddressToAssignDefine_SpriteHPData)
 					endif
 				endif
 	;Get status bar addresses
@@ -382,9 +355,9 @@
 			print "$", hex(!Freeram_SpriteHP_MaxHPHi), " ", dec(!sprite_slots), " Sprite max HP, high byte (\!Freeram_SpriteHP_MaxHPHi)."
 		endif
 		if !Setting_SpriteHP_BarAnimation
-			print "$", hex(!Freeram_SpriteHP_BarAnimationFill), " ", dec(!sprite_slots), " Sprite graphical bar fill amount for animation (\!Freeram_SpriteHP_BarAnimationFill)."
+			print "$", hex(!Freeram_SpriteHP_BarAnimationFill), " 1 Sprite graphical bar fill amount for animation (\!Freeram_SpriteHP_BarAnimationFill)."
 			if !Setting_SpriteHP_BarChangeDelay
-				print "$", hex(!Freeram_SpriteHP_BarAnimationTimer), " ", dec(!sprite_slots), " Sprite graphical bar fill delay timer (\!Freeram_SpriteHP_BarAnimationTimer)."
+				print "$", hex(!Freeram_SpriteHP_BarAnimationTimer), " 1 Sprite graphical bar fill delay timer (\!Freeram_SpriteHP_BarAnimationTimer)."
 			endif
 		endif
 		print "---------------------------------------------------------------------------------"

@@ -1404,7 +1404,7 @@ SpriteHPDamage:
 	.Disabled
 	if and(notequal(!Setting_SpriteHP_BarAnimation, 0), notequal(!Setting_SpriteHP_BarChangeDelay, 0))
 		LDA.b #!Setting_SpriteHP_BarChangeDelay		;\Freeze damage indicator (this makes the bar animation hangs before decreasing towards current HP fill amount)
-		STA !Freeram_SpriteHP_BarAnimationTimer,x	;/
+		STA !Freeram_SpriteHP_BarAnimationTimer		;/
 	endif
 	if !Setting_SpriteHP_TwoByte != 0
 		LDA !Freeram_SpriteHP_CurrentHPHi,x	;>HP high byte
@@ -1526,7 +1526,7 @@ SpriteHPRemoveRecordEffect:
 	PLX
 	if !Setting_SpriteHP_BarAnimation
 		LDA $00
-		STA !Freeram_SpriteHP_BarAnimationFill,x
+		STA !Freeram_SpriteHP_BarAnimationFill
 	endif
 	RTL
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1548,9 +1548,9 @@ SpriteHPIntroEffect:
 		ADC.b #!sprite_slots                                                        ;|
 		STA !Freeram_SpriteHP_MeterState                                            ;/
 		LDA #$00                                                                    ;\Start the meter at 0%
-		STA !Freeram_SpriteHP_BarAnimationFill,x                                    ;/
+		STA !Freeram_SpriteHP_BarAnimationFill                                      ;/
 		if !Setting_SpriteHP_BarChangeDelay                                         ;
-			STA !Freeram_SpriteHP_BarAnimationTimer,x                           ;>Set timer to 0 to make sure the animation plays correctly (allow SFX)
+			STA !Freeram_SpriteHP_BarAnimationTimer                             ;>Set timer to 0 to make sure the animation plays correctly (allow SFX)
 		endif                                                                       ;
 	else
 		TXA

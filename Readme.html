@@ -363,26 +363,22 @@ autoclean JML SpriteHPIntroEffect</pre>
 				</tr>
 				<tr class="RedBackground">
 					<th><kbd>!Freeram_SpriteHP_BarAnimationFill</kbd></th>
-					<td class="Center">Sprite slots</td>
-					<td class="NoLineBreak Center">!sprite_slots</td>
+					<td class="Center">Current sprite slot</td>
+					<td class="NoLineBreak Center">1</td>
 					<td>The secondary fill amount used for the animation of the bar fill going up and down. This does so by using a rapid-flicker to show the difference between current HP fill and previous HP fill. If intro-fill mode is
 					active, will only show the filling up animation.</td>
 					<td>if <kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd> and <kbd>!Setting_SpriteHP_BarAnimation</kbd> is set to <kbd>1</kbd></td>
 				</tr>
 				<tr class="RedBackground">
 					<th><kbd>!Freeram_SpriteHP_BarAnimationTimer</kbd></th>
-					<td class="Center">Sprite slots</td>
-					<td class="NoLineBreak Center">!sprite_slots</td>
+					<td class="Center">Current sprite slot</td>
+					<td class="NoLineBreak Center">1</td>
 					<td>Delay timer that decreases itself once per frame. When nonzero, <kbd>!Freeram_SpriteHP_BarAnimationFill</kbd> briefly freezes
 					before incrementing or decrementing to its current HP fill amount.</td>
 					<td>if <kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd>, <kbd>!Setting_SpriteHP_BarAnimation</kbd>, and <kbd>!Setting_SpriteHP_BarChangeDelay</kbd> is set to nonzero values.</td>
 				</tr>
 			</table><br>
-			Anything with a red background indicates those are optional features you can disable and will not be used. The total number of bytes ranging are:
-			<ul>
-				<li>25 to 73 bytes on LoROM.</li>
-				<li>45 to 133 bytes on SA-1.</li>
-			</ul>
+			Anything with a red background indicates those are optional features you can disable and will not be used.<br><br>
 			If you want to know exactly where they are located, open <kbd>EnemyHPMeterDefines.asm</kbd> and set <kbd>!Setting_SpriteHP_DisplaySpriteHPDataOnConsole</kbd> to <kbd>1</kbd> and reinsert (works on any tool except pixi since <kbd>print</kbd>
 			command behaves differently). On the asar console window, will display the address of each subsection of the sprite HP data (this is in <a href="https://www.smwcentral.net/?p=section&a=details&id=39887">address tracker format</a> along with other summaries.).
 		</p>
