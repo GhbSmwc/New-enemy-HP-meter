@@ -375,7 +375,6 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			.HandleIntroFill
 				if !Setting_SpriteHP_DisplayHPOfSMWSprites
 					if !Setting_SpriteHP_BarAnimation
-						;%IntroFill(!1FD6) ;>This does not work because Wendy/Lemmy actually delete themselves (or simply reset almost all their sprite tables) each time they go back in the pipe.
 						LDA !Ram_WendyLemmyIntroFlag
 						CMP #$25
 						BNE ..NoIntroFill
@@ -392,7 +391,6 @@ incsrc "Defines/GraphicalBarDefines.asm"
 						endif
 						..NoIntroFill
 					else
-						;%IntroFill(!1FD6) ;>This does not work because Wendy/Lemmy actually delete themselves (or simply reset almost all their sprite tables) each time they go back in the pipe.
 						LDA !Ram_WendyLemmyIntroFlag
 						CMP #$25
 						BNE ..NoIntroFill

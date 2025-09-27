@@ -40,13 +40,13 @@
 	; -- Sprite's max HP, high byte
 	;
 	; - Define: !Freeram_SpriteHP_BarAnimationFill
-	; -- BytesUsed: [BytesUsed = (!Setting_SpriteHP_DisplayGraphicalBar & !Setting_SpriteHP_BarAnimation)]
+	; -- BytesUsed: [BytesUsed = (!Setting_SpriteHP_DisplayGraphicalBar && !Setting_SpriteHP_BarAnimation)]
 	; -- Description: A secondary fill amount of the bar, apart from the sprite's current HP's fill amount. This is to
 	;    briefly show previous HP fill amount prior to taking damage or healing before gradually increases or decreases
 	;    to the sprite's current HP fill amount. This is also used for IntroFill animation.
 	;
 	; - Define: !Freeram_SpriteHP_BarAnimationTimer
-	; -- BytesUsed: [BytesUsed = (!Setting_SpriteHP_DisplayGraphicalBar & !Setting_SpriteHP_BarAnimation & (!Setting_SpriteHP_BarChangeDelay != 0))]
+	; -- BytesUsed: [BytesUsed = (!Setting_SpriteHP_DisplayGraphicalBar && !Setting_SpriteHP_BarAnimation && (!Setting_SpriteHP_BarChangeDelay != 0))]
 	; -- Description: delay timer (decreases itself once per frame) before !Freeram_SpriteHP_BarAnimationFill updates to
 	;    the sprite's current HP fill amount. This is ignored if "IntroFill" mode is active.
 	;
@@ -72,7 +72,8 @@
 		;including an unused one $1FD6. Therefore using sprite tables to determine if the introfill animation have already been played,
 		;doesn't work and will replay the animation every time Wendy/Lemmy retreat in their pipes.
 		;By default, this will use the last block in the level map16 data (bottom-right corner). Very unlikely you would need to use the
-		;entire level dimension for a 1-screen boss room.
+		;entire level dimension for a 1-screen boss room. It checks if this value != $25, then play the intro effect, then sets it to $00.
+		;This also means you should not place any other block here.
 			if !sa1 == 0
 				!Ram_WendyLemmyIntroFlag		= $7EFFFF
 			else
