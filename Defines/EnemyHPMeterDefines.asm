@@ -66,18 +66,24 @@
 			;[1 byte]: This holds the current sprite slot used by various codes to determine what sprite slot the HP meter is showing.
 			;This RAM address size must not be 3 bytes long (so $xx and $xxxx are okay, but $xxxxxx are not). It's basically
 			;Value = !Freeram_SpriteHP_MeterState % !sprite_slots.
+	;Qusai-freeram for miscellaneous things (flags to prevent re-triggers)
 		;[BytesUsed = !Setting_SpriteHP_BarAnimation && UsingWendyOrLemmy]. This RAM is only used when vanilla smw boss Wendy or Lemmy koopa
 		;are running. For some reason, SMW either deletes those sprites temporarily ($14C8,x == $00), or just clear all the sprite tables
 		;including an unused one $1FD6. Therefore using sprite tables to determine if the introfill animation have already been played,
-		;doesn't work and will replay the animation every time the koopa retreats in the pipe.
-		;
+		;doesn't work and will replay the animation every time Wendy/Lemmy retreat in their pipes.
 		;By default, this will use the last block in the level map16 data (bottom-right corner). Very unlikely you would need to use the
-		;entire level dimension for a boss room.
+		;entire level dimension for a 1-screen boss room.
 			if !sa1 == 0
-				!Freeram_WendyLemmyIntroFlag		= $7EFFFF
+				!Ram_WendyLemmyIntroFlag		= $7EFFFF
 			else
-				!Freeram_WendyLemmyIntroFlag		= $40FFFF
+				!Ram_WendyLemmyIntroFlag		= $40FFFF
 			endif
+		;[BytesUsed = !sprite_slots * !Setting_SpriteHP_DisplayHPOfSMWSprites]. This RAM is used on a code that runs every frame for Chucks
+		;to switch the HP meter to them when they instantly die (cape spins, kicked shells, bounce blocks, etc.). It is used to check if the
+		;meter have already been switch to them to make it only perform once. I wouldn't want to add a hijack to every instance of $14C8
+		;getting set to any of their death values. This should only be any unused sprite table by the Chucks (and therefore must be cleared
+		;when they load).
+			!Ram_SpriteTable_CharginChuck_InstaKillHaveDisplayedHP = !1626
 ;Settings
 	;HUD settings
 		;Notes:
@@ -220,7 +226,7 @@
 				;-Wendy and Lemmy (share most of the same code)
 				;-Ludwig, Morton, and Roy (same as above)
 				
-		;Simply display the HP of smw sprites?
+		;Simply display the HP of smw sprites? (this does not remove the jank fix)
 			!Setting_SpriteHP_DisplayHPOfSMWSprites			= 1
 				; 0 = will not display HP.
 				;^1 = Will display the HP.

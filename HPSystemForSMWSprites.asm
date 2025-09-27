@@ -286,21 +286,37 @@ incsrc "Defines/GraphicalBarDefines.asm"
 	freecode
 	if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Chuck)
 		CharginChuckHitCountToHP:	;>JML from $02C1F8 (runs every frame)
-			LDA !14C8,x
-			CMP #$02
-			BCC .Restore		;>Do nothing if $00~$01
-			CMP #$07
-			BCC .ZeroHP		;>No HP on killed states $02~$06
-			CMP #$0C
-			BCC .ConvertHitCountToHP	;>Other non-killed/transformed states, allow HP display
-			BRA .Restore
+			.InstantKillToDisplayHP
+				if !Setting_SpriteHP_DisplayHPOfSMWSprites
+					LDA !Ram_SpriteTable_CharginChuck_InstaKillHaveDisplayedHP,x
+					BNE ..No							;>If already in dying phase on the next frame, don't set HP display (only do following code one time).
+					LDA !14C8,x							;\If sprite status table is set to any of the kill animation, display HP meter.
+					CMP #$02							;|
+					BEQ ..Yes							;|
+					CMP #$05							;|
+					BEQ ..Yes							;/
+					BRA ..No
+					
+					..Yes
+						INC !Ram_SpriteTable_CharginChuck_InstaKillHaveDisplayedHP,x
+						%IncreaseDamageCounter(!1528, !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount, !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount)
+					..No
+				endif
+			.DeathCheck
+				LDA !14C8,x
+				CMP #$02
+				BCC .Restore		;>Do nothing if $00~$01
+				CMP #$07
+				BCC .ZeroHP		;>No HP on killed states $02~$06
+				CMP #$0C
+				BCC .ConvertHitCountToHP	;>Other non-killed/transformed states, allow HP display
+				BRA .Restore
 			
 			.ZeroHP
 				LDA.b #!Setting_SpriteHP_VanillaSprite_Chucks_HPAmount
 				STA !1528,x
 			.ConvertHitCountToHP
 				%ConvertDamageAmountToHP(!1528, !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount)
-			
 			.Restore
 				LDA !187B,x
 				PHA
@@ -360,11 +376,11 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				if !Setting_SpriteHP_DisplayHPOfSMWSprites
 					if !Setting_SpriteHP_BarAnimation
 						;%IntroFill(!1FD6) ;>This does not work because Wendy/Lemmy actually delete themselves (or simply reset almost all their sprite tables) each time they go back in the pipe.
-						LDA !Freeram_WendyLemmyIntroFlag
+						LDA !Ram_WendyLemmyIntroFlag
 						CMP #$25
 						BNE ..NoIntroFill
 						LDA #$00
-						STA !Freeram_WendyLemmyIntroFlag
+						STA !Ram_WendyLemmyIntroFlag
 						TXA
 						CLC
 						ADC.b #!sprite_slots
@@ -377,11 +393,11 @@ incsrc "Defines/GraphicalBarDefines.asm"
 						..NoIntroFill
 					else
 						;%IntroFill(!1FD6) ;>This does not work because Wendy/Lemmy actually delete themselves (or simply reset almost all their sprite tables) each time they go back in the pipe.
-						LDA !Freeram_WendyLemmyIntroFlag
+						LDA !Ram_WendyLemmyIntroFlag
 						CMP #$25
 						BNE ..NoIntroFill
 						LDA #$00
-						STA !Freeram_WendyLemmyIntroFlag
+						STA !Ram_WendyLemmyIntroFlag
 						TXA
 						STA !Freeram_SpriteHP_MeterState
 						
