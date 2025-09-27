@@ -18,7 +18,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 	endmacro
 	macro ConvertDamageAmountToHP(DamageCountSpriteTableRAM, DamageAmountToDie)
 		?HitCountToHP:
-			if !Setting_SpriteHP_NoDisplaySMWSpriteHP == 0
+			if !Setting_SpriteHP_DisplayHPOfSMWSprites
 				LDA.b #<DamageAmountToDie>                                      ;>The amount of damage that would kill the sprite
 				STA !Freeram_SpriteHP_MaxHPLow,x                                ;>This also means its maximum health is this value.
 				SEC                                                             ;\RemainingHP = DamageAmountToDie - DamageCount
@@ -38,7 +38,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 	
 	macro IncreaseDamageCounter(DamageCountSpriteTableRAM, DamageAmount, DamageAmountToDie)
 		?Damage:
-		if !Setting_SpriteHP_NoDisplaySMWSpriteHP == 0
+		if !Setting_SpriteHP_DisplayHPOfSMWSprites
 			if !Setting_SpriteHP_TwoByte
 				REP #$20
 				LDA.w #<DamageAmount>
@@ -65,7 +65,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 	
 	macro IntroFill(IntroStateSpriteTableRAM)
 		?HandleIntro:
-			if !Setting_SpriteHP_NoDisplaySMWSpriteHP == 0
+			if !Setting_SpriteHP_DisplayHPOfSMWSprites
 				if !Setting_SpriteHP_BarAnimation
 					LDA <IntroStateSpriteTableRAM>,x
 					BNE ?.IntroDone
@@ -357,7 +357,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		WendyLemmyHitCountToHP:
 			%ConvertDamageAmountToHP(!1534, !Setting_SpriteHP_VanillaSprite_WendyLemmy_HPAmount)
 			.HandleIntroFill
-				if !Setting_SpriteHP_NoDisplaySMWSpriteHP == 0
+				if !Setting_SpriteHP_DisplayHPOfSMWSprites
 					if !Setting_SpriteHP_BarAnimation
 						;%IntroFill(!1FD6) ;>This does not work because Wendy/Lemmy actually delete themselves (or simply reset almost all their sprite tables) each time they go back in the pipe.
 						LDA !Freeram_WendyLemmyIntroFlag

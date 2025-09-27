@@ -210,7 +210,7 @@
 	;Patching settings
 		;Apply (proper) HP system on various vanilla SMW sprites: 0 = no, 1 = yes, again, use only mentioned values,
 		;unless stated otherwise. Having these turned off will COMPLETELY revert back to original format including
-		;the fireball and stomp damage jank.
+		;the fireball and stomp damage jank (see readme under "...from a damage counter").
 			!Setting_SpriteHP_ModifySMWSprites			= 1	;>Universal option if you want to have all SMW sprites unaffected (this also undo the patching if you have already).
 			!Setting_SpriteHP_VanillaSprite_Chuck			= 1
 				;^All the chucks in SMW.
@@ -220,17 +220,14 @@
 				;-Wendy and Lemmy (share most of the same code)
 				;-Ludwig, Morton, and Roy (same as above)
 				
-		;Disable displaying HP but keep the proper fireball and stomp damage and the hurt SFX?
-			!Setting_SpriteHP_NoDisplaySMWSpriteHP			= 0
-				;^0 = Will display the HP meter along with the jank fix + fireball hurt SFX.
-				; 1 = will not display HP, but keep the jank fix and fireball hurt sound.
-				;
-				; This only affects the display of the meter of HP
-				; of SMW's vanilla sprites.
+		;Simply display the HP of smw sprites?
+			!Setting_SpriteHP_DisplayHPOfSMWSprites			= 1
+				; 0 = will not display HP.
+				;^1 = Will display the HP.
 		;Amount of HP SMW sprites has. NOTE: SMW only have hit counts being an 8-bit unsigned integer stored
 		;within various sprite tables (Chucks and any sprites using the 5 fireballs to kill: $1528,
 		;Ludwig/Morton/Roy: $1626, Big Boo Boss, Wendy and Lemmy: $1534). This means up to 255 health and
-		;damage are allowed, and those does not support 16-bit HP system.
+		;damage are allowed, and those do not support 16-bit HP system.
 		;This only applies if !Setting_SpriteHP_ModifySMWSprites == 1 and their respective settings being 1.
 			!Setting_SpriteHP_VanillaSprite_Chucks_HPAmount		= 15	;>This applies to all chuck variants and all sprites with "Take 5 fireballs to kill" of $190F's bit 3.
 			!Setting_SpriteHP_VanillaSprite_Chucks_StompDamage	= 5	;>Amount of HP loss when taking damage from stomp attacks
