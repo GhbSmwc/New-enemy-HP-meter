@@ -18,24 +18,28 @@
 	incsrc "../EnemyHPMeterDefines.asm"
 	incsrc "../GraphicalBarDefines.asm"
 	
+	;Defines here for settings and values. A value without any prefixes (such as "$" or "%") are decimal.
+	;If you want hex, use "$".
+	
 	!Setting_StompBounceBack	= 1	;>bounce player away when stomping: 0 = false, 1 = true.
 	!Setting_DamagePlayer		= 1	;>0 = harmless, 1 = damage player on contact (besides stomping)
 	
-	!HealCooldownAmount	= 120		;>Heal cooldown, in frames (1/60th of a second). Up to 4.25 seconds (255 frames) of cooldown allowed.
-	!HealingSfxNum		= $0A		;\sound effects played when healing.
-	!HealingSfxRam		= $1DF9|!Base2	;/
+	!Setting_Heal_Cooldown	= 120		;>Heal cooldown, in frames (1/60th of a second). Up to 4.25 seconds (255 frames) of cooldown allowed.
+	!Setting_Heal_SfxNumber	= $0A		;\sound effects played when healing.
+	!Setting_Heal_SfxPort	= $1DF9|!Base2	;/
 	;These below here are recovery and damages.
 	;Make sure these numbers are not greater than SizeLimit, where SizeLimit is...
 	; - 255 if you have !Setting_SpriteHP_TwoByte set to 0
 	; - 65535 if !Setting_SpriteHP_TwoByte set to 1.
-		!HealingAmount		= 3		;>amount of HP recovered periodically (0 = no heal). The periods are on the following define.
-		!HPToStart		= 100		;>Decimal, amount of HP the enemy has.
-		!StompDamage		= 5		;>Decimal, amount of damage from stomping.
-		!FireballDmg		= 3		;>Decimal, amount of damage from player's fireball.
-		!YoshiFireball		= 25		;>Decimal, amount of damage from yoshi's fireball.
-		!BounceDamage		= 15		;>Decimal, amount of damage from bounce blocks.
-		!CarryableKickedSpr	= 6		;>Decimal, amount of damage from other sprites (shell, for example)
-		!CapeSpinDamage		= 4		;>Decimal, amount of damage from cape spin.
+		!Setting_Heal_HPAmount		= 3	;>amount of HP recovered periodically (0 = no heal). The periods are on the following define.
+		!Setting_StartingHP		= 100	;>Amount of HP the enemy has.
+		!Setting_Damage_Stomp		= 5	;>Amount of damage from stomping.
+		!Setting_Damage_PlayerFireball	= 3	;>Amount of damage from player's fireball.
+		!Setting_Damage_YoshiFireball	= 25	;>Amount of damage from yoshi's fireball.
+		!Setting_Damage_BounceBlock	= 15	;>Amount of damage from bounce blocks.
+		!Setting_Damage_KickedSprite	= 6	;>Amount of damage from other sprites (shell, for example)
+		!Setting_Damage_CapeSpin	= 4	;>Amount of damage from cape spin.
+		!Setting_Damage_BobOmbExplosion	= 50	;>Amount of damage from Bob Omb explosions.
 	
 	
 	!IntroFill		= 1		;>Boss intro fill (meter automatically switches to this sprite when it spawns): 0 = nom 1 = yes.
@@ -49,7 +53,7 @@
 	!SPR_OBJ_STATUS		= !1588
 	!SPR_HealCooldown	= !1558
 
-	!HPLowEnoughToShowAltGfx	= !HPToStart/2		;>HP to get below to start showing alternative graphics
+	!HPLowEnoughToShowAltGfx	= !Setting_StartingHP/2		;>HP to get below to start showing alternative graphics
 	!TILE				= $00
 	!TILE_LowHealth			= $02			;>16x16 tile to use when HP is below !HPLowEnoughToShowAltGfx.
 
@@ -59,15 +63,15 @@
 ;Don't touch
 	macro SpriteDamage()
 		JSL !SharedSub_SpriteHPDamage
-		if !HealingAmount
-			LDA.b #!HealCooldownAmount
+		if !Setting_Heal_HPAmount
+			LDA.b #!Setting_Heal_Cooldown
 			STA !SPR_HealCooldown,x
 		endif
 	endmacro
 	
 	macro SetHealCooldown()
-		if !HealingAmount
-			LDA.b #!HealCooldownAmount
+		if !Setting_Heal_HPAmount
+			LDA.b #!Setting_Heal_Cooldown
 			STA !SPR_HealCooldown,x
 		endif
 	endmacro
@@ -77,11 +81,11 @@
 print "INIT ",pc
 	Mainlabel:
 	.StartWithFullHP
-	LDA.b #!HPToStart			;\Full HP (low byte)
+	LDA.b #!Setting_StartingHP		;\Full HP (low byte)
 	STA !Freeram_SpriteHP_CurrentHPLow,x	;|
 	STA !Freeram_SpriteHP_MaxHPLow,x	;/
 	if !Setting_SpriteHP_TwoByte
-		LDA.b #!HPToStart>>8			;\Full HP (High byte)
+		LDA.b #!Setting_StartingHP>>8		;\Full HP (High byte)
 		STA !Freeram_SpriteHP_CurrentHPHi,x	;|
 		STA !Freeram_SpriteHP_MaxHPHi,x		;/
 	endif
@@ -133,7 +137,7 @@ SPRITE_CODE_START:
 		BNE MainReturn			;/
 		LDA #$00
 		%SubOffScreen()
-	if !HealingAmount
+	if !Setting_Heal_HPAmount
 		.Healing
 			LDA !Freeram_SpriteHP_CurrentHPLow,x			;\CMP is like SBC. if currentHP - MaxHP results an unsigned underflow (which causes a barrow; carry clear)
 			CMP !Freeram_SpriteHP_MaxHPLow,x			;|then allow healing
@@ -144,10 +148,10 @@ SPRITE_CODE_START:
 			BCS ..FullHealth				;/>If HP is full, don't do healing effect.
 			LDA !SPR_HealCooldown,x
 			BNE ..HealDone
-			LDA.b #!HealCooldownAmount
+			LDA.b #!Setting_Heal_Cooldown
 			STA !SPR_HealCooldown,x
 			REP #$20					;\heal sprite
-			LDA.w #!HealingAmount				;|
+			LDA.w #!Setting_Heal_HPAmount			;|
 			STA $00						;|
 			SEP #$20					;|
 			JSR Heal					;/
@@ -155,9 +159,9 @@ SPRITE_CODE_START:
 				LDA.b #!Setting_SpriteHP_BarChangeDelay
 				STA !Freeram_SpriteHP_BarAnimationTimer
 			endif
-			if !HealingSfxNum != 0
-				LDA #!HealingSfxNum
-				STA !HealingSfxRam
+			if !Setting_Heal_SfxNumber != 0
+				LDA #!Setting_Heal_SfxNumber
+				STA !Setting_Heal_SfxPort
 			endif
 			BRA ..HealDone
 			..FullHealth
@@ -220,7 +224,7 @@ SPRITE_CODE_START:
 			STA !InvulnerabilityTimer,x	;/(happens very easily when hitting sprites on top two corners).
 			JSR ConsecutiveStomps
 			REP #$20
-			LDA.w #!StompDamage			;\Amount of damage
+			LDA.w #!Setting_Damage_Stomp		;\Amount of damage
 			STA $00					;/
 			SEP #$20
 			JSL !SharedSub_SpriteHPDamage				;>Lose HP (handles bar animation and other effects). Note that this alone only subtracts HP, does not handle death sequence.
@@ -298,12 +302,8 @@ SPRITE_CODE_START:
 					;so that in case if 2 fireballs contacts at the same frame, each will run this.
 					;Y = current extended sprite slot.
 					;------------------------------------------------------------------------------
-					LDA !Freeram_SpriteHP_CurrentHPLow,x		;\If HP is already 0 and another sprite within the same frame
-					if !Setting_SpriteHP_TwoByte
-						ORA !Freeram_SpriteHP_CurrentHPHi,x		;/hits this boss, make it ignore the boss (pass through already-dead boss)
-					endif
-					ORA !InvulnerabilityTimer,x			;>And also no invulnerabilty timer running.
-					BEQ ...ExitLoop					;
+					JSR CheckDamageIfZeroHPOrInvul
+					BCC ...ExitLoop					;
 
 					REP #$20
 					LDA $00			;\Preserve $00 (used for contact checking, about to be used
@@ -318,17 +318,17 @@ SPRITE_CODE_START:
 					JMP ...NextSlot
 
 					....PlayerFireball
-						REP #$20		;\Damage from player's fireball
-						LDA.w #!FireballDmg	;|
-						STA $00			;|
-						SEP #$20		;|
-						BRA ....Damage		;/
+						REP #$20				;\Damage from player's fireball
+						LDA.w #!Setting_Damage_PlayerFireball	;|
+						STA $00					;|
+						SEP #$20				;|
+						BRA ....Damage				;/
 
 					....YoshiFireball
-						REP #$20		;\Damage from yoshi's fireball
-						LDA.w #!YoshiFireball	;|
-						STA $00			;|
-						SEP #$20		;/
+						REP #$20				;\Damage from yoshi's fireball
+						LDA.w #!Setting_Damage_YoshiFireball	;|
+						STA $00					;|
+						SEP #$20				;/
 
 					....Damage
 						LDA.b #10				;\Just to show the blinking and in case if projectile penetrates.
@@ -399,10 +399,10 @@ SPRITE_CODE_START:
 					STA !InvulnerabilityTimer,x	;/
 
 					REP #$20
-					LDA $00			;\Preserve hitbox data
-					PHA			;/
-					LDA.w #!BounceDamage	;\Damage from bounce blocks
-					STA $00			;/
+					LDA $00				;\Preserve hitbox data
+					PHA				;/
+					LDA.w #!Setting_Damage_BounceBlock	;\Damage from bounce blocks
+					STA $00					;/
 					SEP #$20
 					JSL !SharedSub_SpriteHPDamage			;>Lose HP
 					%SetHealCooldown()
@@ -444,18 +444,66 @@ SPRITE_CODE_START:
 			+
 			LDA !14C8,y		;>Sprite state
 			CMP #$08		;\No interaction on non-existent sprite and any form of death sprite.
-			BCS +
-			JMP ...NextSlot
-			+
-			CMP #$0C		;/
-			BCC +
-			JMP ...NextSlot		;>Powerup from goal as well as invalid states.
-			+
-	
+			BCC ...No
+			CMP #$0B
+			BCS ...No
+			BRA ...ValidStates
+			...No
+				JMP ...NextSlot		;>Powerup from goal as well as invalid states.
 			...ValidStates
-				JSR CarryableKickedClipB	;>You may need to change this if you have sprites other than "16x16" dimension.
-				JSL $03B72B|!bank			;>If sprite B hits this sprite
-				BCC ...NextSlot
+				JSR MainSpriteClipA		;>Get hitbox A of main sprite
+				....BobOmbExplosionCheck
+					LDA !9E,y
+					CMP #$0D				;\Other than bob-omb
+					BNE ....NonExplosionSprites		;/
+					LDA !7FAB10,y				;\Is custom sprite
+					BIT.b #%00001000			;|
+					BNE ....NonExplosionSprites		;/
+					LDA !1534,y				;\Is not exploding
+					BEQ ....NonExplosionSprites		;/
+				....ExplosionSprite
+					JSR GetBobOmbExplosionClipB		;>Get hitbox of the explosion
+					JSL $03B72B|!bank
+					BCS +
+					JMP ...NextSlot
+					+
+					.....ExplosionContact
+						JSR CheckDamageIfZeroHPOrInvul
+						BCS +
+						JMP ...NextSlot
+						+
+						......Damage
+							LDA.b #90				;>invulnerability timer must be long enough to avoid multiple hits from the same explosion.
+							STA !InvulnerabilityTimer,x
+							if !Setting_SpriteHP_TwoByte
+								REP #$20
+								LDA.w #!Setting_Damage_BobOmbExplosion
+								STA $00
+								SEP #$20
+							else
+								LDA.b #!Setting_Damage_BobOmbExplosion
+								STA $00
+							endif
+							JSL !SharedSub_SpriteHPDamage			;>Lose HP
+							%SetHealCooldown()
+							LDA !Freeram_SpriteHP_CurrentHPLow,x	;\If HP != 0, don't kill
+							if !Setting_SpriteHP_TwoByte
+								ORA !Freeram_SpriteHP_CurrentHPHi,x	;|
+							endif
+							BNE ......NoDeath			;/
+							
+							......Death
+								JSR SpinjumpKillSprite
+								BRA ...NextSlot
+							......NoDeath
+								LDA #!DmgSfxNumb		;\SFX
+								STA !DmgSfxRam			;/
+							
+				....NonExplosionSprites
+					JSR CarryableKickedClipB		;>You may need to change this if you have sprites other than "16x16" dimension.
+				....CheckContact
+					JSL $03B72B|!bank			;>If sprite B hits this sprite
+					BCC ...NextSlot
 			...Contact
 				;------------------------------------------------------------------------------
 				;here is where the contact happens. Make sure that it goes to [...NextSlot] so
@@ -463,11 +511,8 @@ SPRITE_CODE_START:
 				;
 				;Y = current bounce sprite slot.
 				;------------------------------------------------------------------------------
-				LDA !Freeram_SpriteHP_CurrentHPLow,x		;\If HP is already 0 and another sprite within the same frame
-				if !Setting_SpriteHP_TwoByte
-					ORA !Freeram_SpriteHP_CurrentHPHi,x		;|hits this boss, make it ignore the boss (pass through already-dead boss)
-				endif
-				BEQ ...ExitLoop				;/
+				JSR CheckDamageIfZeroHPOrInvul
+				BCC ...ExitLoop				;/
 			
 				;Accepts states #$08 to #$0B here. My following example only includes carryable/kicked to damage.
 				LDA !14C8,y			;\only allow kicked/carryable sprites
@@ -501,12 +546,15 @@ SPRITE_CODE_START:
 			...Damage
 				LDA.b #10			;\flashing animation
 				STA !InvulnerabilityTimer,x	;/
-				REP #$20
-				LDA $00				;\Preserve $00 used by hitbox A
-				PHA				;/
-				LDA.w #!CarryableKickedSpr	;\The damage
-				STA $00				;/
-				SEP #$20
+				if !Setting_SpriteHP_TwoByte
+					REP #$20
+					LDA.w #!Setting_Damage_KickedSprite	;\The damage
+					STA $00					;/
+					SEP #$20
+				else
+					LDA.b #!Setting_Damage_KickedSprite
+					STA $00
+				endif
 				JSL !SharedSub_SpriteHPDamage			;>Lose HP
 				%SetHealCooldown()
 				LDA !Freeram_SpriteHP_CurrentHPLow,x	;\If HP != 0, don't kill
@@ -536,10 +584,6 @@ SPRITE_CODE_START:
 							LDA #$10
 							+
 							STA !B6,y
-							REP #$20			;\Restore hitbox A
-							PLA				;|
-							STA $00				;|
-							SEP #$20			;/
 
 			...NextSlot
 				DEY
@@ -559,7 +603,7 @@ SPRITE_CODE_START:
 
 		JSR CapeClipB		;>Get cape's hitbox
 		BCC ..NoCapeHit		;>If cape spin non-existent, don't assume it exist
-		JSL $03B72B|!bank		;>Check if cape's hitbox hits this current sprite
+		JSL $03B72B|!bank	;>Check if cape's hitbox hits this current sprite
 		BCC ..NoCapeHit		;>If box A and B not touching, don't assume touching.
 		..Contact
 			;------------------------------------------------------------------------------
@@ -572,8 +616,8 @@ SPRITE_CODE_START:
 			REP #$20
 			LDA $00				;\$00 going to be used as damage instead of hitbox-related
 			PHA				;/
-			LDA.w #!CapeSpinDamage		;\Amount of damage
-			STA $00				;/
+			LDA.w #!Setting_Damage_CapeSpin		;\Amount of damage
+			STA $00					;/
 			SEP #$20
 			JSL !SharedSub_SpriteHPDamage		;>Lose HP
 			%SetHealCooldown()
@@ -651,6 +695,23 @@ SUB_GFX:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;My own routines here.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+CheckDamageIfZeroHPOrInvul:
+	;Carry: Set if damage should be allowed, otherwise clear (don't take damage).
+	LDA !Freeram_SpriteHP_CurrentHPLow,x		;\If HP is already 0 and another sprite within the same frame
+	if !Setting_SpriteHP_TwoByte
+		ORA !Freeram_SpriteHP_CurrentHPHi,x		;|hits this boss, make it ignore the boss (pass through already-dead boss)
+	endif
+	BEQ .ZeroHP
+	LDA !InvulnerabilityTimer,x
+	BEQ .NotInvulnerable
+	
+	.ZeroHP
+		CLC
+		RTS
+	.NotInvulnerable
+		SEC
+		RTS
 
 MainSpriteClipA:
 ;Get the main sprite's hitbox in A. NOTE: hitbox is actually 12x12 centered.
@@ -799,6 +860,27 @@ CapeClipB:
 
 	.NoCapeHitbox
 	CLC			;>Clear carry.
+	RTS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Y = sprite slot of Bob-omb
+GetBobOmbExplosionClipB:
+	LDA !E4,y		;\X position, $00 and $08
+	SEC			;|
+	SBC #$20		;|
+	STA $00			;|
+	LDA !14E0,y		;|
+	SBC #$00		;|
+	STA $08			;/
+	LDA !D8,y		;\Y Position, $01 and $09
+	SEC			;|
+	SBC #$20		;|
+	STA $01			;|
+	LDA !14D4,y		;|
+	SBC #$00		;|
+	STA $09			;/
+	LDA #$50		;
+	STA $02			;>Width
+	STA $03			;>Height
 	RTS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 StompSounds:
