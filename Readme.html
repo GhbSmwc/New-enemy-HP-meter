@@ -285,7 +285,7 @@ autoclean JML SpriteHPIntroEffect</pre>
 			be pasted in the ExGraphics of your game file. To insert into your game, &ldquo;Quick Insert ExGFX to ROM&rdquo; (golden mushroom). Finally, &ldquo;Open "Layer 3 GFX/Tilemap Bypass" Dialog&rdquo; (green
 			poison mushroom), and set LG1 to use your inserted graphics file (by default, should be $80 if you didn't change the slot number)<br><br>
 			
-			This graphic is for layer 3 status bar, since some symbols needed for the display are missing. The tiles used are the slash (&ldquo;/&rdquo;, if you have <kbd>!Setting_SpriteHP_DisplayNumerical</kbd> set to <kbd>2</kbd>) and graphical bar tiles (if you have
+			This graphic is for layer 3 status bar, since some symbols and other tiles are needed for the display are missing. The tiles used are the slash (&ldquo;/&rdquo;, if you have <kbd>!Setting_SpriteHP_DisplayNumerical</kbd> set to <kbd>2</kbd>) and graphical bar tiles (if you have
 			<kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd> set to <kbd>1</kbd>).
 			
 			</li>
@@ -406,7 +406,8 @@ autoclean JML SpriteHPIntroEffect</pre>
 	<ul>
 		<li>
 			If the sprite utilizes a damage counter (starts at 0 and hits increases this value), you need to reverse it. If there are damage amount thresholds to trigger different phases, that also needs to be
-			reversed (for example, 10 points of damage to defeat an enemy, and 7 or more points trigger phase 2. That needs to be changed to a 10 HP sprite, and triggers phase 2 with its HP drops to 3 or lower).
+			<abbr title="HealthTriggerPhase = TotalDamageToKill - DamageThreshold">reversed</abbr> (for example, 10 points of damage to defeat an enemy, and 7 or more points trigger phase 2. That needs to be
+			changed to a 10 HP sprite, and triggers phase 2 when its HP drops to 3 or lower).
 		</li>
 		<li>
 			Most sprites with a health system don't have 16-bit health. If you have <kbd>!Setting_SpriteHP_TwoByte == 1</kbd>, you need to either always set their <kbd>!Freeram_SpriteHP_MaxHPHi</kbd> to always zero,
@@ -455,7 +456,7 @@ autoclean JML SpriteHPIntroEffect</pre>
 			endif
 	endmacro
 </pre></div>
-	For example, Chargin' Chucks have their damage counter stored at sprite table <kbd>$1528</kbd>. This means to call the macro with the <kbd>DamageCountSpriteTableRAM</kbd> set to <kbd>!1528</kbd> (address changed to a define for SA-1 hybrid support).
+	For example, Chargin' Chucks have their damage counter stored at sprite table <a href="https://smwc.me/m/smw/ram/7E1528"><kbd>$1528</kbd></a>. This means to call the macro with the <kbd>DamageCountSpriteTableRAM</kbd> set to <kbd>!1528</kbd> (address changed to a define for SA-1 hybrid support).
 	With the patch installed, the sprite dies if the damage counter reaches 15 or more. So the <kbd>DamageAmountToDie</kbd> should be 15. With this, the macro should be called like this: <span class="NoLineBreak">%ConvertDamageAmountToHP(!1528, 15)</span>.
 	Now note, this is assuming you've patched <kbd>HPSystemForSMWSprites.asm</kbd> into your game. Reason for modifying bosses and enemies that take damage from fireballs and stomps is because of how janky it is.<br><br>
 	
@@ -467,7 +468,8 @@ autoclean JML SpriteHPIntroEffect</pre>
 	
 	The same also applies to Ludwig, Morton, and Roy. 12 fireballs or 3 stomps.<br><br>
 	
-	As a speedrunner trick, you can quickly kill Chucks, Ludwig, Morton, and Roy by shooting 2 fireballs (which ignores the temporary invulnerability state after taking damage), then jumping on them.<br><br>
+	This also creates a strange anomaly: 2 fireballs and then a stomp would seemingly be enough damage to kill the sprite. But if the order of attacks is different in a way that the 3rd hit was a fireball, it would take more hits to defeat. That shouldn't happen
+	due to <a href="https://en.wikipedia.org/wiki/Commutative_property">commutative property of addition</a> (assuming no status effects or modifiers for later damage).<br><br>
 	
 	The patch modifies this to work as an actual damage system. Damages from fireballs and stomps deal different amounts, and there is only one value (reguardless of attack type) that if the damage counter reaches or exceeds it, kills the sprite.
 	By default, Chucks needed 15 or more points of damage to defeat, fireballs deal 3 damage and stomps deal 5. And for Ludwig, Morton, and Roy, they needed 12 points to defeat, with fireballs dealing 1 damage, and Stomp attacks dealing 4.
@@ -501,8 +503,7 @@ autoclean JML SpriteHPIntroEffect</pre>
 	</ul>
 	Thankfully, all that logic is handled automatically in a subroutine defined as <kbd>!SharedSub_SpriteHPDamage</kbd>, with the inputs stored in <kbd>$00</kbd> (2 bytes if <kbd>!Setting_SpriteHP_TwoByte == 1</kbd>). Feel free to check out the subroutines as you wish.</p>
 	
-	<p>If you want to know how it works, just open the provided custom sprite's asm file or view the provided patch and seeing the SMW disassembly. Please note that, because patches, uberasm tool, and pixi have their own isolated subroutines system,
-	and I don't want to have duplicate subroutines, I had to use Shared Subroutines to make this work.</p>
+	<p>If you want to know how it works, just open the provided Shared Subroutines code, custom sprite's asm file or view the provided patch and seeing the SMW disassembly.</p>
 	
 	<p>If you're dealing with an incremental damage counter-type HP for bosses and wanted a damage animation, you would do the same thing, just make sure the how much it increases are stored in <kbd>$00</kbd> (<kbd>$00~$01</kbd> if <kbd>!Setting_SpriteHP_TwoByte == 1</kbd>), for example,
 	the <a href="https://www.smwcentral.net/?p=section&a=details&id=13144">Giant Masked Koopa boss</a>:
@@ -529,7 +530,7 @@ autoclean JML SpriteHPIntroEffect</pre>
     CMP.b #!HitPoints                         ; |
     BEQ SpriteDead                            ;/
 </pre></div><br>
-	The same goes with if it have a health counter rather than a damage counter. For example, the Spiny Boss's damage code (yeah, some of the comments are incorrect, such as &ldquo;Increase&rdquo; when it supposed to say &ldquo;Decrease&rdquo;.):<br>
+	The same goes with if it have a health counter rather than a damage counter. For example, the Spiny Boss's damage code (yeah, some of the comments are incorrect (at the time of making this), such as &ldquo;Increase&rdquo; when it supposed to say &ldquo;Decrease&rdquo;.):<br>
 <div class="CodeBlock" style="height: 60px"><pre>    DEC !sprite_health,x        ; Increase hit counter and...
     LDA !sprite_health,x        ; \ Check if the sprite has been hit 3 times
     BNE .justHit</pre></div><br>
@@ -611,7 +612,7 @@ Change that to this:
 	;[...]
 </pre></div><br>
 	If there are multiple instances of increasing/decreasing the RAM (espically if it doesn't utilizes a subroutine to merge them into one), then every one of them should be changed to include setting RAM <kbd>$00</kbd> (<kbd>$00~$01</kbd> if <kbd>!Setting_SpriteHP_TwoByte</kbd> is set to <kbd>1</kbd>)
-	and then calling <kbd>JSL !SharedSub_SpriteHPDamage</kbd> so all damage types will perform the animation (if you enabled it) and other effects (such as switching the health meter to the sprite you dealt damage to).
+	and then calling <kbd>JSL !SharedSub_SpriteHPDamage</kbd> so all damage types will perform the bar animation (if you enabled it) and other effects (such as switching the health meter to the sprite you dealt damage to).
 	</p>
 	<hr>
 	<h2><a href="#ToC_Notes" id="JMPTo_Notes">^</a>Notes</h2>
@@ -628,7 +629,7 @@ Change that to this:
 		<li>
 			Q: &ldquo;When the HP meter appears, and despite the setting <kbd>!Setting_SpriteHP_DisplayNumerical</kbd> set to <kbd>1</kbd> or <kbd>2</kbd>, the numbers won't appear anyway.&rdquo;<br><br>
 			A: The sprite have too much HP digits, either have lower HP values or set <kbd>!Setting_SpriteHP_MaxDigits</kbd> to a higher value. Not showing the text is a failsafe if the string gets too long. That failsafe is intended to avoid writing too many symbols
-			onto the status bar that some tiles that supposed to disappear failed to do so (when the string gets shorter). You can turn it off (may come with such a risk) by setting <kbd>!Setting_SpriteHP_ExcessDigitProt</kbd> to <kbd>0</kbd>.
+			onto the status bar that some tiles that supposed to disappear failed to do so (when the string gets shorter), or worse, write data beyond the status bar tile data. You can turn it off (may come with such a risk) by setting <kbd>!Setting_SpriteHP_ExcessDigitProt</kbd> to <kbd>0</kbd>.
 		</li>
 		<li>
 			Q: &ldquo;When I damage an enemy that uses the HP system, it's HP shown won't go down!&rdquo;<br><br>
@@ -637,7 +638,7 @@ Change that to this:
 				<li>Numbers not showing (either because you have them disabled or too many symbols in the text display of the numbers), and it's HP is set above its maximum.</li>
 				<li>The amount of damage it receives was set to 0 damage, causing no changes on its HP value.</li>
 				<li>You forgot to modify the sprite's code to write its own HP data into this ASM resource' HP data to display properly.</li>
-				<li>With the numbers not showing, if you have more max HP than the number of pieces the bar has, small damages can result in the bar visibly not updating. This is because a range of current HP values get approximated (rounded) to the
+				<li>Having <kbd>!Setting_SpriteHP_DisplayNumerical == 0</kbd>, if you have more max HP than the number of pieces the bar has, small damages can result in the bar visibly not updating. This is because a range of current HP values get approximated (rounded) to the
 				same amount of fill in the bar.</li>
 			</ul>
 		
@@ -650,7 +651,7 @@ Change that to this:
 				unlikely to use in a 1-screen wide boss room), graphical bar input and outputs, and the character tile table for displaying aligned text for leading-zero suppression. While &ldquo;<kbd>!Scratchram_&lt;ResourceName&gt;...</kbd>&rdquo; can be reused as another scratch RAM (as
 				long as after the code finish using it you can re-use it for something else), the same can't be said if they are named &ldquo;<kbd>!Freeram_&lt;ResourceName&gt;...</kbd>. Make sure you pay attention on every installed ASM resource
 				on what RAMs are being used. If you have trouble knowing if a RAM conflicts, use the Address Tracker as mentioned in the recommended at the top of this readme.</li>
-				<li>Hijack conflicts. This should only be possible if you patch <kbd>HPSystemForSMWSprites.asm</kbd> along with 3rd party patches that also modifies SMW's sprites with overlapping hijacks with those said patches (such as
+				<li>Hijack conflicts. This should only be possible if you patch <kbd>HPSystemForSMWSprites.asm</kbd> along with 3rd party patches that also modifies SMW's sprites (including extended sprites - player's fireball mainly) with overlapping hijacks with those said patches (such as
 				<a href="https://www.smwcentral.net/?p=section&a=details&id=20847">&ldquo;FireBall HP&rdquo;</a> patch by Bio).</li>
 				<li>
 					Incorrect use of Shared Subroutines:
