@@ -430,7 +430,7 @@ SPRITE_CODE_START:
 
 	.SkipBounceBlkDmg
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-		;Other (normal) sprites.
+		;Other (normal/main) sprites.
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	.HitboxWithOtherSpr
 		LDY.b #!sprite_slots-1		;There are 12 slots in LoROM (ranging from 0 to 11), or 22 in SA-1 (ranging from 0 to 21).
@@ -459,8 +459,20 @@ SPRITE_CODE_START:
 					LDA !7FAB10,y				;\Is custom sprite
 					BIT.b #%00001000			;|
 					BNE ....NonExplosionSprites		;/
-					LDA !1534,y				;\Is not exploding
-					BEQ ....NonExplosionSprites		;/
+					LDA !1534,y				;\Is exploding
+					BNE ....ExplosionSprite			;/
+				....ExplodePrematurely
+					;If hit directly with a Bob-omb before it exploded, make it explode immediately
+					JSR CarryableKickedClipB
+					JSL $03B72B|!bank			;>Check for contact
+					BCS +
+					JMP ...NextSlot
+					+
+					LDA #$01				;\Explode early
+					STA !1534,y				;|
+					LDA #$02				;|>STZ $xxxx,y does not exists
+					STA !1540,y				;/
+					JMP ...NextSlot				
 				....ExplosionSprite
 					JSR GetBobOmbExplosionClipB		;>Get hitbox of the explosion
 					JSL $03B72B|!bank
