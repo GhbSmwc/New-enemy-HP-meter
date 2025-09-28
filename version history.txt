@@ -28,6 +28,7 @@ Thing(s) to fix:
   relies on vanilla code of setting $170B to #$01 and $176F set to #$0F.
  -Bar animation fill (displays previous HP fill amount) and delay timer (how long the fill amount of
   previous HP) are no longer sprite slot-based and each consumes 1 byte.
+ -Added bob-omb damage support to the test sprite.
 
 3/27/2019 2.5.24 Moved codes to shared subroutines and new features.
  -Moved major routines to shared subroutines patch due to ease of use and that most of GHB's code (mainly the
