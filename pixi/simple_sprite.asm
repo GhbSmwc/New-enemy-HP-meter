@@ -462,6 +462,11 @@ SPRITE_CODE_START:
 					LDA !1534,y				;\Is exploding
 					BNE ....ExplosionSprite			;/
 				....ExplodePrematurely
+					LDA !14C8,y
+					CMP #$08
+					BNE +
+					JMP ...NextSlot
+					+
 					;If hit directly with a Bob-omb before it exploded, make it explode immediately
 					JSR CarryableKickedClipB
 					JSL $03B72B|!bank			;>Check for contact
