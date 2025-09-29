@@ -44,7 +44,7 @@
 		!Setting_Damage_BobOmbExplosion	= 50	;>Amount of damage from Bob Omb explosions.
 	
 	
-	!IntroFill		= 1		;>Boss intro fill (meter automatically switches to this sprite when it spawns): 0 = nom 1 = yes.
+	!Setting_IntroFill		= 1		;>Boss intro fill (meter automatically switches to this sprite when it spawns): 0 = nom 1 = yes.
 
 	;symbolic names for ram addresses
 		!SPRITE_Y_SPEED		= !AA
@@ -101,7 +101,7 @@ print "INIT ",pc
 		STA !Freeram_SpriteHP_CurrentHPHi,x	;|
 		STA !Freeram_SpriteHP_MaxHPHi,x		;/
 	endif
-	if !IntroFill
+	if !Setting_IntroFill
 		JSL !SharedSub_SpriteHPIntroEffect
 	endif
 	RTL
@@ -302,8 +302,9 @@ SPRITE_CODE_START:
 				BRA ...NextSlot		;>Others = next
 
 				...Fireball
+					JSR MainSpriteClipA
 					JSR ExtSprFireballClipB	;>Get contact with current fireball ext spr slot.
-					JSL $03B72B|!bank		;>Check contact between A and B.
+					JSL $03B72B|!bank	;>Check contact between A and B.
 					BCC ...NextSlot		;>No contact, check other extended sprite.
 				...Contact
 					;------------------------------------------------------------------------------
@@ -313,11 +314,6 @@ SPRITE_CODE_START:
 					;------------------------------------------------------------------------------
 					JSR CheckDamageIfZeroHPOrInvul
 					BCC ...ExitLoop					;
-
-					REP #$20
-					LDA $00			;\Preserve $00 (used for contact checking, about to be used
-					PHA			;/for damage value)
-					SEP #$20
 
 					LDA $170B|!Base2,y	;>Extended sprite number (do not clear it before reaching here)
 					CMP #$05		;\Player's fireball
@@ -366,10 +362,6 @@ SPRITE_CODE_START:
 							%PlaySoundEffect(!Setting_Damage_SfxNumber, !Setting_Damage_SfxPort)
 
 						.....SkipSfx
-							REP #$20
-							PLA			;\Restore hitbox data.
-							STA $00			;/
-							SEP #$20
 							LDA #$01		;\Turn fireball into smoke the same way it interacts with enemies and solid blocks in vanilla.
 							STA $170B|!Base2,y	;|
 							LDA #$0F		;|
@@ -399,8 +391,9 @@ SPRITE_CODE_START:
 			BEQ ...NextSlot		;/
 
 			...SpriteHit
+				JSR MainSpriteClipA
 				JSR BounceSprClipB	;>Get bounce sprite clipping into B.
-				JSL $03B72B|!bank		;>Check contact between A and B.
+				JSL $03B72B|!bank	;>Check contact between A and B.
 				BCC ...NextSlot		;>No contact, check other extended sprite.
 			...Contact
 				;------------------------------------------------------------------------------
@@ -428,11 +421,6 @@ SPRITE_CODE_START:
 				....NoDeath
 					%PlaySoundEffect(!Setting_Damage_SfxNumber, !Setting_Damage_SfxPort)
 				....SkipSfx
-					REP #$20
-					PLA			;\Restore hitbox data
-					STA $00			;/
-					SEP #$20
-				
 			...NextSlot
 				DEY			;>Next slot
 				BPL ..Loop		;>Loop if there is another slot to run, otherwise terminate
@@ -498,6 +486,9 @@ SPRITE_CODE_START:
 					JMP ...NextSlot
 					+
 					.....ExplosionContact
+						;------------------------------------------------------------------------------
+						;This handles Bob-omb explosion damage
+						;------------------------------------------------------------------------------
 						JSR CheckDamageIfZeroHPOrInvul
 						BCS +
 						JMP ...NextSlot
