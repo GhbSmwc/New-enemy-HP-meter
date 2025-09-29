@@ -24,9 +24,11 @@
 	!Setting_StompBounceBack	= 1	;>bounce player away when stomping: 0 = false, 1 = true.
 	!Setting_DamagePlayer		= 1	;>0 = harmless, 1 = damage player on contact (besides stomping)
 	
-	!Setting_Heal_Cooldown	= 120		;>Heal cooldown, in frames (1/60th of a second). Up to 4.25 seconds (255 frames) of cooldown allowed.
-	!Setting_Heal_SfxNumber	= $0A		;\sound effects played when healing.
-	!Setting_Heal_SfxPort	= $1DF9|!Base2	;/
+	!Setting_Heal_Cooldown			= 120		;>Heal cooldown, in frames (1/60th of a second). Up to 4.25 seconds (255 frames) of cooldown allowed.
+	!Setting_Heal_SfxNumber			= $0A		;\sound effects played when healing.
+	!Setting_Heal_SfxPort			= $1DF9|!Base2	;/
+	!Setting_Damage_SfxNumber		= $28		;\Sound effect played when taking damage
+	!Setting_Damage_SfxPort			= $1DFC|!Base2	;/
 	;These below here are recovery and damages.
 	;Make sure these numbers are not greater than SizeLimit, where SizeLimit is...
 	; - 255 if you have !Setting_SpriteHP_TwoByte set to 0
@@ -45,20 +47,18 @@
 	!IntroFill		= 1		;>Boss intro fill (meter automatically switches to this sprite when it spawns): 0 = nom 1 = yes.
 
 	;symbolic names for ram addresses
-	!SPRITE_Y_SPEED		= !AA
-	!SPRITE_X_SPEED		= !B6
-	!SPRITE_STATE		= !C2
-	!SPRITE_STATUS		= !14C8
-	!InvulnerabilityTimer	= !1540		;>flashing animation + invulnerability timer.
-	!SPR_OBJ_STATUS		= !1588
-	!SPR_HealCooldown	= !1558
-
-	!HPLowEnoughToShowAltGfx	= !Setting_StartingHP/2		;>HP to get below to start showing alternative graphics
-	!TILE				= $00
-	!TILE_LowHealth			= $02			;>16x16 tile to use when HP is below !HPLowEnoughToShowAltGfx.
-
-	!DmgSfxNumb		= $28
-	!DmgSfxRam		= $1DFC|!Base2
+		!SPRITE_Y_SPEED		= !AA
+		!SPRITE_X_SPEED		= !B6
+		!SPRITE_STATE		= !C2
+		!SPRITE_STATUS		= !14C8
+		!InvulnerabilityTimer	= !1540		;>flashing animation + invulnerability timer.
+		!SPR_OBJ_STATUS		= !1588
+		!SPR_HealCooldown	= !1558
+	;Misc
+		!Setting_HPValueToShowCracked	= !Setting_StartingHP/2		;>HP to get below to start showing alternative graphics
+		!Setting_TileNumber_EnoughHP			= $00
+		!Setting_TileNumber_LowHP			= $02			;>16x16 tile to use when HP is below !Setting_HPValueToShowCracked.
+		!Setting_Bobomb_ExplosionApothem		= $28			;>Explosion "apothem" (the length from the center of a square, which is the center of the Bob-omb sprite) to the midpoint of edges.
 	
 ;Don't touch
 	macro SpriteDamage()
@@ -73,6 +73,13 @@
 		if !Setting_Heal_HPAmount
 			LDA.b #!Setting_Heal_Cooldown
 			STA !SPR_HealCooldown,x
+		endif
+	endmacro
+	
+	macro PlaySoundEffect(SoundNumber, SoundPort)
+		if <SoundNumber> != $00
+			LDA #<SoundNumber>
+			STA <SoundPort>
 		endif
 	endmacro
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -252,8 +259,7 @@ SPRITE_CODE_START:
 					LDA BouncePlayerAway,y
 					STA $7B
 				endif
-				LDA #!DmgSfxNumb	;\SFX
-				STA !DmgSfxRam		;/
+				%PlaySoundEffect(!Setting_Damage_SfxNumber, !Setting_Damage_SfxPort)
 
 			...SkipBouncePlayerAwayAndSfx
 				LDA $15			;\Bounce at very different y speeds depending on holding jump or not.
@@ -344,8 +350,7 @@ SPRITE_CODE_START:
 						BRA .....SkipSfx
 
 						.....NoDeath
-							LDA #!DmgSfxNumb			;\SFX
-							STA !DmgSfxRam				;/
+							%PlaySoundEffect(!Setting_Damage_SfxNumber, !Setting_Damage_SfxPort)
 
 						.....SkipSfx
 							REP #$20
@@ -415,9 +420,7 @@ SPRITE_CODE_START:
 					BRA ....SkipSfx
 
 				....NoDeath
-					LDA #!DmgSfxNumb	;\SFX
-					STA !DmgSfxRam		;/
-					
+					%PlaySoundEffect(!Setting_Damage_SfxNumber, !Setting_Damage_SfxPort)
 				....SkipSfx
 					REP #$20
 					PLA			;\Restore hitbox data
@@ -475,11 +478,15 @@ SPRITE_CODE_START:
 					+
 					LDA #$01				;\Explode early
 					STA !1534,y				;|
-					LDA #$02				;|>STZ $xxxx,y does not exists
-					STA !1540,y				;/
+					LDA #$40				;|
+					STA !1540,y				;/>Explosion timer
+					LDA #$08				;\Make it a normal routine
+					STA !14C8,y				;/
 					JMP ...NextSlot				
 				....ExplosionSprite
-					JSR GetBobOmbExplosionClipB		;>Get hitbox of the explosion
+					LDA.b #!Setting_Bobomb_ExplosionApothem
+					STA $8B
+					%GetBobOmbClippingB()
 					JSL $03B72B|!bank
 					BCS +
 					JMP ...NextSlot
@@ -513,8 +520,7 @@ SPRITE_CODE_START:
 								JSR SpinjumpKillSprite
 								BRA ...NextSlot
 							......NoDeath
-								LDA #!DmgSfxNumb		;\SFX
-								STA !DmgSfxRam			;/
+								%PlaySoundEffect(!Setting_Damage_SfxNumber, !Setting_Damage_SfxPort)
 							
 				....NonExplosionSprites
 					JSR CarryableKickedClipB		;>You may need to change this if you have sprites other than "16x16" dimension.
@@ -583,8 +589,7 @@ SPRITE_CODE_START:
 				BRA ....SkipSfx
 
 				....NoDeath
-					LDA #!DmgSfxNumb		;\SFX
-					STA !DmgSfxRam			;/
+					%PlaySoundEffect(!Setting_Damage_SfxNumber, !Setting_Damage_SfxPort)
 				....SkipSfx
 					LDA #$02			;\Kill sprite (falling down screen).
 					STA !14C8,y			;/
@@ -647,8 +652,7 @@ SPRITE_CODE_START:
 			BRA ...SkipSfx
 
 			...NoDeath
-				LDA #!DmgSfxNumb		;\SFX
-				STA !DmgSfxRam			;/
+				%PlaySoundEffect(!Setting_Damage_SfxNumber, !Setting_Damage_SfxPort)
 
 			...SkipSfx
 				REP #$20
@@ -682,22 +686,22 @@ SUB_GFX:
 		XBA
 		LDA !Freeram_SpriteHP_CurrentHPLow,x
 		REP #$20
-		CMP.w #!HPLowEnoughToShowAltGfx
+		CMP.w #!Setting_HPValueToShowCracked
 		SEP #$20
 		BCS .HighHP
 		;LowHP
-		LDA #!TILE_LowHealth
+		LDA #!Setting_TileNumber_LowHP
 		BRA .SetTile
 	else
 		LDA !Freeram_SpriteHP_CurrentHPLow,x
-		CMP.b #!HPLowEnoughToShowAltGfx
+		CMP.b #!Setting_HPValueToShowCracked
 		BCS .HighHP
-		LDA #!TILE_LowHealth
+		LDA #!Setting_TileNumber_LowHP
 		BRA .SetTile
 	endif
 	
 	.HighHP:
-		LDA #!TILE
+		LDA #!Setting_TileNumber_EnoughHP
 	.SetTile
 		STA $0302|!Base2,y
 
@@ -877,27 +881,6 @@ CapeClipB:
 
 	.NoCapeHitbox
 	CLC			;>Clear carry.
-	RTS
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;Y = sprite slot of Bob-omb
-GetBobOmbExplosionClipB:
-	LDA !E4,y		;\X position, $00 and $08
-	SEC			;|
-	SBC #$20		;|
-	STA $00			;|
-	LDA !14E0,y		;|
-	SBC #$00		;|
-	STA $08			;/
-	LDA !D8,y		;\Y Position, $01 and $09
-	SEC			;|
-	SBC #$20		;|
-	STA $01			;|
-	LDA !14D4,y		;|
-	SBC #$00		;|
-	STA $09			;/
-	LDA #$50		;
-	STA $02			;>Width
-	STA $03			;>Height
 	RTS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 StompSounds:

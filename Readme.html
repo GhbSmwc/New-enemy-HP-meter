@@ -108,6 +108,10 @@
 			Vanilla status bar is way-too limited.
 		</li>
 		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=39887">Address Tracker</a>, if you have trouble knowing if there are RAM conflicts (two unrelated resources uses the same addresses at the same time).</li>
+		<li>
+			<a href="https://www.smwcentral.net/?p=section&a=details&id=40704">Kick and Drop Override Fix</a>. Due to a bug that allows the player to have persisting Bob-omb explosion hitbox once they drop/kick the carried Bob-Omb
+			the same frame it explodes.
+		</li>
 	</ul>
 	<h2>Documentations of other ASM resources</h2>
 	<ul>
@@ -622,6 +626,13 @@ Change that to this:
 		and dies if this number reaches or exceeds a value defined as <kbd>!Setting_SpriteHP_VanillaSprite_Chucks_HPAmount</kbd> (these are found in <kbd>EnemyHPMeterDefines.asm</kbd>). The code checking if enough damage have been made by the fireballs is
 		processed by the fireballs' code (at <kbd>$02A0FC</kbd>) rather than the sprite's code.</li>
 		<li>Ludwig, Morton, and Roy, however, their sprite code processes the fireball damage manually and in their own sprite code, and does not utilizes the 5 fireballs tweaker bit.</li>
+		<li>There is a bug on how SMW handles player kicking carried sprites. If you release a sprite (either by kicking or dropping them) on the frame the sprite you're carrying (<kbd>$14C8</kbd>) is set to other values, (such as erasing the sprite),
+		you'll cancel out the status being written. This is because the player releasing the sprite action overrides whatever previous code meant to make it perform certain actions.<br><br>
+		
+		This also lead to an exploit with the test sprite's explosion damage handler by having basically infinite explosion (Bob-omb explodes, <kbd>$1534</kbd> is set to mark that it is exploding and <kbd>$14C8</kbd> gets sets to <kbd>$08</kbd>, Mario releases the Bob-omb from his hands and sets <kbd>$14C8</kbd>
+		to <kbd>$09/$0A</kbd>, while still marked that it is exploding, leading to a persisting explosion hitbox and causing the test sprite to receive repeated damage from the same explosion).<br><br>
+		
+		<a href="https://www.smwcentral.net/?p=section&a=details&id=40704">I made such a bug fix patch</a>.</li>
 	</ul>
 	<hr>
 	<h2><a href="#ToC_Troubleshooting" id="JMPTo_Troubleshooting">^</a>Troubleshooting</h2>
