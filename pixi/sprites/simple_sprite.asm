@@ -61,12 +61,17 @@
 		!Setting_Bobomb_ExplosionApothem		= $28			;>Explosion "apothem" (the length from the center of a square, which is the center of the Bob-omb sprite) to the midpoint of edges.
 	
 ;Don't touch
-	macro SpriteDamage()
-		JSL !SharedSub_SpriteHPDamage
-		if !Setting_Heal_HPAmount
-			LDA.b #!Setting_Heal_Cooldown
-			STA !SPR_HealCooldown,x
+	macro SpriteDamage(DamageAmount)
+		if !Setting_SpriteHP_TwoByte
+			REP #$20
+			LDA.w #<DamageAmount>
+			STA $00
+			SEP #$20
+		else
+			LDA.b #<DamageAmount>
+			STA $00
 		endif
+		JSL !SharedSub_SpriteHPDamage
 	endmacro
 	
 	macro SetHealCooldown()
@@ -189,9 +194,10 @@ SPRITE_CODE_START:
 	;Player touching sprite
 	;------------------------------------------------------------------------------
 	.Contact
-		LDA !InvulnerabilityTimer,x	;\Don't drain-damage every frame during touch
-		BEQ ..Contact
+		JSR CheckDamageIfZeroHPOrInvul	;\Don't drain-damage every frame during touch
+		BCS ..Contact			;|
 		JMP .NoContact			;/
+		
 		..Contact
 		REP #$20
 		LDA $00		;\Protect hitbox data
@@ -230,11 +236,8 @@ SPRITE_CODE_START:
 			LDA.b #10			;\Set timer to prevent multi-hit rapid stomping drain HP
 			STA !InvulnerabilityTimer,x	;/(happens very easily when hitting sprites on top two corners).
 			JSR ConsecutiveStomps
-			REP #$20
-			LDA.w #!Setting_Damage_Stomp		;\Amount of damage
-			STA $00					;/
-			SEP #$20
-			JSL !SharedSub_SpriteHPDamage				;>Lose HP (handles bar animation and other effects). Note that this alone only subtracts HP, does not handle death sequence.
+			%SpriteDamage(!Setting_Damage_Stomp)
+			
 			%SetHealCooldown()
 			LDA !Freeram_SpriteHP_CurrentHPLow,x	;\If HP != 0, don't kill
 			if !Setting_SpriteHP_TwoByte
@@ -324,17 +327,27 @@ SPRITE_CODE_START:
 					JMP ...NextSlot
 
 					....PlayerFireball
-						REP #$20				;\Damage from player's fireball
-						LDA.w #!Setting_Damage_PlayerFireball	;|
-						STA $00					;|
-						SEP #$20				;|
+						if !Setting_SpriteHP_TwoByte
+							REP #$20				;\Damage from player's fireball
+							LDA.w #!Setting_Damage_PlayerFireball	;|
+							STA $00					;|
+							SEP #$20				;/
+						else
+							LDA.b #!Setting_Damage_PlayerFireball
+							STA $00
+						endif
 						BRA ....Damage				;/
 
 					....YoshiFireball
-						REP #$20				;\Damage from yoshi's fireball
-						LDA.w #!Setting_Damage_YoshiFireball	;|
-						STA $00					;|
-						SEP #$20				;/
+						if !Setting_SpriteHP_TwoByte
+							REP #$20				;\Damage from yoshi's fireball
+							LDA.w #!Setting_Damage_YoshiFireball	;|
+							STA $00					;|
+							SEP #$20				;/
+						else
+							LDA.b #!Setting_Damage_YoshiFireball
+							STA $00
+						endif
 
 					....Damage
 						LDA.b #10				;\Just to show the blinking and in case if projectile penetrates.
@@ -395,21 +408,14 @@ SPRITE_CODE_START:
 				;so that in case if 2 bounce contacts at the same frame, each will run this.
 				;Y = current bounce sprite slot.
 				;------------------------------------------------------------------------------
-				LDA !InvulnerabilityTimer,x		;\Prevent damaging sprite multiple frames
-				BEQ ....RunBounceBlockDmg		;|during touching a bounce sprite.
+				JSR CheckDamageIfZeroHPOrInvul		;\Prevent damaging sprite multiple frames
+				BCS ....RunBounceBlockDmg		;|during touching a bounce sprite.
 				JMP .SkipBounceBlkDmg			;/
 
 				....RunBounceBlockDmg	
 					LDA.b #15			;\Prevent another damage on next frame
 					STA !InvulnerabilityTimer,x	;/
-
-					REP #$20
-					LDA $00				;\Preserve hitbox data
-					PHA				;/
-					LDA.w #!Setting_Damage_BounceBlock	;\Damage from bounce blocks
-					STA $00					;/
-					SEP #$20
-					JSL !SharedSub_SpriteHPDamage			;>Lose HP
+					%SpriteDamage(!Setting_Damage_BounceBlock)
 					%SetHealCooldown()
 					LDA !Freeram_SpriteHP_CurrentHPLow,x	;\If HP != 0, don't kill
 					if !Setting_SpriteHP_TwoByte
@@ -499,16 +505,7 @@ SPRITE_CODE_START:
 						......Damage
 							LDA.b #90				;>invulnerability timer must be long enough to avoid multiple hits from the same explosion.
 							STA !InvulnerabilityTimer,x
-							if !Setting_SpriteHP_TwoByte
-								REP #$20
-								LDA.w #!Setting_Damage_BobOmbExplosion
-								STA $00
-								SEP #$20
-							else
-								LDA.b #!Setting_Damage_BobOmbExplosion
-								STA $00
-							endif
-							JSL !SharedSub_SpriteHPDamage			;>Lose HP
+							%SpriteDamage(!Setting_Damage_BobOmbExplosion)
 							%SetHealCooldown()
 							LDA !Freeram_SpriteHP_CurrentHPLow,x	;\If HP != 0, don't kill
 							if !Setting_SpriteHP_TwoByte
@@ -567,18 +564,9 @@ SPRITE_CODE_START:
 							BCC ...NextSlot		;/no damage/interaction
 
 			...Damage
-				LDA.b #10			;\flashing animation
-				STA !InvulnerabilityTimer,x	;/
-				if !Setting_SpriteHP_TwoByte
-					REP #$20
-					LDA.w #!Setting_Damage_KickedSprite	;\The damage
-					STA $00					;/
-					SEP #$20
-				else
-					LDA.b #!Setting_Damage_KickedSprite
-					STA $00
-				endif
-				JSL !SharedSub_SpriteHPDamage			;>Lose HP
+				LDA.b #10
+				STA !InvulnerabilityTimer,x
+				%SpriteDamage(!Setting_Damage_KickedSprite)
 				%SetHealCooldown()
 				LDA !Freeram_SpriteHP_CurrentHPLow,x	;\If HP != 0, don't kill
 				if !Setting_SpriteHP_TwoByte
@@ -622,7 +610,7 @@ SPRITE_CODE_START:
 	.HitboxWithCapeSpin
 		LDA !InvulnerabilityTimer,x	;\Don't damage multiple frames after the first hit.
 		BNE ..NoCapeHit			;/
-
+		JSR MainSpriteClipA
 		JSR CapeClipB		;>Get cape's hitbox
 		BCC ..NoCapeHit		;>If cape spin non-existent, don't assume it exist
 		JSL $03B72B|!bank	;>Check if cape's hitbox hits this current sprite
@@ -635,13 +623,7 @@ SPRITE_CODE_START:
 			;------------------------------------------------------------------------------
 			LDA #$08			;\Make sprite invulnerable the inital hit.
 			STA !InvulnerabilityTimer,x	;/
-			REP #$20
-			LDA $00				;\$00 going to be used as damage instead of hitbox-related
-			PHA				;/
-			LDA.w #!Setting_Damage_CapeSpin		;\Amount of damage
-			STA $00					;/
-			SEP #$20
-			JSL !SharedSub_SpriteHPDamage		;>Lose HP
+			%SpriteDamage(!Setting_Damage_CapeSpin)
 			%SetHealCooldown()
 			LDA !Freeram_SpriteHP_CurrentHPLow,x	;\If HP != 0, don't kill
 			if !Setting_SpriteHP_TwoByte
@@ -655,10 +637,6 @@ SPRITE_CODE_START:
 				%PlaySoundEffect(!Setting_Damage_SfxNumber, !Setting_Damage_SfxPort)
 
 			...SkipSfx
-				REP #$20
-				PLA				;\Restore hitbox data
-				STA $00				;/
-				SEP #$20
 
 				..NoCapeHit ;>You must have this in existent though.
 				RTS
