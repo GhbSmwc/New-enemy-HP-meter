@@ -472,7 +472,7 @@ autoclean JML SpriteHPIntroEffect</pre>
 	
 	The same also applies to Ludwig, Morton, and Roy. 12 fireballs or 3 stomps.<br><br>
 	
-	This also creates a strange anomaly: 2 fireballs and then a stomp would seemingly be enough damage to kill the sprite. But if the order of attacks is different in a way that the 3rd hit was a fireball, it would take more hits to defeat. That shouldn't happen
+	This also creates a strange anomaly: 2 fireballs and then a stomp would seemingly be enough damage to kill the sprite. But if the order of attacks is different in a way that the 3rd hit is a fireball instead, it would take more hits to defeat. That shouldn't happen
 	due to <a href="https://en.wikipedia.org/wiki/Commutative_property">commutative property of addition</a> (assuming no status effects or modifiers for later damage).<br><br>
 	
 	The patch modifies this to work as an actual damage system. Damages from fireballs and stomps deal different amounts, and there is only one value (reguardless of attack type) that if the damage counter reaches or exceeds it, kills the sprite.

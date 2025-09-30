@@ -21,6 +21,7 @@ Thing(s) to fix:
  -Redid the readme.
  -"simple_sprite.asm" changes:
  --Added bob-omb damage support.
+ --Added different damages for normal and spinjump.
  --Fireball interaction now no longer uses a custom subroutine to generate smoke, instead relies on vanilla
    code of setting $170B to #$01 and $176F set to #$0F.
  --Fixed a bug with interaction with other sprites due to still using 12 sprite slots instead of 22 in sa-1.

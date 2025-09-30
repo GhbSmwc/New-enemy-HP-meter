@@ -35,7 +35,8 @@
 	; - 65535 if !Setting_SpriteHP_TwoByte set to 1.
 		!Setting_Heal_HPAmount		= 3	;>amount of HP recovered periodically (0 = no heal). The periods are on the following define.
 		!Setting_StartingHP		= 100	;>Amount of HP the enemy has.
-		!Setting_Damage_Stomp		= 5	;>Amount of damage from stomping.
+		!Setting_Damage_RegularStomp	= 5	;>Amount of damage from stomping.
+		!Setting_Damage_SpinJumpStomp	= 7	;>Amount of damage from a spin jump.
 		!Setting_Damage_PlayerFireball	= 3	;>Amount of damage from player's fireball.
 		!Setting_Damage_YoshiFireball	= 25	;>Amount of damage from yoshi's fireball.
 		!Setting_Damage_BounceBlock	= 15	;>Amount of damage from bounce blocks.
@@ -87,6 +88,12 @@
 			STA <SoundPort>
 		endif
 	endmacro
+	;Some other stuff to handle defines (again, don't touch)
+		!DamageSize = "db"
+		
+		if !Setting_SpriteHP_TwoByte
+			!DamageSize = "dw"
+		endif
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; sprite init JSL
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -130,7 +137,11 @@ FootYpos:
 		BouncePlayerAway:
 			db $E0,$20 ;>Same as chargin chuck.
 	endif
-
+	if notequal(!Setting_Damage_RegularStomp, !Setting_Damage_SpinJumpStomp)
+		StompDamages:
+			!DamageSize !Setting_Damage_RegularStomp
+			!DamageSize !Setting_Damage_SpinJumpStomp
+	endif
 MainReturn:
 	RTS
 SPRITE_CODE_START:
@@ -236,7 +247,24 @@ SPRITE_CODE_START:
 			LDA.b #10			;\Set timer to prevent multi-hit rapid stomping drain HP
 			STA !InvulnerabilityTimer,x	;/(happens very easily when hitting sprites on top two corners).
 			JSR ConsecutiveStomps
-			%SpriteDamage(!Setting_Damage_Stomp)
+			if equal(!Setting_Damage_RegularStomp, !Setting_Damage_SpinJumpStomp)
+				%SpriteDamage(!Setting_Damage_RegularStomp)
+			else
+				if !Setting_SpriteHP_TwoByte
+					LDA $140D|!addr
+					ASL
+					TAY
+					REP #$20
+					LDA StompDamages,y
+					STA $00
+					SEP #$20
+				else
+					LDY $140D|!addr
+					LDA StompDamages,y
+					STA $00
+				endif
+				JSL !SharedSub_SpriteHPDamage
+			endif
 			
 			%SetHealCooldown()
 			LDA !Freeram_SpriteHP_CurrentHPLow,x	;\If HP != 0, don't kill
