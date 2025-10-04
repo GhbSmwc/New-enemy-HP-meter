@@ -86,6 +86,7 @@
 				<li><a href="#JMPTo_MakeSpritesDisplayHP_GetHPValue_GetStraightFromHPSprTbl" id="ToC_MakeSpritesDisplayHP_GetHPValue_GetStraightFromHPSprTbl">...from its own sprite table as HP</a></li>
 			</ul>
 			<li><a href="#JMPTo_MakeSpritesDisplayHP_TakingDamage" id="ToC_MakeSpritesDisplayHP_TakingDamage">Damage handler</a></li>
+			<li><a href="#JMPTo_MakeSpritesDisplayHP_GetHPValue_TotalHPAllPhases" id="ToC_MakeSpritesDisplayHP_GetHPValue_TotalHPAllPhases">Getting total HP of all phases</a></li>
 		</ul>
 		<li><a href="#JMPTo_Notes" id="ToC_Notes">Notes</a></li>
 		<li><a href="#JMPTo_Troubleshooting" id="ToC_Troubleshooting">Troubleshooting</a></li>
@@ -382,7 +383,7 @@ autoclean JML SpriteHPIntroEffect</pre>
 					<td>if <kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd>, <kbd>!Setting_SpriteHP_BarAnimation</kbd>, and <kbd>!Setting_SpriteHP_BarChangeDelay</kbd> is set to nonzero values.</td>
 				</tr>
 			</table><br>
-			Anything with a red background indicates those are optional features you can disable and will not be used.<br><br>
+			Anything with a red background indicates those are optional features you can disable and will not be used. In LoROM, 25 to 73 bytes will be used, in SA-1, 45 to 91 bytes will be used instead.<br><br>
 			If you want to know exactly where they are located, open <kbd>EnemyHPMeterDefines.asm</kbd> and set <kbd>!Setting_SpriteHP_DisplaySpriteHPDataOnConsole</kbd> to <kbd>1</kbd> and reinsert (works on any tool except pixi since <kbd>print</kbd>
 			command behaves differently). On the asar console window, will display the address of each subsection of the sprite HP data (this is in <a href="https://www.smwcentral.net/?p=section&a=details&id=39887">address tracker format</a> along with other summaries.).
 		</p>
@@ -409,7 +410,7 @@ autoclean JML SpriteHPIntroEffect</pre>
 	at all and instead directly use this ASM resources' current and max HP RAM (in a way similar to the provided example sprite), however that comes with caveats and may need further edits:
 	<ul>
 		<li>
-			If the sprite utilizes a damage counter (starts at 0 and hits increases this value), you need to reverse it. If there are damage amount thresholds to trigger different phases, that also needs to be
+			If the sprite utilizes a damage counter (starts at 0 and hits increases this value), you need to reverse it. If there are damage amount thresholds to trigger different phases/attacks, that also needs to be
 			<abbr title="HealthTriggerPhase = TotalDamageToKill - DamageThreshold">reversed</abbr> (for example, 10 points of damage to defeat an enemy, and 7 or more points trigger phase 2. That needs to be
 			changed to a 10 HP sprite, and triggers phase 2 when its HP drops to 3 or lower).
 		</li>
@@ -615,9 +616,19 @@ Change that to this:
 	BCC +
 	;[...]
 </pre></div><br>
-	If there are multiple instances of increasing/decreasing the RAM (espically if it doesn't utilizes a subroutine to merge them into one), then every one of them should be changed to include setting RAM <kbd>$00</kbd> (<kbd>$00~$01</kbd> if <kbd>!Setting_SpriteHP_TwoByte</kbd> is set to <kbd>1</kbd>)
+	If there are multiple instances of increasing/decreasing the RAM (especially if it doesn't utilizes a subroutine to merge them into one), then every one of them should be changed to include setting RAM <kbd>$00</kbd> (<kbd>$00~$01</kbd> if <kbd>!Setting_SpriteHP_TwoByte</kbd> is set to <kbd>1</kbd>)
 	and then calling <kbd>JSL !SharedSub_SpriteHPDamage</kbd> so all damage types will perform the bar animation (if you enabled it) and other effects (such as switching the health meter to the sprite you dealt damage to).
 	</p>
+	<h3><a href="#ToC_MakeSpritesDisplayHP_GetHPValue_TotalHPAllPhases" id="JMPTo_MakeSpritesDisplayHP_GetHPValue_TotalHPAllPhases">^</a>Getting total HP of all phases</h3>
+	<p>This section covers sprites, most likely bosses, that stores HP in memory that is per-phase, and we need to get the total HP value of all phases. So far, I have not seen any sprite released in the section that does this. If they have, most likely they would have different coding and behavior structures</p>
+	
+	<p>To calculate the total max HP, it's simply adding all the starting HP values of each phase. To get the total current HP, you'll need to find out how many phases that the player have not reached (not counting the current phase and phases the player have cleared), add up all that HP, then add by the
+	remaining HP of the current phase. If the system uses a damage/hit counter, then you need to count how many phases the player have cleared, add how much damage/hits to clear each of those phases, and the amount of damage have taken on the current phase. After that, take its total damage (&ldquo;maximum HP&rdquo;)
+	to defeat the enemy and subtract by the total damage.</p>
+	
+	<p>Note that if damages can be multiple points of units, and doesn't not carry over to the next phase (meaning HP will always be full on that phase regardless of how much damage taken on the phase prior), then you would want not want to use the <a href="#JMPTo_MakeSpritesDisplayHP_TakingDamage">standard damage</a>
+	with the amount of damage by the player, else the HP display would desync with the meter saying it takes the full damage amount as the sprite takes partial damage as part of the damage have been nullified by the phase trigger. Instead, just use its remaining HP of the current phase as the amount of damage.</p>
+	
 	<hr>
 	<h2><a href="#ToC_Notes" id="JMPTo_Notes">^</a>Notes</h2>
 	<ul>
@@ -633,6 +644,8 @@ Change that to this:
 		to <kbd>$09/$0A</kbd>, while still marked that it is exploding, leading to a persisting explosion hitbox and causing the test sprite to receive repeated damage from the same explosion).<br><br>
 		
 		<a href="https://www.smwcentral.net/?p=section&a=details&id=40704">I made such a bug fix patch</a>.</li>
+		<li>Interestingly, Bowser actually have a HP counter (RAM <kbd>$187B</kbd>) rather than a hit counter. It is the only boss sprite in the game that have this.</li>
+		<li>Internally, when Wendy, Lemmy, Ludwig, Morton, Roy, Big Boo Boss, and Bowser takes damage, their hit count/HP values do not update until their hurt animation finishes. In addition, Wendy and Lemmy would delete all other sprites when taking the last hit when their hit counter is at one-less than the amount to defeat.</li>
 	</ul>
 	<hr>
 	<h2><a href="#ToC_Troubleshooting" id="JMPTo_Troubleshooting">^</a>Troubleshooting</h2>

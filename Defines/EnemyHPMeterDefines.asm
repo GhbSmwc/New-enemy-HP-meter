@@ -266,7 +266,7 @@
 	;Misc settings
 		!Setting_SpriteHP_DisplaySpriteHPDataOnConsole = 0
 			;^0 = no
-			; 1 = yes, display the HP data RAM usage on asar console.
+			; 1 = yes, display the HP data RAM usage on asar console (would not work for pixi due to print command reserved for description).
 
 
 
