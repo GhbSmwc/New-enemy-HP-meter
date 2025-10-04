@@ -626,8 +626,8 @@ Change that to this:
 	remaining HP of the current phase. If the system uses a damage/hit counter, then you need to count how many phases the player have cleared, add how much damage/hits to clear each of those phases, and the amount of damage have taken on the current phase. After that, take its total damage (&ldquo;maximum HP&rdquo;)
 	to defeat the enemy and subtract by the total damage.</p>
 	
-	<p>Note that if damages can be multiple points of units, and doesn't not carry over to the next phase (meaning HP will always be full on that phase regardless of how much damage taken on the phase prior), then you would want not want to use the <a href="#JMPTo_MakeSpritesDisplayHP_TakingDamage">standard damage</a>
-	with the amount of damage by the player, else the HP display would desync with the meter saying it takes the full damage amount as the sprite takes partial damage as part of the damage have been nullified by the phase trigger. Instead, just use its remaining HP of the current phase as the amount of damage.</p>
+	<p>Note that if damages can be multiple points of units, and doesn't carry over to the next phase (meaning HP will always be full on that phase regardless of how much damage taken on the phase prior), then you would want not want to use the <a href="#JMPTo_MakeSpritesDisplayHP_TakingDamage">standard damage</a>
+	with the amount of damage by the player, else the HP display would desync with the meter saying it takes the full damage amount as the sprite takes partial damage. Instead, just use its remaining HP of the current phase as the amount of damage when the sprite receives the final blow of the phase.</p>
 	
 	<hr>
 	<h2><a href="#ToC_Notes" id="JMPTo_Notes">^</a>Notes</h2>
