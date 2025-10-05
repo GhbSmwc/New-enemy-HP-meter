@@ -620,7 +620,8 @@ Change that to this:
 	and then calling <kbd>JSL !SharedSub_SpriteHPDamage</kbd> so all damage types will perform the bar animation (if you enabled it) and other effects (such as switching the health meter to the sprite you dealt damage to).
 	</p>
 	<h3><a href="#ToC_MakeSpritesDisplayHP_GetHPValue_TotalHPAllPhases" id="JMPTo_MakeSpritesDisplayHP_GetHPValue_TotalHPAllPhases">^</a>Getting total HP of all phases</h3>
-	<p>This section covers sprites, most likely bosses, that stores HP in memory that is per-phase, and we need to get the total HP value of all phases. So far, I have not seen any sprite released in the section that does this. If they have, most likely they would have different coding and behavior structures</p>
+	<p>This section covers sprites, most likely bosses, that stores HP in memory that is per-phase, and we need to get the total HP value of all phases. So far, I have not seen any sprite released in the section that does this. If they have, most likely they would have different coding and behavior structures. This section
+	explains the general principal of that.</p>
 	
 	<p>To calculate the total max HP, it's simply adding all the starting HP values of each phase. To get the total current HP, you'll need to find out how many phases that the player have not reached (not counting the current phase and phases the player have cleared), add up all that HP, then add by the
 	remaining HP of the current phase. If the system uses a damage/hit counter, then you need to count how many phases the player have cleared, add how much damage/hits to clear each of those phases, and the amount of damage have taken on the current phase. After that, take its total damage (&ldquo;maximum HP&rdquo;)
@@ -628,6 +629,9 @@ Change that to this:
 	
 	<p>Note that if damages can be multiple points of units, and doesn't carry over to the next phase (meaning HP will always be full on that phase regardless of how much damage taken on the phase prior), then you would want not want to use the <a href="#JMPTo_MakeSpritesDisplayHP_TakingDamage">standard damage</a>
 	with the amount of damage by the player, else the HP display would desync with the meter saying it takes the full damage amount as the sprite takes partial damage. Instead, just use its remaining HP of the current phase as the amount of damage when the sprite receives the final blow of the phase.</p>
+	
+	<p>To visualize handling phase triggers, here is a diagram to help understand:<br>
+	<img src="Readme_Files/PhaseTotalHP.png"></p>
 	
 	<hr>
 	<h2><a href="#ToC_Notes" id="JMPTo_Notes">^</a>Notes</h2>
