@@ -162,7 +162,8 @@
 					; 0 = Round to nearest
 					; 1 = Round down (bar may display 0 fill amount when !Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull isn't 1 or 3)
 					; 2 = Round up
-			;Fill direction. 0 = Left-to-right, 1 = Right-to-left. Note that the XY position remains extending to the right reguardless of direction.
+			;Fill direction. 0 = Left-to-right, 1 = Right-to-left. Note that the given XY position will occupy that position and N tiles towards
+			;the right regardless of leftwards or not.
 				!Setting_SpriteHP_LeftwardsBar                       = 1
 			;Tile properties (X-flip for leftwards bar is already handled.)
 				!Setting_SpriteHP_BarProps_Page                      = 0  ;>Use only values 0-3
