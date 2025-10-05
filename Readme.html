@@ -82,7 +82,7 @@
 			<li><a href="#JMPTo_MakeSpritesDisplayHP_BossIntroFill" id="ToC_MakeSpritesDisplayHP_BossIntroFill">(Optional) Boss intro-fill</a></li>
 			<li><a href="#JMPTo_MakeSpritesDisplayHP_GetHPValue" id="ToC_MakeSpritesDisplayHP_GetHPValue">Obtaining HP value...</a></li>
 			<ul>
-				<li><a href="#JMPTo_MakeSpritesDisplayHP_GetHPValue_ConvertDamageToHP" id="ToC_MakeSpritesDisplayHP_GetHPValue_ConvertDamageToHP">...from a damage counter</a></li>
+				<li><a href="#JMPTo_MakeSpritesDisplayHP_GetHPValue_ConvertDamageToHP" id="ToC_MakeSpritesDisplayHP_GetHPValue_ConvertDamageToHP">...from a damage counter (&ldquo;Inverted health&rdquo;)</a></li>
 				<li><a href="#JMPTo_MakeSpritesDisplayHP_GetHPValue_GetStraightFromHPSprTbl" id="ToC_MakeSpritesDisplayHP_GetHPValue_GetStraightFromHPSprTbl">...from its own sprite table as HP</a></li>
 			</ul>
 			<li><a href="#JMPTo_MakeSpritesDisplayHP_TakingDamage" id="ToC_MakeSpritesDisplayHP_TakingDamage">Damage handler</a></li>
@@ -439,7 +439,7 @@ autoclean JML SpriteHPIntroEffect</pre>
 	<p>This covers on how to extract data from a sprite table that is being used to track the amount of damage or health, then storing that data to <kbd>!Freeram_SpriteHP_CurrentHPLow</kbd>, <kbd>!Freeram_SpriteHP_MaxHPLow</kbd>
 	(<kbd>!Freeram_SpriteHP_CurrentHPHi</kbd> and <kbd>!Freeram_SpriteHP_MaxHPHi</kbd> in addition if <kbd>!Setting_SpriteHP_TwoByte == 1</kbd>) so that it gets displayed on the HUD. This must run every frame (as a failsafe in
 	case if the sprite's real health sprite table changes without that being shown) on the sprite main (preferably at the start). Note that the following code uses a macro that doesn't get used unless you call it.</p>
-	<h4><a href="#ToC_MakeSpritesDisplayHP_GetHPValue_ConvertDamageToHP" id="JMPTo_MakeSpritesDisplayHP_GetHPValue_ConvertDamageToHP">^</a>...from a damage counter</h4>
+	<h4><a href="#ToC_MakeSpritesDisplayHP_GetHPValue_ConvertDamageToHP" id="JMPTo_MakeSpritesDisplayHP_GetHPValue_ConvertDamageToHP">^</a>...from a damage counter (&ldquo;Inverted health&rdquo;)</h4>
 	<p>When a custom sprite stores a number (<kbd>DamageCount</kbd>) that starts at 0, and increases (commonly by 1 as a hit counter) for each hit the sprite receives, HP can be found by
 	taking the amount of damage needed to defeat the enemy, and subtract that by <kbd>DamageCount</kbd> to obtain the remaining damage needed to defeat the sprite:
 <div class="CodeBlock" style="height: 250px;"><pre>
@@ -624,14 +624,15 @@ Change that to this:
 	This section explains the general principal of that.</p>
 	
 	<p>To calculate the total max HP, it's simply adding all the starting HP values of each phase. To get the total current HP, you'll need to find out how many phases that the player have not reached (not counting the current phase and phases the player have cleared), add up all that HP,
-	then add by the remaining HP of the current phase. If the system uses a damage/hit counter, then you need to count how many phases the player have cleared, add how much damage/hits to clear each of those phases, and the amount of damage have taken on the current phase. After that, take its total damage (&ldquo;maximum HP&rdquo;)
-	to defeat the enemy and subtract by the total damage.</p>
+	then add by the remaining HP of the current phase:<br>
+	<img src="Readme_Files/PhaseTotalHP.png"></p>
+	<p>If the system uses a damage/hit counter, then you need to count how many phases the player have cleared, add how much damage/hits to clear each of those phases, and the amount of damage have taken on the current phase, which will be <kbd>DamageAccrued</kbd>. After that, take its total damage of all phases to defeat the sprite,
+	and subtract by <kbd>DamageAccrued</kbd> to obtain the total remaining health.</p>
 	
 	<p>Note that if damages can be multiple points of units, and doesn't carry over to the next phase (meaning HP will always be full on that phase regardless of how much damage taken on the phase prior), then you would want not want to use the <a href="#JMPTo_MakeSpritesDisplayHP_TakingDamage">standard damage</a>
-	with the amount of damage by the player, else the HP display would desync with the meter saying it takes the full damage amount as the sprite takes partial damage. Instead, just use its remaining HP of the current phase as the amount of damage when the sprite receives the final blow of the phase.</p>
-	
-	<p>To visualize handling phase triggers, here is a diagram to help understand:<br>
-	<img src="Readme_Files/PhaseTotalHP.png"></p>
+	with the amount of damage by the player, else the HP display would desync with the meter saying it takes the full damage amount as the sprite takes partial damage. Instead, just use its remaining HP of the current phase as the amount of damage (<kbd>RemainingHP - RemainingHP = 0</kbd>) when the sprite receives the final blow of the phase:<br>
+	<img src="Readme_Files/PhaseDamageTrigger.png"><br>
+	The same also applies to damage/hit counter, sprite have 1 damage point, and 2 points are needed to enter phase 2. Obviously <kbd>1 + 2 = 3</kbd> and you would need to cap it to 2.</p>
 	
 	<hr>
 	<h2><a href="#ToC_Notes" id="JMPTo_Notes">^</a>Notes</h2>
@@ -650,6 +651,13 @@ Change that to this:
 		<a href="https://www.smwcentral.net/?p=section&a=details&id=40704">I made such a bug fix patch</a>.</li>
 		<li>Interestingly, Bowser actually have a HP counter (RAM <kbd>$187B</kbd>) rather than a hit counter. It is the only boss sprite in the game that have this.</li>
 		<li>Internally, when Wendy, Lemmy, Ludwig, Morton, Roy, Big Boo Boss, and Bowser takes damage, their hit count/HP values do not update until their hurt animation finishes. In addition, Wendy and Lemmy would delete all other sprites when taking the last hit when their hit counter is at one-less than the amount to defeat.</li>
+		<li>
+			This ASM resource does not support vanilla bowser battle because of 2 reasons:
+			<ul>
+				<li>The game overrides the sprite graphics (MechaKoopas are at <kbd>SP4=$0E</kbd>, but in LM, its default graphics are <kbd>SP4=$02 (forest)</kbd>), so assuming I have sprite OAM support, there is no way to fix the incorrect graphics for the sprite HP meter display.</li>
+				<li>Vanilla Bowser battle is rarely used in SMW hacks, due to it being not customizable.</li>
+			</ul>
+		</li>
 	</ul>
 	<hr>
 	<h2><a href="#ToC_Troubleshooting" id="JMPTo_Troubleshooting">^</a>Troubleshooting</h2>
