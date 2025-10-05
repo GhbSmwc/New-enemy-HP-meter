@@ -19,6 +19,8 @@ Thing(s) to fix:
  -Bar animation fill (displays previous HP fill amount) and delay timer (how long the fill amount of
   previous HP) are no longer sprite slot-based and each consumes 1 byte, saving RAM space.
  -Redid the readme.
+ -Fixed an issue where Chucks instantly die from various things doesn't display the meter, and if already
+  displayed, would ignore the damage animation delay.
  -"simple_sprite.asm" changes:
  --Added bob-omb damage support.
  --Added different damages for normal and spinjump.
