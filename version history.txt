@@ -6,7 +6,7 @@ based (8.9, then 8.10 rather than 9.0)):
 Thing(s) to fix:
 -no glitches found so far.
 
-08/25/2025
+10/5/2025
  -Fixed asar-related depreciated features.
  -Makes use of shared subroutines system.
  -ASM codes using JSL/JML to banks $00-$7F now uses fastROM addressing ($xxxxxx|!bank) for LoROM.
