@@ -4,6 +4,10 @@
 	incsrc "SharedSub_Defines/EnemyHPMeterDefines.asm"
 	
 	
+;Stick this code into Shared Subroutine's "subroutinecode.asm".
+;
+;If there are subroutines you won't be using at all of your entire hack,
+;feel free to remove them.
 ;Subroutine list:
 ; - MathDiv
 ; - MathDiv32_16
@@ -988,11 +992,11 @@ ConvertToRightAlignedFormat2:
 	; - !Scratchram_GraphicalBar_TempLength: The length of the bar (only counts
 	;   middle bytes)
 	;Output:
-	; - !Scratchram_GraphicalBar_FillByteTbl to !Scratchram_GraphicalBar_FillByteTbl+EndAddress:
+	; - !Scratchram_GraphicalBar_FillByteTbl to !Scratchram_GraphicalBar_FillByteTbl+NumberOfBytes-1:
 	;   A table array containing the amount of fill for each byte (N bytes (including zero) full,
 	;   0 or 1 bytes a fraction, and then N bytes (including zero) empty), the address it ends at is:
 	;
-	;    EndAddress = (L + MLength + R) - 1
+	;    NumberOfBytes = (L + MLength + R)
 	;
 	;  - L and R are 0 if set to 0 number of pieces, 1 otherwise on any nonzero values.
 	;  - MLength is how many middle tiles.
@@ -1371,11 +1375,11 @@ GraphicalBarNumberOfTiles:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 SpriteHPDamage:
 	PHY
-	LDA !Freeram_SpriteHP_MeterState
-	CMP #$FE
-	BEQ .Disabled
-	CMP #$FD
-	BEQ .Disabled
+	LDA !Freeram_SpriteHP_MeterState		;\Check if the meter is disabled as to not display the meter on the HUD.
+	CMP #$FE					;|
+	BEQ .Disabled					;|
+	CMP #$FD					;|
+	BEQ .Disabled					;/
 	if !Setting_SpriteHP_BarAnimation == 0
 		TXA
 		STA !Freeram_SpriteHP_MeterState
@@ -1389,8 +1393,8 @@ SpriteHPDamage:
 		JSL SpriteHPGetSlotIndex
 		TXA
 		CMP !Scratchram_SpriteHP_SpriteSlotToDisplay
-		BEQ .SameSpriteSlot
-		STA !Freeram_SpriteHP_MeterState
+		BEQ .SameSpriteSlot				;>If damages happened to the same sprite, don't remove the record/previousHP display.
+		STA !Freeram_SpriteHP_MeterState		;>Switch HP display to the most recent damaged sprite.
 		.Different
 			JSL SpriteHPRemoveRecordEffect		;>Get fill amount of current HP *before* the damage (and not before even that) to properly show how much fill loss when switching slots.
 		.SameSpriteSlot
