@@ -634,7 +634,8 @@ Change that to this:
 	<p>Note that if damages can be multiple points of units, and doesn't carry over to the next phase (meaning HP will always be full on that phase regardless of how much damage taken on the phase prior), then you would want not want to use the <a href="#JMPTo_MakeSpritesDisplayHP_TakingDamage">standard damage</a>
 	with the amount of damage by the player, else the HP display would desync with the meter saying it takes the full damage amount as the sprite takes partial damage. Instead, just use its remaining HP of the current phase as the amount of damage (<kbd>RemainingHP - RemainingHP = 0</kbd>) when the sprite receives the final blow of the phase:<br>
 	<img src="Readme_Files/PhaseDamageTrigger.png"><br>
-	The same also applies to damage/hit counter, sprite have 1 damage point, and 2 points are needed to enter phase 2. Obviously taking 2 damage results in <kbd>1 + 2 = 3</kbd> and you would need to cap it to 2, so you call <kbd>JSL !SharedSub_SpriteHPDamage</kbd> with damage amount being set to <kbd>1</kbd> instead of <kbd>2</kbd>.</p>
+	The same also applies to damage/hit counter. At phase 1, 2 damage points are needed to enter phase 2, and it have taken 1 point of damage. If more than 1 point of damage have been dealt, it will be reduced to 1 damage (1 damage point + 2 damage = 3 damage, but caps it at 2). When excess damage occurs, the true damage amount is again, the remaining points left until a phase trigger:
+	<kbd>DamageAmountToTriggerNextPhase - DamageAccruedBeforeExceedingTrigger</kbd> (2 damage to trigger - 1 damage accrued = maximum of 1 damage point allowed) which shall be written to <kbd>$00</kbd> before calling <kbd>JSL !SharedSub_SpriteHPDamage</kbd>.</p>
 	
 	<hr>
 	<h2><a href="#ToC_Notes" id="JMPTo_Notes">^</a>Notes</h2>
