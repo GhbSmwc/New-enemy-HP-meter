@@ -632,7 +632,7 @@ Change that to this:
 	and subtract by <kbd>DamageAccrued</kbd> to obtain the total remaining health.</p>
 	
 	<p>Note that if damages can be multiple points of units, and doesn't carry over to the next phase (meaning HP will always be full on that phase regardless of how much damage taken on the phase prior), then you would want not want to use the <a href="#JMPTo_MakeSpritesDisplayHP_TakingDamage">standard damage</a>
-	with the amount of damage by the player, else the HP display would desync with the meter saying it takes the full damage amount as the sprite takes partial damage. Instead, just use its remaining HP of the current phase as the amount of damage (so it performs <kbd class="NoLineBreak">DisplayedDamage = TotalRemainingHP</kbd>)
+	with the amount of damage by the player, else the HP display would desync with the meter saying it takes the full damage amount as the sprite takes partial damage. Instead, just use its remaining HP of the current phase as the amount of damage (so it performs <kbd class="NoLineBreak">DisplayedDamage = HPLeftInAPhase</kbd>)
 	when the sprite receives the final blow of the phase:<br>
 	<img src="Readme_Files/PhaseDamageTrigger.png"><br>
 	The same also applies to damage/hit counter. Using the equivalent to above example, at phase 1, 2 damage points are needed to enter phase 2, and it have taken 1 point of damage. If more than 1 point of damage have been dealt, it will be reduced to 1 damage (1 damage point + 2 damage = 3 damage, but caps it at 2). When excess damage occurs, the true damage amount is again, the remaining points left until a phase trigger:
