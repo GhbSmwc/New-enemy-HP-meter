@@ -626,15 +626,16 @@ Change that to this:
 	This section explains the general principal of that.</p>
 	
 	<p>To calculate the total max HP, it's simply adding all the starting HP values of each phase. To get the total current HP, you'll need to find out how many phases that the player have not reached (not counting the current phase and phases the player have cleared), add up all that HP,
-	then add by the remaining HP of the current phase:<br>
+	then add by the remaining HP of the current phase, as seen in the example below:<br>
 	<img src="Readme_Files/PhaseTotalHP.png"></p>
 	<p>If the system uses a damage/hit counter, then you need to count how many phases the player have cleared, add how much damage/hits to clear each of those phases, and the amount of damage have taken on the current phase, which will be <kbd>DamageAccrued</kbd>. After that, take its total damage of all phases to defeat the sprite,
 	and subtract by <kbd>DamageAccrued</kbd> to obtain the total remaining health.</p>
 	
 	<p>Note that if damages can be multiple points of units, and doesn't carry over to the next phase (meaning HP will always be full on that phase regardless of how much damage taken on the phase prior), then you would want not want to use the <a href="#JMPTo_MakeSpritesDisplayHP_TakingDamage">standard damage</a>
-	with the amount of damage by the player, else the HP display would desync with the meter saying it takes the full damage amount as the sprite takes partial damage. Instead, just use its remaining HP of the current phase as the amount of damage (<kbd>RemainingHP - RemainingHP = 0</kbd>) when the sprite receives the final blow of the phase:<br>
+	with the amount of damage by the player, else the HP display would desync with the meter saying it takes the full damage amount as the sprite takes partial damage. Instead, just use its remaining HP of the current phase as the amount of damage (so it performs <kbd class="NoLineBreak">DisplayedDamage = TotalRemainingHP</kbd>)
+	when the sprite receives the final blow of the phase:<br>
 	<img src="Readme_Files/PhaseDamageTrigger.png"><br>
-	The same also applies to damage/hit counter. At phase 1, 2 damage points are needed to enter phase 2, and it have taken 1 point of damage. If more than 1 point of damage have been dealt, it will be reduced to 1 damage (1 damage point + 2 damage = 3 damage, but caps it at 2). When excess damage occurs, the true damage amount is again, the remaining points left until a phase trigger:
+	The same also applies to damage/hit counter. Using the equivalent to above example, at phase 1, 2 damage points are needed to enter phase 2, and it have taken 1 point of damage. If more than 1 point of damage have been dealt, it will be reduced to 1 damage (1 damage point + 2 damage = 3 damage, but caps it at 2). When excess damage occurs, the true damage amount is again, the remaining points left until a phase trigger:
 	<kbd>DamageAmountToTriggerNextPhase - DamageAccruedBeforeExceedingTrigger</kbd> (2 damage to trigger - 1 damage accrued = maximum of 1 damage point allowed) which shall be written to <kbd>$00</kbd> before calling <kbd>JSL !SharedSub_SpriteHPDamage</kbd>.</p>
 	
 	<hr>
