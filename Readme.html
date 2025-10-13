@@ -432,9 +432,10 @@ autoclean JML SpriteHPIntroEffect</pre>
 	;Have the following as an option on your custom sprite if you are willing to submit it to SMWC.
 		!Setting_IntroFill = 1                            ;&gt;0 = no, 1 = yes (switch display to boss sprite with filling animation or simply a full bar if animation disabled).
 	
-	if !Setting_IntroFill
-		JSL !SharedSub_SpriteHPIntroEffect
-	endif
+	;Have this in the sprite's code, either in the INIT or in the main (but only call it once, such as when the cutscene ends)
+		if !Setting_IntroFill
+			JSL !SharedSub_SpriteHPIntroEffect
+		endif
 </pre></div>
 	</p>
 	<h3><a href="#ToC_MakeSpritesDisplayHP_GetHPValue" id="JMPTo_MakeSpritesDisplayHP_GetHPValue">^</a>Obtaining HP value...</h3>
