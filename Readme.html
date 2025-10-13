@@ -336,7 +336,7 @@ autoclean JML SpriteHPIntroEffect</pre>
 							<li><kbd>$FE</kbd> is &ldquo;disabled&rdquo;, will only write blank tiles to clear the HP meter display once, then set itself to <kbd>$FD</kbd>. Make sure you do not set this to <kbd>$FE</kbd> every frame though.</li>
 							<li><kbd>$FD</kbd> is also &ldquo;disabled&rdquo;, but will not write anything on the spot the meter occupies (stops writing tiles here every frame, including blank tiles).</li>
 						</ul>
-						Note that when disabled, you can use that spot where the meter occupies without it being overwritten. It also prevents displaying the meter if the intro-fill animation plays, as well as displaying the meter when damaging enemies.
+						Note that when disabled (<kbd>$FD</kbd>), you can use that spot where the meter occupies without it being overwritten. It also prevents displaying the meter if the intro-fill animation plays, as well as displaying the meter when damaging enemies.
 					</td>
 					<td>Always</td>
 				</tr>
@@ -398,7 +398,7 @@ autoclean JML SpriteHPIntroEffect</pre>
 	
 	<p>To program a health system for existing custom sprites, they should store a value representing how much damage (can be any value it increases), hits (counts up by one regardless of an attack), or
 	remaining health (starts at any nonzero value and decreases each damage) else the sprite will never die or dies in one hit. Because each sprite is different, documenting every one of them would make
-	this tutorial very long. So I'll explain the principals and with some examples.</p>
+	this tutorial very long. So I'll explain the general programming and with some examples.</p>
 	
 	<p>I provided an example test sprite under <kbd>pixi/sprites/simple_sprite.asm</kbd> for testing the HP system.</p>
 	
@@ -417,7 +417,7 @@ autoclean JML SpriteHPIntroEffect</pre>
 			changed to a 10 HP sprite, and triggers phase 2 when its HP drops to 3 or lower).
 		</li>
 		<li>
-			Most sprites with a health system don't have 16-bit health. If you have <kbd>!Setting_SpriteHP_TwoByte == 1</kbd>, you need to either always set their <kbd>!Freeram_SpriteHP_MaxHPHi</kbd> to always zero,
+			Most sprites with a health system don't have 16-bit health. If you have <kbd>!Setting_SpriteHP_TwoByte == 1</kbd>, you need to either always set their <kbd>!Freeram_SpriteHP_CurrentHPHi</kbd> and <kbd>!Freeram_SpriteHP_MaxHPHi</kbd> to always zero,
 			or every code that reads and set their HP to account the high byte when their HP value can go greater than 255.
 		</li>
 	</ul>
@@ -476,7 +476,7 @@ autoclean JML SpriteHPIntroEffect</pre>
 	
 	The same also applies to Ludwig, Morton, and Roy. 12 fireballs or 3 stomps.<br><br>
 	
-	This also creates another strange anomaly: 2 fireballs and then a stomp would seemingly be enough damage to kill the sprite. But if the order of attacks is different in a way that the 3rd hit is a fireball instead, it would take more hits to defeat. That shouldn't happen
+	This also creates another anomaly: 2 fireballs and then a stomp would seemingly be enough damage to kill the sprite. But if the order of attacks is different in a way that the 3rd hit is a fireball instead, it would take more hits to defeat. That shouldn't happen
 	due to <a href="https://en.wikipedia.org/wiki/Commutative_property">commutative property of addition</a> (assuming no status effects or modifiers for later damages).<br><br>
 	
 	The patch modifies this to work as an actual damage system. Damages from fireballs and stomps deal different amounts, and there is only one value (reguardless of attack type) that if the damage counter reaches or exceeds it, kills the sprite.
@@ -509,11 +509,11 @@ autoclean JML SpriteHPIntroEffect</pre>
 		<li>If you have animation enabled (<kbd>!Setting_SpriteHP_BarAnimation</kbd> set to <kbd>1</kbd>), you need to set some values for that.</li>
 		<li>Ensure that the health meter switches to that damaged enemy when hit.</li>
 	</ul>
-	Thankfully, all that logic is handled automatically in a subroutine defined as <kbd>!SharedSub_SpriteHPDamage</kbd>, with the inputs stored in <kbd>$00</kbd> (2 bytes if <kbd>!Setting_SpriteHP_TwoByte == 1</kbd>). Feel free to check out the subroutines as you wish.</p>
+	Thankfully, all that logic is handled automatically in a subroutine defined as <kbd>!SharedSub_SpriteHPDamage</kbd>, with the inputs stored in <kbd>$00</kbd> (2 bytes, <kbd>$00~$01</kbd>, if <kbd>!Setting_SpriteHP_TwoByte == 1</kbd>). Feel free to check out the subroutines as you wish.</p>
 	
 	<p>If you want to know how it works, just open the provided Shared Subroutines code, custom sprite's asm file or view the provided patch and seeing the SMW disassembly.</p>
 	
-	<p>If you're dealing with an incremental damage counter-type HP for bosses and wanted a damage animation, you would do the same thing, just make sure the how much it increases are stored in <kbd>$00</kbd> (<kbd>$00~$01</kbd> if <kbd>!Setting_SpriteHP_TwoByte == 1</kbd>), for example,
+	<p>If you're dealing with an incremental damage counter-type HP for bosses and wanted a damage animation, you would do the same thing, just make sure the how much it increases are stored in <kbd>$00</kbd>, for example,
 	the <a href="https://www.smwcentral.net/?p=section&a=details&id=13144">Giant Masked Koopa boss</a>:
 <div class="CodeBlock" style="height: 70px;"><pre>
     INC !1534,x                 ; increment sprite hit counter (this counts the damage up by 1)
@@ -619,7 +619,7 @@ Change that to this:
 	BCC +
 	;[...]
 </pre></div><br>
-	If there are multiple instances of increasing/decreasing the RAM (especially if it doesn't utilizes a subroutine to merge them into one), then every one of them should be changed to include setting RAM <kbd>$00</kbd> (<kbd>$00~$01</kbd> if <kbd>!Setting_SpriteHP_TwoByte</kbd> is set to <kbd>1</kbd>)
+	If there are multiple instances of increasing/decreasing the RAM (especially if it doesn't utilizes a subroutine to merge them into one), then every one of them should be changed to include setting RAM <kbd>$00</kbd>
 	and then calling <kbd>JSL !SharedSub_SpriteHPDamage</kbd> so all damage types will perform the bar animation (if you enabled it) and other effects (such as switching the health meter to the sprite you dealt damage to).
 	</p>
 	<h3><a href="#ToC_MakeSpritesDisplayHP_GetHPValue_TotalHPAllPhases" id="JMPTo_MakeSpritesDisplayHP_GetHPValue_TotalHPAllPhases">^</a>Getting total HP of all phases</h3>
@@ -637,7 +637,7 @@ Change that to this:
 	when the sprite receives the final blow of the phase:<br>
 	<img src="Readme_Files/PhaseDamageTrigger.png"><br>
 	The same also applies to damage/hit counter. Using the equivalent to above example, at phase 1, 2 damage points are needed to enter phase 2, and it have taken 1 point of damage. If more than 1 point of damage have been dealt, it will be reduced to 1 damage (1 damage point + 2 damage = 3 damage, but caps it at 2). When excess damage occurs, the true damage amount is again, the remaining points left until a phase trigger:
-	<kbd>DamageAmountToTriggerNextPhase - DamageAccruedBeforeExceedingTrigger</kbd> (2 damage to trigger - 1 damage accrued = maximum of 1 damage point allowed) which shall be written to <kbd>$00</kbd> before calling <kbd>JSL !SharedSub_SpriteHPDamage</kbd>.</p>
+	<kbd>DamageAmountToTriggerNextPhase - DamageAccruedBeforeExceedingTrigger</kbd> (2 damage to trigger - 1 damage accrued = maximum of 1 damage point allowed) which should be written to <kbd>$00</kbd> (2 bytes, <kbd>$00~$01</kbd>, if <kbd>!Setting_SpriteHP_TwoByte == 1</kbd>) before calling <kbd>JSL !SharedSub_SpriteHPDamage</kbd>.</p>
 	
 	<hr>
 	<h2><a href="#ToC_Notes" id="JMPTo_Notes">^</a>Notes</h2>
@@ -654,10 +654,10 @@ Change that to this:
 		to <kbd>$09/$0A</kbd>, while still marked that it is exploding, leading to a persisting explosion hitbox and causing the test sprite to receive repeated damage from the same explosion).<br><br>
 		
 		<a href="https://www.smwcentral.net/?p=section&a=details&id=40704">I made such a bug fix patch</a>.</li>
-		<li>Interestingly, Bowser actually have a HP counter (RAM <kbd>$187B</kbd>) rather than a hit counter. It is the only boss sprite in the game that have this.</li>
+		<li>Interestingly, Bowser actually have a HP counter (RAM <kbd>$187B</kbd>) rather than a hit counter. It is the only boss sprite in the vanilla game that have this.</li>
 		<li>Internally, when Wendy, Lemmy, Ludwig, Morton, Roy, Big Boo Boss, and Bowser takes damage, their hit count/HP values do not update until their hurt animation finishes. In addition, Wendy and Lemmy would delete all other sprites when taking the last hit when their hit counter is at one-less than the amount to defeat.</li>
 		<li>
-			This ASM resource does not support vanilla bowser battle because of 2 reasons:
+			This ASM resource does not support vanilla bowser battle because of 2 reasons (yes, despite I have made sprite OAM-based HUD elements):
 			<ul>
 				<li>The game overrides the sprite graphics (MechaKoopas are at <kbd>SP4=$0E</kbd>, but in LM, its default graphics are <kbd>SP4=$02 (forest)</kbd>), so assuming I have sprite OAM support, there is no way to fix the incorrect graphics for the sprite HP meter display.</li>
 				<li>Vanilla Bowser battle is rarely used in SMW hacks, due to it being not customizable.</li>

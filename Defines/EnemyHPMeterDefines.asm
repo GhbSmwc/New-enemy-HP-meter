@@ -20,8 +20,8 @@
 	; --- When equal to $FD, will also be "disabled", this will not write anything on the spot the HP meter occupies
 	;     (stops writing tiles here every frame, including blank tiles).
 	;
-	;  Disable mode is useful if you need a HUD element on that spot where the HP meter is placed on. This also prevents
-	;  IntroFill and enemy damage from displaying the HP meter.
+	;  Disable mode is useful if you need a HUD element on that spot where the HP meter is placed on (when $FD). This
+	;  also prevents IntroFill and enemy damage from displaying the HP meter.
 	;
 	; - Define: !Freeram_SpriteHP_CurrentHPLow
 	; -- BytesUsed: !sprite_slots
