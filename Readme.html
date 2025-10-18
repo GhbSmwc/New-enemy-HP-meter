@@ -106,7 +106,7 @@
 		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=37432">Pixi</a></li>
 		<li>
 			Status bar/HUD enhancement patches, this ASM package by default assumes you are using the <a href="https://www.smwcentral.net/?p=section&a=details&id=19247">Super Status Bar patch</a>.
-			Vanilla status bar is way-too limited.
+			Vanilla status bar is way-too limited. Note that this only supports layer 3 HUDs, not sprite OAM-based patches (you however are free to edit the uberasm tool code though to support OAM).
 		</li>
 		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=39887">Address Tracker</a>, if you have trouble knowing if there are RAM conflicts (two unrelated resources uses the same addresses at the same time).</li>
 		<li>
@@ -396,9 +396,9 @@ autoclean JML SpriteHPIntroEffect</pre>
 	
 	<p>This section covers on how to <b>display</b> the sprite's HP.</p>
 	
-	<p>To program a health system for existing custom sprites, they should store a value representing how much damage (can be any value it increases), hits (counts up by one regardless of an attack), or
+	<p>To program a health system for existing custom sprites, they should store a value in sprite table RAM representing how much damage (can be any value it increases), hits (counts up by one regardless of an attack), or
 	remaining health (starts at any nonzero value and decreases each damage) else the sprite will never die or dies in one hit. Because each sprite is different, documenting every one of them would make
-	this tutorial very long. So I'll explain the general programming and with some examples.</p>
+	this tutorial very long. So I'll explain the method that works with most sprites and with some examples.</p>
 	
 	<p>I provided an example test sprite under <kbd>pixi/sprites/simple_sprite.asm</kbd> for testing the HP system.</p>
 	
@@ -443,7 +443,7 @@ autoclean JML SpriteHPIntroEffect</pre>
 	(<kbd>!Freeram_SpriteHP_CurrentHPHi</kbd> and <kbd>!Freeram_SpriteHP_MaxHPHi</kbd> in addition if <kbd>!Setting_SpriteHP_TwoByte == 1</kbd>) so that it gets displayed on the HUD. This must run every frame (as a failsafe in
 	case if the sprite's real health sprite table changes without that being shown) on the sprite main (preferably at the start). Note that the following code uses a macro that doesn't get used unless you call it.</p>
 	<h4><a href="#ToC_MakeSpritesDisplayHP_GetHPValue_ConvertDamageToHP" id="JMPTo_MakeSpritesDisplayHP_GetHPValue_ConvertDamageToHP">^</a>...from a damage counter (&ldquo;Inverted health&rdquo;)</h4>
-	<p>When a custom sprite stores a number (<kbd>DamageCount</kbd>) that starts at 0, and increases (commonly by 1 as a hit counter) for each hit the sprite receives, HP can be found by
+	<p>When a custom sprite stores a number (<kbd>DamageCount</kbd>) that starts at 0 (spawned sprites automatically sets their sprite table values to <kbd>$00</kbd> by default), and increases (commonly by 1 as a hit counter) for each hit the sprite receives, HP can be found by
 	taking the amount of damage needed to defeat the enemy, and subtract that by <kbd>DamageCount</kbd> to obtain the remaining damage needed to defeat the sprite:
 <div class="CodeBlock" style="height: 250px;"><pre>
 	macro ConvertDamageAmountToHP(DamageCountSpriteTableRAM, DamageAmountToDie)
@@ -485,7 +485,7 @@ autoclean JML SpriteHPIntroEffect</pre>
 	</p>
 	<h4><a href="#ToC_MakeSpritesDisplayHP_GetHPValue_GetStraightFromHPSprTbl" id="JMPTo_MakeSpritesDisplayHP_GetHPValue_GetStraightFromHPSprTbl">^</a>...from its own sprite table as HP</h4>
 	<p>
-		This assumes that the custom sprite you have stores the health amount (a number starting at some nonzero value, and decreases when taking damage) rather than a damage/hit counter. This, is in fact, even easier than having to invert
+		This assumes that the custom sprite you have stores the health amount (a number starting at some nonzero value, commonly set to when running <kbd>init</kbd> code, and decreases when taking damage) rather than a damage/hit counter. This, is in fact, even easier than having to invert
 		the damage counter. All you have to do is simply load its source HP data, and store it directly into the HP data of this ASM resource:
 <div class="CodeBlock" style="height: 200px;"><pre>
 	macro TransferHealthToHPData(HealthSpriteTableRAM, MaxHealth)
@@ -655,9 +655,9 @@ Change that to this:
 		
 		<a href="https://www.smwcentral.net/?p=section&a=details&id=40704">I made such a bug fix patch</a>.</li>
 		<li>Interestingly, Bowser actually have a HP counter (RAM <kbd>$187B</kbd>) rather than a hit counter. It is the only boss sprite in the vanilla game that have this.</li>
-		<li>Internally, when Wendy, Lemmy, Ludwig, Morton, Roy, Big Boo Boss, and Bowser takes damage, their hit count/HP values do not update until their hurt animation finishes. In addition, Wendy and Lemmy would delete all other sprites when taking the last hit when their hit counter is at one-less than the amount to defeat.</li>
+		<li>Internally, when Wendy, Lemmy, Ludwig, Morton, Roy, Big Boo Boss, and Bowser takes damage, their hit count/HP values do not update until their &ldquo;hurt&rdquo; animation finishes. In addition, Wendy and Lemmy would delete all other sprites when taking the last hit when their hit counter is at one-less than the amount to defeat.</li>
 		<li>
-			This ASM resource does not support vanilla bowser battle because of 2 reasons (yes, despite I have made sprite OAM-based HUD elements):
+			This ASM resource does not support vanilla bowser battle because of 2 reasons (yes, despite I have made sprite OAM-based HUD elements in the tutorials):
 			<ul>
 				<li>The game overrides the sprite graphics (MechaKoopas are at <kbd>SP4=$0E</kbd>, but in LM, its default graphics are <kbd>SP4=$02 (forest)</kbd>), so assuming I have sprite OAM support, there is no way to fix the incorrect graphics for the sprite HP meter display.</li>
 				<li>Vanilla Bowser battle is rarely used in SMW hacks, due to it being not customizable.</li>
@@ -676,11 +676,16 @@ Change that to this:
 			Q: &ldquo;When I damage an enemy that uses the HP system, it's HP shown won't go down!&rdquo;<br><br>
 			A: There are possible cases that have occurred:
 			<ul>
-				<li>Numbers not showing (either because you have them disabled or too many symbols in the text display of the numbers), and it's HP is set above its maximum.</li>
+				<li>
+					Numbers not showing (either because you have them disabled via <kbd>!Setting_SpriteHP_DisplayNumerical == 0</kbd> or too many symbols in the text display of the numbers), and it's HP is set above its maximum. With intro-fill enabled and displaying the graphical bar, the filling sound effect
+					continues to play even after the bar reaches 100%.
+				</li>
 				<li>The amount of damage it receives was set to 0 damage, causing no changes on its HP value.</li>
 				<li>You forgot to modify the sprite's code to write its own HP data into this ASM resource' HP data to display properly.</li>
-				<li>Having <kbd>!Setting_SpriteHP_DisplayNumerical == 0</kbd>, if you have more max HP than the number of pieces the bar has, small damages can result in the bar visibly not updating. This is because a range of current HP values get approximated (rounded) to the
-				same amount of fill in the bar.</li>
+				<li>
+					Having <kbd>!Setting_SpriteHP_DisplayNumerical == 0</kbd>, if you have more max HP than the max number of pieces the bar has, small damages can result in the bar visibly not updating. This is because a range of current HP values get approximated (rounded) to the
+					same amount of fill in the bar. This isn't a problem.
+				</li>
 			</ul>
 		
 		</li>
@@ -698,8 +703,8 @@ Change that to this:
 					Incorrect use of Shared Subroutines:
 					<ul>
 						<li>
-							Using an Incorrect address for Shared Subroutines JML list. Make sure you place it at an actual freespace and not address occupied by the original game, other patches, including by other tools and Lunar Magic. Best way to fix is to revert your game to a previous
-							state before patching Shared Subroutines, correct the address for the JML list, re-patch, and update every copy of the Shared Subroutine defines for all ASM resources using the Shared Subroutines and re-insert them.
+							Using an Incorrect address for Shared Subroutines JML list. Make sure you place it at an actual freespace and not address occupied by the original game, other patches, including by other tools and Lunar Magic.
+							Best way to fix is to revert your game to a previous state before patching Shared Subroutines (Lunar Magic's menu bar &rarr; <kbd>Restore</kbd> &rarr; <kbd>Restore ROM to previous state...</kbd>), correct the address for the JML list, re-patch, and update every copy of the Shared Subroutine defines for all ASM resources using the Shared Subroutines and re-insert them.
 						</li>
 						<li>You've relocated the JML list but not updated the defines that references the JML list in other ASM stuff, causing the game's code to jump to an old outdated area that is invalid.</li>
 					</ul>
@@ -707,7 +712,49 @@ Change that to this:
 				</li>
 				<li>Faulty code that you have found that I didn't catch (most likely if you haven't installed any other ASM resource). PM me or the moderators on fixing a newly discovered bug. If I'm inactive, feel free to update it.</li>
 			</ul>
-		
+		</li>
+		<li>
+			Q: &ldquo;I tried everything to get the sprite display its HP and the meter is acting funny. How do I fix this?&rdquo;<br><br>
+			A: Possible cases:
+			<ul>
+				<li>If the meter starts empty, and fills up as you damage the sprite, then you've used a value as a health counter when the value tracked is actually a damage counter, or incorrectly converted a value you think its a damage counter but is actually a health counter.</li>
+				<li>
+					If the meter keeps changing values depending on the sprite's action or state, then the sprite may have its HP tied directly to its state or phase. I've never seen such a sprite do that. In theory, you can convert that to HP via loading that value, index it (often to <kbd>Y register</kbd>)
+					load a phase-to-HP table whose state values are correspond to HP amount left and now you have the equivalent HP amount. Most likely use of this format is if every damage taken triggers a phase or something.
+				</li>
+				<li>
+					If the sprite dies prematurely without the meter being empty, or dies after some additional hits after the meter empties:
+					<ul>
+						<li>
+							The HP value is offset by some amount (including negative values, likely used as an index to unlocking new attacks and phases). For example, <a href="https://www.smwcentral.net/?p=section&a=details&id=32734">Sonikku's FryGuy</a>, at the time of writing this, stores its HP value
+							minus 1 (3 HP is <kbd>$02</kbd> in its sprite table RAM). The sprite dies if its HP reaches any negative amount. I did post a comment on there instructing on how to get it to display HP properly.
+						</li>
+						<li>
+							The sprite may be programmed to instantly die without setting its HP to 0, usually for scripted cutscenes, or you found a bug that resulted in the sprite using the vanilla instant-kill interaction. So far, I never seen a custom sprite does this intentionally. An easy way to fix this
+							is to simply set its <i>display HP</i> to 0 rather than its actual HP sprite table RAM (just in case it might break the sprite functionality) when this death state occurs:
+<div class="CodeBlock" style="height: 208px"><pre>
+	;These are just to have a proper damage animation on the meter.
+	;Either it subtracts by a larger value, detects that, sets to zero,
+	;or subtracts by the same value and also results zero.
+		if !Setting_SpriteHP_TwoByte
+			REP #$20
+			LDA #$FFFF
+			STA $00
+			SEP #$20
+		else
+			LDA #$FF
+			STA $00
+		endif
+		JSL !SharedSub_SpriteHPDamage
+</pre></div>
+						</li>
+					</ul>
+				</li>
+				<li>You are using an entirely wrong sprite table RAM address as HP. Probable causes is either a typo or an incorrect assigning a sprite table define to another define.</li>
+			</ul>
+			
+			In other cases, the custom sprite you're using may have an even weirder or unusual format on how it handles HP/Damage. I strongly recommend checking how the code read and writes its HP value, and use a debugger and spot any behavior patterns with it.
+			If it's a sprite on SMWC, I or someone else may post instructions on how to get it to work with this ASM resource. If you have the knowledge to get it working, you are free to post it if you wish.
 		</li>
 	</ul>
 </div>
