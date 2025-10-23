@@ -144,7 +144,8 @@
 				!Setting_SpriteHP_GraphicalBarPos_x = 23
 				!Setting_SpriteHP_GraphicalBarPos_y = 1
 			;These below affect how much fill capacity the bar has. This value is equal to LeftPieces + (MiddlePieces * MiddleLength) + RightPieces.
-			;If you have !Setting_SpriteHP_BarAnimation == 0, up to 255 is safe.
+			;For more information, see info about graphical bar linked from "Documentations of other ASM resources" in the readme. Setting them to 0
+			;will exclude the type of tile on the bar. 1-255 are valid and will include that tile on the HUD. 256+, don't use those values.
 				;Number of pieces on each tile
 					!Setting_SpriteHP_GraphicalBar_LeftPieces                  = 3             ;\These are the amount of fill capacity of each part of the bar.
 					!Setting_SpriteHP_GraphicalBar_MiddlePieces                = 8             ;|
