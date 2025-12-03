@@ -21,14 +21,14 @@
 	;Defines here for settings and values. A value without any prefixes (such as "$" or "%") are decimal.
 	;If you want hex, use "$".
 	
-	!Setting_StompBounceBack	= 1	;>bounce player away when stomping: 0 = false, 1 = true.
-	!Setting_DamagePlayer		= 1	;>0 = harmless, 1 = damage player on contact (besides stomping)
+		!Setting_StompBounceBack	= 1	;>bounce player away when stomping: 0 = false, 1 = true.
+		!Setting_DamagePlayer		= 1	;>0 = harmless, 1 = damage player on contact (besides stomping)
 	
-	!Setting_Heal_Cooldown			= 120		;>Heal cooldown, in frames (1/60th of a second). Up to 4.25 seconds (255 frames) of cooldown allowed.
-	!Setting_Heal_SfxNumber			= $0A		;\sound effects played when healing.
-	!Setting_Heal_SfxPort			= $1DF9|!Base2	;/
-	!Setting_Damage_SfxNumber		= $28		;\Sound effect played when taking damage
-	!Setting_Damage_SfxPort			= $1DFC|!Base2	;/
+		!Setting_Heal_Cooldown			= 120		;>Heal cooldown, in frames (1/60th of a second). Up to 4.25 seconds (255 frames) of cooldown allowed.
+		!Setting_Heal_SfxNumber			= $0A		;\sound effects played when healing.
+		!Setting_Heal_SfxPort			= $1DF9|!Base2	;/
+		!Setting_Damage_SfxNumber		= $28		;\Sound effect played when taking damage
+		!Setting_Damage_SfxPort			= $1DFC|!Base2	;/
 	;These below here are recovery and damages.
 	;Make sure these numbers are not greater than SizeLimit, where SizeLimit is...
 	; - 255 if you have !Setting_SpriteHP_TwoByte set to 0
@@ -210,38 +210,38 @@ SPRITE_CODE_START:
 		JMP .NoContact			;/
 		
 		..Contact
-		REP #$20
-		LDA $00		;\Protect hitbox data
-		PHA		;/
-		SEP #$20
+			REP #$20
+			LDA $00		;\Protect hitbox data
+			PHA		;/
+			SEP #$20
 	
-		LDA !14D4,x	;\Sprite Y positon 16-bit into $00-$01
-		XBA		;|
-		LDA !D8,x	;|
-		REP #$20	;|
-		STA $00		;/
-		LDA $187A|!Base2	;\Positon of the player's bottommost hitbox depending on riding yoshi
-		ASL			;|>Index times 2 because the positions are 2-bytes.
-		TAY			;/
-		LDA $96			;\The position where bottom hitbox feet is
-		CLC			;|above the sprite (move down TOWARDS the sprite's Y pos).
-		ADC FootYpos,y		;/
-		CMP $00			;>Compare with sprite's y pos
-		SEP #$20
-		BMI ..MarioStomps	;>If mario is above, go to damage sprite
+			LDA !14D4,x	;\Sprite Y positon 16-bit into $00-$01
+			XBA		;|
+			LDA !D8,x	;|
+			REP #$20	;|
+			STA $00		;/
+			LDA $187A|!Base2	;\Positon of the player's bottommost hitbox depending on riding yoshi
+			ASL			;|>Index times 2 because the positions are 2-bytes.
+			TAY			;/
+			LDA $96			;\The position where bottom hitbox feet is
+			CLC			;|above the sprite (move down TOWARDS the sprite's Y pos).
+			ADC FootYpos,y		;/
+			CMP $00			;>Compare with sprite's y pos
+			SEP #$20
+			BMI ..MarioStomps	;>If mario is above, go to damage sprite
 
 		..SpriteDamageMario
-		if !Setting_DamagePlayer != 0
-			LDA $187A|!addr
-			BNE ...LoseYoshiInstead
-			
-			...DamageMario
-				JSL $00F5B7|!bank		;>Hurt player by touching below/sides
-				BRA ..Restore
-			...LoseYoshiInstead
-				%LoseYoshi()
-		endif
-		BRA ..Restore
+			if !Setting_DamagePlayer != 0
+				LDA $187A|!addr
+				BNE ...LoseYoshiInstead
+				
+				...DamageMario
+					JSL $00F5B7|!bank		;>Hurt player by touching below/sides
+					BRA ..Restore
+				...LoseYoshiInstead
+					%LoseYoshi()
+			endif
+			BRA ..Restore
 
 		..MarioStomps
 			LDA.b #10			;\Set timer to prevent multi-hit rapid stomping drain HP
@@ -508,7 +508,7 @@ SPRITE_CODE_START:
 				....ExplosionSprite
 					LDA.b #!Setting_Bobomb_ExplosionApothem
 					STA $8B
-					%GetBobOmbClippingB()
+					%GetBobOmbExplosionClippingB()
 					JSL $03B72B|!bank
 					BCS +
 					JMP ...NextSlot
@@ -623,7 +623,7 @@ SPRITE_CODE_START:
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;Cape spin
 	;
-	;Probably the first non-instant-kill damage and not a stun from a
+	;Probably the only non-instant-kill damage and not a stun from a
 	;cape spin. 
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	.HitboxWithCapeSpin
@@ -881,7 +881,7 @@ CapeClipB:
 	RTS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 StompSounds:
-	db $00,$13,$14,$15,$16,$17,$18,$19 ;>The SFX for each pitch.
+	db $13,$14,$15,$16,$17,$18,$19 ;>The SFX for each pitch.
 
 ConsecutiveStomps:
 ;A routine that each time you jump on an enemy without touching the ground
@@ -896,7 +896,7 @@ ConsecutiveStomps:
 	INY			;>Don't know why nintendo would increase it again for some reason...
 	CPY #$08		;\If after the last sound pitch (and a score of 8000),
 	BCS .NoSound		;/replace with 1-up.
-	LDA StompSounds,y	;\Play stomp sounds with different pitches
+	LDA StompSounds-1,y	;\Play stomp sounds with different pitches
 	STA $1DF9|!Base2	;/depending on the consecutive stomp counter.
 
 	.NoSound

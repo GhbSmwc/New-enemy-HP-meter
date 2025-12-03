@@ -4,7 +4,9 @@
 ; - Y (8-bit): Sprite slot of the Bob-omb to get explosion
 ;   clipping
 ; - $8B (1 byte): Explosion "apothem", centered within Bob-omb.
-;   Note that the hitbox is a square.
+;   Note that the hitbox is a square. From my testing, $28
+;   (40 pixels) is appropriate, not sure vanilla SMW's explosion
+;   hitbox though.
 ;Output:
 ; - Hitbox B values:
 ; -- $00 (1 byte): X Position low byte
@@ -14,7 +16,7 @@
 ; -- $08 (1 byte): X position high byte
 ; -- $09 (1 byte): Y Position high byte
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-?BobOmbClippingB:
+?BobOmbExplosionClippingB:
 	LDA !E4,y		;\Sprite is 16x16, and our current position is the top-left of that.
 	CLC			;|We need to go 8 pixels to the right and 8 down to locate the center
 	ADC #$08		;|of that sprite.
@@ -33,7 +35,7 @@
 	ASL			;|
 	STA $02			;|
 	STA $03			;/
-	LDA $00			;\As the box expands from center, the top or left gets moved by "apothem"
+	LDA $00			;\As the box expands from center, the top or left gets moved upwards or leftwards by "apothem"
 	SEC			;|
 	SBC $8B			;|
 	STA $00			;|
