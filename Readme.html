@@ -677,8 +677,7 @@ Change that to this:
 			A: There are possible cases that have occurred:
 			<ul>
 				<li>
-					Numbers not showing (either because you have them disabled via <kbd>!Setting_SpriteHP_DisplayNumerical == 0</kbd> or too many symbols in the text display of the numbers), and it's HP is set above its maximum. With intro-fill enabled and displaying the graphical bar, the filling sound effect
-					continues to play even after the bar reaches 100%.
+					Numbers not showing (either because you have them disabled via <kbd>!Setting_SpriteHP_DisplayNumerical == 0</kbd> or too many symbols in the text display of the numbers), and it's HP is set above its maximum. With intro-fill enabled and displaying the graphical bar, the sound effect <kbd>!Setting_SpriteHP_FillingSFXNumb</kbd> being nonzero, results in the filling sound effect continuing to play even after the bar reaches 100%.
 				</li>
 				<li>The amount of damage it receives was set to 0 damage, causing no changes on its HP value.</li>
 				<li>You forgot to modify the sprite's code to write its own HP data into this ASM resource' HP data to display properly.</li>
