@@ -329,7 +329,7 @@ autoclean JML SpriteHPIntroEffect</pre>
 						<ul>
 							<li>From <kbd>$00</kbd> to <kbd>!sprite_slots-1</kbd> will make the bar visible and display HP of the sprite of the slot corresponding to this value.</li>
 							<li>
-								From <kbd>!sprite_slots</kbd> to <kbd>(!sprite_slots*2)-1</kbd> is the same as above (subtract by <kbd>!sprite_slots</kbd> to obtain the sprite slot number) but for the <kbd>intro-fill</kbd> animation (bar appears empty, and fills up, useful for boss fight). This only applies
+								From <kbd>!sprite_slots</kbd> to <kbd>(!sprite_slots*2)-1</kbd> is the same as above (subtract by <kbd>!sprite_slots</kbd> to obtain the sprite slot number) but for the <kbd>intro-fill</kbd> animation (bar appears empty, and fills up, useful for boss fights). This only applies
 								if <kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd> and <kbd>!Setting_SpriteHP_BarAnimation</kbd> set to <kbd>1</kbd>.
 							</li>
 							<li><kbd>$FF</kbd> Means don't display the meter, which occurs when the enemy despawns or dies the meter is displaying for. Note that this will write blank tiles every frame.</li>
