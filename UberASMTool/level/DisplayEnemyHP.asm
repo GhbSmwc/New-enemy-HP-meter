@@ -383,7 +383,7 @@ main:
 										STA !Setting_SpriteHP_FillingSFXPort
 									......NoSfx
 								endif
-									JMP ...AnimationDone
+								JMP ...AnimationDone
 					...Damage
 						....TerminateIntroFill
 							;This is if you damage the sprite so that the current HP fill amount jumps to below
