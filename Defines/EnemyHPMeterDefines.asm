@@ -152,17 +152,17 @@
 					!Setting_SpriteHP_GraphicalBar_RightPieces                 = 3             ;/
 				;Length of bar (number of middle tiles). Full screen width is 32 tiles.
 					!Setting_SpriteHP_GraphicalBarMiddleLength           = 7
-			;Avoid percentage bar from representing 0 or full when really close but not at those values:
+			;Avoid percentage bar from rounding to 0 or full when really close but not at those values:
 				!Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull	= 3
-					;^0 = allow bar to display 0% when HP is very close to zero and 100% when close to max.
-					; 1 = display 1 pixel of piece filled when low on HP and only 0 if HP is 0.
-					; 2 = display MaxPieces-1 when nearly full.
+					;^0 = Allow bar to display 0% when HP is very close to zero and 100% when close to max.
+					; 1 = Display 1 pixel of piece filled when low on HP and only 0 if HP is 0.
+					; 2 = Display MaxPieces-1 when nearly full.
 					; 3 = Display 1 piece or MaxPieces-1 if close to 0 or MaxPieces.
 			;Rounding the amount of fill settings:
 				!Setting_SpriteHP_BarFillRoundDirection = 0
 					; 0 = Round to nearest
-					; 1 = Round down (bar may display 0 fill amount when !Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull isn't 1 or 3)
-					; 2 = Round up
+					; 1 = Round down (floor, bar may display 0 fill amount when !Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull isn't 1 or 3)
+					; 2 = Round up (ceiling)
 			;Fill direction. 0 = Left-to-right, 1 = Right-to-left. Note that the given XY position will occupy that position and N tiles towards
 			;the right regardless of leftwards or not.
 				!Setting_SpriteHP_LeftwardsBar                       = 1
@@ -173,7 +173,7 @@
 			;Bar animation stuff
 				!Setting_SpriteHP_BarAnimation			= 1
 					;^0 = HP bar instantly updates when the enemy heals or take damage
-					;     (!Freeram_SpriteHP_BarRecord is no longer used).
+					;     (!Freeram_SpriteHP_BarRecord and introfill is no longer used).
 					; 1 = Shows animation (gradual change, rapid-flicker, transparent
 					;     effect to display previous and current HP fill amounts).
 
@@ -236,7 +236,9 @@
 		;Amount of HP SMW sprites has. NOTE: SMW only have hit counts being an 8-bit unsigned integer stored
 		;within various sprite tables (Chucks and any sprites using the 5 fireballs to kill: $1528,
 		;Ludwig/Morton/Roy: $1626, Big Boo Boss, Wendy and Lemmy: $1534). This means up to 255 health and
-		;damage are allowed, and those do not support 16-bit HP system.
+		;damage are allowed, and those do not support 16-bit HP system (even if you have
+		;!Setting_SpriteHP_TwoByte == 1).
+		;
 		;This only applies if !Setting_SpriteHP_ModifySMWSprites == 1 and their respective settings being 1.
 			!Setting_SpriteHP_VanillaSprite_Chucks_HPAmount		= 15	;>This applies to all chuck variants and all sprites with "Take 5 fireballs to kill" of $190F's bit 3.
 			!Setting_SpriteHP_VanillaSprite_Chucks_StompDamage	= 5	;>Amount of HP loss when taking damage from stomp attacks
@@ -244,8 +246,8 @@
 			!Setting_SpriteHP_VanillaSprite_BigBooBoss_HPAmount		= 3	;>Amount of HP Big Boo boss have.
 			!Setting_SpriteHP_VanillaSprite_BigBooBoss_ThrownItemDamage	= 1	;>Amount of damage Big Boo boss takes from any thrown sprite.
 			
-			!Setting_SpriteHP_VanillaSprite_WendyLemmy_HPAmount	= 3
-			!Setting_SpriteHP_VanillaSprite_WendyLemmy_StompDamage	= 1
+			!Setting_SpriteHP_VanillaSprite_WendyLemmy_HPAmount	= 3		;\Same as before.
+			!Setting_SpriteHP_VanillaSprite_WendyLemmy_StompDamage	= 1		;/
 			;Following settings are HP and damage values for Ludwig, Morton and Roy.
 			;
 			;Be careful with having too much health and too little damage from stomp attacks for Roy, if its possible to stomp Roy too many times
@@ -267,8 +269,8 @@
 				!Setting_SpriteHP_VanillaSprite_LudwigMortonRoy_Damage_SoundPort	= $1DFC|!addr
 	;Misc settings
 		!Setting_SpriteHP_DisplaySpriteHPDataOnConsole = 0
-			;^0 = no
-			; 1 = yes, display the HP data RAM usage on asar console (would not work for pixi due to print command reserved for description).
+			;^0 = No
+			; 1 = Yes, display the HP data RAM usage on asar console (would not work for pixi due to print command reserved for description).
 
 
 
