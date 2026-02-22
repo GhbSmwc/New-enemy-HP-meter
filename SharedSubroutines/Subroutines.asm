@@ -1113,7 +1113,7 @@ ConvertToRightAlignedFormat2:
 	; -- $01 = rounded to empty
 	; -- $02 = rounded to full
 	;Output:
-	; - $00-$01: Percentage, rounded away from 0 and max.
+	; - $00 to $01: Percentage, rounded away from 0 and max.
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	GraphicalBarRoundAwayEmpty:
 		CPY #$01
