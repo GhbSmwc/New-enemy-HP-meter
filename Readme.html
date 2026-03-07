@@ -132,8 +132,9 @@
 			subroutines, they're in <kbd>NumberDisplayRoutinesDefines.asm</kbd>.<br><br>
 			
 			Once you are done, you'll need to have copies of these ASM text files (not the folders itself containing them) in same directory as the tools'
-			<kbd>.exe</kbd> programs are at (pixi and uberasm tool). This also applies to Shared Subroutines' <kbd>SubroutineDefs.asm</kbd> since UAT and pixi need a define of a subroutine. Do not have them in any
-			subfolders beyond that area. Make sure you do not move the define files	as the patch will include those define files (better to copy than to cut/move them).<br><br>
+			<kbd>.exe</kbd> programs are at (pixi and uberasm tool). This also includes Shared Subroutines' <kbd>SubroutineDefs.asm</kbd> since UAT and pixi need defines that
+			points to shared subroutine's addresses. Do not have them in any subfolders beyond that area. Make sure you do not move the define files
+			as the patch will include those define files (better to copy than to cut/move them).<br><br>
 			
 			If you later make changes in any of the defines and reinsert by one tool, make sure you update all others and reinsert by other tools.<br><br>
 			
@@ -184,7 +185,7 @@
 								The reason for the dual-formats is because there are 2 types of status bar tile data formatting: 2 tables; <kbd>%TTTTTTTT, %TTTTTTTT, ...</kbd> and <kbd>%YXPCCCTT, %YXPCCCTT, ...</kbd> for the non-<kbd>Format2</kbd>
 								(which are most of Ladida's status bar patches, <a href="https://www.smwcentral.net/?p=section&a=details&id=35718">Minimalist</a>, and <a href="https://www.smwcentral.net/?p=section&a=details&id=21573">SMB3</a>), and the
 								<kbd>Format2</kbd> version have one table interleaved: <kbd>%TTTTTTTT, %YXPCCCTT, (repeats the two)</kbd> (which are Kaijyuu's <a href="https://www.smwcentral.net/?p=section&a=details&id=19247">Super Status Bar</a> and MarioFanGamer's
-								<a href="https://www.smwcentral.net/?p=section&a=details&id=21665">Overworld Border Plus</a> (OWB+) patch). It's possible you'll want to have both formats if you have OWB+ for "Overworld HUD" and using non-<kbd>Format2</kbd> status bars for levels.
+								<a href="https://www.smwcentral.net/?p=section&a=details&id=21665">Overworld Border Plus</a> (OWB+) patch). It's possible you'll want to have both formats if you have OWB+ for &ldquo;Overworld HUD&rdquo; and using non-<kbd>Format2</kbd> status bars for levels.
 								<ul>
 									<li><kbd>ConvertToRightAligned</kbd> (only used if <kbd class="NoLineBreak">!Setting_SpriteHP_NumericalTextAlignment == 2</kbd>)</li>
 									<li><kbd>ConvertToRightAlignedFormat2</kbd> (same as above)</li>
@@ -278,10 +279,14 @@ autoclean JML SpriteHPIntroEffect</pre>
 			
 			<li>Patch <kbd>HPSystemForSMWSprites.asm</kbd> to your game. This adds a proper health system for some sprites and bosses and fixes <a href="#HitCountJank">an anomaly for SMW</a>.
 			This alone does not display meter, but will write to various RAM for the uberasm tool code to display it.</li>
-			
-			<li>Insert the ASM files to Uberasm tool. The provided folders should be obvious.</li>
-			
-			<li>Same with pixi, if you want custom sprites. I provided a test sprite in the folder for demonstration.</li>
+			<li>
+				Uberasm tool:
+				<ol>
+					<li>Include the defines, from this ASM pack, and shared subroutine's <kbd>SubroutineDefs.asm</kbd>, be placed where the <kbd>.exe</kbd> is at.</li>
+					<li>Insert the ASM files to Uberasm tool. The provided folders should be obvious.</li>
+				</ol>
+			</li>
+			<li>Insert the ASM files for pixi. Same way as uberasm tool. if you want custom sprites. I provided a test sprite in the folder for demonstration.</li>
 		</ol>
 		<li>Lunar Magic stuff</li>
 		<ol>
@@ -754,6 +759,11 @@ Change that to this:
 			
 			In other cases, the custom sprite you're using may have an even weirder or unusual format on how it handles HP/Damage. I strongly recommend checking how the code read and writes its HP value, and use a debugger and spot any behavior patterns with it.
 			If it's a sprite on SMWC, I or someone else may post instructions on how to get it to work with this ASM resource. If you have the knowledge to get it working, you are free to post it if you wish.
+		</li>
+		<li>
+			Q: I tried inserting the ASM files, ran the <kbd>.exe</kbd> programs and Shared Subroutines via asar to insert it into the game, and got errors like &ldquo;<kbd>Efile_not_found</kbd>&rdquo; and &ldquo;<kbd>Define &lt;Define_name&gt; wasn't found.</kbd>&rdquo;<br><br>
+			A: Most likely you forgot to paste (copies of) the define files (from here and Shared Subroutine's <kbd>SubroutineDefs.asm</kbd>) in the respective tools and Shared Subroutines patch. For tools, they must be located where their <kbd>.exe</kbd>s are at,
+			for Shared Subroutines, they must be placed inside its <kbd>SharedSub_Defines</kbd> folder.
 		</li>
 	</ul>
 </div>
