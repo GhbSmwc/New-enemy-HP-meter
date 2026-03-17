@@ -6,6 +6,9 @@ based (8.9, then 8.10 rather than 9.0)):
 Thing(s) to fix:
 -no glitches found so far.
 
+3/16/2025
+ -Fixed a very minor copy-paste issue where option "!Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull" seems
+  to incorrectly use the round-away functions on certain values.
 10/5/2025 2.5.25
  -Fixed asar-related depreciated features.
  -Makes use of the updated shared subroutines system.

@@ -289,9 +289,9 @@ main:
 				if !Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull == 1
 					JSL !SharedSub_GraphicalBarRoundAwayEmpty
 				elseif !Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull == 2
-					JSL !SharedSub_GraphicalBarRoundAwayEmptyFull
-				elseif !Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull == 3
 					JSL !SharedSub_GraphicalBarRoundAwayFull
+				elseif !Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull == 3
+					JSL !SharedSub_GraphicalBarRoundAwayEmptyFull
 				endif
 				PLX
 				if !Setting_SpriteHP_BarAnimation
