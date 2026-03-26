@@ -16,7 +16,7 @@
 	; --- When equal to $FF, will not display the meter, which occurs when the enemy despawns or dies. Note that this
 	;     will write blank tiles every frame.
 	; --- When equal to $FE, will be "disabled", it will clear the tiles only this current frame, then sets itself to
-	;     $FD*. Make sure you don't set this to $FE every frame though.
+	;     $FD. Make sure you don't set this to $FE every frame though.
 	; --- When equal to $FD, will also be "disabled", this will not write anything on the spot the HP meter occupies
 	;     (stops writing tiles here every frame, including blank tiles).
 	;

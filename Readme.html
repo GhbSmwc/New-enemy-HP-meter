@@ -98,8 +98,10 @@
 		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=17109">Lunar magic</a></li>
 		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=14560">Asar</a></li>
 		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=39036">Uberasm tool version 2.0 or higher</a> (latest version recommended)</li>
-		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=40579">Shared Subroutines</a> (version 4.2.1 or later). Needed because there are subroutines that may be needed for pixi sprites, SMW sprites, and uberasm tool code, and
-		their subroutines are isolated from one another.</li>
+		<li>
+			<a href="https://www.smwcentral.net/?p=section&a=details&id=40579">Shared Subroutines</a> (version 4.2.1 or later). Needed because there are subroutines that may be needed for pixi sprites, SMW sprites, and uberasm tool code, and
+			their own built-in subroutines are isolated from one another.
+		</li>
 	</ul>
 	<h2>Recommended</h2>
 	<ul>
@@ -107,6 +109,11 @@
 		<li>
 			Status bar/HUD enhancement patches, this ASM package by default assumes you are using the <a href="https://www.smwcentral.net/?p=section&a=details&id=19247">Super Status Bar patch</a>.
 			Vanilla status bar is way-too limited. Note that this only supports layer 3 HUDs, not sprite OAM-based patches (you however are free to edit the uberasm tool code though to support OAM).
+			Other status bar patches that should work (may need some changes in their defines and this ASM resource's defines to prevent HUD element conflicts and potential tile number remapping):
+			<ul>
+				<li><a href="https://www.smwcentral.net/?p=section&a=details&id=35718">Minimalist</a></li>
+				<li><a href="https://www.smwcentral.net/?p=section&a=details&id=21573">SMB3</a></li>
+			</ul>
 		</li>
 		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=39887">Address Tracker</a>, if you have trouble knowing if there are RAM conflicts (two unrelated resources uses the same addresses at the same time).</li>
 		<li>
@@ -151,7 +158,26 @@
 					<li>Have the enemy HP meter's defines inside Shared Subroutines' folder <kbd>SharedSub_Defines</kbd>.</li>
 					<li>In the folder <kbd>SharedSubroutines</kbd> of this package, copy the entire code and paste it in Shared Subroutines' <kbd>subroutinecode.asm</kbd>. It can be anywhere, but not in the middle of a subroutine code.</li>
 					<li>
-						Any subroutines you don't use (for your entire hack, no ASM from anywhere in your ROM using it, not just the enemy HP system), feel free to omit them (remove the subroutine code, the JML and define list item) to save ROM space. Just to let you know that you can use some of these subroutines for other than sprite HP, as many of them are general-purpose.
+						Any subroutines you don't use (for your entire hack, no ASM from anywhere in your ROM using it, not just the enemy HP system), feel free to omit them (remove the subroutine code, the JML and define list item)
+						to save ROM space. Just to let you know that you can use some of these subroutines for other than sprite HP, as many of them are general-purpose.<br><br>
+						
+						Another thing to note is that the HUD write subroutines have 2 variants with the second having &ldquo;<kbd>Format2</kbd>&rdquo; in its name to support duel-format. Various HUD patches on SMWC including an
+						overworld border have 2 different formats:
+						<ul>
+							<li>
+								2 Separate tables with one containing just the tile numbers (<kbd>%TTTTTTTT</kbd>) and the other tile properties (<kbd>%YXPCCCTT</kbd>). Each next byte is the next tile in the sequence. Subroutines
+								without the <kbd>Format2</kbd> in its name handle this format, and therefore you should have <kbd>!StatusbarFormat</kbd> set to <kbd>$01</kbd> in <kbd>StatusBarDefines.asm</kbd>. Some of Ladida's
+								status bar patches uses this format, including but not limited to (at the time of writing this): Minimalist and SMB3 status bar patches.
+							</li>
+							<li>
+								A single table, with interleaved, alternating bytes (every pair of bytes is the tile number followed by tile properties). Every pair of adjacent bytes is the next tile in the sequence. Subroutines
+								with a <kbd>Format2</kbd> handle this format, and therefore you should have <kbd>!StatusbarFormat</kbd> set to <kbd>$02</kbd> in <kbd>StatusBarDefines.asm</kbd>. Kaijyuu's Super Status Bar and
+								MarioFanGamer's <a href="https://www.smwcentral.net/?p=section&a=details&id=21665">Overworld Border Plus</a> patch uses this format (at the time of writing this)
+							</li>
+						</ul>
+						In the case you are using MarioFanGamer's Overworld Border Plus patch, and using status bar patches with 2 separate tables, then its possible you need both with and without the <kbd>Format2</kbd> variants installed
+						in your hack.<br>
+						
 						Subroutines that you likely not need are:
 						<ul>
 							<li>
@@ -178,14 +204,7 @@
 								</ul>
 							</li>
 							<li>
-								Number display routines, not used if <kbd class="NoLineBreak">!Setting_SpriteHP_DisplayNumerical == 0</kbd>. Note that any subroutine with 2 versions with and without <kbd>Format2</kbd> will and will not be used
-								depending on <kbd>!StatusbarFormat</kbd> in <kbd>StatusBarDefines.asm</kbd>. When <kbd>!StatusbarFormat</kbd> is set to <kbd>$01</kbd>, then only versions without the <kbd>Format2</kbd> will be used, otherwise (<kbd>$02</kbd>)
-								means only <kbd>Format2</kbd> will be used.<br><br>
-								
-								The reason for the dual-formats is because there are 2 types of status bar tile data formatting: 2 tables; <kbd>%TTTTTTTT, %TTTTTTTT, ...</kbd> and <kbd>%YXPCCCTT, %YXPCCCTT, ...</kbd> for the non-<kbd>Format2</kbd>
-								(which are most of Ladida's status bar patches, <a href="https://www.smwcentral.net/?p=section&a=details&id=35718">Minimalist</a>, and <a href="https://www.smwcentral.net/?p=section&a=details&id=21573">SMB3</a>), and the
-								<kbd>Format2</kbd> version have one table interleaved: <kbd>%TTTTTTTT, %YXPCCCTT, (repeats the two)</kbd> (which are Kaijyuu's <a href="https://www.smwcentral.net/?p=section&a=details&id=19247">Super Status Bar</a> and MarioFanGamer's
-								<a href="https://www.smwcentral.net/?p=section&a=details&id=21665">Overworld Border Plus</a> (OWB+) patch). It's possible you'll want to have both formats if you have OWB+ for &ldquo;Overworld HUD&rdquo; and using non-<kbd>Format2</kbd> status bars for levels.
+								Number display routines, not used if <kbd class="NoLineBreak">!Setting_SpriteHP_DisplayNumerical == 0</kbd>:
 								<ul>
 									<li><kbd>ConvertToRightAligned</kbd> (only used if <kbd class="NoLineBreak">!Setting_SpriteHP_NumericalTextAlignment == 2</kbd>)</li>
 									<li><kbd>ConvertToRightAlignedFormat2</kbd> (same as above)</li>
