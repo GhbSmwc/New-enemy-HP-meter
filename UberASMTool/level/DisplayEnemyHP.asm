@@ -3,7 +3,7 @@
 ;This ASM code displays the enemy's HP on the HUD of the most recent enemy the player
 ;have dealt damage to.
 
-incsrc "../SubroutineDefs.asm"
+incsrc "../SharedSubroutineDefs.asm"
 incsrc "../StatusBarDefines.asm"
 incsrc "../EnemyHPMeterDefines.asm"
 incsrc "../GraphicalBarDefines.asm"

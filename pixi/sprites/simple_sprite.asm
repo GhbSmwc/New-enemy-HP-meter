@@ -14,7 +14,7 @@
 	;was needed:
 		!sa1 = !SA1		;>case sensitive.
 		!sprite_slots = !SprSize
-	incsrc "../SubroutineDefs.asm"
+	incsrc "../SharedSubroutineDefs.asm"
 	incsrc "../EnemyHPMeterDefines.asm"
 	incsrc "../GraphicalBarDefines.asm"
 	
