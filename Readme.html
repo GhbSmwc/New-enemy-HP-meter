@@ -103,7 +103,7 @@
 		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=14560">Asar</a></li>
 		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=39036">Uberasm tool version 2.0 or higher</a> (latest version recommended)</li>
 		<li>
-			<a href="https://www.smwcentral.net/?p=section&a=details&id=40579">Shared Subroutines</a> (version 2.4.1 or later). Needed because there are subroutines that may be needed for pixi sprites, SMW sprites (patch), and uberasm tool code, and
+			<a href="https://www.smwcentral.net/?p=section&a=details&id=40579">Shared Subroutines</a> (version 2.4.2 or later). Needed because there are subroutines that may be needed for pixi sprites, SMW sprites (patch), and uberasm tool code, and
 			their own built-in subroutines are isolated from one another (e.g. you cannot use pixi subroutines from an uberasm tool code and vice versa).
 		</li>
 	</ul>
@@ -143,7 +143,7 @@
 			subroutines, they're in <kbd>NumberDisplayRoutinesDefines.asm</kbd>.<br><br>
 			
 			Once you are done, you'll need to have copies of these ASM text files (not the folders itself containing them) in same directory as the tools'
-			<kbd>.exe</kbd> programs are at (pixi and uberasm tool). This also includes Shared Subroutines' <kbd>SubroutineDefs.asm</kbd> since UAT and pixi need defines that
+			<kbd>.exe</kbd> programs are at (pixi and uberasm tool). This also includes Shared Subroutines' <kbd>SharedSubroutineDefs.asm</kbd> since UAT and pixi need defines that
 			points to shared subroutine's addresses. Do not have them in any subfolders beyond that area. Make sure you do not move the define files
 			as the patch will include those define files (better to copy than to cut/move them).<br><br>
 			
@@ -259,7 +259,7 @@ autoclean JML SpriteHPIntroEffect</pre>
 </div>
 					</li>
 					<li>
-						Open Shared Subroutines' <kbd>SharedSub_Defines/SubroutineDefs.asm</kbd> and paste the following (same as above, remove define list items you don't use):
+						Open Shared Subroutines' <kbd>SharedSub_Defines/SharedSubroutineDefs.asm</kbd> and paste the following (same as above, remove define list items you don't use):
 <div class="CodeBlock" style="height: 340px;"><pre>		%SetSharedSubDefine(SharedSub_CalculateGraphicalBarPercentage)
 		%SetSharedSubDefine(SharedSub_CalculateGraphicalBarPercentageRoundDown)
 		%SetSharedSubDefine(SharedSub_CalculateGraphicalBarPercentageRoundUp)
@@ -305,7 +305,7 @@ autoclean JML SpriteHPIntroEffect</pre>
 			<li>
 				Uberasm tool:
 				<ol>
-					<li>Include the defines, from this ASM pack, and shared subroutine's <kbd>SubroutineDefs.asm</kbd>, be placed where the <kbd>.exe</kbd> is at.</li>
+					<li>Include the defines, from this ASM pack, and shared subroutine's <kbd>SharedSubroutineDefs.asm</kbd>, be placed where the <kbd>.exe</kbd> is at.</li>
 					<li>Insert the ASM files to Uberasm tool. The provided folders should be obvious.</li>
 				</ol>
 			</li>
@@ -431,7 +431,7 @@ autoclean JML SpriteHPIntroEffect</pre>
 	<p>I provided an example test sprite under <kbd>pixi/sprites/simple_sprite.asm</kbd> for testing the HP system.</p>
 	
 	<p>Because HP-related defines are heavily involved here, it's important to include the define files at the top of your sprite's ASM file, like this:
-<div class="CodeBlock" style="height: 50px;"><pre>	incsrc "../SubroutineDefs.asm"
+<div class="CodeBlock" style="height: 50px;"><pre>	incsrc "../SharedSubroutineDefs.asm"
 	incsrc "../EnemyHPMeterDefines.asm"
 	incsrc "../GraphicalBarDefines.asm"</pre></div><br>
 	Else you get define not being defined errors. Then after the include-defines, have the macros (the ones on this HTML file) being set/defined (anything with a <span class="NoLineBreak">macro MacroName(Pram1, Pram2...) ... endmacro</span>).</p>
@@ -785,7 +785,7 @@ Change that to this:
 		</li>
 		<li>
 			Q: I tried inserting the ASM files, ran the <kbd>.exe</kbd> programs and Shared Subroutines via asar to insert it into the game, and got errors like &ldquo;<kbd>Efile_not_found</kbd>&rdquo; and &ldquo;<kbd>Define &lt;Define_name&gt; wasn't found.</kbd>&rdquo;<br><br>
-			A: Most likely you forgot to paste (copies of) the define files (from here and Shared Subroutine's <kbd>SubroutineDefs.asm</kbd>) in the respective tools and Shared Subroutines patch. For tools, they must be located where their <kbd>.exe</kbd>s are at,
+			A: Most likely you forgot to paste (copies of) the define files (from here and Shared Subroutine's <kbd>SharedSubroutineDefs.asm</kbd>) in the respective tools and Shared Subroutines patch. For tools, they must be located where their <kbd>.exe</kbd>s are at,
 			for Shared Subroutines, they must be placed inside its <kbd>SharedSub_Defines</kbd> folder.
 		</li>
 	</ul>
