@@ -47,15 +47,16 @@
 	;
 	; - Define: !Freeram_SpriteHP_BarAnimationTimer
 	; -- BytesUsed: [BytesUsed = (!Setting_SpriteHP_DisplayGraphicalBar && !Setting_SpriteHP_BarAnimation && (!Setting_SpriteHP_BarChangeDelay != 0))]
-	; -- Description: delay timer (decreases itself once per frame) before !Freeram_SpriteHP_BarAnimationFill updates to
+	; -- Description: Delay timer (decreases itself once per frame) before !Freeram_SpriteHP_BarAnimationFill updates to
 	;    the sprite's current HP fill amount. This is ignored if "IntroFill" mode is active.
 	;
 	; Summary:
-	; - LoROM number of bytes used: 25 to 73 bytes used.
-	; - SA-1 version number of bytes used: 45 to 91 bytes used.
+	; - LoROM number of bytes used: 25 to 73.
+	; - SA-1 ROM number of bytes used: 45 to 91.
 	;
 	;If you want to know display the RAM usage of this, have !Setting_SpriteHP_DisplaySpriteHPDataOnConsole set to 1 and
-	;insert via uberasm tool. The console window will show the list of itemized used RAM.
+	;insert via uberasm tool. The console window will show the list of itemized used RAM, in "Address Tracker" format:
+	;https://www.smwcentral.net/?p=section&a=details&id=39887.
 		if !sa1 == 0
 			!Freeram_SpriteHP_SpriteHPData = $7FACC4
 		else
@@ -68,7 +69,7 @@
 			;Value = !Freeram_SpriteHP_MeterState % !sprite_slots.
 	;Qusai-freeram for miscellaneous things (flags to prevent re-triggers)
 		;[BytesUsed = !Setting_SpriteHP_BarAnimation && UsingWendyOrLemmy]. This RAM is only used when vanilla smw boss Wendy or Lemmy koopa
-		;are running. For some reason, SMW either deletes those sprites temporarily ($14C8,x == $00), or just clear all the sprite tables
+		;are running. For some reason, SMW either deletes those sprites temporarily ($14C8,x == $00), or just clear all the dummy sprites
 		;including an unused one $1FD6. Therefore using sprite tables to determine if the introfill animation have already been played,
 		;doesn't work and will replay the animation every time Wendy/Lemmy retreat in their pipes.
 		;By default, this will use the last block in the level map16 data (bottom-right corner). Very unlikely you would need to use the
@@ -204,8 +205,10 @@
 					; to healing should !Setting_SpriteHP_ShowHealedTransparent be enabled.
 
 				!Setting_SpriteHP_ShowHealedTransparent		= 1
-					;^0 = show sliding upwards animation (with an optional sound effect)
+					;^0 = show opaque sliding upwards animation.
 					; 1 = show amount healed as transparent segment.
+					; Note that reguardless of this setting, there's an optional sound effect
+					; for filling (for healing and intro-fill).
 
 				!Setting_SpriteHP_ShowDamageTransperent		= 1
 					;^0 = show no transparent (if !Setting_SpriteHP_BarAnimation is
@@ -220,6 +223,8 @@
 		;Apply (proper) HP system on various vanilla SMW sprites: 0 = no, 1 = yes, again, use only mentioned values,
 		;unless stated otherwise. Having these turned off will COMPLETELY revert back to original format including
 		;the fireball and stomp damage jank (see readme under "...from a damage counter").
+		;
+		;Displaying HP with the jank is not possible due to the nature of the jank.
 			!Setting_SpriteHP_ModifySMWSprites			= 1	;>Universal option if you want to have all SMW sprites unaffected (this also undo the patching if you have already).
 			!Setting_SpriteHP_VanillaSprite_Chuck			= 1
 				;^All the chucks in SMW.
