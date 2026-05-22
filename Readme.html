@@ -174,9 +174,9 @@
 								status bar patches uses this format, including but not limited to (at the time of writing this): Minimalist and SMB3 status bar patches.
 							</li>
 							<li>
-								A single table, with interleaved, alternating bytes (every pair of bytes is the tile number followed by tile properties). Every pair of adjacent bytes is the next tile in the sequence. Subroutines
-								with a <kbd>Format2</kbd> handle this format, and therefore you should have <kbd>!StatusbarFormat</kbd> set to <kbd>$02</kbd> in <kbd>StatusBarDefines.asm</kbd>. Kaijyuu's Super Status Bar and
-								MarioFanGamer's <a href="https://www.smwcentral.net/?p=section&a=details&id=21665">Overworld Border Plus</a> patch uses this format (at the time of writing this)
+								A single table, with interleaved, alternating bytes (every pair of bytes is the tile number followed by tile properties, like this: <kbd>%TTTTTTTT, %YXPCCCTT</kbd>). Every pair of adjacent bytes
+								is the next tile in the sequence. Subroutines with a <kbd>Format2</kbd> handle this format, and therefore you should have <kbd>!StatusbarFormat</kbd> set to <kbd>$02</kbd> in <kbd>StatusBarDefines.asm</kbd>.
+								Kaijyuu's Super Status Bar and MarioFanGamer's <a href="https://www.smwcentral.net/?p=section&a=details&id=21665">Overworld Border Plus</a> patch uses this format (at the time of writing this).
 							</li>
 						</ul>
 						In the case you are using MarioFanGamer's Overworld Border Plus patch, and using status bar patches with 2 separate tables, then its possible you need both with and without the <kbd>Format2</kbd> variants installed
