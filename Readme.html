@@ -532,10 +532,17 @@ autoclean JML SpriteHPIntroEffect</pre>
 	</p>
 	<h3><a href="#ToC_MakeSpritesDisplayHP_TakingDamage" id="JMPTo_MakeSpritesDisplayHP_TakingDamage">^</a>Damage handler</h3>
 	<p>Like I said before, the sprite having HP/Damage system must have something that would track the amount health or damage when a hit occurs, else it would take one hit to kill or have infinite HP. Thankfully most sprites have comments and defines
-	in their ASM codes (CTRL+F to see how the defines are being used and you get a clue on what RAM is its health/damage) that tell you what the codes do. However, this isn't just changing the HP amounts when the sprite takes damage or heals, you also to do in addition:
+	in their ASM codes (CTRL+F to see how the defines are being used and you get a clue on what RAM is its health/damage) that tell you what the codes do. However, this isn't just changing the HP amounts when the sprite takes damage or heals, you also need to do in addition:
 	<ul>
-		<li>If you have animation enabled (<kbd>!Setting_SpriteHP_BarAnimation</kbd> set to <kbd>1</kbd>), you need to set some values for that.</li>
-		<li>Ensure that the health meter switches to that damaged enemy when hit.</li>
+		<li>
+			If you have animation enabled (<kbd>!Setting_SpriteHP_BarAnimation</kbd> set to <kbd>1</kbd>), you need to set some values for that.
+			Without it, dealing damage would skip the animation (such as the bar that shows previous fill amount prior to the damage immediately
+			decreasing without the freeze delay).
+		</li>
+		<li>
+			Ensure that the health meter switches to that damaged enemy when hit. Without it, if there were multiple enemies utilizing the HP
+			system and the player damages them, then damage the former enemy, the meter wouldn't switch back.
+		</li>
 	</ul>
 	Thankfully, all that logic is handled automatically in a subroutine defined as <kbd>!SharedSub_SpriteHPDamage</kbd>, with the inputs stored in <kbd>$00</kbd> (2 bytes, <kbd>$00~$01</kbd>, if <kbd>!Setting_SpriteHP_TwoByte == 1</kbd>). Feel free to check out the subroutines as you wish.</p>
 	
@@ -561,7 +568,7 @@ autoclean JML SpriteHPIntroEffect</pre>
         LDA #$01
         STA $00
     endif
-    JSL !SharedSub_SpriteHPDamage             ;Reflect the damage over to the sprite HP data (yes, the HP data is already synced via macro call of "ConvertDamageAmountToHP", however this may only happen before this code, which may cause 1-frame off-sync)
+    JSL !SharedSub_SpriteHPDamage             ;&gt;Reflect the damage over to the sprite HP data (yes, the HP data is already synced via macro call of "ConvertDamageAmountToHP", however this may only happen before this code, which may cause 1-frame off-sync, also we need the bar animation to be set)
     LDA !1534,x                               ;\ If it has incremented to the "max", do death animation.
     CMP.b #!HitPoints                         ; |
     BEQ SpriteDead                            ;/
@@ -647,7 +654,7 @@ Change that to this:
 	BCC +
 	;[...]
 </pre></div><br>
-	If there are multiple instances of increasing/decreasing the RAM (especially if it doesn't utilizes a subroutine to merge them into one), then every one of them should be changed to include setting RAM <kbd>$00</kbd>
+	Now this sprite did have damages handled in its own subroutine called from the stomping and thrown sprite handler. If there are multiple instances of increasing/decreasing the RAM (not using a subroutine to merge them into one), then every one of them should be changed to include setting RAM <kbd>$00</kbd>
 	and then calling <kbd>JSL !SharedSub_SpriteHPDamage</kbd> so all damage types will perform the bar animation (if you enabled it) and other effects (such as switching the health meter to the sprite you dealt damage to).
 	</p>
 	<h3><a href="#ToC_MakeSpritesDisplayHP_GetHPValue_TotalHPAllPhases" id="JMPTo_MakeSpritesDisplayHP_GetHPValue_TotalHPAllPhases">^</a>Getting total HP of all phases</h3>
