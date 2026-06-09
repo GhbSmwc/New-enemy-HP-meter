@@ -43,7 +43,8 @@
 	; -- BytesUsed: [BytesUsed = (!Setting_SpriteHP_DisplayGraphicalBar && !Setting_SpriteHP_BarAnimation)]
 	; -- Description: A secondary fill amount of the bar, apart from the sprite's current HP's fill amount. This is to
 	;    briefly show previous HP fill amount prior to taking damage or healing before gradually increases or decreases
-	;    to the sprite's current HP fill amount. This is also used for IntroFill animation.
+	;    to the sprite's current HP fill amount. This is also used for IntroFill animation, it being the amount of fill
+	;    as it fills up.
 	;
 	; - Define: !Freeram_SpriteHP_BarAnimationTimer
 	; -- BytesUsed: [BytesUsed = (!Setting_SpriteHP_DisplayGraphicalBar && !Setting_SpriteHP_BarAnimation && (!Setting_SpriteHP_BarChangeDelay != 0))]
@@ -215,7 +216,7 @@
 					;     enabled, would perform a sliding down animation as opaque)
 					; 1 = show transparent.
 					; This applies when the sprite takes damage.
-				;Sound effect when the bar fills up (boss intro, or when enemy heals).
+				;Sound effect when the bar fills up (boss intro and when enemy heals).
 				;See https://www.smwcentral.net/?p=viewthread&t=6665
 					!Setting_SpriteHP_FillingSFXNumb		= $23		;>Sound number (set to 0 to disable SFX)
 					!Setting_SpriteHP_FillingSFXPort		= $1DFC|!addr	;>Use $1DF9, $1DFA, or $1DFC, followed by "|!addr" if you're using SA-1
@@ -224,10 +225,11 @@
 		;unless stated otherwise. Having these turned off will COMPLETELY revert back to original format including
 		;the fireball and stomp damage jank (see readme under "...from a damage counter").
 		;
-		;Displaying HP with the jank is not possible due to the nature of the jank.
+		;Displaying HP with the jank is not possible due to the nature of the jank (see readme, and find "janky"
+		;for more explanation).
 			!Setting_SpriteHP_ModifySMWSprites			= 1	;>Universal option if you want to have all SMW sprites unaffected (this also undo the patching if you have already).
 			!Setting_SpriteHP_VanillaSprite_Chuck			= 1
-				;^All the chucks in SMW.
+				;^Applies to all the chucks in SMW.
 			!Setting_SpriteHP_VanillaSprite_Bosses			= 1
 				;^Includes:
 				;-Big boo boss
@@ -241,7 +243,7 @@
 		;Amount of HP SMW sprites has. NOTE: SMW only have hit counts being an 8-bit unsigned integer stored
 		;within various sprite tables (Chucks and any sprites using the 5 fireballs to kill: $1528,
 		;Ludwig/Morton/Roy: $1626, Big Boo Boss, Wendy and Lemmy: $1534). This means up to 255 health and
-		;damage are allowed, and those do not support 16-bit HP system (even if you have
+		;damage are allowed, and those do not support 16-bit HP system (even if you set
 		;!Setting_SpriteHP_TwoByte == 1).
 		;
 		;This only applies if !Setting_SpriteHP_ModifySMWSprites == 1 and their respective settings being 1.
