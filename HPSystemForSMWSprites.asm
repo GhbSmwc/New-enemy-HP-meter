@@ -174,6 +174,37 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			INC !C2,x
 			LDA !C2,x
 		endif
+	;Modify how much HP rex has (stomps only)
+		if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Rex)
+			org $0395B7
+			CMP.b #!Setting_SpriteHP_VanillaSprite_Rex_HPAmount
+		else
+			org $0395B7
+			CMP #$02
+		endif
+	;Modify spinjump kills to display HP when spin-killed (Rex, for example, can be non-fatally damaged, or insta-killed)
+		;Most sprites
+			if !Setting_SpriteHP_DisplayHPOfSMWSprites
+				org $01A93F
+				autoclean JSL SpinKillDisplayHP
+				NOP
+			else
+				%RemoveFreespaceCodeFromJMLJSL($01A93F)
+				org $01A93F
+				LDA #$08
+				STA $1DF9|!addr
+			endif
+		;Rex
+			if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_Rex)
+				org $0395EC
+				autoclean JSL SpinKillDisplayHP
+				NOP
+			else
+				%RemoveFreespaceCodeFromJMLJSL($0395EC)
+				org $0395EC
+				LDA #$08
+				STA $1DF9|!addr
+			endif
 	;Bosses below (only applies to bosses with a HP system, and not bowser)
 		;Big boo boss
 			if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
@@ -382,7 +413,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				
 				..Yes
 					INC !Ram_SpriteTable_Rex_InstaKillHaveDisplayedHP,x
-					%IncreaseDamageCounter(!C2, 2, 2)
+					%IncreaseDamageCounter(!C2, !Setting_SpriteHP_VanillaSprite_Rex_HPAmount, !Setting_SpriteHP_VanillaSprite_Rex_HPAmount)
 					LDA #$02			;\Treat as if the player stomps the sprite 2 times.
 					STA !C2,x			;/
 				
@@ -390,17 +421,41 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			.SyncToHP
 				LDA #$02
 				STA !Freeram_SpriteHP_MaxHPLow,x
-				%ConvertDamageAmountToHP(!C2, 2)
+				%ConvertDamageAmountToHP(!C2, !Setting_SpriteHP_VanillaSprite_Rex_HPAmount)
 			.Restore
 				LDA !14C8,x
 				CMP #$08
 				RTL
 		StompRex: ;JSL from $0395B3
-			%IncreaseDamageCounter(!C2, 1, 2)
+			%IncreaseDamageCounter(!C2, 1, !Setting_SpriteHP_VanillaSprite_Rex_HPAmount)
 			.Restore
 				;INC !C2,x ;>This already incremented by "IncreaseDamageCounter"
 				LDA !C2,x
 				RTL
+	endif
+	if !Setting_SpriteHP_DisplayHPOfSMWSprites
+		SpinKillDisplayHP:	;>JSL from $01A93F
+			.Restore
+				LDA #$08
+				STA $1DF9|!addr
+			.CheckSprite
+				LDA !7FAB10,x
+				AND.b #%00001000
+				BNE ..CustomSprite
+				
+				..Vanilla
+					if !Setting_SpriteHP_VanillaSprite_Rex
+						LDA !9E,x
+						CMP #$AB
+						BEQ ..Rex
+					endif
+				..CustomSprite
+					RTL
+				if !Setting_SpriteHP_VanillaSprite_Rex
+					..Rex
+						%IncreaseDamageCounter(!C2, 2, 2)
+						RTL
+				endif
 	endif
 	if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
 		DamageBigBooBoss:
