@@ -413,10 +413,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				
 				..Yes
 					INC !Ram_SpriteTable_Rex_InstaKillHaveDisplayedHP,x
-					%IncreaseDamageCounter(!C2, !Setting_SpriteHP_VanillaSprite_Rex_HPAmount, !Setting_SpriteHP_VanillaSprite_Rex_HPAmount)
-					LDA #$02			;\Treat as if the player stomps the sprite 2 times.
-					STA !C2,x			;/
-				
+					%IncreaseDamageCounter(!C2, !Setting_SpriteHP_VanillaSprite_Rex_HPAmount, !Setting_SpriteHP_VanillaSprite_Rex_HPAmount)				
 				..No
 			.SyncToHP
 				LDA #$02
@@ -453,7 +450,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					RTL
 				if !Setting_SpriteHP_VanillaSprite_Rex
 					..Rex
-						%IncreaseDamageCounter(!C2, 2, 2)
+						%IncreaseDamageCounter(!C2, !Setting_SpriteHP_VanillaSprite_Rex_HPAmount, !Setting_SpriteHP_VanillaSprite_Rex_HPAmount)
 						RTL
 				endif
 	endif

@@ -261,8 +261,9 @@
 		;This only applies if !Setting_SpriteHP_ModifySMWSprites == 1 and their respective settings being 1.
 			!Setting_SpriteHP_VanillaSprite_Chucks_HPAmount		= 15	;>This applies to all chuck variants and all sprites with "Take 5 fireballs to kill" of $190F's bit 3.
 			!Setting_SpriteHP_VanillaSprite_Chucks_StompDamage	= 5	;>Amount of HP loss when taking damage from stomp attacks
-			
-			!Setting_SpriteHP_VanillaSprite_Rex_HPAmount		= 2	;>Amount of HP Rex has (how many stomp attacks, other attacks are either immune or insta-kill)
+			;Amount of HP Rex has (how many stomp attacks, other attacks are either immune or insta-kill).
+			;Note that after the first stomp attack will leave the Rex in his 1/2 height form.
+				!Setting_SpriteHP_VanillaSprite_Rex_HPAmount		= 2
 			
 			!Setting_SpriteHP_VanillaSprite_BigBooBoss_HPAmount		= 3	;>Amount of HP Big Boo boss have.
 			!Setting_SpriteHP_VanillaSprite_BigBooBoss_ThrownItemDamage	= 1	;>Amount of damage Big Boo boss takes from any thrown sprite.
