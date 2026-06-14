@@ -236,13 +236,12 @@
 		;unless stated otherwise. Having these turned off will COMPLETELY revert back to original format including
 		;the fireball and stomp damage jank (see readme under "...from a damage counter").
 		;
-		;Displaying HP with the jank is not possible due to the nature of the jank (see readme, and find "janky"
-		;for more explanation).
+		;Displaying HP with the jank is not possible due to the nature of the jank.
 			!Setting_SpriteHP_ModifySMWSprites			= 1	;>Universal option if you want to have all SMW sprites unaffected (this also undo the patching if you have already).
 			!Setting_SpriteHP_VanillaSprite_Chuck			= 1
 				;^Applies to all the chucks in SMW.
 			!Setting_SpriteHP_VanillaSprite_Rex			= 1
-				;^This will display HP of Rex, based on his smushed state
+				;^This will display HP of Rex. Any kills that would make it fall off the screen or smushed will display its HP.
 			!Setting_SpriteHP_VanillaSprite_Bosses			= 1
 				;^Includes:
 				;-Big boo boss

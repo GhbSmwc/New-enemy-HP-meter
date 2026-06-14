@@ -682,7 +682,7 @@ Change that to this:
 		and dies if this number reaches or exceeds a value defined as <kbd>!Setting_SpriteHP_VanillaSprite_Chucks_HPAmount</kbd> (these are found in <kbd>EnemyHPMeterDefines.asm</kbd>). The code checking if enough damage have been made by the fireballs is
 		processed by the fireballs' code (at <kbd>$02A0FC</kbd>) rather than the sprite's code.</li>
 		<li>Ludwig, Morton, and Roy, however, their sprite code processes the fireball damage manually and in their own sprite code, and does not utilizes the 5 fireballs tweaker bit.</li>
-		<li>There is a bug on how SMW handles player kicking carried sprites. If you release a sprite (either by kicking or dropping them) on the frame the sprite you're carrying (<kbd>$14C8</kbd>) is set to other values, (such as erasing the sprite),
+		<li>There is a bug on how SMW handles player kicking carried sprites. If you release a sprite (either by kicking or dropping them) on the frame the sprite you're carrying (<kbd><a href="https://smwc.me/m/smw/ram/7E14C8">$14C8</a></kbd>) is set to other values, (such as erasing the sprite),
 		you'll cancel out the status being written. This is because the player releasing the sprite action overrides whatever previous code meant to make it perform certain actions.<br><br>
 		
 		This also lead to an exploit with the test sprite's explosion damage handler by having basically infinite explosion (Bob-omb explodes, <kbd>$1534</kbd> is set to mark that it is exploding and <kbd>$14C8</kbd> gets sets to <kbd>$08</kbd>, Mario releases the Bob-omb from his hands and sets <kbd>$14C8</kbd>
@@ -794,6 +794,27 @@ Change that to this:
 			Q: I tried inserting the ASM files, ran the <kbd>.exe</kbd> programs and Shared Subroutines via asar to insert it into the game, and got errors like &ldquo;<kbd>Efile_not_found</kbd>&rdquo; and &ldquo;<kbd>Define &lt;Define_name&gt; wasn't found.</kbd>&rdquo;<br><br>
 			A: Most likely you forgot to paste (copies of) the define files (from here and Shared Subroutine's <kbd>SharedSubroutineDefs.asm</kbd>) in the respective tools and Shared Subroutines patch. For tools, they must be located where their <kbd>.exe</kbd>s are at,
 			for Shared Subroutines, they must be placed inside its <kbd>SharedSub_Defines</kbd> folder.
+		</li>
+		<li>
+			Q: For most sprites (espically vanilla), whenever a sprite instantly dies, the meter simply disappears rather than go empty then disappear!<br><br>
+			
+			A: That's intentional. Reasons are:
+			<ul>
+				<li>
+					The display HP code checks if the sprite is non-existent (as in, <kbd>$14C8</kbd> being <kbd>$00</kbd>). If that's the case, it wouldn't display HP of something that doesn't exists. If it were to continue to display,
+					and a sprite was spawned on the same slot the sprite was deleted, the HP meter would then &ldquo;transfer&rdquo; to this new sprite, even when it shouldn't use the HP system.
+				</li>
+				<li>
+					Killing enemies (such as a Rex) with a fireball (from Fire Mario or Yoshi) doesn't actually delete the sprite, rather the sprite <i>transforms</i> into a coin. Without making the HP meter disappear,
+					this would look weird with the HP bar persisting until the coin is either grabbed or despawned.
+				</li>
+			</ul>
+			If you want the meter to persist temporarily to show 0 HP, you would not want to use an instant-kill effect that would immediately becomes a free sprite slot. One way is to have a death animation that spans several
+			frames before it disappears, such as falling down the screen (<kbd>$14C8</kbd> set to <kbd>$02</kbd>), or dying in a similar way in <i>Super Mario Land</i> where an enemy lies on the ground stunned before disappearing.<br><br>
+			
+			It's important to note that despite <kbd>$14C8</kbd> being nonzero, there are other states that results in the sprite not running their main code at all. For example, being killed by a spinjump (<kbd>$14C8</kbd> set to
+			<kbd>$04</kbd>). Because a code at <kbd>$018127</kbd> (named <kbd>HandleSprite</kbd> in disassembly), it skips the main sprite code entirely, and because a code that would set the HP meter to show HP of that sprite slot
+			resides there, it too will also be skipped.
 		</li>
 	</ul>
 </div>

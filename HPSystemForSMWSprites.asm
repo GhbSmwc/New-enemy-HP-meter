@@ -153,15 +153,14 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			db 5
 		endif
 	;Rex to display HP
-		;This code runs every frame, for 2 reasons:
-		; - When rex gets insta-killed by bounce blocks, fireballs, quake, etc.
-		; - A failsafe to ensure that the displayed HP amount and its smushed state ($1602)
-		;   remain synced.
+		;This code runs every frame, for this reason: when rex gets insta-killed by, fireballs, quake, etc.
 		if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Rex)
 			org $03951A
 			autoclean JSL RexStateToHP
 			NOP
 		else
+			%RemoveFreespaceCodeFromJMLJSL($03951A)
+			org $03951A
 			LDA !14C8,x
 			CMP #$08
 		endif
@@ -170,6 +169,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			org $0395B3
 			JSL StompRex
 		else
+			%RemoveFreespaceCodeFromJMLJSL($0395B3)
 			org $0395B3
 			INC !C2,x
 			LDA !C2,x

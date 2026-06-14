@@ -189,10 +189,20 @@ main:
 			LDX !Scratchram_SpriteHP_SpriteSlotToDisplay
 			LDA !14C8,x				;>Sprite status table
 			BNE ...Exists				;>If exists, allow HP to be displayed.
-			LDA #$FF				;\Don't display HP of an enemy that does not exist.
-			STA !Freeram_SpriteHP_MeterState	;/
-			JMP .Done
+			
+			...HideHPMeter
+				LDA #$FF				;\Don't display HP of an enemy that does not exist.
+				STA !Freeram_SpriteHP_MeterState	;/
+				JMP .Done
 			...Exists
+				LDA !7FAB10,x			;\If sprite is custom, allow display
+				AND.b #%00001000		;/(can be overridden within sprite code to not display)
+				BNE ...AllowDisplay
+				LDA !9E,x			;\If sprite is vanilla and is a moving coin, skip drawing
+				CMP #$21			;|(enemies "killed" by a fireball actually turns the sprite into a coin
+				BNE ...AllowDisplay		;/rather than spawning a new coin sprite and deleting itself).
+				BRA ...HideHPMeter
+			...AllowDisplay
 	.DisplayNumerical
 		;Detect user trying to make a right-aligned single number (which avoids unnecessarily uses suppress leading zeroes)
 			!IsUsingRightAlignedSingleNumber = and(equal(!Setting_SpriteHP_NumericalTextAlignment, 2),equal(!Setting_SpriteHP_DisplayNumerical, 1))
