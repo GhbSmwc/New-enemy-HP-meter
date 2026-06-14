@@ -1,5 +1,12 @@
 	incsrc "StatusBarDefines.asm"
 ;Freeram settings
+	;NOTE:
+	; - If boolean operators are involved on how much bytes used, the boolean operator will output either 0 for false
+	;   or 1 for true. For example:
+	;    12 * (1 && 1) would be ( "&&" is an AND boolean operator):
+	;    12 * 1
+	;    = 12
+	;
 	;[BytesUsed = 1 + (!sprite_slots*2) + ((!sprite_slots*2) * !Setting_SpriteHP_TwoByte) +
 	; (!Setting_SpriteHP_DisplayGraphicalBar * !Setting_SpriteHP_BarAnimation) +
 	; (!Setting_SpriteHP_DisplayGraphicalBar * !Setting_SpriteHP_BarAnimation) *
@@ -81,12 +88,16 @@
 			else
 				!Ram_WendyLemmyIntroFlag		= $40FFFF
 			endif
-		;[BytesUsed = !sprite_slots * !Setting_SpriteHP_DisplayHPOfSMWSprites]. This RAM is used on a code that runs every frame for Chucks
-		;to switch the HP meter to them when they instantly die (cape spins, kicked shells, bounce blocks, etc.). It is used to check if the
-		;meter have already been switch to them to make it only perform once. I wouldn't want to add a hijack to every instance of $14C8
-		;getting set to any of their death values. This should only be any unused sprite table by the Chucks (and therefore must be cleared
+		;[BytesUsed = !sprite_slots * (!Setting_SpriteHP_DisplayHPOfSMWSprites && !Setting_SpriteHP_VanillaSprite_Chuck)].
+		;This RAM is used on a code that runs every frame for Chucks to switch the HP meter to them when they instantly die (cape spins,
+		;kicked shells, bounce blocks, etc.). It is used to check if the meter have already been switch to them to make it only perform once.
+		;I wouldn't want to add a hijack to every instance of $14C8 getting set to any of their death values. This should only be any unused
+		;sprite table by the Chucks (and therefore must be cleared
 		;when they load).
 			!Ram_SpriteTable_CharginChuck_InstaKillHaveDisplayedHP = !1626
+		;[BytesUsed = !sprite_slots * (!Setting_SpriteHP_DisplayHPOfSMWSprites && !Setting_SpriteHP_VanillaSprite_Rex)].
+		;Same as above but for Rex.
+			!Ram_SpriteTable_Rex_InstaKillHaveDisplayedHP = !1626
 ;Settings
 	;HUD settings
 		;Notes:
@@ -230,6 +241,8 @@
 			!Setting_SpriteHP_ModifySMWSprites			= 1	;>Universal option if you want to have all SMW sprites unaffected (this also undo the patching if you have already).
 			!Setting_SpriteHP_VanillaSprite_Chuck			= 1
 				;^Applies to all the chucks in SMW.
+			!Setting_SpriteHP_VanillaSprite_Rex			= 1
+				;^This will display HP of Rex, based on his smushed state
 			!Setting_SpriteHP_VanillaSprite_Bosses			= 1
 				;^Includes:
 				;-Big boo boss

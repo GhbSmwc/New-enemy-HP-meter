@@ -152,6 +152,28 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			org $02A103
 			db 5
 		endif
+	;Rex to display HP
+		;This code runs every frame, for 2 reasons:
+		; - When rex gets insta-killed by bounce blocks, fireballs, quake, etc.
+		; - A failsafe to ensure that the displayed HP amount and its smushed state ($1602)
+		;   remain synced.
+		if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Rex)
+			org $03951A
+			autoclean JSL RexStateToHP
+			NOP
+		else
+			LDA !14C8,x
+			CMP #$08
+		endif
+		
+		if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_Rex)
+			org $0395B3
+			JSL StompRex
+		else
+			org $0395B3
+			INC !C2,x
+			LDA !C2,x
+		endif
 	;Bosses below (only applies to bosses with a HP system, and not bowser)
 		;Big boo boss
 			if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
@@ -346,7 +368,40 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			endif
 			RTL
 	endif
-		
+	if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Rex)
+		RexStateToHP: ;>JSL from $03951A
+			.InstantKillToDisplayHP
+				LDA !Ram_SpriteTable_Rex_InstaKillHaveDisplayedHP,x
+				BNE ..No							;>If already in dying phase on the next frame, don't set HP display (only do following code one time).
+				LDA !14C8,x							;\If sprite status table is set to any of the kill animation, display HP meter.
+				CMP #$08
+				BCC ..Yes
+				CMP #$09
+				BCS ..Yes
+				BRA ..No
+				
+				..Yes
+					INC !Ram_SpriteTable_Rex_InstaKillHaveDisplayedHP,x
+					%IncreaseDamageCounter(!C2, 2, 2)
+					LDA #$02			;\Treat as if the player stomps the sprite 2 times.
+					STA !C2,x			;/
+				
+				..No
+			.SyncToHP
+				LDA #$02
+				STA !Freeram_SpriteHP_MaxHPLow,x
+				%ConvertDamageAmountToHP(!C2, 2)
+			.Restore
+				LDA !14C8,x
+				CMP #$08
+				RTL
+		StompRex: ;JSL from $0395B3
+			%IncreaseDamageCounter(!C2, 1, 2)
+			.Restore
+				;INC !C2,x ;>This already incremented by "IncreaseDamageCounter"
+				LDA !C2,x
+				RTL
+	endif
 	if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
 		DamageBigBooBoss:
 			%IncreaseDamageCounter(!1534, !Setting_SpriteHP_VanillaSprite_BigBooBoss_ThrownItemDamage, !Setting_SpriteHP_VanillaSprite_BigBooBoss_HPAmount)
