@@ -629,7 +629,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					;  %SpriteHPMeterBlacklist_BranchUnlimited(<Enter_Sprite_Number_Here>)
 					;
 					;If you want a range (inclusive) of sprite numbers blacklisted, then do this:
-					;  SpriteHPMeterBlacklist_Range(<Enter_Sprite_Number_Min_Here>, <Enter_Sprite_Number_Max_Here>)
+					;  %SpriteHPMeterBlacklist_Range(<Enter_Sprite_Number_Min_Here>, <Enter_Sprite_Number_Max_Here>)
 					
 					
 					
