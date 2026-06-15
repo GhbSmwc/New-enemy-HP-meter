@@ -226,6 +226,9 @@ incsrc "Defines/GraphicalBarDefines.asm"
 	;  Addr+0  LDA.b #$02
 	;  Addr+2  STA $14C8,x (or STA $14C8,y)
 	;
+	;NOTE: If your custom sprites uses a vanilla death routine and you don't want a health meter
+	;for those sprites, see "ZeroOutHPOfOneShotSprites:" (without quotes and including the colon)
+	;on this ASM file.
 		macro HijacksForFallingOffScrn(Addr_Hijack, Label_ToFreespace, String_IndexToUse)
 			if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
 				org <Addr_Hijack>
@@ -248,7 +251,25 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		%HijacksForFallingOffScrn($01B140, ShowHPForFallingOffScrn, x)
 		%HijacksForFallingOffScrn($02945B, ShowHPForFallingOffScrnCapeSpinQuakeNetPunch, x)
 		%HijacksForFallingOffScrn($02F29D, ShowHPForFallingOffScrn, x)
-		
+	;Hijack the clear-sprite tables routine (when sprite spawns) to default sprites with 1/1 HP.
+	;This is needed so that sprites not have 0 HP and not be a zombie-like state (makes the HUD
+	;actually say the sprite previously have full HP).
+	;
+	;Note to self:
+	; - $07F779-$07F77E (6 bytes): Hijacked by this patch so all other sprites will have default 1 HP.
+	; - $07F77F-$07F784 (6 bytes): Hijacked by "Takes 5 fireballs to kill" Work-around Patch.
+	; - $07F785-$07F78A (5 bytes): Hijacked by Pixi.
+		if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
+			org $07F779
+			autoclean JSL Default1HP
+			NOP #2
+		else
+			%RemoveFreespaceCodeFromJMLJSL($07F779)
+			org $07F779
+			STZ.w !160E,x
+			STZ.w !1594,x
+		endif
+	
 	;Bosses below (only applies to bosses with a HP system, and not bowser)
 		;Big boo boss
 			if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
@@ -491,7 +512,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 						BEQ ..Rex
 					endif
 					if !Setting_SpriteHP_VanillaSprite_OneShotSprites
-						JSR ZeroOutHPOfOneShotSMWSprites
+						JSR ZeroOutHPOfOneShotSprites
 					endif
 				..CustomSprite
 					RTL
@@ -507,7 +528,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				LDA #$02
 				STA !14C8,x
 			.DisplayOneHP
-				JSR ZeroOutHPOfOneShotSMWSprites
+				JSR ZeroOutHPOfOneShotSprites
 			RTL
 	endif
 	
@@ -530,7 +551,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					RTL
 				
 				..NonCarryable
-					JSR ZeroOutHPOfOneShotSMWSprites
+					JSR ZeroOutHPOfOneShotSprites
 					RTL
 	endif
 	if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
@@ -541,8 +562,24 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			.DisplayOneHP
 				PHX
 				TYX
-				JSR ZeroOutHPOfOneShotSMWSprites
+				JSR ZeroOutHPOfOneShotSprites
 				PLX
+			RTL
+	endif
+	if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
+		Default1HP:
+			.Restore
+				STZ.w !160E,x
+				STZ.w !1594,x
+			.SetDefaultHP
+				LDA #$01
+				STA !Freeram_SpriteHP_CurrentHPLow,x
+				STA !Freeram_SpriteHP_MaxHPLow,x
+				if !Setting_SpriteHP_TwoByte
+					LDA #$00
+					STA !Freeram_SpriteHP_CurrentHPHi,x
+					STA !Freeram_SpriteHP_MaxHPHi,x
+				endif
 			RTL
 	endif
 	if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
@@ -551,37 +588,73 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				LDA #$03
 				STA !14C8,x
 			.DisplayOneHP
-				JSR ZeroOutHPOfOneShotSMWSprites
+				JSR ZeroOutHPOfOneShotSprites
 			RTL
 	endif
+	macro SpriteHPMeterBlacklist(SpriteNumb)
+		CMP.b #<SpriteNumb>
+		BEQ .Done
+	endmacro
+	macro SpriteHPMeterBlacklist_BranchUnlimited(SpriteNumb)
+		CMP.b #<SpriteNumb>
+		BNE ?+
+		RTS
+		?+
+	endmacro
+	macro SpriteHPMeterBlacklist_Range(SpriteNumbMin, SpriteNumbMax)
+		CMP.b #<SpriteNumbMin>
+		BCC ?OutOfBlacklistedRange
+		CMP.b #<SpriteNumbMax>+1
+		BCS ?OutOfBlacklistedRange
+		
+		?InBlacklistedRange:
+		RTS
+		
+		?OutOfBlacklistedRange:
+	endmacro
+	
 	if !Setting_SpriteHP_VanillaSprite_OneShotSprites
-		ZeroOutHPOfOneShotSMWSprites:
+		ZeroOutHPOfOneShotSprites:
 			.CheckSprite
-				;All other sprites beyond listed here are treated as having 1 HP. Because following
-				;have multiple HPs.
-				LDA !9E,x
-				CMP #$46				;\Diggin chuck
-				BEQ .Done				;/
-				CMP #$AB				;\Rex
-				BEQ .Done				;/
-				CMP #$91				;\Sprite numbers $91-$98 are chucks
-				BCC ..OutOfChucksSprNumRange		;|
-				CMP #$99				;|
-				BCS ..OutOfChucksSprNumRange		;/
-				BRA .Done
-				
-				..OutOfChucksSprNumRange
-				
-			LDA #$01				;\For 1HP sprites that lacked a health system
-			STA $00					;|fudge the data to act as if they do have
-			STA !Freeram_SpriteHP_CurrentHPLow,x	;|a health system.
-			STA !Freeram_SpriteHP_MaxHPLow,x	;|
-			if !Setting_SpriteHP_TwoByte		;|
-				LDA #$00			;|
-				STA $01				;|
-				STA !Freeram_SpriteHP_MaxHPHi,x	;|
-			endif					;|
-			JSL !SharedSub_SpriteHPDamage		;/
+				LDA !7FAB10,x
+				AND.b #%00001000
+				BEQ ..VanillaSMWSpr
+				..CustomSpr
+					LDA !7FAB9E,x
+					;Add your list of custom sprites here to not display HP.
+					;The syntax is:
+					;  %SpriteHPMeterBlacklist(<Enter_Sprite_Number_Here>)
+					;
+					;If you get a branch-out-of-bounds error, do this instead:
+					;  %SpriteHPMeterBlacklist_BranchUnlimited(<Enter_Sprite_Number_Here>)
+					;
+					;If you want a range (inclusive) of sprite numbers blacklisted, then do this:
+					;  SpriteHPMeterBlacklist_Range(<Enter_Sprite_Number_Min_Here>, <Enter_Sprite_Number_Max_Here>)
+					
+					
+					
+					;Do not remove this code here, as it is needed so if a non-blacklisted sprite
+					;runs this code, it passes though all the items in the list and proceeds to
+					;display the HP meter.
+						JMP .DisplayHPMeterOfOneShotSprites ;>Used JMP instead of BRA as a failsafe if you added a long enough list for vanilla sprites.
+				..VanillaSMWSpr
+					LDA !9E,x
+					;This is the same as above, but for vanilla sprite numbers.
+					;
+					;All other sprites beyond listed here are treated as having 1 HP. Because following
+					;have multiple HPs we not to treat them as 1-shot.
+						%SpriteHPMeterBlacklist($46)		;>Diggin' chuck
+						%SpriteHPMeterBlacklist($AB)		;>Rex
+						%SpriteHPMeterBlacklist_Range($91, $98)	;>Sprite numbers $91-$98 are chucks, which already been handled.
+
+			.DisplayHPMeterOfOneShotSprites
+				LDA #$01				;\Treat as the killing blow deals 1 damage to the sprite
+				STA $00					;|(assuming the sprite have 1 HP). The subroutine
+				if !Setting_SpriteHP_TwoByte		;|does the damage and HP meter switching.
+					LDA #$00			;|
+					STA $01				;|
+				endif					;|
+				JSL !SharedSub_SpriteHPDamage		;/
 			.Done
 			RTS
 	endif
