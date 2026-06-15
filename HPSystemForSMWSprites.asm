@@ -221,89 +221,33 @@ incsrc "Defines/GraphicalBarDefines.asm"
 	; - Stomped (e.g. Monty Mole) and falling down the screen
 	; - Stunned sprites kicked automatically by player (stunned koopas (except blue) and fish)
 	; - Killed via Sliding down a slope or via star power
-		if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
-			org $01A5E3
-			autoclean JSL ShowHPForFallingOffScrnYregister
-			NOP
-			
-			org $01A66B
-			autoclean JSL ShowHPForFallingOffScrn
-			NOP
-			
-			org $01A68F
-			autoclean JSL ShowHPForFallingOffScrn
-			NOP
-			
-			org $01A6AC
-			autoclean JSL ShowHPForFallingOffScrnYregister
-			NOP
-			
-			org $01A86B
-			autoclean JSL ShowHPForFallingOffScrn
-			NOP
-			
-			org $01A9E9
-			autoclean JSL ShowHPForFallingOffScrn
-			NOP
-
-			org $01B140
-			autoclean JSL ShowHPForFallingOffScrn
-			NOP
-			
-			org $02945B
-			autoclean JSL ShowHPForFallingOffScrnCapeSpinQuakeNetPunch
-			NOP
-			
-			org $02F29D
-			autoclean JSL ShowHPForFallingOffScrn
-			NOP
-		else
-			%RemoveFreespaceCodeFromJMLJSL($01A5E3)
-			org $01A5E3
-			LDA #$02
-			STA !14C8,y
-			
-			%RemoveFreespaceCodeFromJMLJSL($01A66B)
-			org $01A66B
-			LDA #$02
-			STA !14C8,x
-			
-			%RemoveFreespaceCodeFromJMLJSL($01A68F)
-			org $01A68F
-			LDA #$02
-			STA !14C8,x
-			
-			%RemoveFreespaceCodeFromJMLJSL($01A6AC)
-			org $01A6AC
-			LDA #$02
-			STA !14C8,y
-			
-			%RemoveFreespaceCodeFromJMLJSL($01A86B)
-			org $01A86B
-			LDA #$02
-			STA !14C8,x
-			
-			%RemoveFreespaceCodeFromJMLJSL($01A9E9)
-			org $01A9E9
-			LDA #$02
-			STA !14C8,x
-			
-			%RemoveFreespaceCodeFromJMLJSL($01B140)
-			LDA #$02
-			STA !14C8,x
-			
-			%RemoveFreespaceCodeFromJMLJSL($02945B)
-			LDA #$02
-			STA !14C8,x
-			
-			%RemoveFreespaceCodeFromJMLJSL($02F29D)
-			LDA #$02
-			STA !14C8,x
-		endif
-
-		if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
-		else
-		endif
+	;
+	;The following hijacks a 5-byte area being:
+	;  Addr+0  LDA.b #$02
+	;  Addr+2  STA $14C8,x (or STA $14C8,y)
+	;
+		macro HijacksForFallingOffScrn(Addr_Hijack, Label_ToFreespace, String_IndexToUse)
+			if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
+				org <Addr_Hijack>
+				autoclean JSL <Label_ToFreespace>
+				NOP
+			else
+				%RemoveFreespaceCodeFromJMLJSL(<Addr_Hijack>)
+				org <Addr_Hijack>
+				LDA.b #$02
+				STA !14C8,<String_IndexToUse>
+			endif
+		endmacro
+	
+		%HijacksForFallingOffScrn($01A5E3, ShowHPForFallingOffScrnYregister, y)
+		%HijacksForFallingOffScrn($01A66B, ShowHPForFallingOffScrn, x)
+		%HijacksForFallingOffScrn($01A68F, ShowHPForFallingOffScrn, x)
+		%HijacksForFallingOffScrn($01A6AC, ShowHPForFallingOffScrnYregister, y)
+		%HijacksForFallingOffScrn($01A86B, ShowHPForFallingOffScrn, x)
+		%HijacksForFallingOffScrn($01A9E9, ShowHPForFallingOffScrn, x)
+		%HijacksForFallingOffScrn($01B140, ShowHPForFallingOffScrn, x)
+		%HijacksForFallingOffScrn($02945B, ShowHPForFallingOffScrnCapeSpinQuakeNetPunch, x)
+		%HijacksForFallingOffScrn($02F29D, ShowHPForFallingOffScrn, x)
 		
 	;Bosses below (only applies to bosses with a HP system, and not bowser)
 		;Big boo boss
