@@ -197,12 +197,13 @@ main:
 			...Exists
 				LDA !7FAB10,x			;\If sprite is custom, allow display
 				AND.b #%00001000		;/(can be overridden within sprite code to not display)
-				BNE ...AllowDisplay
-				LDA !9E,x			;\If sprite is vanilla and is a moving coin, skip drawing
-				CMP #$21			;|(enemies "killed" by a fireball actually turns the sprite into a coin
-				BNE ...AllowDisplay		;/rather than spawning a new coin sprite and deleting itself).
-				BRA ...HideHPMeter
-			...AllowDisplay
+				BNE ....CustomSprite		;>For custom sprites, you'll need to edit the custom sprite's code.
+				....VanillaSprite
+					LDA !9E,x			;\If sprite is vanilla and is a moving coin, skip drawing
+					CMP #$21			;|(enemies "killed" by a fireball actually turns the sprite into a coin
+					BEQ ...HideHPMeter		;/rather than spawning a new coin sprite and deleting itself).
+				....CustomSprite
+			...DisplayNormally
 	.DisplayNumerical
 		;Detect user trying to make a right-aligned single number (which avoids unnecessarily uses suppress leading zeroes)
 			!IsUsingRightAlignedSingleNumber = and(equal(!Setting_SpriteHP_NumericalTextAlignment, 2),equal(!Setting_SpriteHP_DisplayNumerical, 1))

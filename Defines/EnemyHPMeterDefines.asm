@@ -279,6 +279,12 @@
 				!Setting_SpriteHP_VanillaSprite_LudwigMortonRoy_HPAmount	= 12
 				!Setting_SpriteHP_VanillaSprite_LudwigMortonRoy_StompDamage	= 4
 				!Setting_SpriteHP_VanillaSprite_LudwigMortonRoy_FireballDamage	= 1
+			;Display HP for all other sprites. Sprites that can be 1-shotted are treated as them having
+			;only 1 HP by checking their sprite status table ($14C8). How it's handled:
+			; - For displaying HP of the sprite, that's handled in uberasm tool code "level/DisplayEnemyHP.asm"
+			; - For when sprites switch the HP meter when getting killed, that's handled via patch
+			;   "HPSystemForSMWSprites.asm"
+				!Setting_SpriteHP_VanillaSprite_OneShotSprites			= 1
 		;For any sprite whose tweaker $190F's bit 3 (%wcdj5sDp, takes 5 fireballs to kill; bit 3) is set:
 			!Setting_SpriteHP_FireballDamageAmount			= 3	;>Amount of damage sprites receives from fireball damage.
 		;Fixes and additions

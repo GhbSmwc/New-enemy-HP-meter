@@ -182,7 +182,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			org $0395B7
 			CMP #$02
 		endif
-	;Modify spinjump kills to display HP when spin-killed (Rex, for example, can be non-fatally damaged, or insta-killed)
+	;Modify spinjump kills to display HP when spinjump/yoshi stomp killed (Rex, for example, can be non-fatally damaged, or insta-killed)
 		;Most sprites
 			if !Setting_SpriteHP_DisplayHPOfSMWSprites
 				org $01A93F
@@ -205,6 +205,38 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				LDA #$08
 				STA $1DF9|!addr
 			endif
+	;Modify when enemies are killed by sliding down a slope or touched a player with a super star power
+		if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
+			org $01A86B
+			autoclean JSL ShowHPForFallingOffScrn
+			NOP
+		else
+			%RemoveFreespaceCodeFromJMLJSL($01A86B)
+			org $01A86B
+			LDA #$02
+			STA !14C8,x
+		endif
+	;Same as above but when stomping enemies regularly (flatten).
+		if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
+			org $01A9D3
+			autoclean JSL StompKill
+			NOP
+		else
+			%RemoveFreespaceCodeFromJMLJSL($01A9D3)
+			org $01A9D3
+			LDA #$03
+			STA !14C8,x
+		endif
+	;Kicking stunned shelless koopas and out-of-water fish
+		if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
+			org $01B140
+			autoclean JSL ShowHPForFallingOffScrn
+			NOP
+		else
+			%RemoveFreespaceCodeFromJMLJSL($01B140)
+			LDA #$02
+			STA !14C8,x
+		endif
 	;Bosses below (only applies to bosses with a HP system, and not bowser)
 		;Big boo boss
 			if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
@@ -441,10 +473,13 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				BNE ..CustomSprite
 				
 				..Vanilla
+					LDA !9E,x
 					if !Setting_SpriteHP_VanillaSprite_Rex
-						LDA !9E,x
 						CMP #$AB
 						BEQ ..Rex
+					endif
+					if !Setting_SpriteHP_VanillaSprite_OneShotSprites
+						JSR ZeroOutHPOfOneShotSMWSprites
 					endif
 				..CustomSprite
 					RTL
@@ -453,6 +488,55 @@ incsrc "Defines/GraphicalBarDefines.asm"
 						%IncreaseDamageCounter(!C2, !Setting_SpriteHP_VanillaSprite_Rex_HPAmount, !Setting_SpriteHP_VanillaSprite_Rex_HPAmount)
 						RTL
 				endif
+	endif
+	if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
+		ShowHPForFallingOffScrn:		;>JSL from $01A86B, $01B140
+			.Restore
+				LDA #$02
+				STA !14C8,x
+			.DisplayOneHP
+				JSR ZeroOutHPOfOneShotSMWSprites
+			RTL
+	endif
+	if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
+		StompKill:	;>JSL from $01A9D3
+			.Restore
+				LDA #$03
+				STA !14C8,x
+			.DisplayOneHP
+				JSR ZeroOutHPOfOneShotSMWSprites
+			RTL
+	endif
+	if !Setting_SpriteHP_VanillaSprite_OneShotSprites
+		ZeroOutHPOfOneShotSMWSprites:
+			.CheckSprite
+				;All other sprites beyond listed here are treated as having 1 HP. Because following
+				;have multiple HPs.
+				LDA !9E,x
+				CMP #$46				;\Diggin chuck
+				BEQ .Done				;/
+				CMP #$AB				;\Rex
+				BEQ .Done				;/
+				CMP #$91				;\Sprite numbers $91-$98 are chucks
+				BCC ..OutOfChucksSprNumRange		;|
+				CMP #$99				;|
+				BCS ..OutOfChucksSprNumRange		;/
+				BRA .Done
+				
+				..OutOfChucksSprNumRange
+				
+			LDA #$01				;\For 1HP sprites that lacked a health system
+			STA $00					;|fudge the data to act as if they do have
+			STA !Freeram_SpriteHP_CurrentHPLow,x	;|a health system.
+			STA !Freeram_SpriteHP_MaxHPLow,x	;|
+			if !Setting_SpriteHP_TwoByte		;|
+				LDA #$00			;|
+				STA $01				;|
+				STA !Freeram_SpriteHP_MaxHPHi,x	;|
+			endif					;|
+			JSL !SharedSub_SpriteHPDamage		;/
+			.Done
+			RTS
 	endif
 	if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
 		DamageBigBooBoss:
