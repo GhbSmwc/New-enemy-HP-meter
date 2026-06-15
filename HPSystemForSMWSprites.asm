@@ -237,6 +237,49 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			LDA #$02
 			STA !14C8,x
 		endif
+	;When kicked/carried sprites hit a 1-shottable enemy
+		if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
+			org $01A5E3
+			autoclean JSL ShowHPForFallingOffScrnYregister
+			NOP
+			
+			org $01A66B
+			autoclean JSL ShowHPForFallingOffScrn
+			NOP
+			
+			org $01A68F
+			autoclean JSL ShowHPForFallingOffScrn
+			NOP
+			
+			org $01A6AC
+			autoclean JSL ShowHPForFallingOffScrnYregister
+			NOP
+		else
+			%RemoveFreespaceCodeFromJMLJSL($01A5E3)
+			org $01A5E3
+			LDA #$02
+			STA !14C8,y
+			
+			%RemoveFreespaceCodeFromJMLJSL($01A66B)
+			org $01A66B
+			LDA #$02
+			STA !14C8,x
+			
+			%RemoveFreespaceCodeFromJMLJSL($01A68F)
+			org $01A68F
+			LDA #$02
+			STA !14C8,x
+			
+			%RemoveFreespaceCodeFromJMLJSL($01A6AC)
+			org $01A6AC
+			LDA #$02
+			STA !14C8,y
+		endif
+
+		if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
+		else
+		endif
+		
 	;Bosses below (only applies to bosses with a HP system, and not bowser)
 		;Big boo boss
 			if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
@@ -496,6 +539,18 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				STA !14C8,x
 			.DisplayOneHP
 				JSR ZeroOutHPOfOneShotSMWSprites
+			RTL
+	endif
+	if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
+		ShowHPForFallingOffScrnYregister:
+			.Restore
+				LDA #$02
+				STA !14C8,y
+			.DisplayOneHP
+				PHX
+				TYX
+				JSR ZeroOutHPOfOneShotSMWSprites
+				PLX
 			RTL
 	endif
 	if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
