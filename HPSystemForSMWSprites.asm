@@ -86,7 +86,54 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				endif
 			endif
 	endmacro
-
+	macro SetSpriteDefaultHP(SpriteNumb, StartingHP)
+		CMP.b #<SpriteNumb>
+		BNE ?OtherSprite
+		?Override
+			LDA.b #<StartingHP>
+			STA !Freeram_SpriteHP_CurrentHPLow,x
+			STA !Freeram_SpriteHP_MaxHPLow,x
+			if !Setting_SpriteHP_TwoByte
+				LDA.b #<StartingHP>>>8
+				STA !Freeram_SpriteHP_CurrentHPHi,x
+				STA !Freeram_SpriteHP_MaxHPHi,x
+			endif
+			RTL
+		?OtherSprite:
+	endmacro
+	macro HijacksForFallingOffScrn(Addr_Hijack, Label_ToFreespace, String_IndexToUse)
+		if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
+			org <Addr_Hijack>
+			autoclean JSL <Label_ToFreespace>
+			NOP
+		else
+			%RemoveFreespaceCodeFromJMLJSL(<Addr_Hijack>)
+			org <Addr_Hijack>
+			LDA.b #$02
+			STA !14C8,<String_IndexToUse>
+		endif
+	endmacro
+	macro SpriteHPMeterBlacklist(SpriteNumb)
+		CMP.b #<SpriteNumb>
+		BEQ .Done
+	endmacro
+	macro SpriteHPMeterBlacklist_BranchUnlimited(SpriteNumb)
+		CMP.b #<SpriteNumb>
+		BNE ?+
+		RTS
+		?+
+	endmacro
+	macro SpriteHPMeterBlacklist_Range(SpriteNumbMin, SpriteNumbMax)
+		CMP.b #<SpriteNumbMin>
+		BCC ?OutOfBlacklistedRange
+		CMP.b #<SpriteNumbMax>+1
+		BCS ?OutOfBlacklistedRange
+		
+		?InBlacklistedRange:
+		RTS
+		
+		?OutOfBlacklistedRange:
+	endmacro
 ;Hijacks
 
 	;Code that runs every frame for chucks
@@ -229,18 +276,6 @@ incsrc "Defines/GraphicalBarDefines.asm"
 	;NOTE: If your custom sprites uses a vanilla death routine and you don't want a health meter
 	;for those sprites, see "ZeroOutHPOfOneShotSprites:" (without quotes and including the colon)
 	;on this ASM file.
-		macro HijacksForFallingOffScrn(Addr_Hijack, Label_ToFreespace, String_IndexToUse)
-			if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
-				org <Addr_Hijack>
-				autoclean JSL <Label_ToFreespace>
-				NOP
-			else
-				%RemoveFreespaceCodeFromJMLJSL(<Addr_Hijack>)
-				org <Addr_Hijack>
-				LDA.b #$02
-				STA !14C8,<String_IndexToUse>
-			endif
-		endmacro
 	
 		%HijacksForFallingOffScrn($01A5E3, ShowHPForFallingOffScrnYregister, y)
 		%HijacksForFallingOffScrn($01A66B, ShowHPForFallingOffScrn, x)
@@ -256,12 +291,13 @@ incsrc "Defines/GraphicalBarDefines.asm"
 	;actually say the sprite previously have full HP).
 	;
 	;Note to self:
-	; - $07F779-$07F77E (6 bytes): Hijacked by this patch so all other sprites will have default 1 HP.
-	; - $07F77F-$07F784 (6 bytes): Hijacked by "Takes 5 fireballs to kill" Work-around Patch.
-	; - $07F785-$07F78A (5 bytes): Hijacked by Pixi.
+	; - $07F722-$07F78A (105 bytes): The entire routine that clears sprite tables:
+	; -- $07F779-$07F77E (6 bytes): Hijacked by this patch so all other sprites will have default 1 HP.
+	; -- $07F77F-$07F784 (6 bytes): Hijacked by "Takes 5 fireballs to kill" Work-around Patch.
+	; -- $07F785-$07F78A (5 bytes): Hijacked by Pixi.
 		if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
 			org $07F779
-			autoclean JSL Default1HP
+			autoclean JSL DefaultHPOnSpawn
 			NOP #2
 		else
 			%RemoveFreespaceCodeFromJMLJSL($07F779)
@@ -269,7 +305,17 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			STZ.w !160E,x
 			STZ.w !1594,x
 		endif
-	
+	;Make stomping on Dino Rhino to transform into Dino Torch to show HP going from 2 to 1 HP
+		if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
+			org $01A981
+			autoclean JSL DinoRhino2HPToTorch1HP
+			NOP
+		else
+			%RemoveFreespaceCodeFromJMLJSL($01A981)
+			org $01A981
+			LDA #$FF
+			STA !1540,x
+		endif
 	;Bosses below (only applies to bosses with a HP system, and not bowser)
 		;Big boo boss
 			if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
@@ -530,9 +576,6 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			.DisplayOneHP
 				JSR ZeroOutHPOfOneShotSprites
 			RTL
-	endif
-	
-	if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
 		ShowHPForFallingOffScrnCapeSpinQuakeNetPunch: ;>JSL from $02945B
 			.Restore
 				LDA #$02
@@ -553,8 +596,6 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				..NonCarryable
 					JSR ZeroOutHPOfOneShotSprites
 					RTL
-	endif
-	if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
 		ShowHPForFallingOffScrnYregister:
 			.Restore
 				LDA #$02
@@ -565,13 +606,16 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				JSR ZeroOutHPOfOneShotSprites
 				PLX
 			RTL
-	endif
-	if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
-		Default1HP:
+		DefaultHPOnSpawn:
+			;I recommend having custom sprites run an init routine to set its starting current and max HP rather
+			;than having them here.
+			;
+			;The good news is that when a sprite is spawned, its sprite number ($9E/$7FAB9E) are set before
+			;calling $07F722
 			.Restore
 				STZ.w !160E,x
 				STZ.w !1594,x
-			.SetDefaultHP
+			.SetDefault1HP
 				LDA #$01
 				STA !Freeram_SpriteHP_CurrentHPLow,x
 				STA !Freeram_SpriteHP_MaxHPLow,x
@@ -580,9 +624,15 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					STA !Freeram_SpriteHP_CurrentHPHi,x
 					STA !Freeram_SpriteHP_MaxHPHi,x
 				endif
-			RTL
-	endif
-	if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
+				LDA !7FAB10,x
+				AND.b #%00001000
+				BNE .Done
+				LDA !9E,x
+				%SetSpriteDefaultHP($6E, 2)		;>Dino Rhino
+				%SetSpriteDefaultHP($6F, 1)
+					;^Dino Torch (note that Dino torch have a max of 2 HP if transformed from Dino Rhino, otherwise a max of 1 HP if spawned directly)
+			.Done
+				RTL
 		StompKill:	;>JSL from $01A9D3
 			.Restore
 				LDA #$03
@@ -590,30 +640,18 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			.DisplayOneHP
 				JSR ZeroOutHPOfOneShotSprites
 			RTL
-	endif
-	macro SpriteHPMeterBlacklist(SpriteNumb)
-		CMP.b #<SpriteNumb>
-		BEQ .Done
-	endmacro
-	macro SpriteHPMeterBlacklist_BranchUnlimited(SpriteNumb)
-		CMP.b #<SpriteNumb>
-		BNE ?+
-		RTS
-		?+
-	endmacro
-	macro SpriteHPMeterBlacklist_Range(SpriteNumbMin, SpriteNumbMax)
-		CMP.b #<SpriteNumbMin>
-		BCC ?OutOfBlacklistedRange
-		CMP.b #<SpriteNumbMax>+1
-		BCS ?OutOfBlacklistedRange
-		
-		?InBlacklistedRange:
-		RTS
-		
-		?OutOfBlacklistedRange:
-	endmacro
-	
-	if !Setting_SpriteHP_VanillaSprite_OneShotSprites
+		DinoRhino2HPToTorch1HP:
+			.Restore
+				LDA #$FF
+				STA !1540,x
+			.SimulateDamage
+				LDA #$01
+				STA $00
+				if !Setting_SpriteHP_TwoByte
+					STZ $01
+				endif
+				JSL !SharedSub_SpriteHPDamage
+				RTL
 		ZeroOutHPOfOneShotSprites:
 			.CheckSprite
 				LDA !7FAB10,x
@@ -648,13 +686,13 @@ incsrc "Defines/GraphicalBarDefines.asm"
 						%SpriteHPMeterBlacklist_Range($91, $98)	;>Sprite numbers $91-$98 are chucks, which already been handled.
 
 			.DisplayHPMeterOfOneShotSprites
-				LDA #$01				;\Treat as the killing blow deals 1 damage to the sprite
-				STA $00					;|(assuming the sprite have 1 HP). The subroutine
-				if !Setting_SpriteHP_TwoByte		;|does the damage and HP meter switching.
-					LDA #$00			;|
-					STA $01				;|
-				endif					;|
-				JSL !SharedSub_SpriteHPDamage		;/
+				LDA.b #!SpriteHP_MaxHPAndDamageValue		;\Treat as the killing blow deals max damage to the sprite
+				STA $00						;|The subroutine does the damage and HP meter switching.
+				if !Setting_SpriteHP_TwoByte			;|
+					LDA.b #!SpriteHP_MaxHPAndDamageValue>>8	;|
+					STA $01					;|
+				endif						;|
+				JSL !SharedSub_SpriteHPDamage			;/
 			.Done
 			RTS
 	endif

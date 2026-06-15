@@ -306,6 +306,10 @@
 	if !Setting_SpriteHP_DisplayGraphicalBar == 0	;>Override to disable unused animation for the bar if the bar doesn't exist.
 		!Setting_SpriteHP_BarAnimation = 0
 	endif
+	!SpriteHP_MaxHPAndDamageValue = 255
+	if !Setting_SpriteHP_TwoByte
+		!SpriteHP_MaxHPAndDamageValue = 65535
+	endif
 	;Obtain addresses representing HP data
 			!CurrentAddressToAssignDefine_SpriteHPData #= !Freeram_SpriteHP_SpriteHPData
 			if not(defined("MacroGuard_SpriteHPData"))
