@@ -227,17 +227,10 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			LDA #$03
 			STA !14C8,x
 		endif
-	;Kicking stunned shelless koopas and out-of-water fish
-		if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
-			org $01B140
-			autoclean JSL ShowHPForFallingOffScrn
-			NOP
-		else
-			%RemoveFreespaceCodeFromJMLJSL($01B140)
-			LDA #$02
-			STA !14C8,x
-		endif
-	;When kicked/carried sprites hit a 1-shottable enemy
+	;When sprites are falling down screen
+	; - kicked/carried sprites hit a 1-shottable enemy
+	; - Stomped (e.g. Monty Mole) and falling down the screen
+	; - Stunned sprites kicked automatically by player (stunned koopas (except blue) and fish)
 		if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
 			org $01A5E3
 			autoclean JSL ShowHPForFallingOffScrnYregister
@@ -253,6 +246,18 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			
 			org $01A6AC
 			autoclean JSL ShowHPForFallingOffScrnYregister
+			NOP
+			
+			org $01A9E9
+			autoclean JSL ShowHPForFallingOffScrn
+			NOP
+
+			org $01B140
+			autoclean JSL ShowHPForFallingOffScrn
+			NOP
+			
+			org $02F29D
+			autoclean JSL ShowHPForFallingOffScrn
 			NOP
 		else
 			%RemoveFreespaceCodeFromJMLJSL($01A5E3)
@@ -274,6 +279,19 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			org $01A6AC
 			LDA #$02
 			STA !14C8,y
+			
+			%RemoveFreespaceCodeFromJMLJSL($01A9E9)
+			org $01A9E9
+			LDA #$02
+			STA !14C8,x
+			
+			%RemoveFreespaceCodeFromJMLJSL($01B140)
+			LDA #$02
+			STA !14C8,x
+			
+			%RemoveFreespaceCodeFromJMLJSL($02F29D)
+			LDA #$02
+			STA !14C8,x
 		endif
 
 		if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
