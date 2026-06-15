@@ -205,17 +205,6 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				LDA #$08
 				STA $1DF9|!addr
 			endif
-	;Modify when enemies are killed by sliding down a slope or touched a player with a super star power
-		if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
-			org $01A86B
-			autoclean JSL ShowHPForFallingOffScrn
-			NOP
-		else
-			%RemoveFreespaceCodeFromJMLJSL($01A86B)
-			org $01A86B
-			LDA #$02
-			STA !14C8,x
-		endif
 	;Same as above but when stomping enemies regularly (flatten).
 		if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
 			org $01A9D3
@@ -231,6 +220,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 	; - kicked/carried sprites hit a 1-shottable enemy
 	; - Stomped (e.g. Monty Mole) and falling down the screen
 	; - Stunned sprites kicked automatically by player (stunned koopas (except blue) and fish)
+	; - Killed via Sliding down a slope or via star power
 		if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
 			org $01A5E3
 			autoclean JSL ShowHPForFallingOffScrnYregister
@@ -248,12 +238,20 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			autoclean JSL ShowHPForFallingOffScrnYregister
 			NOP
 			
+			org $01A86B
+			autoclean JSL ShowHPForFallingOffScrn
+			NOP
+			
 			org $01A9E9
 			autoclean JSL ShowHPForFallingOffScrn
 			NOP
 
 			org $01B140
 			autoclean JSL ShowHPForFallingOffScrn
+			NOP
+			
+			org $02945B
+			autoclean JSL ShowHPForFallingOffScrnCapeSpinQuakeNetPunch
 			NOP
 			
 			org $02F29D
@@ -280,12 +278,21 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			LDA #$02
 			STA !14C8,y
 			
+			%RemoveFreespaceCodeFromJMLJSL($01A86B)
+			org $01A86B
+			LDA #$02
+			STA !14C8,x
+			
 			%RemoveFreespaceCodeFromJMLJSL($01A9E9)
 			org $01A9E9
 			LDA #$02
 			STA !14C8,x
 			
 			%RemoveFreespaceCodeFromJMLJSL($01B140)
+			LDA #$02
+			STA !14C8,x
+			
+			%RemoveFreespaceCodeFromJMLJSL($02945B)
 			LDA #$02
 			STA !14C8,x
 			
@@ -551,13 +558,36 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				endif
 	endif
 	if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
-		ShowHPForFallingOffScrn:		;>JSL from $01A86B, $01B140
+		ShowHPForFallingOffScrn:		;>JSL from various
 			.Restore
 				LDA #$02
 				STA !14C8,x
 			.DisplayOneHP
 				JSR ZeroOutHPOfOneShotSMWSprites
 			RTL
+	endif
+	
+	if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
+		ShowHPForFallingOffScrnCapeSpinQuakeNetPunch: ;>JSL from $02945B
+			.Restore
+				LDA #$02
+				STA !14C8,x
+			.DisplayOneHPIfNotACarryableSpr
+				LDA !1662,x
+				AND.b #%10000000
+				BNE ..NonCarryable ;>Falls straight down when killed
+				LDA !1656,x
+				AND.b #%00010000
+				BEQ ..NonCarryable ;>Can't be jumped on
+				LDA !1656,x
+				AND.b #%00100000 ;>Dies when jumped on
+				BNE ..NonCarryable
+				..Carryable ;Sprite is carryable, when hit by quake/cape spin/net punch, the sprite (such as a shell) doesn't get killed
+					RTL
+				
+				..NonCarryable
+					JSR ZeroOutHPOfOneShotSMWSprites
+					RTL
 	endif
 	if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
 		ShowHPForFallingOffScrnYregister:
