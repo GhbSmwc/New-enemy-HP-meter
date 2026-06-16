@@ -55,10 +55,10 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		endif
 		LDA <DamageCountSpriteTableRAM>,x
 		CLC
-		ADC.b #<DamageAmount>
-		BCS ?.Overflow
+		ADC.b #<DamageAmount>			;
+		BCS ?.Overflow				;>If exceeding 255...
 		CMP.b #<DamageAmountToDie>
-		BCC ?.BelowDeathThreshold
+		BCC ?.BelowDeathThreshold		;>...Or if exceeding the minimum damage amount to kill, then cap the damage counter
 		
 		?.Overflow
 			LDA.b #<DamageAmountToDie>
@@ -105,7 +105,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		?OtherSprite:
 	endmacro
 	macro HijacksForFallingOffScrn(Addr_Hijack, Label_ToFreespace, String_IndexToUse)
-		if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
+		if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
 			org <Addr_Hijack>
 			autoclean JSL <Label_ToFreespace>
 			NOP
@@ -120,7 +120,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		CMP.b #<SpriteNumb>
 		BEQ .Done
 	endmacro
-	macro SpriteHPMeterBlacklist_BranchUnlimited(SpriteNumb)
+	macro SpriteHPMeterBlacklist_UnlimitedDistance(SpriteNumb)
 		CMP.b #<SpriteNumb>
 		BNE ?+
 		RTS
@@ -138,53 +138,53 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		?OutOfBlacklistedRange:
 	endmacro
 ;Hijacks
-
-	;Code that runs every frame for chucks
-		if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Chuck)
-			org $02C1F8
-			autoclean JML CharginChuckHitCountToHP		;>Had to be JML instead JSL because you cannot PHA : RTL [...] PLA.
-		else
-			%RemoveFreespaceCodeFromJMLJSL($02C1F8)
-			org $02C1F8
-			LDA.W !187B,X					;\Then restore the original, overwritten code.
-			PHA						;/
-		endif
-	;Chucks taking a hit from a stomp attack
-		if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Chuck)
-			org $02C7E8
-			autoclean JSL StompCharginChuck
-			NOP #2
-		else
-			%RemoveFreespaceCodeFromJMLJSL($02C7E8)
-			org $02C7E8
-			INC.W !1528,X
-			LDA.W !1528,X
-		endif
-	;Modify hit count to kill to be the minimum amount of damage to kill
-		if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Chuck)
-			org $02C7EF
-			db !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount		;>Amount of total damage to kill for chucks
-		else
-			org $02C7EF
-			db 3
-		endif
-	;Failsafe to prevent a potential bug where a chuck dies and a new sprite spawn on the same slot the dying/despawning chuck
-	;is on causes the HP meter to be transfered over.
-		if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Chuck)
-			org $02C20C
-			autoclean JSL PreventHPDisplayTransferChuck
-			nop
-		else
-			%RemoveFreespaceCodeFromJMLJSL($02C20C)
-			org $02C20C
-			LDA #$28					;\Restore overwritten code
-			STA.W !163E,X					;/
-		endif
+	;Chucks
+		;Code that runs every frame. Ensures the HP values in the new sprite RAM is in sync (for display).
+			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Chuck)
+				org $02C1F8
+				autoclean JML CharginChuckHitCountToHP		;>Had to be JML instead JSL because you cannot PHA : RTL [...] PLA.
+			else
+				%RemoveFreespaceCodeFromJMLJSL($02C1F8)
+				org $02C1F8
+				LDA.W !187B,X					;\Then restore the original, overwritten code.
+				PHA						;/
+			endif
+		;Taking a hit from a stomp attack. This is also part of the Chuck's HP jank fix.
+			if and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_VanillaSprite_Chuck)
+				org $02C7E8
+				autoclean JSL StompCharginChuck
+				NOP #2
+			else
+				%RemoveFreespaceCodeFromJMLJSL($02C7E8)
+				org $02C7E8
+				INC.W !1528,X
+				LDA.W !1528,X
+			endif
+		;Modify hit count to kill to be the minimum amount of damage to kill (stomping)
+			if and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_VanillaSprite_Chuck)
+				org $02C7EF
+				db !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount		;>Amount of total damage to kill for chucks
+			else
+				org $02C7EF
+				db 3
+			endif
+		;Failsafe to prevent a potential bug where a chuck dies and a new sprite spawn on the same slot the dying/despawning chuck
+		;is on causes the HP meter to be transfered over.
+			if and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_VanillaSprite_Chuck)
+				org $02C20C
+				autoclean JSL PreventHPDisplayTransferChuck
+				nop
+			else
+				%RemoveFreespaceCodeFromJMLJSL($02C20C)
+				org $02C20C
+				LDA #$28					;\Restore overwritten code
+				STA.W !163E,X					;/
+			endif
 	;Fireball hitcount hijacks. This modifies the 5 fireballs to kill (when tweaker RAM $190F's bit 3; %0000X000 is set)
 	;to use a damage count system. Chucks are the only sprites that have the tweaker bit being used for the 5 fireballs
 	;system, bosses that (silently) takes damage from fireballs handles these in their sprite code, unlike how chucks
-	;take damage from fireballs.
-		if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Chuck)
+	;take damage from fireballs. This also part of the Chuck's HP jank fix.
+		if and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_VanillaSprite_Chuck)
 			org $02A0FC
 			autoclean JSL FireballEffect
 			NOP #2
@@ -195,37 +195,37 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			LDA.W !1528,X
 		endif
 		
-		if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Chuck)
+		if and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_VanillaSprite_Chuck)
 			org $02A103
-			db !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount
+			db !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount ;>This modifies the Fireball hit counter to be the minimum amount of damage to kill
 		else
 			org $02A103
 			db 5
 		endif
 	;Rex to display HP
 		;This code runs every frame, for this reason: when rex gets insta-killed by, fireballs, quake, etc.
-		if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_Rex)
-			org $03951A
-			autoclean JSL RexStateToHP
-			NOP
-		else
-			%RemoveFreespaceCodeFromJMLJSL($03951A)
-			org $03951A
-			LDA !14C8,x
-			CMP #$08
-		endif
-		
-		if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_Rex)
-			org $0395B3
-			JSL StompRex
-		else
-			%RemoveFreespaceCodeFromJMLJSL($0395B3)
-			org $0395B3
-			INC !C2,x
-			LDA !C2,x
-		endif
-	;Modify how much HP rex has (stomps only)
-		if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_Rex)
+			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Rex)
+				org $03951A
+				autoclean JSL RexStateToHP
+				NOP
+			else
+				%RemoveFreespaceCodeFromJMLJSL($03951A)
+				org $03951A
+				LDA !14C8,x
+				CMP #$08
+			endif
+		;Handle rex getting stomped
+			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Rex)
+				org $0395B3
+				JSL StompRex
+			else
+				%RemoveFreespaceCodeFromJMLJSL($0395B3)
+				org $0395B3
+				INC !C2,x
+				LDA !C2,x
+			endif
+	;Modify how much HP rex has (stomps only). Determines at what counter the Rex will be killed
+		if and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_VanillaSprite_Rex)
 			org $0395B7
 			CMP.b #!Setting_SpriteHP_VanillaSprite_Rex_HPAmount
 		else
@@ -234,7 +234,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		endif
 	;Modify spinjump kills to display HP when spinjump/yoshi stomp killed (Rex, for example, can be non-fatally damaged, or insta-killed)
 		;Most sprites
-			if !Setting_SpriteHP_DisplayHPOfSMWSprites
+			if !Setting_ModifySprAndDisplayHPOfSMWSpr
 				org $01A93F
 				autoclean JSL SpinKillDisplayHP
 				NOP
@@ -245,7 +245,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				STA $1DF9|!addr
 			endif
 		;Rex
-			if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_Rex)
+			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Rex)
 				org $0395EC
 				autoclean JSL SpinKillDisplayHP
 				NOP
@@ -256,7 +256,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				STA $1DF9|!addr
 			endif
 	;Same as above but when stomping enemies regularly (flatten).
-		if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
+		if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
 			org $01A9D3
 			autoclean JSL StompKill
 			NOP
@@ -304,7 +304,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 	; - This entire routine runs AFTER its sprite numbers ($9E/$7FAB9E) have been set, and before its
 	;   init code runs. Thus I can set HP values differently based on sprite number, as well as the
 	;   sprite's init to set HP would override this.
-		if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
+		if and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
 			org $07F779
 			autoclean JSL DefaultHPOnSpawn
 			NOP #2
@@ -318,7 +318,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 	;(Yeah, this code, is in the *general Mario interaction routine* rather than in Dino Rhino's
 	;code, unlike Rex when getting spin jumped. Why Nintendo? Why have sprite-specific interactions
 	;programmed in a general sprite interaction code?).
-		if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
+		if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
 			org $01A981
 			autoclean JSL DinoRhino2HPToTorch1HP
 			NOP
@@ -330,7 +330,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		endif
 	;Bosses below (only applies to bosses with a HP system, and not bowser)
 		;Big boo boss
-			if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
+			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Bosses)
 				org $038233				;\When Big boo boss takes damage from
 				autoclean JSL DamageBigBooBoss		;|a thrown sprite.
 				NOP #1					;|
@@ -341,19 +341,19 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				STA $1DFC|!addr				;/
 			endif
 			org $03819B										;\Big Boo's hit counter actually increments
-			if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)	;|when switching state, not the instant the
+			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Bosses)		;|when switching state, not the instant the
 				NOP #3										;|boo gits hit.
 			else											;|
 				INC.W !1534,X									;|
 			endif											;/
 		
 			org $0381A2										;\Amount of hits to defeat big boo.
-			if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
+			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Bosses)
 				db !Setting_SpriteHP_VanillaSprite_BigBooBoss_HPAmount
 			else
 				db 3
 			endif
-			if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
+			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Bosses)
 				org $0380A2				;\Big boo's "HP" is actually a hit counter
 				autoclean JML BigBooBossHitCountToHP	;|that increments (starts at 0) every hit.
 			else
@@ -363,7 +363,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				BNE $2E					;/
 			endif
 		;Wendy and Lemmy
-			if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
+			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Bosses)
 				org $03CECB
 				autoclean JSL DamageWendyLemmy
 				NOP #1
@@ -375,27 +375,27 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			endif
 		
 			org $03CE13
-			if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
+			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Bosses)
 				NOP #3					;>Remove delay damage (HP value only decreases when going back into pipe after entering)
 			else
 				INC.W !1534,X
 			endif
 			
 			org $03CE1A
-			if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
+			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Bosses)
 				db !Setting_SpriteHP_VanillaSprite_WendyLemmy_HPAmount			;>Wendy/Lemmy's HP.
 			else
 				db $03
 			endif
 			
 			org $03CED4
-			if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
+			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Bosses)
 				db !Setting_SpriteHP_VanillaSprite_WendyLemmy_HPAmount			;>Number of hits (no longer -1) to make sprites vanish
 			else
 				db $02
 			endif
 		
-			if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
+			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Bosses)
 				org $03CC14
 				autoclean JSL WendyLemmyHitCountToHP
 				NOP #2
@@ -406,7 +406,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				LDA !14C8,X
 			endif
 		;Ludwig, Morton, and Roy
-			if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
+			if and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_VanillaSprite_Bosses)
 				org $01D3F3
 				autoclean JSL FireballDamageLudwigMortonRoy	;>Fireball damage
 				NOP #4 ;>This prevents incrementing hit counter past its maximum to prevent displaying negative HP
@@ -419,13 +419,13 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			endif
 		
 			org $01CFC6
-			if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
+			if and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_VanillaSprite_Bosses)
 				NOP #3						;>Remove delay damage (stomp)
 			else
 				INC.W !1626,X
 			endif
 		
-			if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
+			if and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_VanillaSprite_Bosses)
 				org $01CFCD
 				db !Setting_SpriteHP_VanillaSprite_LudwigMortonRoy_HPAmount			;>Set HP value
 		
@@ -438,9 +438,9 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				org $01D3FF
 				db 12						;>Same as above, but fireball.
 			endif
-			if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
+			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Bosses)
 				org $01CDAB
-				autoclean JSL LudwigMortonRoyHitCountToHP	;>Convert HP
+				autoclean JSL LudwigMortonRoyHitCountToHP	;>Convert HP (for display)
 				NOP #2
 			else
 				%RemoveFreespaceCodeFromJMLJSL($01CDAB)
@@ -448,19 +448,19 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				STZ.W $13FB|!addr
 				LDA.W !1602,X
 			endif
-		
-			if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
-				org $01D3AB
-				autoclean JSL StompDamageLudwigMortonRoy	;>Stomp damage.
-			else
-				%RemoveFreespaceCodeFromJMLJSL($01D3AB)
-				org $01D3AB
-				LDA #$28
-				STA $1DFC|!addr
-			endif
+			;Fireball and stomp jank fix
+				if and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_VanillaSprite_Bosses)
+					org $01D3AB
+					autoclean JSL StompDamageLudwigMortonRoy	;>Stomp damage.
+				else
+					%RemoveFreespaceCodeFromJMLJSL($01D3AB)
+					org $01D3AB
+					LDA #$28
+					STA $1DFC|!addr
+				endif
 ;Freespace code
 	freecode
-	if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Chuck)
+	if and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_VanillaSprite_Chuck)
 		CharginChuckHitCountToHP:	;>JML from $02C1F8 (runs every frame)
 			.InstantKillToDisplayHP
 				if !Setting_SpriteHP_DisplayHPOfSMWSprites
@@ -522,7 +522,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			endif
 			RTL
 	endif
-	if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_Rex)
+	if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Rex)
 		RexStateToHP: ;>JSL from $03951A
 			.InstantKillToDisplayHP
 				LDA !Ram_SpriteTable_Rex_InstaKillHaveDisplayedHP,x
@@ -553,7 +553,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				LDA !C2,x
 				RTL
 	endif
-	if !Setting_SpriteHP_DisplayHPOfSMWSprites
+	if !Setting_ModifySprAndDisplayHPOfSMWSpr
 		SpinKillDisplayHP:	;>JSL from $01A93F
 			.Restore
 				LDA #$08
@@ -580,7 +580,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 						RTL
 				endif
 	endif
-	if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
+	if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
 		ShowHPForFallingOffScrn:		;>JSL from various
 			.Restore
 				LDA #$02
@@ -676,8 +676,8 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					;The syntax is:
 					;  %SpriteHPMeterBlacklist(<Enter_Sprite_Number_Here>)
 					;
-					;If you get a branch-out-of-bounds error, do this instead:
-					;  %SpriteHPMeterBlacklist_BranchUnlimited(<Enter_Sprite_Number_Here>)
+					;If you get branch-out-of-bounds error, use this instead:
+					;  %SpriteHPMeterBlacklist_UnlimitedDistance(<Enter_Sprite_Number_Here>)
 					;
 					;If you want a range (inclusive) of sprite numbers blacklisted, then do this:
 					;  %SpriteHPMeterBlacklist_Range(<Enter_Sprite_Number_Min_Here>, <Enter_Sprite_Number_Max_Here>)
@@ -709,7 +709,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			.Done
 			RTS
 	endif
-	if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
+	if and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_VanillaSprite_Bosses)
 		DamageBigBooBoss:
 			%IncreaseDamageCounter(!1534, !Setting_SpriteHP_VanillaSprite_BigBooBoss_ThrownItemDamage, !Setting_SpriteHP_VanillaSprite_BigBooBoss_HPAmount)
 			.Restore
@@ -735,34 +735,32 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		WendyLemmyHitCountToHP:
 			%ConvertDamageAmountToHP(!1534, !Setting_SpriteHP_VanillaSprite_WendyLemmy_HPAmount)
 			.HandleIntroFill
-				if !Setting_SpriteHP_DisplayHPOfSMWSprites
-					if !Setting_SpriteHP_BarAnimation
-						LDA !Ram_WendyLemmyIntroFlag
-						CMP #$25
-						BNE ..NoIntroFill
-						LDA #$00
-						STA !Ram_WendyLemmyIntroFlag
-						TXA
-						CLC
-						ADC.b #!sprite_slots
-						STA !Freeram_SpriteHP_MeterState
-						LDA #$00
-						STA !Freeram_SpriteHP_BarAnimationFill
-						if !Setting_SpriteHP_BarChangeDelay
-							STA !Freeram_SpriteHP_BarAnimationTimer
-						endif
-						..NoIntroFill
-					else
-						LDA !Ram_WendyLemmyIntroFlag
-						CMP #$25
-						BNE ..NoIntroFill
-						LDA #$00
-						STA !Ram_WendyLemmyIntroFlag
-						TXA
-						STA !Freeram_SpriteHP_MeterState
-						
-						..NoIntroFill
+				if !Setting_SpriteHP_BarAnimation
+					LDA !Ram_WendyLemmyIntroFlag
+					CMP #$25
+					BNE ..NoIntroFill
+					LDA #$00
+					STA !Ram_WendyLemmyIntroFlag
+					TXA
+					CLC
+					ADC.b #!sprite_slots
+					STA !Freeram_SpriteHP_MeterState
+					LDA #$00
+					STA !Freeram_SpriteHP_BarAnimationFill
+					if !Setting_SpriteHP_BarChangeDelay
+						STA !Freeram_SpriteHP_BarAnimationTimer
 					endif
+					..NoIntroFill
+				else
+					LDA !Ram_WendyLemmyIntroFlag
+					CMP #$25
+					BNE ..NoIntroFill
+					LDA #$00
+					STA !Ram_WendyLemmyIntroFlag
+					TXA
+					STA !Freeram_SpriteHP_MeterState
+					
+					..NoIntroFill
 				endif
 			.Restore
 				PHK				;\JSL-RTS trick.

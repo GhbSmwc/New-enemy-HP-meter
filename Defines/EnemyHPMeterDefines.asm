@@ -234,28 +234,33 @@
 	;Patching settings
 		;Apply (proper) HP system on various vanilla SMW sprites: 0 = no, 1 = yes, again, use only mentioned values,
 		;unless stated otherwise. Having these turned off will COMPLETELY revert back to original format including
-		;the fireball and stomp damage jank (see readme under "...from a damage counter").
+		;the fireball and stomp damage jank (see readme under "...from a damage counter"). THis also reverts the
+		;amount of HP a sprite has.
 		;
 		;Displaying HP with the jank is not possible due to the nature of the jank.
-			!Setting_SpriteHP_ModifySMWSprites			= 1	;>Universal option if you want to have all SMW sprites unaffected (this also undo the patching if you have already).
-			!Setting_SpriteHP_VanillaSprite_Chuck			= 1
-				;^Applies to all the chucks in SMW.
-			!Setting_SpriteHP_VanillaSprite_Rex			= 1
-				;^This will display HP of Rex. Any kills that would make it fall off the screen or smushed will display its HP.
+		
+			;Universal option to not modify any SMW sprites. Having this set to 0 will override all later options
+			;whether or not to apply changes on any modification of the HP system (including the jank fix, and the amount
+			;of HP).
+				!Setting_SpriteHP_RemoveOrApplyPatch		= 1
+			;Apply HP system for all chucks. Will at least fix the jank of stomp and fireball damage.
+				!Setting_SpriteHP_VanillaSprite_Chuck		= 1
+			;This will display HP of Rex. Any kills that would make it fall off the screen or smushed will display
+			;its HP.
+				!Setting_SpriteHP_VanillaSprite_Rex			= 1
+				
 			!Setting_SpriteHP_VanillaSprite_Bosses			= 1
 				;^Includes:
-				;-Big boo boss
-				;-Wendy and Lemmy (share most of the same code)
-				;-Ludwig, Morton, and Roy (same as above)
+				; - Big boo boss
+				; - Wendy and Lemmy (share most of the same code)
+				; - Ludwig, Morton, and Roy (same as above)
 		;Simply display the HP of smw sprites? (setting this to 0 does not unpatch the jank fix)
 			!Setting_SpriteHP_DisplayHPOfSMWSprites			= 1
-				; 0 = will not display HP.
-				;^1 = Will display the HP.
-		;Display HP for all other sprites. Sprites that can be 1-shotted are treated as them having
-		;only 1 HP by checking their sprite status table ($14C8). How it's handled:
-		; - For displaying HP of the sprite, that's handled in uberasm tool code "level/DisplayEnemyHP.asm"
-		; - For when sprites switch the HP meter when getting killed, that's handled via patch
-		;   "HPSystemForSMWSprites.asm"
+				;^Display HP meter for vanilla SMW sprites:
+				; - 0 = will not display HP.
+				; - 1 = Will display the HP (requires !Setting_SpriteHP_RemoveOrApplyPatch == 1).
+		;Display HP for all one-shot enemies. Modifies the vanilla kill routines used by the vast majority
+		;of enemies.
 			!Setting_SpriteHP_VanillaSprite_OneShotSprites			= 1
 		;Amount of HP SMW sprites has. NOTE: SMW only have hit counts being an 8-bit unsigned integer stored
 		;within various sprite tables (Chucks and any sprites using the 5 fireballs to kill: $1528,
@@ -263,7 +268,7 @@
 		;damage are allowed, and those do not support 16-bit HP system (even if you set
 		;!Setting_SpriteHP_TwoByte == 1).
 		;
-		;This only applies if !Setting_SpriteHP_ModifySMWSprites == 1 and their respective settings being 1.
+		;This only applies if !Setting_SpriteHP_RemoveOrApplyPatch == 1 and their respective settings being 1.
 			!Setting_SpriteHP_VanillaSprite_Chucks_HPAmount		= 15	;>This applies to all chuck variants and all sprites with "Take 5 fireballs to kill" of $190F's bit 3.
 			!Setting_SpriteHP_VanillaSprite_Chucks_StompDamage	= 5	;>Amount of HP loss when taking damage from stomp attacks
 			;Amount of HP Rex has (how many stomp attacks, other attacks are either immune or insta-kill).
@@ -379,28 +384,36 @@
 		if !Setting_SpriteHP_DisplayNumerical == 2
 			!Setting_SpriteHP_MaxStringLength = (!Setting_SpriteHP_MaxDigits*2)+1
 		endif
-	if !Setting_SpriteHP_DisplaySpriteHPDataOnConsole
-		print "---------------------------------------------------------------------------------"
-		print "\!Freeram_SpriteHP_SpriteHPData's Total bytes used: ", dec(!CurrentAddressToAssignDefine_SpriteHPData-!Freeram_SpriteHP_SpriteHPData)
-		print "Range: $", hex(!Freeram_SpriteHP_SpriteHPData), "~$", hex(!CurrentAddressToAssignDefine_SpriteHPData-1)
-		print "---------------------------------------------------------------------------------"
-		print "\!Freeram_SpriteHP_SpriteHPData (Address Tracker format)"
-		print "---------------------------------------------------------------------------------"
-		print "$", hex(!Freeram_SpriteHP_MeterState), " 1 Current index to display sprite's HP (\!Freeram_SpriteHP_MeterState)."
-		print "$", hex(!Freeram_SpriteHP_CurrentHPLow), " ", dec(!sprite_slots), " Sprite current HP, low byte (\!Freeram_SpriteHP_CurrentHPLow)."
-		print "$", hex(!Freeram_SpriteHP_MaxHPLow), " ", dec(!sprite_slots), " Sprite max HP, low byte (\!Freeram_SpriteHP_MaxHPLow)."
-		if !Setting_SpriteHP_TwoByte
-			print "$", hex(!Freeram_SpriteHP_CurrentHPHi), " ", dec(!sprite_slots), " Sprite current HP, high byte (\!Freeram_SpriteHP_CurrentHPHi)."
-			print "$", hex(!Freeram_SpriteHP_MaxHPHi), " ", dec(!sprite_slots), " Sprite max HP, high byte (\!Freeram_SpriteHP_MaxHPHi)."
-		endif
-		if !Setting_SpriteHP_BarAnimation
-			print "$", hex(!Freeram_SpriteHP_BarAnimationFill), " 1 Sprite graphical bar fill amount for animation (\!Freeram_SpriteHP_BarAnimationFill)."
-			if !Setting_SpriteHP_BarChangeDelay
-				print "$", hex(!Freeram_SpriteHP_BarAnimationTimer), " 1 Sprite graphical bar fill delay timer (\!Freeram_SpriteHP_BarAnimationTimer)."
+	;Other
+		;To display HP of sprites, a modification is required:
+		; - It requires fireball + stomp jank fix.
+		; - It needs to take a hit/damage counter and "invert" (via HP = DamageToKill-DamageSoFar) to get HP value.
+		; - It requires making sure the moment the player deals stomp damage to bosses, to have the damage apply on that
+		;   frame rather than a "delay" that is until the boss switches to the next state after "damage" state.
+		!Setting_ModifySprAndDisplayHPOfSMWSpr = and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_DisplayHPOfSMWSprites)
+	;Debug display
+		if !Setting_SpriteHP_DisplaySpriteHPDataOnConsole
+			print "---------------------------------------------------------------------------------"
+			print "\!Freeram_SpriteHP_SpriteHPData's Total bytes used: ", dec(!CurrentAddressToAssignDefine_SpriteHPData-!Freeram_SpriteHP_SpriteHPData)
+			print "Range: $", hex(!Freeram_SpriteHP_SpriteHPData), "~$", hex(!CurrentAddressToAssignDefine_SpriteHPData-1)
+			print "---------------------------------------------------------------------------------"
+			print "\!Freeram_SpriteHP_SpriteHPData (Address Tracker format)"
+			print "---------------------------------------------------------------------------------"
+			print "$", hex(!Freeram_SpriteHP_MeterState), " 1 Current index to display sprite's HP (\!Freeram_SpriteHP_MeterState)."
+			print "$", hex(!Freeram_SpriteHP_CurrentHPLow), " ", dec(!sprite_slots), " Sprite current HP, low byte (\!Freeram_SpriteHP_CurrentHPLow)."
+			print "$", hex(!Freeram_SpriteHP_MaxHPLow), " ", dec(!sprite_slots), " Sprite max HP, low byte (\!Freeram_SpriteHP_MaxHPLow)."
+			if !Setting_SpriteHP_TwoByte
+				print "$", hex(!Freeram_SpriteHP_CurrentHPHi), " ", dec(!sprite_slots), " Sprite current HP, high byte (\!Freeram_SpriteHP_CurrentHPHi)."
+				print "$", hex(!Freeram_SpriteHP_MaxHPHi), " ", dec(!sprite_slots), " Sprite max HP, high byte (\!Freeram_SpriteHP_MaxHPHi)."
 			endif
+			if !Setting_SpriteHP_BarAnimation
+				print "$", hex(!Freeram_SpriteHP_BarAnimationFill), " 1 Sprite graphical bar fill amount for animation (\!Freeram_SpriteHP_BarAnimationFill)."
+				if !Setting_SpriteHP_BarChangeDelay
+					print "$", hex(!Freeram_SpriteHP_BarAnimationTimer), " 1 Sprite graphical bar fill delay timer (\!Freeram_SpriteHP_BarAnimationTimer)."
+				endif
+			endif
+			print "---------------------------------------------------------------------------------"
 		endif
-		print "---------------------------------------------------------------------------------"
-	endif
 	
 	!Setting_SpriteHP_TrueMaximumHPAndDamageValue = min((10**!Setting_SpriteHP_MaxDigits)-1, (2**(8*(1+!Setting_SpriteHP_TwoByte)))-1)
 	

@@ -1363,7 +1363,8 @@ GraphicalBarNumberOfTiles:
 	DEX					;>Subtract by 1 because index 0 exists.
 	RTL
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;Damage sprite subroutine.
+;Damage sprite subroutine. Subtracts HP and switches the
+;meter to that damaged sprite (unless meter is disabled).
 ;Input:
 ; - $00 to $00+!Setting_SpriteHP_TwoByte = Amount of damage.
 ;Output:
