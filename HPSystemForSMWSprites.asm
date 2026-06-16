@@ -664,7 +664,8 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				BEQ ..VanillaSMWSpr
 				..CustomSpr
 					LDA !7FAB9E,x
-					;Add your list of custom sprites here to not display HP.
+					;Add your list of custom sprites here to not display HP
+					;(It only has to be enemies that run a vanilla kill routine).
 					;The syntax is:
 					;  %SpriteHPMeterBlacklist(<Enter_Sprite_Number_Here>)
 					;
