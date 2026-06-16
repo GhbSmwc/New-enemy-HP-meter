@@ -8,6 +8,9 @@ incsrc "Defines/GraphicalBarDefines.asm"
 ; - Any sprite (vanilla or custom) that have the "takes 5 fireballs to kill" tweaker bit set
 ; - Big Boo Boss
 ; - Wendy, Lemmy, Ludwig, Morton, and Roy.
+; - Rex.
+;For all 1-shot enemies, this is enabled by having both !Setting_SpriteHP_VanillaSprite_OneShotSprites
+;and !Setting_SpriteHP_DisplayHPOfSMWSprites set to 1.
 
 ;Macros
 	macro RemoveFreespaceCodeFromJMLJSL(Addr)
@@ -288,16 +291,20 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		%HijacksForFallingOffScrn($02F29D, ShowHPForFallingOffScrn, x)
 	;Make Amazing Hammer bro platform when bonked by player to show HP
 		%HijacksForFallingOffScrn($02DBFD, ShowHPForFallingOffScrnYregister, y)
-	;Hijack the clear-sprite tables routine (when sprite spawns) to default sprites with 1/1 HP.
-	;This is needed so that sprites not have 0 HP and not be a zombie-like state (makes the HUD
-	;actually say the sprite previously have full HP).
+	;Hijack the clear-sprite tables routine (when sprite spawns) to default sprites with a
+	;certain amount of HP (most of them to have 1/1 HP). This is needed so that sprites not
+	;have 0 HP and not be a zombie-like state (makes the HUD actually say the sprite
+	;previously have full HP).
 	;
 	;Note to self:
 	; - $07F722-$07F78A (105 bytes): The entire routine that clears sprite tables:
 	; -- $07F779-$07F77E (6 bytes): Hijacked by this patch so all other sprites will have default 1 HP.
 	; -- $07F77F-$07F784 (6 bytes): Hijacked by "Takes 5 fireballs to kill" Work-around Patch.
 	; -- $07F785-$07F78A (5 bytes): Hijacked by Pixi.
-		if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
+	; - This entire routine runs AFTER its sprite numbers ($9E/$7FAB9E) have been set, and before its
+	;   init code runs. Thus I can set HP values differently based on sprite number, as well as the
+	;   sprite's init to set HP would override this.
+		if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
 			org $07F779
 			autoclean JSL DefaultHPOnSpawn
 			NOP #2
@@ -311,7 +318,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 	;(Yeah, this code, is in the *general Mario interaction routine* rather than in Dino Rhino's
 	;code, unlike Rex when getting spin jumped. Why Nintendo? Why have sprite-specific interactions
 	;programmed in a general sprite interaction code?).
-		if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
+		if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
 			org $01A981
 			autoclean JSL DinoRhino2HPToTorch1HP
 			NOP
