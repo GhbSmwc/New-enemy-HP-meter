@@ -306,6 +306,9 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			STZ.w !1594,x
 		endif
 	;Make stomping on Dino Rhino to transform into Dino Torch to show HP going from 2 to 1 HP
+	;(Yeah, this code, is in the *general Mario interaction routine* rather than in Dino Rhino's
+	;code, unlike Rex when getting spin jumped. Why Nintendo? Why have sprite-specific interactions
+	;programmed in a general sprite interaction code?).
 		if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
 			org $01A981
 			autoclean JSL DinoRhino2HPToTorch1HP
