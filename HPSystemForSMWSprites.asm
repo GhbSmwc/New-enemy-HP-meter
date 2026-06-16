@@ -204,7 +204,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		endif
 	;Rex to display HP
 		;This code runs every frame, for this reason: when rex gets insta-killed by, fireballs, quake, etc.
-		if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Rex)
+		if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_Rex)
 			org $03951A
 			autoclean JSL RexStateToHP
 			NOP
@@ -225,7 +225,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			LDA !C2,x
 		endif
 	;Modify how much HP rex has (stomps only)
-		if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Rex)
+		if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_Rex)
 			org $0395B7
 			CMP.b #!Setting_SpriteHP_VanillaSprite_Rex_HPAmount
 		else
@@ -330,7 +330,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		endif
 	;Bosses below (only applies to bosses with a HP system, and not bowser)
 		;Big boo boss
-			if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
+			if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
 				org $038233				;\When Big boo boss takes damage from
 				autoclean JSL DamageBigBooBoss		;|a thrown sprite.
 				NOP #1					;|
@@ -341,19 +341,19 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				STA $1DFC|!addr				;/
 			endif
 			org $03819B										;\Big Boo's hit counter actually increments
-			if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)	;|when switching state, not the instant the
+			if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)	;|when switching state, not the instant the
 				NOP #3										;|boo gits hit.
 			else											;|
 				INC.W !1534,X									;|
 			endif											;/
 		
 			org $0381A2										;\Amount of hits to defeat big boo.
-			if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
+			if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
 				db !Setting_SpriteHP_VanillaSprite_BigBooBoss_HPAmount
 			else
 				db 3
 			endif
-			if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
+			if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
 				org $0380A2				;\Big boo's "HP" is actually a hit counter
 				autoclean JML BigBooBossHitCountToHP	;|that increments (starts at 0) every hit.
 			else
@@ -363,7 +363,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				BNE $2E					;/
 			endif
 		;Wendy and Lemmy
-			if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
+			if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
 				org $03CECB
 				autoclean JSL DamageWendyLemmy
 				NOP #1
@@ -375,27 +375,27 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			endif
 		
 			org $03CE13
-			if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
+			if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
 				NOP #3					;>Remove delay damage (HP value only decreases when going back into pipe after entering)
 			else
 				INC.W !1534,X
 			endif
 			
 			org $03CE1A
-			if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
+			if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
 				db !Setting_SpriteHP_VanillaSprite_WendyLemmy_HPAmount			;>Wendy/Lemmy's HP.
 			else
 				db $03
 			endif
 			
 			org $03CED4
-			if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
+			if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
 				db !Setting_SpriteHP_VanillaSprite_WendyLemmy_HPAmount			;>Number of hits (no longer -1) to make sprites vanish
 			else
 				db $02
 			endif
 		
-			if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
+			if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_Bosses)
 				org $03CC14
 				autoclean JSL WendyLemmyHitCountToHP
 				NOP #2
@@ -522,7 +522,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			endif
 			RTL
 	endif
-	if and(!Setting_SpriteHP_ModifySMWSprites, !Setting_SpriteHP_VanillaSprite_Rex)
+	if and(!Setting_SpriteHP_DisplayHPOfSMWSprites, !Setting_SpriteHP_VanillaSprite_Rex)
 		RexStateToHP: ;>JSL from $03951A
 			.InstantKillToDisplayHP
 				LDA !Ram_SpriteTable_Rex_InstaKillHaveDisplayedHP,x
