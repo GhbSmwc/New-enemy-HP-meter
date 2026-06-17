@@ -38,9 +38,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				endif
 			endif
 	endmacro
-	
-	macro IncreaseDamageCounter(DamageCountSpriteTableRAM, DamageAmount, DamageAmountToDie)
-		?Damage:
+	macro DealFixedDamage(DamageAmount)
 		if !Setting_SpriteHP_DisplayHPOfSMWSprites
 			if !Setting_SpriteHP_TwoByte
 				REP #$20
@@ -51,7 +49,31 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				LDA.b #<DamageAmount>
 				STA $00
 			endif
-			JSL !SharedSub_SpriteHPDamage
+			JSL !SharedSub_SpriteHPDamage ;>This would display HP
+		else
+			LDA !Freeram_SpriteHP_CurrentHPLow,x
+			SEC
+			SBC.b <DamageAmount>
+			STA !Freeram_SpriteHP_CurrentHPLow,x
+			if !Setting_SpriteHP_TwoByte
+				LDA !Freeram_SpriteHP_CurrentHPHi,x
+				SBC.b <DamageAmount>>>8
+				STA !Freeram_SpriteHP_CurrentHPHi,x
+			endif
+			BCC ?UnderFlow
+			
+			?UnderFlow:
+				LDA #$00
+				STA !Freeram_SpriteHP_CurrentHPLow,x
+				if !Setting_SpriteHP_TwoByte
+					STA !Freeram_SpriteHP_CurrentHPHi,x
+				endif
+		endif
+	endmacro
+	macro IncreaseDamageCounter(DamageCountSpriteTableRAM, DamageAmount, DamageAmountToDie)
+		?Damage:
+		if !Setting_SpriteHP_DisplayHPOfSMWSprites
+			%DealFixedDamage(<DamageAmount>)
 		endif
 		LDA <DamageCountSpriteTableRAM>,x
 		CLC
@@ -92,7 +114,24 @@ incsrc "Defines/GraphicalBarDefines.asm"
 	macro SetSpriteDefaultHP(SpriteNumb, StartingHP)
 		CMP.b #<SpriteNumb>
 		BNE ?OtherSprite
-		?Override
+		?Override:
+			LDA.b #<StartingHP>
+			STA !Freeram_SpriteHP_CurrentHPLow,x
+			STA !Freeram_SpriteHP_MaxHPLow,x
+			if !Setting_SpriteHP_TwoByte
+				LDA.b #<StartingHP>>>8
+				STA !Freeram_SpriteHP_CurrentHPHi,x
+				STA !Freeram_SpriteHP_MaxHPHi,x
+			endif
+			RTL
+		?OtherSprite:
+	endmacro
+	macro SetSpriteRangeDefaultHP(MinSpriteNumb, MaxSpriteNumb, StartingHP)
+		CMP.b #<MinSpriteNumb>
+		BCC ?OtherSprite
+		CMP.b #<MaxSpriteNumb>+1
+		BCS ?OtherSprite
+		?Override:
 			LDA.b #<StartingHP>
 			STA !Freeram_SpriteHP_CurrentHPLow,x
 			STA !Freeram_SpriteHP_MaxHPLow,x
@@ -152,7 +191,11 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		;Taking a hit from a stomp attack. This is also part of the Chuck's HP jank fix.
 			if and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_VanillaSprite_Chuck)
 				org $02C7E8
-				autoclean JSL StompCharginChuck
+				if !Setting_SpriteHP_Modify5FireballsSystem == 0
+					autoclean JSL StompCharginChuck
+				else
+					autoclean JML StompCharginChuck
+				endif
 				NOP #2
 			else
 				%RemoveFreespaceCodeFromJMLJSL($02C7E8)
@@ -186,7 +229,11 @@ incsrc "Defines/GraphicalBarDefines.asm"
 	;take damage from fireballs. This also part of the Chuck's HP jank fix.
 		if and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_VanillaSprite_Chuck)
 			org $02A0FC
-			autoclean JSL FireballEffect
+			if !Setting_SpriteHP_Modify5FireballsSystem == 0
+				autoclean JSL FireballEffect
+			else
+				autoclean JML FireballEffect
+			endif
 			NOP #2
 		else
 			%RemoveFreespaceCodeFromJMLJSL($02A0FC)
@@ -497,9 +544,23 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				LDA !187B,x
 				PHA
 				JML $02C1FC|!bank		;>Again, PHA : RTL : PLA crashes the game because RTL pulls stack.
-		StompCharginChuck:	;>JSL from $02C7E8
-			%IncreaseDamageCounter(!1528, !Setting_SpriteHP_VanillaSprite_Chucks_StompDamage, !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount)
-			RTL
+		StompCharginChuck:	;>JSL/JML from $02C7E8
+			if !Setting_SpriteHP_Modify5FireballsSystem == 0
+				%IncreaseDamageCounter(!1528, !Setting_SpriteHP_VanillaSprite_Chucks_StompDamage, !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount)
+				RTL
+			else
+				%DealFixedDamage(!Setting_SpriteHP_VanillaSprite_Chucks_StompDamage)
+				
+				LDA !Freeram_SpriteHP_CurrentHPLow,x
+				if !Setting_SpriteHP_TwoByte
+					ORA !Freeram_SpriteHP_CurrentHPHi,x
+				endif
+				BEQ .SpriteDead
+				.SpriteAlive
+					JML $02C7F6|!bank
+				.SpriteDead
+					JML $02C7F2|!bank
+			endif
 		PreventHPDisplayTransferChuck:
 			.Restore
 				LDA #$28
@@ -512,15 +573,32 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				
 				..NotDead
 			RTL
-		FireballEffect:	;>JSL from $02A0FC
-			%IncreaseDamageCounter(!1528, !Setting_SpriteHP_FireballDamageAmount, !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount)
+		FireballEffect:	;>JSL/JML from $02A0FC
+			if !Setting_SpriteHP_Modify5FireballsSystem == 0
+				%IncreaseDamageCounter(!1528, !Setting_SpriteHP_FireballDamageAmount, !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount)
+			else
+				%DealFixedDamage(!Setting_SpriteHP_FireballDamageAmount)
+			endif
 			if !Setting_SpriteHP_VanillaSprite_5FireballsToKill_SoundNumber != $00
 				LDA.b #!Setting_SpriteHP_VanillaSprite_5FireballsToKill_SoundNumber
 				STA !Setting_SpriteHP_VanillaSprite_5FireballsToKill_SoundPort
+			endif
+			if !Setting_SpriteHP_Modify5FireballsSystem == 0
 				.Restore
 					LDA !1528,x
+					RTL
+			else
+				LDA !Freeram_SpriteHP_CurrentHPLow,x
+				if !Setting_SpriteHP_TwoByte
+					ORA !Freeram_SpriteHP_CurrentHPHi,x
+				endif
+				BEQ .SpriteDead
+				.SpriteAlive
+					JML $02A143|!bank
+				.SpriteDead
+					JML $02A106|!bank
 			endif
-			RTL
+			
 	endif
 	if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Rex)
 		RexStateToHP: ;>JSL from $03951A
@@ -641,7 +719,11 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				BNE .Done
 				LDA !9E,x
 				%SetSpriteDefaultHP($6E, 2)		;>Dino Rhino
-				%SetSpriteDefaultHP($6F, 1)
+				%SetSpriteDefaultHP($6F, 1)		;>Dino Torch
+				if !Setting_SpriteHP_Modify5FireballsSystem
+					%SetSpriteDefaultHP($46, !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount)
+					%SetSpriteRangeDefaultHP($91, $98, !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount)
+				endif
 					;^Dino Torch (note that Dino torch have a max of 2 HP if transformed from Dino Rhino, otherwise a max of 1 HP if spawned directly)
 			.Done
 				RTL
