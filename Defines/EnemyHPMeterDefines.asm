@@ -232,41 +232,37 @@
 					!Setting_SpriteHP_FillingSFXNumb		= $23		;>Sound number (set to 0 to disable SFX)
 					!Setting_SpriteHP_FillingSFXPort		= $1DFC|!addr	;>Use $1DF9, $1DFA, or $1DFC, followed by "|!addr" if you're using SA-1
 	;Patching settings
-		;Apply (proper) HP system on various vanilla SMW sprites: 0 = no, 1 = yes, again, use only mentioned values,
+		;Option to install or remove the patch. Having this set to 0 will override all later options whether or not
+		;to apply changes on any modification of the HP system (including the jank fix, and the amount of HP).
+		;0 = Remove patch, 1 = Install.
+			!Setting_SpriteHP_RemoveOrApplyPatch		= 1
+		;Apply (proper) HP system on various vanilla SMW sprites: 0 = no, 1 = yes. Use only mentioned values,
 		;unless stated otherwise. Having these turned off will COMPLETELY revert back to original format including
-		;the fireball and stomp damage jank (see readme under "...from a damage counter"). THis also reverts the
+		;the fireball and stomp damage jank (see readme under "...from a damage counter"). This also reverts the
 		;amount of HP a sprite has.
-		;
-		;Displaying HP with the jank is not possible due to the nature of the jank.
-		
-			;Universal option to not modify any SMW sprites. Having this set to 0 will override all later options
-			;whether or not to apply changes on any modification of the HP system (including the jank fix, and the amount
-			;of HP).
-				!Setting_SpriteHP_RemoveOrApplyPatch		= 1
 			;Apply HP system for all chucks. Will at least fix the jank of stomp and fireball damage.
 				!Setting_SpriteHP_VanillaSprite_Chuck		= 1
 			;This will display HP of Rex. Any kills that would make it fall off the screen or smushed will display
 			;its HP.
 				!Setting_SpriteHP_VanillaSprite_Rex			= 1
-				
-			!Setting_SpriteHP_VanillaSprite_Bosses			= 1
-				;^Includes:
-				; - Big boo boss
-				; - Wendy and Lemmy (share most of the same code)
-				; - Ludwig, Morton, and Roy (same as above)
-		;Simply display the HP of smw sprites? (setting this to 0 does not unpatch the jank fix)
+			;Same with bosses. It includes:
+			; - Big boo boss
+			; - Wendy and Lemmy (share most of the same code)
+			; - Ludwig, Morton, and Roy (same as above). NOTE: Like the Chuck enemies, they also have fireball/stomp
+			;   jank that needs to be fixed for a proper HP system (and to display it).
+				!Setting_SpriteHP_VanillaSprite_Bosses			= 1
+		;Simply display the HP of smw sprites?
+		; - 0 = will not display HP (use this option if you just want the jank fix).
+		; - 1 = Will display the HP (requires !Setting_SpriteHP_RemoveOrApplyPatch == 1).
 			!Setting_SpriteHP_DisplayHPOfSMWSprites			= 1
-				;^Display HP meter for vanilla SMW sprites:
-				; - 0 = will not display HP.
-				; - 1 = Will display the HP (requires !Setting_SpriteHP_RemoveOrApplyPatch == 1).
-		;Display HP for all one-shot enemies. Modifies the vanilla kill routines used by the vast majority
-		;of enemies.
+		;Display HP for all one-shot enemies. Modifies various vanilla kill routines used by the vast majority
+		;of enemies. 0 = No, 1 = Yes.
 			!Setting_SpriteHP_VanillaSprite_OneShotSprites			= 1
 		;Amount of HP SMW sprites has. NOTE: SMW only have hit counts being an 8-bit unsigned integer stored
 		;within various sprite tables (Chucks and any sprites using the 5 fireballs to kill: $1528,
 		;Ludwig/Morton/Roy: $1626, Big Boo Boss, Wendy and Lemmy: $1534). This means up to 255 health and
 		;damage are allowed, and those do not support 16-bit HP system (even if you set
-		;!Setting_SpriteHP_TwoByte == 1).
+		;!Setting_SpriteHP_TwoByte == 1). This does not include 1-shot enemies.
 		;
 		;This only applies if !Setting_SpriteHP_RemoveOrApplyPatch == 1 and their respective settings being 1.
 			!Setting_SpriteHP_VanillaSprite_Chucks_HPAmount		= 15	;>This applies to all chuck variants and all sprites with "Take 5 fireballs to kill" of $190F's bit 3.
