@@ -115,15 +115,6 @@
 		; - For SMB3 status bar, Y is 0-3.
 		;
 		;XY positions are calculated to an address in StatusBarDefines.asm
-		
-		;Size of the HP:
-			;Size of the HP data:
-			; - 0 = 8-bit HP (HP up to 255)
-			; - 1 = 16-bit (HP up to 65535).
-				!Setting_SpriteHP_TwoByte = 1
-			;The maximum number of digits to be displayed. Obviously you
-			;wouldn't set this above 3 for 8-bit HP and above 5 for 16-bit.
-				!Setting_SpriteHP_MaxDigits	= 3
 		;Number display settings
 				!Setting_SpriteHP_DisplayNumerical = 2
 					;^Display numerical HP?
@@ -309,6 +300,14 @@
 			;Same but when shooting fireballs to Ludwig, Morton, and Roy.
 				!Setting_SpriteHP_VanillaSprite_LudwigMortonRoy_Damage_SoundNumber	= $28
 				!Setting_SpriteHP_VanillaSprite_LudwigMortonRoy_Damage_SoundPort	= $1DFC|!addr
+	;Size of the HP:
+		;Size of the HP data:
+		; - 0 = 8-bit HP (HP up to 255)
+		; - 1 = 16-bit (HP up to 65535).
+			!Setting_SpriteHP_TwoByte = 1
+		;The maximum number of digits to be displayed. Obviously you
+		;wouldn't set this above 3 for 8-bit HP and above 5 for 16-bit.
+			!Setting_SpriteHP_MaxDigits	= 3
 	;Misc settings
 		!Setting_SpriteHP_DisplaySpriteHPDataOnConsole = 0
 			;^0 = No
