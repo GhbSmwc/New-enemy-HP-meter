@@ -233,6 +233,12 @@
 			; - 1 = Deal direct damage (will use this patch's HP values directly, and no longer touches $1528)
 			;Warning: This will affect all sprites using the 5-fireballs system when set to 1. The good news
 			;is that in vanilla SMW, only Chucks use this, and is extremely rare for custom sprites to use this.
+			;
+			;NOTE: If you wish to have this set to 1, using Chucks in your game, then you need to have
+			;!Setting_SpriteHP_VanillaSprite_Chuck == 1 because otherwise their HP system would be broken
+			;(Having !Setting_SpriteHP_VanillaSprite_Chuck == 0 would revert chuck to use $1528, but the
+			;fireball damage code would not use $1528, resulting in them being immune to fireballs (despite
+			;an optional damage sound effect playing)).
 			
 		;Apply (proper) HP system on various vanilla SMW sprites that are not strictly one-shot: 0 = no, 1 = yes.
 		;Use only mentioned values, unless stated otherwise. Having these turned off will COMPLETELY revert back
@@ -268,6 +274,10 @@
 		;damage are allowed, and those do not support 16-bit HP system (even if you set
 		;!Setting_SpriteHP_TwoByte == 1). This does not include 1-shot enemies.
 		;
+		;The only exception is for Chucks when having !Setting_SpriteHP_Modify5FireballsSystem == 1,
+		;or any sprite using this now so-called "take 5 fireballs to kill" (assuming you have
+		;!Setting_SpriteHP_TwoByte == 1).
+		;
 		;This only applies if !Setting_SpriteHP_RemoveOrApplyPatch == 1 and their respective settings being 1.
 			!Setting_SpriteHP_VanillaSprite_Chucks_HPAmount		= 15	;>This applies to all chuck variants and all sprites with "Take 5 fireballs to kill" of $190F's bit 3.
 			!Setting_SpriteHP_VanillaSprite_Chucks_StompDamage	= 5	;>Amount of HP loss when taking damage from stomp attacks
@@ -289,7 +299,8 @@
 				!Setting_SpriteHP_VanillaSprite_LudwigMortonRoy_HPAmount	= 12
 				!Setting_SpriteHP_VanillaSprite_LudwigMortonRoy_StompDamage	= 4
 				!Setting_SpriteHP_VanillaSprite_LudwigMortonRoy_FireballDamage	= 1
-		;For any sprite whose tweaker $190F's bit 3 (%wcdj5sDp, takes 5 fireballs to kill; bit 3) is set:
+		;For any sprite whose tweaker $190F's bit 3 (%wcdj5sDp, takes 5 fireballs to kill; bit 3) is set.
+		;If !Setting_SpriteHP_Modify5FireballsSystem == 1, this will directly write to the new sprite's HP RAM.
 			!Setting_SpriteHP_FireballDamageAmount			= 3	;>Amount of damage sprites receives from fireball damage.
 			
 		;Fixes and additions

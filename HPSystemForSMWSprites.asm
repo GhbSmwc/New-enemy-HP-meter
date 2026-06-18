@@ -522,24 +522,29 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					
 					..Yes
 						INC !Ram_SpriteTable_CharginChuck_InstaKillHaveDisplayedHP,x
-						%IncreaseDamageCounter(!1528, !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount, !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount)
+						if !Setting_SpriteHP_Modify5FireballsSystem == 0
+							%IncreaseDamageCounter(!1528, !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount, !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount)
+						else
+							%DealFixedDamage(!Setting_SpriteHP_VanillaSprite_Chucks_HPAmount) ;>Make it show that its HP went to 0.
+						endif
 					..No
 				endif
 			.DeathCheck
-				LDA !14C8,x
-				CMP #$02
-				BCC .Restore		;>Do nothing if $00~$01
-				CMP #$07
-				BCC .ZeroHP		;>No HP on killed states $02~$06
-				CMP #$0C
-				BCC .ConvertHitCountToHP	;>Other non-killed/transformed states, allow HP display
-				BRA .Restore
-			
-			.ZeroHP
-				LDA.b #!Setting_SpriteHP_VanillaSprite_Chucks_HPAmount
-				STA !1528,x
-			.ConvertHitCountToHP
-				%ConvertDamageAmountToHP(!1528, !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount)
+				if !Setting_SpriteHP_Modify5FireballsSystem == 0
+					LDA !14C8,x
+					CMP #$02
+					BCC .Restore		;>Do nothing if $00~$01
+					CMP #$07
+					BCC .ZeroHP		;>No HP on killed states $02~$06
+					CMP #$0C
+					BCC .ConvertHitCountToHP	;>Other non-killed/transformed states, allow HP display
+					BRA .Restore
+					.ZeroHP
+						LDA.b #!Setting_SpriteHP_VanillaSprite_Chucks_HPAmount
+						STA !1528,x
+					.ConvertHitCountToHP
+						%ConvertDamageAmountToHP(!1528, !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount)
+				endif
 			.Restore
 				LDA !187B,x
 				PHA
@@ -696,6 +701,8 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				JSR ZeroOutHPOfOneShotSprites
 				PLX
 			RTL
+	endif
+	if !Setting_SpriteHP_RemoveOrApplyPatch
 		DefaultHPOnSpawn:
 			;I recommend having custom sprites run an init routine to set its starting current and max HP rather
 			;than having them here.
@@ -727,6 +734,8 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					;^Dino Torch (note that Dino torch have a max of 2 HP if transformed from Dino Rhino, otherwise a max of 1 HP if spawned directly)
 			.Done
 				RTL
+	endif
+	if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
 		StompKill:	;>JSL from $01A9D3
 			.Restore
 				LDA #$03
