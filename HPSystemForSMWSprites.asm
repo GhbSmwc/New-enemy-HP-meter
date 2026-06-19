@@ -166,11 +166,13 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		?+
 	endmacro
 	macro SpriteHPMeterBlacklist_Range(SpriteNumbMin, SpriteNumbMax)
-		CMP.b #<SpriteNumbMin>
+		assert <SpriteNumbMin> <= <SpriteNumbMax>, "blacklisted sprite range's minimum is greater than max."
+		CMP.b #clamp(<SpriteNumbMin>, $00, $FF)
 		BCC ?OutOfBlacklistedRange
-		CMP.b #<SpriteNumbMax>+1
-		BCS ?OutOfBlacklistedRange
-		
+		CMP.b #clamp(<SpriteNumbMax>+1, $00, $FF)
+		if (<SpriteNumbMax>+1) < $FF ;>Optimization technique, there are no values beyond $FF, thus checking with a max of $FF is redundant.
+			BCS ?OutOfBlacklistedRange
+		endif
 		?InBlacklistedRange:
 		RTS
 		
@@ -264,21 +266,29 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		;Handle rex getting stomped
 			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Rex)
 				org $0395B3
-				JSL StompRex
+				RexStompHijack:
+					if !Setting_SpriteHP_VanillaSprite_Rex == 1
+						autoclean JSL StompRex
+						CMP.b #!Setting_SpriteHP_VanillaSprite_Rex_HPAmount
+						BCC .SmushRex		;>NOTE: I changed from a BNE to a BCC, in case if it accumulated more damage beyond the threshold.
+						
+						org $0395C1		;Instead of <BranchOpcode> $XX, I can do <BranchOpcode> <Label> followed by org $xxxxxx : Label 
+						.SmushRex
+					else
+						autoclean JML StompRex
+					endif
 			else
 				%RemoveFreespaceCodeFromJMLJSL($0395B3)
 				org $0395B3
-				INC !C2,x
-				LDA !C2,x
+				RexStompRestore:
+					INC !C2,x
+					LDA !C2,x
+					CMP #$02
+					BNE .SmushRex
+					
+					org $0395C1		;Instead of <BranchOpcode> $XX, I can do <BranchOpcode> <Label> followed by org $xxxxxx : Label 
+					.SmushRex
 			endif
-	;Modify how much HP rex has (stomps only). Determines at what counter the Rex will be killed
-		if and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_VanillaSprite_Rex)
-			org $0395B7
-			CMP.b #!Setting_SpriteHP_VanillaSprite_Rex_HPAmount
-		else
-			org $0395B7
-			CMP #$02
-		endif
 	;Modify spinjump kills to display HP when spinjump/yoshi stomp killed (Rex, for example, can be non-fatally damaged, or insta-killed)
 		;Most sprites
 			if !Setting_ModifySprAndDisplayHPOfSMWSpr
@@ -619,22 +629,41 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				
 				..Yes
 					INC !Ram_SpriteTable_Rex_InstaKillHaveDisplayedHP,x
-					%IncreaseDamageCounter(!C2, !Setting_SpriteHP_VanillaSprite_Rex_HPAmount, !Setting_SpriteHP_VanillaSprite_Rex_HPAmount)				
+					if !Setting_SpriteHP_VanillaSprite_Rex == 1
+						%IncreaseDamageCounter(!C2, !Setting_SpriteHP_VanillaSprite_Rex_HPAmount, !Setting_SpriteHP_VanillaSprite_Rex_HPAmount)				
+					else
+						%DealFixedDamage(!Setting_SpriteHP_VanillaSprite_Rex_HPAmount)
+					endif
 				..No
 			.SyncToHP
-				LDA #$02
-				STA !Freeram_SpriteHP_MaxHPLow,x
-				%ConvertDamageAmountToHP(!C2, !Setting_SpriteHP_VanillaSprite_Rex_HPAmount)
+				if !Setting_SpriteHP_VanillaSprite_Rex == 1
+					LDA.b #!Setting_SpriteHP_VanillaSprite_Rex_HPAmount
+					STA !Freeram_SpriteHP_MaxHPLow,x
+					%ConvertDamageAmountToHP(!C2, !Setting_SpriteHP_VanillaSprite_Rex_HPAmount)
+				endif
 			.Restore
 				LDA !14C8,x
 				CMP #$08
 				RTL
 		StompRex: ;JSL from $0395B3
-			%IncreaseDamageCounter(!C2, 1, !Setting_SpriteHP_VanillaSprite_Rex_HPAmount)
-			.Restore
-				;INC !C2,x ;>This already incremented by "IncreaseDamageCounter"
-				LDA !C2,x
-				RTL
+			if !Setting_SpriteHP_VanillaSprite_Rex == 1
+				%IncreaseDamageCounter(!C2, !Setting_SpriteHP_VanillaSprite_Rex_StompDamage, !Setting_SpriteHP_VanillaSprite_Rex_HPAmount)
+				.Restore
+					;INC !C2,x ;>This already incremented by "IncreaseDamageCounter"
+					LDA !C2,x
+					RTL
+			else
+				%DealFixedDamage(!Setting_SpriteHP_VanillaSprite_Rex_StompDamage)
+				INC !C2,x	;>Advance the Rex state
+				LDA !Freeram_SpriteHP_CurrentHPLow,x
+				if !Setting_SpriteHP_TwoByte
+					ORA !Freeram_SpriteHP_CurrentHPHi,x
+				endif
+				BNE .Smushed
+				JML $0395BB|!bank
+				.Smushed
+					JML $0395C1|!bank
+			endif
 	endif
 	if !Setting_ModifySprAndDisplayHPOfSMWSpr
 		SpinKillDisplayHP:	;>JSL from $01A93F
@@ -703,7 +732,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			RTL
 	endif
 	if !Setting_SpriteHP_RemoveOrApplyPatch
-		DefaultHPOnSpawn:
+		DefaultHPOnSpawn:	;>JSL from $07F779
 			;I recommend having custom sprites run an init routine to set its starting current and max HP rather
 			;than having them here.
 			;
@@ -723,10 +752,16 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				endif
 				LDA !7FAB10,x
 				AND.b #%00001000
-				BNE .Done
+				;BNE .Done
+				BEQ +
+				RTL
+				+
 				LDA !9E,x
 				%SetSpriteDefaultHP($6E, 2)		;>Dino Rhino
 				%SetSpriteDefaultHP($6F, 1)		;>Dino Torch
+				if !Setting_SpriteHP_VanillaSprite_Rex == 2
+					%SetSpriteDefaultHP($AB, !Setting_SpriteHP_VanillaSprite_Rex_HPAmount)		;>Set Rex's HP amount if set to use HP tables directly
+				endif
 				if !Setting_SpriteHP_Modify5FireballsSystem
 					%SetSpriteDefaultHP($46, !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount)
 					%SetSpriteRangeDefaultHP($91, $98, !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount)
@@ -772,7 +807,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					;
 					;If you want a range (inclusive) of sprite numbers blacklisted, then do this:
 					;  %SpriteHPMeterBlacklist_Range(<Enter_Sprite_Number_Min_Here>, <Enter_Sprite_Number_Max_Here>)
-					
+					;This is immune to branch-out-of-bounds error.
 					
 					
 					;Do not remove this code here, as it is needed so if a non-blacklisted sprite
@@ -785,6 +820,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					;
 					;All other sprites beyond listed here are treated as having 1 HP. Because following
 					;have multiple HPs we not to treat them as 1-shot.
+						%SpriteHPMeterBlacklist($20)		;>Magikoopa's magic (without this, its HP meter shows if killed with star)
 						%SpriteHPMeterBlacklist($46)		;>Diggin' chuck
 						%SpriteHPMeterBlacklist($AB)		;>Rex
 						%SpriteHPMeterBlacklist_Range($91, $98)	;>Sprite numbers $91-$98 are chucks, which already been handled.

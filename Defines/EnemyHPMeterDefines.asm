@@ -228,17 +228,22 @@
 			; 0 = Remove patch, 1 = Install.
 			
 		!Setting_SpriteHP_Modify5FireballsSystem = 1
-			;^Make change on how fireballs work with $190F's 3 (%----X---):
+			;^Make change on how fireballs work with $190F's 3 (%----X---), "takes 5 fireballs to kill":
 			; - 0 = Keep vanilla (will treat $1528 as a damage counter)
 			; - 1 = Deal direct damage (will use this patch's HP values directly, and no longer touches $1528)
 			;Warning: This will affect all sprites using the 5-fireballs system when set to 1. The good news
 			;is that in vanilla SMW, only Chucks use this, and is extremely rare for custom sprites to use this.
 			;
-			;NOTE: If you wish to have this set to 1, using Chucks in your game, then you need to have
-			;!Setting_SpriteHP_VanillaSprite_Chuck == 1 because otherwise their HP system would be broken
-			;(Having !Setting_SpriteHP_VanillaSprite_Chuck == 0 would revert chuck to use $1528, but the
-			;fireball damage code would not use $1528, resulting in them being immune to fireballs (despite
-			;an optional damage sound effect playing)).
+			;NOTES:
+			; - If you wish to have this set to 1 and are using Chucks in your game, then you need to have
+			;   !Setting_SpriteHP_VanillaSprite_Chuck == 1 because otherwise their HP system would be broken
+			;   (Having !Setting_SpriteHP_VanillaSprite_Chuck == 0 would revert chuck to use $1528 when being
+			;   stomped, but the fireball damage code would not use $1528 but this patch's HP values instead,
+			;   resulting in them having 2 separate HP values that they die when either one of them reaches 0)).
+			;
+			; - If a sprite have its own built-in fireball damage handler, like Ludwig/Morton/Roy, and have
+			;   $190F's "takes 5 fireballs to kill" be set, then it is possible the sprite takes both damage
+			;   from the fireball's code and its own built-in.
 			
 		;Apply (proper) HP system on various vanilla SMW sprites that are not strictly one-shot: 0 = no, 1 = yes.
 		;Use only mentioned values, unless stated otherwise. Having these turned off will COMPLETELY revert back
@@ -248,8 +253,14 @@
 				;^Apply HP system for all chucks. Will at least fix the jank of stomp and fireball damage.
 				
 			!Setting_SpriteHP_VanillaSprite_Rex			= 1
-				;^This will display HP of Rex. Any kills that would make it fall off the screen or smushed will display
-				;its HP.
+				;^This will display HP of Rex:
+				; - 0 = No
+				; - 1 = Yes (handled via RAM $C2 as vanilla, transfers to HP RAMs used by here,
+				;   cannot be over 255 even with !Setting_SpriteHP_TwoByte == 1)
+				; - 2 = Yes (uses the new HP RAM, which allows more than 255 HP if
+				;   !Setting_SpriteHP_TwoByte == 1). $C2 is now a state handler to determine if
+				;   the sprite is normal, or half-squished.
+				;
 				
 			!Setting_SpriteHP_VanillaSprite_Bosses			= 1
 				;^Same with bosses. It includes:
@@ -283,7 +294,11 @@
 			!Setting_SpriteHP_VanillaSprite_Chucks_StompDamage	= 5	;>Amount of HP loss when taking damage from stomp attacks
 			;Amount of HP Rex has (how many stomp attacks, other attacks are either immune or insta-kill).
 			;Note that after the first stomp attack will leave the Rex in his 1/2 height form.
+			;Values here are cannot be over 255, unless you have:
+			; - !Setting_SpriteHP_VanillaSprite_Rex == 2
+			; - !Setting_SpriteHP_TwoByte == 1
 				!Setting_SpriteHP_VanillaSprite_Rex_HPAmount		= 2
+				!Setting_SpriteHP_VanillaSprite_Rex_StompDamage		= 1
 			
 			!Setting_SpriteHP_VanillaSprite_BigBooBoss_HPAmount		= 3	;>Amount of HP Big Boo boss have.
 			!Setting_SpriteHP_VanillaSprite_BigBooBoss_ThrownItemDamage	= 1	;>Amount of damage Big Boo boss takes from any thrown sprite.
