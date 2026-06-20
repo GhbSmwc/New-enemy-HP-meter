@@ -178,6 +178,18 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		
 		?OutOfBlacklistedRange:
 	endmacro
+	macro JSLRTS(JumpTo, RTLOfSameBank)
+		;This allows calling subroutines ending with an RTS from a different bank
+		;without crashing the game.
+		;JumpTo = Address to call subroutine
+		;RTLOfSameBank = Address of an RTL in the same bank as the call subroutine.
+		PHK				;\Set up a 24-bit return address to make an RTL jump
+		PEA.w ?ReturnAddr-1		;/to where "?ReturnAddr"
+		PEA.w <RTLOfSameBank>-1		;>Set up a 16-bit return address to make RTS jump to an RTL
+		JML <JumpTo>
+		
+		?ReturnAddr:
+	endmacro
 ;Hijacks
 	;Chucks
 		;Code that runs every frame. Ensures the HP values in the new sprite RAM is in sync (for display).
@@ -385,6 +397,29 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			LDA #$FF
 			STA !1540,x
 		endif
+	;Enemies that don't get killed at all by stomps, but get changes state. The meter will just simply display
+	;without damage
+		;Wigglers
+			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
+				org $02F26B
+				autoclean JSL StompWigglerShowHP
+				NOP
+			else
+				%RemoveFreespaceCodeFromJMLJSL($02F26B)
+				org $02F26B
+			endif
+		;Dry bones and Bony Beetle. NOTE: They seemingly process offscreen when they are in their crumbled state,
+		;causing the HP meter to continue to display even far offscreen.
+			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
+				org $01E5FE
+				autoclean JSL StompDryBonesBonyBeetle
+				NOP
+			else
+				%RemoveFreespaceCodeFromJMLJSL($01E5FE)
+				org $01E5FE
+				LDA #$FF
+				STA !1540,x
+			endif
 	;Bosses below (only applies to bosses with a HP system, and not bowser)
 		;Big boo boss
 			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Bosses)
@@ -789,6 +824,19 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					STZ $01
 				endif
 				JSL !SharedSub_SpriteHPDamage
+				RTL
+		StompWigglerShowHP:
+			.Restore
+				LDA #$03
+				STA $1DF9
+			.ShowHP
+				%DealFixedDamage(0)	;>Wiggler takes no damage, but still display HP.
+				RTL
+		StompDryBonesBonyBeetle:
+			.Restore
+				LDA #$FF
+				STA !1540,x
+				%DealFixedDamage(0)	;>They crumble, but it's better to assume no damage, much like Super Paper Mario
 				RTL
 		ZeroOutHPOfOneShotSprites:
 			.CheckSprite

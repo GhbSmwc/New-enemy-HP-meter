@@ -271,13 +271,17 @@
 				
 			!Setting_SpriteHP_DisplayHPOfSMWSprites			= 1
 				;^Simply display the HP of smw sprites?
-				; - 0 = will not display HP (use this option if you just want the jank fix).
-				; - 1 = Will display the HP (requires !Setting_SpriteHP_RemoveOrApplyPatch == 1).
+				; - 0 = will not display HP.
+				; - 1 = Will display the HP (requires !Setting_SpriteHP_RemoveOrApplyPatch == 1 and the jankfix).
 				
 		!Setting_SpriteHP_VanillaSprite_OneShotSprites			= 1
 			;^Display HP for all one-shot enemies. Modifies various vanilla kill routines used by the vast majority
 			; of enemies. 0 = No, 1 = Yes. Note that this also modifies the sprite table clearing routine (when sprite
 			; spawns) due to not all sprites have an init to set its default HP.
+			;
+			; Other enemies listed below will show the health meter in unique ways:
+			; - Enemies that don't get killed at all by stomps but instead simply change states will show no damage
+			;   but will still display the meter: Wiggler, Dry Bones, Bony Beetle.
 			
 		;Amount of HP SMW sprites has. NOTE: SMW only have hit counts being an 8-bit unsigned integer stored
 		;within various sprite tables (Chucks and any sprites using the 5 fireballs to kill: $1528,
