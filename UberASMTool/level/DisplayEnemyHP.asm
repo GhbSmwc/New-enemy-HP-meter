@@ -202,7 +202,19 @@ main:
 					LDA !9E,x			;\If sprite is vanilla and is a moving coin, skip drawing
 					CMP #$21			;|(enemies "killed" by a fireball actually turns the sprite into a coin
 					BEQ ...HideHPMeter		;/rather than spawning a new coin sprite and deleting itself).
+					CMP #$0D
+					BEQ .....BombOmb
+					
+					;[...]
+					;BRA ...DisplayNormally
+					
+					.....BombOmb
+						LDA !1534,x			;\If Bob-omb exploded, hide it's HP meter.
+						BNE ...HideHPMeter		;/
 				....CustomSprite
+					;LDA !7FAB9E,x
+					;CMP $xx
+					;BEQ ...HideHPMeter
 			...DisplayNormally
 	.DisplayNumerical
 		;Detect user trying to make a right-aligned single number (which avoids unnecessarily uses suppress leading zeroes)

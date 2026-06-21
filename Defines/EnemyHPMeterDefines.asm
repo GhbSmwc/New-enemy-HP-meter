@@ -142,8 +142,9 @@
 				!Setting_SpriteHP_Numerical_PropPalette	= 6	;>Valid values: 0-7
 		;Graphical bar settings
 			!Setting_SpriteHP_DisplayGraphicalBar = 1
-				;^0 = don't show the bar
-				; 1 = display the bar
+				;^Display a bar representing percentage as fill?
+				; - 0 = don't show the bar
+				; - 1 = display the bar
 			;XY position of the bar (uses this position and tiles to the right, even when leftwards)
 				!Setting_SpriteHP_GraphicalBarPos_x = 23
 				!Setting_SpriteHP_GraphicalBarPos_y = 1
@@ -156,17 +157,17 @@
 					!Setting_SpriteHP_GraphicalBar_RightPieces                 = 3             ;/
 				;Length of bar (number of middle tiles). Full screen width is 32 tiles.
 					!Setting_SpriteHP_GraphicalBarMiddleLength           = 7
-			;Avoid percentage bar from rounding to 0 or full when really close but not at those values:
-				!Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull	= 3
-					;^0 = Allow bar to display 0% when HP is very close to zero and 100% when close to max.
-					; 1 = Display 1 pixel of piece filled when low on HP and only 0 if HP is 0.
-					; 2 = Display MaxPieces-1 when nearly full.
-					; 3 = Display 1 piece or MaxPieces-1 if close to 0 or MaxPieces.
-			;Rounding the amount of fill settings:
-				!Setting_SpriteHP_BarFillRoundDirection = 0
-					; 0 = Round to nearest
-					; 1 = Round down (floor, bar may display 0 fill amount when !Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull isn't 1 or 3)
-					; 2 = Round up (ceiling)
+			!Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull	= 3
+				;^Round away from 0% and/or 100% when fill is close to such values:
+				; - 0 = Allow bar to display 0% when HP is very close to zero and 100% when close to max.
+				; - 1 = Display 1 pixel of piece filled when low on HP and only 0 if HP is 0.
+				; - 2 = Display MaxPieces-1 when nearly full.
+				; - 3 = Display 1 piece or MaxPieces-1 if close to 0 or MaxPieces.
+			!Setting_SpriteHP_BarFillRoundDirection = 0
+				;^Rounding to nearest integer fill amount of the bar:
+				; - 0 = Round to nearest
+				; - 1 = Round down (floor, bar may display 0 fill amount when !Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull isn't 1 or 3)
+				; - 2 = Round up (ceiling)
 			;Fill direction. 0 = Left-to-right, 1 = Right-to-left. Note that the given XY position will occupy that position and N tiles towards
 			;the right regardless of leftwards or not.
 				!Setting_SpriteHP_LeftwardsBar                       = 1
@@ -176,10 +177,11 @@
 				
 			;Bar animation stuff
 				!Setting_SpriteHP_BarAnimation			= 1
-					;^0 = HP bar instantly updates when the enemy heals or take damage
-					;     (!Freeram_SpriteHP_BarRecord and introfill is no longer used).
-					; 1 = Shows animation (gradual change, rapid-flicker, transparent
-					;     effect to display previous and current HP fill amounts).
+					;^Show animation of the bar:
+					; - 0 = HP bar instantly updates when the enemy heals or take damage
+					;   (!Freeram_SpriteHP_BarRecord and introfill is no longer used).
+					; - 1 = Shows animation (gradual change, rapid-flicker, transparent
+					;   effect to display previous and current HP fill amounts).
 
 				!Setting_SpriteHP_FillDelayFrames				= $00
 					;^Speed that the bar fills up. Only use these values:
@@ -208,15 +210,16 @@
 					; to healing should !Setting_SpriteHP_ShowHealedTransparent be enabled.
 
 				!Setting_SpriteHP_ShowHealedTransparent		= 1
-					;^0 = show opaque sliding upwards animation.
-					; 1 = show amount healed as transparent segment.
+					;^Show HP change effect when healing:
+					; - 0 = show opaque sliding upwards animation.
+					; - 1 = show amount healed as transparent segment.
 					; Note that reguardless of this setting, there's an optional sound effect
 					; for filling (for healing and intro-fill).
 
 				!Setting_SpriteHP_ShowDamageTransperent		= 1
-					;^0 = show no transparent (if !Setting_SpriteHP_BarAnimation is
-					;     enabled, would perform a sliding down animation as opaque)
-					; 1 = show transparent.
+					;^- 0 = show no transparent (if !Setting_SpriteHP_BarAnimation is
+					; -     enabled, would perform a sliding down animation as opaque)
+					; - 1 = show transparent.
 					; This applies when the sprite takes damage.
 				;Sound effect when the bar fills up (boss intro and when enemy heals).
 				;See https://www.smwcentral.net/?p=viewthread&t=6665
@@ -226,6 +229,11 @@
 		!Setting_SpriteHP_RemoveOrApplyPatch		= 1
 			;^Option to install or remove the patch.
 			; 0 = Remove patch, 1 = Install.
+			; NOTE: If you make hex edits at certain addresses, and you have patch this with this option set to
+			; 0, it will revert your hex edits in the process of restoring the game. This is because of the
+			; restore function assumes you haven't hex edited at those addresses. The hijack locations are
+			; found in "HPSystemForSMWSprites.asm", where org $xxxxxx indicates where to place data on (as well
+			; as the macro calling "HijacksForFallingOffScrn").
 			
 		!Setting_SpriteHP_Modify5FireballsSystem = 1
 			;^Make change on how fireballs work with $190F's 3 (%----X---), "takes 5 fireballs to kill":
@@ -340,8 +348,13 @@
 			!Setting_SpriteHP_MaxDigits	= 3
 	;Misc settings
 		!Setting_SpriteHP_DisplaySpriteHPDataOnConsole = 0
-			;^0 = No
-			; 1 = Yes, display the HP data RAM usage on asar console (would not work for pixi due to print command reserved for description).
+			;^Display RAM usage on Asar console window:
+			; - 0 = No
+			; - 1 = Yes, display the HP data RAM usage on asar console (would not work for pixi due to print command reserved for description).
+		!Setting_SpriteHP_Koopas_StompedStunnedOutShells = 1
+			;^Koopas do what when stomped (this is because of a hijack at $01AA14):
+			; - 0 = Stay in their shells (equivalent to hex edits at $0196C6 and $01AA15).
+			; - 1 = Come out of shells (vanilla).
 
 
 

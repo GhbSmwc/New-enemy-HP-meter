@@ -347,16 +347,31 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		endif
 	;Show HP meter when enemies merely get stunned when jumped on (Goomba, Bob-omb, Buzzy Beetle, and Mecha Koopa).
 	;Again, this is mario-interact-sprites routine. EDIT: This also triggers when kicking carried sprites.
-;		if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
-;			org $01AA2D
-;			autoclean JSL StunnedShowHP
-;			NOP
-;		else
-;			%RemoveFreespaceCodeFromJMLJSL($01AA2D)
-;			org $01AA2D
-;			LDA #$09
-;			STA !14C8,x
-;		endif
+		if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
+			org $01AA14
+			autoclean JSL StunnedKoopaShowHP
+		else
+			%RemoveFreespaceCodeFromJMLJSL($01AA14)
+			org $01AA14
+			if !Setting_SpriteHP_Koopas_StompedStunnedOutShells == 0
+				LDA #$FF
+			else
+				LDA #$02
+			endif
+			if !sa1 == 0
+				LDY $9E,x
+			else
+				LDY $87
+			endif
+		endif
+	;Optional feature if user wished to have stunned koopas not leave their shells
+		if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, equal(!Setting_SpriteHP_Koopas_StompedStunnedOutShells, 0))
+			org $0196C5
+			BNE $04
+		else
+			org $0196C5
+			BNE $1A
+		endif
 	;When sprites are falling down screen
 	; - kicked/carried sprites hit a 1-shottable enemy
 	; - Stomped (e.g. Monty Mole) and falling down the screen
@@ -905,13 +920,22 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				JSL !SharedSub_SpriteHPDamage			;/
 			.Done
 			RTS
-;		StunnedShowHP: ;>JSL from $01AA2D
-;			.Restore
-;				LDA #$09
-;				STA !14C8,x
-;			.Display
-;				%DealFixedDamage(0)
-;				RTL
+		StunnedKoopaShowHP: ;>JSL from $01AA14
+			.Display
+				%DealFixedDamage(0)
+			.Restore
+				;We need the value of Y after this is done.
+				if !Setting_SpriteHP_Koopas_StompedStunnedOutShells == 0
+					LDA #$FF
+				else
+					LDA #$02
+				endif
+				if !sa1 == 0
+					LDY $9E,x
+				else
+					LDY $87
+				endif
+				RTL
 	endif
 	if and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_VanillaSprite_Bosses)
 		DamageBigBooBoss:
