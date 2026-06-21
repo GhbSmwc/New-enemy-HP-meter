@@ -112,7 +112,17 @@ macro ConvertToRightAligned()
 		JSL !SharedSub_ConvertToRightAlignedFormat2
 	endif
 endmacro
-
+macro TurnOffHPMeterOfCertainSpr(SprNumb, LabelToJump)
+	CMP.b #<SprNumb>
+	BEQ <LabelToJump>
+endmacro
+macro TurnOffHPMeterOfCertainSpr_UnlimitedDistance(SprNumb, LabelToJump)
+	CMP.b #<SprNumb>
+	BNE ?+
+	JMP <LabelToJump>
+	+
+	
+endmacro
 load:
 	;To ASM hackers, when a sprite is placed in a level so that the player entering the level
 	;would immediately load the sprite, the codes are executed in this order:
@@ -191,31 +201,41 @@ main:
 			BNE ...Exists				;>If exists, allow HP to be displayed.
 			
 			...HideHPMeter
-				LDA #$FF				;\Don't display HP of an enemy that does not exist.
-				STA !Freeram_SpriteHP_MeterState	;/
+				LDA #$FF				;\Hide HP for non-existing sprites, sprites that have HP in certain cases
+				STA !Freeram_SpriteHP_MeterState	;/(like before it was turned into a coin from a fireball, or bob-omb exploding)
 				JMP .Done
 			...Exists
-				LDA !7FAB10,x			;\If sprite is custom, allow display
-				AND.b #%00001000		;/(can be overridden within sprite code to not display)
-				BNE ....CustomSprite		;>For custom sprites, you'll need to edit the custom sprite's code.
-				....VanillaSprite
-					LDA !9E,x			;\If sprite is vanilla and is a moving coin, skip drawing
-					CMP #$21			;|(enemies "killed" by a fireball actually turns the sprite into a coin
-					BEQ ...HideHPMeter		;/rather than spawning a new coin sprite and deleting itself).
-					CMP #$0D
-					BEQ .....BombOmb
-					
-					;[...]
-					BRA ...DisplayNormally
-					
-					.....BombOmb
-						LDA !1534,x			;\If Bob-omb exploded, hide it's HP meter.
-						BNE ...HideHPMeter		;/
-						BRA ...DisplayNormally
-				....CustomSprite
-					;LDA !7FAB9E,x
-					;CMP $xx
-					;BEQ ...HideHPMeter
+				if !Setting_SpriteHP_VanillaSprite_OneShotSprites
+					LDA !7FAB10,x			;\If sprite is custom, allow display
+					AND.b #%00001000		;/(can be overridden within sprite code to not display)
+					BNE ....CustomSprite		;>For custom sprites, you'll need to edit the custom sprite's code.
+
+					;Here are sprites with special behaviors. Sprites that in a situation that have an HP system, but becomes in a state
+					;that shouldn't have, either because it changed sprite numbers or changed its state while keeping its sprite number.
+					....VanillaSprite
+						LDA !9E,x
+						%TurnOffHPMeterOfCertainSpr($21, ...HideHPMeter) ;>If sprite the meter is on *transforms* into moving coin, turn off meter
+						%TurnOffHPMeterOfCertainSpr($0D, .....BombOmb) ;>Handle Bob-omb. If not exploding, show HP as normal, otherwise turn off meter.
+						;To add more sprites here, syntax is:
+						; %TurnOffHPMeterOfCertainSpr($xx, Label)
+						;  - xx is the hexadecimal value representing a sprite number
+						;  - Label is the label to jump to. Either to "...HideHPMeter" to hide the meter immediately
+						;    when certain cases like the sprite becomes another sprite that shouldn't have a HP meter
+						;    or to whatever label for custom handling (such as ".....BombOmb") if it should not have
+						;    a HP meter at certain states.
+						;If you happened to have "branch out of bounds" error, use
+						;TurnOffHPMeterOfCertainSpr_UnlimitedDistance($xx, Label) instead
+						
+						;Don't remove this. If not any of the listed sprites, it should display normally.
+							BRA ...DisplayNormally
+						;Custom or special handlers here, based on a sprite does have HP, but only on certain conditions.
+							.....BombOmb
+								LDA !1534,x			;\If Bob-omb exploded, hide it's HP meter.
+								BNE ...HideHPMeter		;/
+								BRA ...DisplayNormally
+					....CustomSprite
+						;Same as under "....VanillaSprite" but for custom sprites through pixi.
+				endif
 			...DisplayNormally
 	.DisplayNumerical
 		;Detect user trying to make a right-aligned single number (which avoids unnecessarily uses suppress leading zeroes)
