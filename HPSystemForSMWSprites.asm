@@ -787,6 +787,8 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				AND.b #%00100000 ;>Dies when jumped on
 				BNE ..NonCarryable
 				..Carryable ;Sprite is carryable, when hit by quake/cape spin/net punch, the sprite (such as a shell) doesn't get killed
+				
+				%DealFixedDamage(0)	;>Display HP (no damage) of flipped but not killed sprites
 					RTL
 				
 				..NonCarryable

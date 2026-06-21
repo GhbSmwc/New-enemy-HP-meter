@@ -206,11 +206,12 @@ main:
 					BEQ .....BombOmb
 					
 					;[...]
-					;BRA ...DisplayNormally
+					BRA ...DisplayNormally
 					
 					.....BombOmb
 						LDA !1534,x			;\If Bob-omb exploded, hide it's HP meter.
 						BNE ...HideHPMeter		;/
+						BRA ...DisplayNormally
 				....CustomSprite
 					;LDA !7FAB9E,x
 					;CMP $xx
