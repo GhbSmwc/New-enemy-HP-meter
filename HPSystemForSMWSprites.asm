@@ -302,10 +302,10 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					.SmushRex
 			endif
 	;Modify spinjump kills to display HP when spinjump/yoshi stomp killed (Rex, for example, can be non-fatally damaged, or insta-killed)
-		;Most sprites
+		;Most sprites (within general mario-interact-sprites routine - JSR $01A83B)
 			if !Setting_ModifySprAndDisplayHPOfSMWSpr
 				org $01A93F
-				autoclean JSL SpinKillDisplayHP
+				autoclean JSL SpinjumpKillDisplayHP
 				NOP
 			else
 				%RemoveFreespaceCodeFromJMLJSL($01A93F)
@@ -316,7 +316,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		;Rex
 			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Rex)
 				org $0395EC
-				autoclean JSL SpinKillDisplayHP
+				autoclean JSL SpinjumpKillDisplayHP
 				NOP
 			else
 				%RemoveFreespaceCodeFromJMLJSL($0395EC)
@@ -335,6 +335,18 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			LDA #$03
 			STA !14C8,x
 		endif
+	;Show HP meter when enemies merely get stunned when jumped on (Goomba, Bob-omb, Buzzy Beetle, and Mecha Koopa).
+	;Again, this is mario-interact-sprites routine. EDIT: This also triggers when kicking carried sprites.
+;		if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
+;			org $01AA2D
+;			autoclean JSL StunnedShowHP
+;			NOP
+;		else
+;			%RemoveFreespaceCodeFromJMLJSL($01AA2D)
+;			org $01AA2D
+;			LDA #$09
+;			STA !14C8,x
+;		endif
 	;When sprites are falling down screen
 	; - kicked/carried sprites hit a 1-shottable enemy
 	; - Stomped (e.g. Monty Mole) and falling down the screen
@@ -701,7 +713,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			endif
 	endif
 	if !Setting_ModifySprAndDisplayHPOfSMWSpr
-		SpinKillDisplayHP:	;>JSL from $01A93F
+		SpinjumpKillDisplayHP:	;>JSL from $01A93F
 			.Restore
 				LDA #$08
 				STA $1DF9|!addr
@@ -883,6 +895,13 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				JSL !SharedSub_SpriteHPDamage			;/
 			.Done
 			RTS
+;		StunnedShowHP: ;>JSL from $01AA2D
+;			.Restore
+;				LDA #$09
+;				STA !14C8,x
+;			.Display
+;				%DealFixedDamage(0)
+;				RTL
 	endif
 	if and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_VanillaSprite_Bosses)
 		DamageBigBooBoss:
