@@ -327,7 +327,8 @@
 				!Setting_SpriteHP_VanillaSprite_LudwigMortonRoy_StompDamage	= 4
 				!Setting_SpriteHP_VanillaSprite_LudwigMortonRoy_FireballDamage	= 1
 		;For any sprite whose tweaker $190F's bit 3 (%wcdj5sDp, takes 5 fireballs to kill; bit 3) is set.
-		;If !Setting_SpriteHP_Modify5FireballsSystem == 1, this will directly write to the new sprite's HP RAM.
+		;If !Setting_SpriteHP_Modify5FireballsSystem == 1, this will directly subtract the new sprite's HP RAM.
+		;This also applies to yoshi fireball (however this can hit multiple times)
 			!Setting_SpriteHP_FireballDamageAmount			= 3	;>Amount of damage sprites receives from fireball damage.
 			
 		;Fixes and additions

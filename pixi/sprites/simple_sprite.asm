@@ -20,6 +20,25 @@
 	
 	;Defines here for settings and values. A value without any prefixes (such as "$" or "%") are decimal.
 	;If you want hex, use "$".
+		!Setting_UseModified5FireballsSystem = 0
+			;^What fireball damage system to use:
+			; - 0 = Use its own fireball damage handler. Make sure the CFG
+			;   does not override the sprite damage/kill handler:
+			; -- $166E -> "Disable fireball killing" to be true.
+			; -- $190F -> "Takes 5 fireballs to kill" to be false.
+			; -- $167A -> "Invincible to star/cape/fire/bounce blk." to be true.
+			; - 1 = Use "Takes 5 fireballs to kill". Note that you'll need
+			;   to modify these cfg setting:
+			; -- $166E -> "Disable fireball killing" to be false.
+			; -- $190F -> "Takes 5 fireballs to kill" to be true.
+			; -- $167A -> "Invincible to star/cape/fire/bounce blk." to be false.
+			;    Note: Because of above, this means that cape and bounce blocks
+			;    will insta-kill the sprite, ignoring the damage settings below.
+			; Warning: Having !Setting_UseModified5FireballsSystem set to 0
+			; and !Setting_SpriteHP_Modify5FireballsSystem set to 1
+			; (in "EnemyHPMeterDefines") may result in both the fireballs code
+			; to run, dealing additional damage that shouldn't (there's an assert
+			; preventing this however as a failsafe).
 	
 		!Setting_StompBounceBack	= 1	;>bounce player away when stomping: 0 = false, 1 = true.
 		!Setting_DamagePlayer		= 1	;>0 = harmless, 1 = damage player on contact (besides stomping)
@@ -94,6 +113,8 @@
 		if !Setting_SpriteHP_TwoByte
 			!DamageSize = "dw"
 		endif
+		
+	assert not(and(notequal(!Setting_SpriteHP_Modify5FireballsSystem, 0), equal(!Setting_UseModified5FireballsSystem, 0))), "Invalid option, either use its own built in fireball damage, or the fireball damage from chucks, not both."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; sprite init JSL
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -314,92 +335,94 @@ SPRITE_CODE_START:
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		;Extended sprite (Mario and Yoshi's fireball Contact)
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-		.HitboxWithExtSpr
-			LDY.b #10-1			;>There are 10 slots, numbered from 0 to 9.
-
-			..Loop
-				LDA $170B|!Base2,y	;>Extended sprite number
-;				BEQ ...NextSlot		;>next if not-existent
-				BNE +
-				JMP ...NextSlot
-				+
-				CMP #$05		;\Player's fireball
-				BEQ ...Fireball		;/
-				CMP #$11		;\Yoshi's fireball after eating
-				BEQ ...Fireball		;/a red shell
-				BRA ...NextSlot		;>Others = next
-
-				...Fireball
-					JSR MainSpriteClipA
-					JSR ExtSprFireballClipB	;>Get contact with current fireball ext spr slot.
-					JSL $03B72B|!bank	;>Check contact between A and B.
-					BCC ...NextSlot		;>No contact, check other extended sprite.
-				...Contact
-					;------------------------------------------------------------------------------
-					;here is where the contact happens. Make sure that it goes to [...NextSlot]
-					;so that in case if 2 fireballs contacts at the same frame, each will run this.
-					;Y = current extended sprite slot.
-					;------------------------------------------------------------------------------
-					JSR CheckDamageIfZeroHPOrInvul
-					BCC ...ExitLoop					;
-
-					LDA $170B|!Base2,y	;>Extended sprite number (do not clear it before reaching here)
-					CMP #$05		;\Player's fireball
-					BEQ ....PlayerFireball	;/
-					CMP #$11		;\Yoshi's fireball
-					BEQ ....YoshiFireball	;/
+		if !Setting_UseModified5FireballsSystem == 0
+			.HitboxWithExtSpr
+				LDY.b #10-1			;>There are 10 slots, numbered from 0 to 9.
+	
+				..Loop
+					LDA $170B|!Base2,y	;>Extended sprite number
+;					BEQ ...NextSlot		;>next if not-existent
+					BNE +
 					JMP ...NextSlot
-
-					....PlayerFireball
-						if !Setting_SpriteHP_TwoByte
-							REP #$20				;\Damage from player's fireball
-							LDA.w #!Setting_Damage_PlayerFireball	;|
-							STA $00					;|
-							SEP #$20				;/
-						else
-							LDA.b #!Setting_Damage_PlayerFireball
-							STA $00
-						endif
-						BRA ....Damage				;/
-
-					....YoshiFireball
-						if !Setting_SpriteHP_TwoByte
-							REP #$20				;\Damage from yoshi's fireball
-							LDA.w #!Setting_Damage_YoshiFireball	;|
-							STA $00					;|
-							SEP #$20				;/
-						else
-							LDA.b #!Setting_Damage_YoshiFireball
-							STA $00
-						endif
-
-					....Damage
-						LDA.b #10				;\Just to show the blinking and in case if projectile penetrates.
-						STA !InvulnerabilityTimer,x		;/
-						JSL !SharedSub_SpriteHPDamage				;>Lose HP
-						%SetHealCooldown()
-						LDA !Freeram_SpriteHP_CurrentHPLow,x		;\If HP != 0, don't kill
-						if !Setting_SpriteHP_TwoByte
-							ORA !Freeram_SpriteHP_CurrentHPHi,x		;|
-						endif
-						BNE .....NoDeath			;/
-						JSR SpinjumpKillSprite			;>Make sprite die (sets !14C8,x and uses whats marked * to prevent executing multiple times).
-						BRA .....SkipSfx
-
-						.....NoDeath
-							%PlaySoundEffect(!Setting_Damage_SfxNumber, !Setting_Damage_SfxPort)
-
-						.....SkipSfx
-							LDA #$01		;\Turn fireball into smoke the same way it interacts with enemies and solid blocks in vanilla.
-							STA $170B|!Base2,y	;|
-							LDA #$0F		;|
-							STA $176F|!Base2,y	;/
-
-				...NextSlot
-					DEY			;>Next slot
-					BMI ...ExitLoop		;\Loop until out of 0-9 (inclusive) range
-					JMP ..Loop		;/
-					...ExitLoop
+					+
+					CMP #$05		;\Player's fireball
+					BEQ ...Fireball		;/
+					CMP #$11		;\Yoshi's fireball after eating
+					BEQ ...Fireball		;/a red shell
+					BRA ...NextSlot		;>Others = next
+	
+					...Fireball
+						JSR MainSpriteClipA
+						JSR ExtSprFireballClipB	;>Get contact with current fireball ext spr slot.
+						JSL $03B72B|!bank	;>Check contact between A and B.
+						BCC ...NextSlot		;>No contact, check other extended sprite.
+					...Contact
+						;------------------------------------------------------------------------------
+						;here is where the contact happens. Make sure that it goes to [...NextSlot]
+						;so that in case if 2 fireballs contacts at the same frame, each will run this.
+						;Y = current extended sprite slot.
+						;------------------------------------------------------------------------------
+						JSR CheckDamageIfZeroHPOrInvul
+						BCC ...ExitLoop					;
+	
+						LDA $170B|!Base2,y	;>Extended sprite number (do not clear it before reaching here)
+						CMP #$05		;\Player's fireball
+						BEQ ....PlayerFireball	;/
+						CMP #$11		;\Yoshi's fireball
+						BEQ ....YoshiFireball	;/
+						JMP ...NextSlot
+	
+						....PlayerFireball
+							if !Setting_SpriteHP_TwoByte
+								REP #$20				;\Damage from player's fireball
+								LDA.w #!Setting_Damage_PlayerFireball	;|
+								STA $00					;|
+								SEP #$20				;/
+							else
+								LDA.b #!Setting_Damage_PlayerFireball
+								STA $00
+							endif
+							BRA ....Damage				;/
+	
+						....YoshiFireball
+							if !Setting_SpriteHP_TwoByte
+								REP #$20				;\Damage from yoshi's fireball
+								LDA.w #!Setting_Damage_YoshiFireball	;|
+								STA $00					;|
+								SEP #$20				;/
+							else
+								LDA.b #!Setting_Damage_YoshiFireball
+								STA $00
+							endif
+	
+						....Damage
+							LDA.b #10				;\Just to show the blinking and in case if projectile penetrates.
+							STA !InvulnerabilityTimer,x		;/
+							JSL !SharedSub_SpriteHPDamage				;>Lose HP
+							%SetHealCooldown()
+							LDA !Freeram_SpriteHP_CurrentHPLow,x		;\If HP != 0, don't kill
+							if !Setting_SpriteHP_TwoByte
+								ORA !Freeram_SpriteHP_CurrentHPHi,x		;|
+							endif
+							BNE .....NoDeath			;/
+							JSR SpinjumpKillSprite			;>Make sprite die (sets !14C8,x and uses whats marked * to prevent executing multiple times).
+							BRA .....SkipSfx
+	
+							.....NoDeath
+								%PlaySoundEffect(!Setting_Damage_SfxNumber, !Setting_Damage_SfxPort)
+	
+							.....SkipSfx
+								LDA #$01		;\Turn fireball into smoke the same way it interacts with enemies and solid blocks in vanilla.
+								STA $170B|!Base2,y	;|
+								LDA #$0F		;|
+								STA $176F|!Base2,y	;/
+	
+					...NextSlot
+						DEY			;>Next slot
+						BMI ...ExitLoop		;\Loop until out of 0-9 (inclusive) range
+						JMP ..Loop		;/
+						...ExitLoop
+		endif
 
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;Bounce blocks
