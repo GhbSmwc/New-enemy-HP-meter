@@ -42,32 +42,42 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		if !Setting_SpriteHP_DisplayHPOfSMWSprites
 			if !Setting_SpriteHP_TwoByte
 				REP #$20
-				LDA.w #<DamageAmount>
-				STA $00
+				if <DamageAmount> != 0
+					LDA.w #<DamageAmount>
+					STA $00
+				else
+					STZ $00
+				endif
 				SEP #$20
 			else
-				LDA.b #<DamageAmount>
-				STA $00
+				if <DamageAmount> != 0
+					LDA.b #<DamageAmount>
+					STA $00
+				else
+					STZ $00
+				endif
 			endif
 			JSL !SharedSub_SpriteHPDamage ;>This would display HP
 		else
-			LDA !Freeram_SpriteHP_CurrentHPLow,x
-			SEC
-			SBC.b <DamageAmount>
-			STA !Freeram_SpriteHP_CurrentHPLow,x
-			if !Setting_SpriteHP_TwoByte
-				LDA !Freeram_SpriteHP_CurrentHPHi,x
-				SBC.b <DamageAmount>>>8
-				STA !Freeram_SpriteHP_CurrentHPHi,x
-			endif
-			BCC ?UnderFlow
-			
-			?UnderFlow:
-				LDA #$00
+			if <DamageAmount> != 0
+				LDA !Freeram_SpriteHP_CurrentHPLow,x
+				SEC
+				SBC.b <DamageAmount>
 				STA !Freeram_SpriteHP_CurrentHPLow,x
 				if !Setting_SpriteHP_TwoByte
+					LDA !Freeram_SpriteHP_CurrentHPHi,x
+					SBC.b <DamageAmount>>>8
 					STA !Freeram_SpriteHP_CurrentHPHi,x
 				endif
+				BCC ?UnderFlow
+				
+				?UnderFlow:
+					LDA #$00
+					STA !Freeram_SpriteHP_CurrentHPLow,x
+					if !Setting_SpriteHP_TwoByte
+						STA !Freeram_SpriteHP_CurrentHPHi,x
+					endif
+			endif
 		endif
 	endmacro
 	macro IncreaseDamageCounter(DamageCountSpriteTableRAM, DamageAmount, DamageAmountToDie)
