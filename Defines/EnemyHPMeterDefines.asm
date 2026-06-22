@@ -265,7 +265,7 @@
 				; - 0 = No
 				; - 1 = Yes (handled via RAM $C2 as vanilla, transfers to HP RAMs used by here,
 				;   cannot be over 255 even with !Setting_SpriteHP_TwoByte == 1)
-				; - 2 = Yes (uses the new HP RAM, which allows more than 255 HP if
+				; - 2 = Yes (uses the new HP RAM directly, which allows more than 255 HP if
 				;   !Setting_SpriteHP_TwoByte == 1). $C2 is now a state handler to determine if
 				;   the sprite is normal, or half-squished.
 				;
@@ -290,27 +290,52 @@
 			; Other enemies listed below will show the health meter in unique ways:
 			; - Enemies that don't get killed at all by stomps but instead simply change states will show no damage
 			;   but will still display the meter: Wiggler, Dry Bones, Bony Beetle.
+			; - When regular Koopas are stomped, the HP meter will switch to the sprite slot of the shell, not the
+			;   shell-less koopa it spawned (with the exception that you do not wish koopas get forced out of shells,
+			;   see !Setting_SpriteHP_Koopas_StompedStunnedOutShells).
+			;
+			; If there are enemies/sprites that shouldn't have HP meter display for them when killed, see under the
+			; label "ZeroOutHPOfOneShotSprites" in HPSystemForSMWSprites.asm.
+			;
+			; For enemies that are switching states or changing sprite number from a thing that should have an HP meter
+			; and currently displayed for, into another thing that should make its HP meter disappear, see
+			; "UberASMTool/level/DisplayEnemyHP.asm" under label "...Exists".
+			;
+			;  Alternatively, for custom sprites, you can simply make it hide the meter like so in its sprite code:
+			;  ;[...]
+			;  ;Assuming X is the current sprite slot processed
+			;  JSL !SharedSub_SpriteHPGetSlotIndex
+			;  TXA
+			;  CMP !Scratchram_SpriteHP_SpriteSlotToDisplay ;>CPX $xxxxxx does not exists, 
+			;  BNE .DontHideMeter ;>If meter is on other sprite and not this, don't suppress it.
+			;  .HideHPMeter
+			;   LDA #$FF
+			;   STA !Freeram_SpriteHP_MeterState
+			;  .DontHideHPMeter
 			
 		;Amount of HP SMW sprites has. NOTE: SMW only have hit counts being an 8-bit unsigned integer stored
 		;within various sprite tables (Chucks and any sprites using the 5 fireballs to kill: $1528,
 		;Ludwig/Morton/Roy: $1626, Big Boo Boss, Wendy and Lemmy: $1534). This means up to 255 health and
 		;damage are allowed, and those do not support 16-bit HP system (even if you set
-		;!Setting_SpriteHP_TwoByte == 1). This does not include 1-shot enemies.
-		;
-		;The only exception is for Chucks when having !Setting_SpriteHP_Modify5FireballsSystem == 1,
-		;or any sprite using this now so-called "take 5 fireballs to kill" (assuming you have
-		;!Setting_SpriteHP_TwoByte == 1).
+		;!Setting_SpriteHP_TwoByte == 1). This does not include 1-shot enemies (they'll strictly be 1 HP
+		;and dies instantly from any attack). That is, unless stated otherwise.
+		
 		;
 		;This only applies if !Setting_SpriteHP_RemoveOrApplyPatch == 1 and their respective settings being 1.
-			!Setting_SpriteHP_VanillaSprite_Chucks_HPAmount		= 15	;>This applies to all chuck variants and all sprites with "Take 5 fireballs to kill" of $190F's bit 3.
-			!Setting_SpriteHP_VanillaSprite_Chucks_StompDamage	= 5	;>Amount of HP loss when taking damage from stomp attacks
-			;Amount of HP Rex has (how many stomp attacks, other attacks are either immune or insta-kill).
-			;Note that after the first stomp attack will leave the Rex in his 1/2 height form.
-			;Values here are cannot be over 255, unless you have:
+		
+			;Chucks. Values can be up to 65535 if these conditions are met:
+			; - !Setting_SpriteHP_TwoByte == 1
+			; - !Setting_SpriteHP_Modify5FireballsSystem == 1
+				!Setting_SpriteHP_VanillaSprite_Chucks_HPAmount		= 15	;>This applies to all chuck variants and all sprites with "Take 5 fireballs to kill" of $190F's bit 3.
+				!Setting_SpriteHP_VanillaSprite_Chucks_StompDamage	= 5	;>Amount of HP loss when taking damage from stomp attacks
+			;Rex. Values can be up to 65535 if these conditions are met:
 			; - !Setting_SpriteHP_VanillaSprite_Rex == 2
 			; - !Setting_SpriteHP_TwoByte == 1
 				!Setting_SpriteHP_VanillaSprite_Rex_HPAmount		= 2
+					;^Amount of HP Rex has (only stomps, other attacks are insta-kill).
+					;Note that after the first stomp attack will leave the Rex in his 1/2 height form.
 				!Setting_SpriteHP_VanillaSprite_Rex_StompDamage		= 1
+					;^The only nonlethal damage in the game.
 			
 			!Setting_SpriteHP_VanillaSprite_BigBooBoss_HPAmount		= 3	;>Amount of HP Big Boo boss have.
 			!Setting_SpriteHP_VanillaSprite_BigBooBoss_ThrownItemDamage	= 1	;>Amount of damage Big Boo boss takes from any thrown sprite.
@@ -322,14 +347,23 @@
 			;Be careful with having too much health and too little damage from stomp attacks for Roy, if its possible to stomp Roy too many times
 			;(from my testing, 7 and higher) before he dies, the pillars of the arena can glitch since Nintendo didn't program a limit on how
 			;far the pillars can move. To know if its possible, do the math: NumberOfStomps = ceiling(Health/StompDamage), where ceiling rounds
-			;the number up to an integer.
+			;the number up to an integer. A division by zero obviously means you can trigger the walls bugging out without damage.
 				!Setting_SpriteHP_VanillaSprite_LudwigMortonRoy_HPAmount	= 12
 				!Setting_SpriteHP_VanillaSprite_LudwigMortonRoy_StompDamage	= 4
 				!Setting_SpriteHP_VanillaSprite_LudwigMortonRoy_FireballDamage	= 1
 		;For any sprite whose tweaker $190F's bit 3 (%wcdj5sDp, takes 5 fireballs to kill; bit 3) is set.
-		;If !Setting_SpriteHP_Modify5FireballsSystem == 1, this will directly subtract the new sprite's HP RAM.
-		;This also applies to yoshi fireball (however this can hit multiple times)
-			!Setting_SpriteHP_FireballDamageAmount			= 3	;>Amount of damage sprites receives from fireball damage.
+		;And along with other tweaker settings:
+		; - $166E's bit 4 ("Disable fireball killing") to be 0 or false.
+		; - $167A's bit 1 ("Invincible to star/cape/fire/bouncing bricks") to be 0 or false.
+		;
+		;If !Setting_SpriteHP_Modify5FireballsSystem == 1, this will directly subtract the new sprite's HP RAM instead of $1528.
+		;This also applies to yoshi fireball (note that this can hit multiple times)
+			!Setting_SpriteHP_FireballDamageAmount			= 3
+				;^Amount of damage sprites receives from fireball damage.
+				; With !Setting_SpriteHP_Modify5FireballsSystem == 0
+				; this cannot be over 255. However if
+				; !Setting_SpriteHP_Modify5FireballsSystem == 1 and
+				; !Setting_SpriteHP_TwoByte == 1, then 65535 is the limit instead.
 			
 		;Fixes and additions
 			;Sound effect when the fireball damages enemies with the "take 5 fireballs to kill" bit being set.
@@ -367,6 +401,32 @@
 	if !Setting_SpriteHP_TwoByte
 		!SpriteHP_MaxHPAndDamageValue = 65535
 	endif
+	;Check if user enters over-limit values
+		!SpriteHP_5FireballsMaxHPAndDamageValue = 255
+		if and(notequal(!Setting_SpriteHP_Modify5FireballsSystem, 0), notequal(!Setting_SpriteHP_TwoByte, 0))
+			!SpriteHP_5FireballsMaxHPAndDamageValue = 65535
+		endif
+		!SpriteHP_RexMaxHPAndDamageValue = 255
+		if and(equal(!Setting_SpriteHP_VanillaSprite_Rex, 2), notequal(!Setting_SpriteHP_TwoByte, 0))
+			!SpriteHP_RexMaxHPAndDamageValue = 65535
+		endif
+		
+		assert !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount <= !SpriteHP_5FireballsMaxHPAndDamageValue, "Chuck's HP is over the limit."
+		assert !Setting_SpriteHP_VanillaSprite_Chucks_StompDamage <= !SpriteHP_5FireballsMaxHPAndDamageValue, "Chuck's stomp damage is over the limit."
+		assert !Setting_SpriteHP_FireballDamageAmount <= !SpriteHP_5FireballsMaxHPAndDamageValue, "Fireball damage is over the limit."
+		assert !Setting_SpriteHP_VanillaSprite_Rex_HPAmount <= !SpriteHP_RexMaxHPAndDamageValue, "Rex's HP is over the limit."
+		assert !Setting_SpriteHP_VanillaSprite_Rex_StompDamage <= !SpriteHP_RexMaxHPAndDamageValue, "Rex's stomp damage is over the limit."
+		
+		assert !Setting_SpriteHP_VanillaSprite_BigBooBoss_HPAmount <= 255, "Big Boo Boss HP over the limit."
+		assert !Setting_SpriteHP_VanillaSprite_BigBooBoss_ThrownItemDamage <= 255, "Big Boo Boss thrown item damage is over the limit."
+		assert !Setting_SpriteHP_VanillaSprite_WendyLemmy_HPAmount <= 255, "Wendy and Lemmy HP is over the limit"
+		assert !Setting_SpriteHP_VanillaSprite_WendyLemmy_StompDamage <= 255, "Wendy and Lemmy stomp damage is over the limit."
+		
+		assert !Setting_SpriteHP_VanillaSprite_LudwigMortonRoy_HPAmount <= 255, "Ludwig/Morton/Roy HP is over the limit."
+		assert !Setting_SpriteHP_VanillaSprite_LudwigMortonRoy_StompDamage <= 255, "Ludwig/Morton/Roy stomp damage is over the limit."
+		assert !Setting_SpriteHP_VanillaSprite_LudwigMortonRoy_FireballDamage <= 255, "Ludwig/Morton/Roy Fireball damage is over the limit."
+		
+	
 	;Obtain addresses representing HP data
 			!CurrentAddressToAssignDefine_SpriteHPData #= !Freeram_SpriteHP_SpriteHPData
 			if not(defined("MacroGuard_SpriteHPData"))

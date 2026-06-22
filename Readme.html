@@ -60,17 +60,16 @@
 	<p>This is similar to <i>Kirby & The Amazing Mirror</i>. With the differences being:</p>
 	<ul>
 		<li>The bar in this resource displays its current HP percentage and its previous HP via a rapid-flicker. In K&tAM, the bar
-		updates with a gradual decrease without showing the previous HP percentage.</li>
+		updates with a gradual decrease without showing the previous HP percentage. Note that this can be re-created in the settings</li>
 		
-		<li>Touching enemies will not display the meter, in K&tAM, it is possible to make it show its HP without damaging the enemy
-		by having Sone Kirby in his stone form (not moving or rolling down slopes) and an enemy passes through you.</li>
+		<li>Touching enemies will not display the meter.</li>
 		
 		<li>When an enemy damages another enemy, such as a Giant Rocky pounding another enemy, the meter does not automatically switch
 		to the damaged enemy. This ASM resource however does so (e.g. when a blue shell-less koopa kicks a shell to a Chargin Chuck).
 		This is because there isn't a check on who kicked/throw the shell (or who damaged the enemy).</li>
 	</ul>
 	<p>So few enemies in SMW can take damage without being one-shotted, they are Chucks, Wendy/Lemmy, Ludwig, Morton/Roy, Big Boo boss,
-	and Bowser (although the status bar in the last battle is disabled).</p>
+	and Bowser (although the status bar in the last battle is disabled). However, this ASM resource optionally supports 1-shot enemies.</p>
 </div>
 <div>
 	<p>Note that code blocks here can be easily copied by holding down CTRL and double-clicking the text.</p>
@@ -678,10 +677,23 @@ Change that to this:
 	<hr>
 	<h2><a href="#ToC_Notes" id="JMPTo_Notes">^</a>Notes</h2>
 	<ul>
-		<li>Any sprite (most likely custom sprites) with 6th tweaker byte's (RAM <a href="https://smwc.me/m/smw/ram/7E190F"><kbd>$190F</kbd></a>) bit 3 (<kbd>Takes 5 fireballs to kill</kbd>) being set will also be affected by this patch. In the original game, this feature was only used by Chargin' Chucks and
-		all its variants. Instead of counting RAM <a href="https://smwc.me/m/smw/ram/7E1528"><kbd>$1528</kbd></a> up by 1 and killing the sprite when reaches 5 or more, it counts up by a value defined as <kbd>!Setting_SpriteHP_FireballDamageAmount</kbd>,
-		and dies if this number reaches or exceeds a value defined as <kbd>!Setting_SpriteHP_VanillaSprite_Chucks_HPAmount</kbd> (these are found in <kbd>EnemyHPMeterDefines.asm</kbd>). The code checking if enough damage have been made by the fireballs is
-		processed by the fireballs' code (at <kbd>$02A0FC</kbd>) rather than the sprite's code.</li>
+		<li>
+			Any sprite (most likely custom sprites) with 6th tweaker byte's (RAM <a href="https://smwc.me/m/smw/ram/7E190F"><kbd>$190F</kbd></a>) bit 3 (<kbd>Takes 5 fireballs to kill</kbd>) being set,
+			along with other tweaker settings:
+			<ul>
+				<li><kbd><a href="https://smwc.me/m/smw/ram/7E166E">$166E</a></kbd>'s bit 4 (&ldquo;<kbd>Disable fireball killing</kbd>&rdquo;) to be <kbd>0/false</kbd></li>
+				<li><kbd><a href="https://smwc.me/m/smw/ram/7E167A">$167A</a></kbd>'s bit 1 (&ldquo;<kbd>Invincible to star/cape/fire/bouncing bricks</kbd>&rdquo;) to be <kbd>0/false</kbd></li>
+			</ul>
+
+
+			will also be affected by this patch. In the original game, this feature was only used by Chargin' Chucks and
+			all its variants. Instead of counting RAM <a href="https://smwc.me/m/smw/ram/7E1528"><kbd>$1528</kbd></a> up by 1 and killing the sprite when reaches 5 or more, it counts up by a value defined as <kbd>!Setting_SpriteHP_FireballDamageAmount</kbd>,
+			and dies if this number reaches or exceeds a value defined as <kbd>!Setting_SpriteHP_VanillaSprite_Chucks_HPAmount</kbd> (these are found in <kbd>EnemyHPMeterDefines.asm</kbd>). The code checking if enough damage have been made by the fireballs is
+			processed by the fireballs' code (at <kbd>$02A0FC</kbd>) rather than the sprite's code.<br><br>
+			
+			However, if you have <kbd>!Setting_SpriteHP_Modify5FireballsSystem</kbd> (in <kbd>EnemyHPMeterDefines.asm</kbd>) set to <kbd>1</kbd>, it will use the HP values from this ASM resource directly instead, and not modify <kbd>$1528</kbd>. Again, make sure
+			custom sprites using the <kbd>take 5 fireballs to kill</kbd>'s code is adopted to work with this.
+		</li>
 		<li>Ludwig, Morton, and Roy, however, their sprite code processes the fireball damage manually and in their own sprite code, and does not utilizes the 5 fireballs tweaker bit.</li>
 		<li>There is a bug on how SMW handles player kicking carried sprites. If you release a sprite (either by kicking or dropping them) on the frame the sprite you're carrying (<kbd><a href="https://smwc.me/m/smw/ram/7E14C8">$14C8</a></kbd>) is set to other values, (such as erasing the sprite),
 		you'll cancel out the status being written. This is because the player releasing the sprite action overrides whatever previous code meant to make it perform certain actions.<br><br>

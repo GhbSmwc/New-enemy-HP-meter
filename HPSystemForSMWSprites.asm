@@ -717,7 +717,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				LDA !14C8,x
 				CMP #$08
 				RTL
-		StompRex: ;JSL from $0395B3
+		StompRex: ;>JSL from $0395B3
 			if !Setting_SpriteHP_VanillaSprite_Rex == 1
 				%IncreaseDamageCounter(!C2, !Setting_SpriteHP_VanillaSprite_Rex_StompDamage, !Setting_SpriteHP_VanillaSprite_Rex_HPAmount)
 				.Restore
