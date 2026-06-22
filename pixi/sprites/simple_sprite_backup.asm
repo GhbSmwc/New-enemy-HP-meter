@@ -332,18 +332,317 @@ SPRITE_CODE_START:
 			SEP #$20
 
 	.NoContact
-	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	;Handle collisions with other sprites, extended,
-	;and bounce sprites
-	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-		JSR MainSpriteClipA				;>Set up hitbox for main sprite
-		REP #$20					;\Set up callback function
-		LDA.w HandleDamagesFromSprExtandBounceSpr	;|
-		STA $8D						;|
-		SEP #$20					;|
-		LDA.b HandleDamagesFromSprExtandBounceSpr>>16	;|
-		STA $8F						;/
-		%MasterHandleCollisionWithSprites()		;>Process custom interaction with sprites
+		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+		;Extended sprite (Mario and Yoshi's fireball Contact)
+		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+		if !Setting_UseModified5FireballsSystem == 0
+			.HitboxWithExtSpr
+				LDY.b #10-1			;>There are 10 slots, numbered from 0 to 9.
+	
+				..Loop
+					LDA $170B|!Base2,y	;>Extended sprite number
+;					BEQ ...NextSlot		;>next if not-existent
+					BNE +
+					JMP ...NextSlot
+					+
+					CMP #$05		;\Player's fireball
+					BEQ ...Fireball		;/
+					CMP #$11		;\Yoshi's fireball after eating
+					BEQ ...Fireball		;/a red shell
+					BRA ...NextSlot		;>Others = next
+	
+					...Fireball
+						JSR MainSpriteClipA
+						JSR ExtSprFireballClipB	;>Get contact with current fireball ext spr slot.
+						JSL $03B72B|!bank	;>Check contact between A and B.
+						BCC ...NextSlot		;>No contact, check other extended sprite.
+					...Contact
+						;------------------------------------------------------------------------------
+						;here is where the contact happens. Make sure that it goes to [...NextSlot]
+						;so that in case if 2 fireballs contacts at the same frame, each will run this.
+						;Y = current extended sprite slot.
+						;------------------------------------------------------------------------------
+						JSR CheckDamageIfZeroHPOrInvul
+						BCC ...ExitLoop					;
+	
+						LDA $170B|!Base2,y	;>Extended sprite number (do not clear it before reaching here)
+						CMP #$05		;\Player's fireball
+						BEQ ....PlayerFireball	;/
+						CMP #$11		;\Yoshi's fireball
+						BEQ ....YoshiFireball	;/
+						JMP ...NextSlot
+	
+						....PlayerFireball
+							if !Setting_SpriteHP_TwoByte
+								REP #$20				;\Damage from player's fireball
+								LDA.w #!Setting_Damage_PlayerFireball	;|
+								STA $00					;|
+								SEP #$20				;/
+							else
+								LDA.b #!Setting_Damage_PlayerFireball
+								STA $00
+							endif
+							BRA ....Damage				;/
+	
+						....YoshiFireball
+							if !Setting_SpriteHP_TwoByte
+								REP #$20				;\Damage from yoshi's fireball
+								LDA.w #!Setting_Damage_YoshiFireball	;|
+								STA $00					;|
+								SEP #$20				;/
+							else
+								LDA.b #!Setting_Damage_YoshiFireball
+								STA $00
+							endif
+	
+						....Damage
+							LDA.b #10				;\Just to show the blinking and in case if projectile penetrates.
+							STA !InvulnerabilityTimer,x		;/
+							JSL !SharedSub_SpriteHPDamage				;>Lose HP
+							%SetHealCooldown()
+							LDA !Freeram_SpriteHP_CurrentHPLow,x		;\If HP != 0, don't kill
+							if !Setting_SpriteHP_TwoByte
+								ORA !Freeram_SpriteHP_CurrentHPHi,x		;|
+							endif
+							BNE .....NoDeath			;/
+							JSR SpinjumpKillSprite			;>Make sprite die (sets !14C8,x and uses whats marked * to prevent executing multiple times).
+							BRA .....SkipSfx
+	
+							.....NoDeath
+								%PlaySoundEffect(!Setting_Damage_SfxNumber, !Setting_Damage_SfxPort)
+	
+							.....SkipSfx
+								LDA #$01		;\Turn fireball into smoke the same way it interacts with enemies and solid blocks in vanilla.
+								STA $170B|!Base2,y	;|
+								LDA #$0F		;|
+								STA $176F|!Base2,y	;/
+	
+					...NextSlot
+						DEY			;>Next slot
+						BMI ...ExitLoop		;\Loop until out of 0-9 (inclusive) range
+						JMP ..Loop		;/
+						...ExitLoop
+		endif
+
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	;Bounce blocks
+	;
+	;Note to self: thankfully, they are mostly 16x16
+	;shaped.
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+	.HitboxWithBounceBlocks
+		LDY.b #$04-1	;>There are 4 slots, numbered from 0 to 3.
+
+		..Loop
+			LDA $1699|!Base2,y	;\Non-existent bounce block = next slot
+			BEQ ...NextSlot		;/
+
+			CMP #$07		;\A spinning turn block does not hurt foes.
+			BEQ ...NextSlot		;/
+
+			...SpriteHit
+				JSR MainSpriteClipA
+				JSR BounceSprClipB	;>Get bounce sprite clipping into B.
+				JSL $03B72B|!bank	;>Check contact between A and B.
+				BCC ...NextSlot		;>No contact, check other extended sprite.
+			...Contact
+				;------------------------------------------------------------------------------
+				;here is where the contact happens. Make sure that it goes to [...NextSlot]
+				;so that in case if 2 bounce contacts at the same frame, each will run this.
+				;Y = current bounce sprite slot.
+				;------------------------------------------------------------------------------
+				JSR CheckDamageIfZeroHPOrInvul		;\Prevent damaging sprite multiple frames
+				BCS ....RunBounceBlockDmg		;|during touching a bounce sprite.
+				JMP .SkipBounceBlkDmg			;/
+
+				....RunBounceBlockDmg	
+					LDA.b #15			;\Prevent another damage on next frame
+					STA !InvulnerabilityTimer,x	;/
+					%SpriteDamage(!Setting_Damage_BounceBlock)
+					%SetHealCooldown()
+					LDA !Freeram_SpriteHP_CurrentHPLow,x	;\If HP != 0, don't kill
+					if !Setting_SpriteHP_TwoByte
+						ORA !Freeram_SpriteHP_CurrentHPHi,x	;|
+					endif
+					BNE ....NoDeath			;/
+					JSR SpinjumpKillSprite	;>Make sprite die
+					BRA ....SkipSfx
+
+				....NoDeath
+					%PlaySoundEffect(!Setting_Damage_SfxNumber, !Setting_Damage_SfxPort)
+				....SkipSfx
+			...NextSlot
+				DEY			;>Next slot
+				BPL ..Loop		;>Loop if there is another slot to run, otherwise terminate
+
+	.SkipBounceBlkDmg
+		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+		;Other (normal/main) sprites.
+		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	.HitboxWithOtherSpr
+		LDY.b #!sprite_slots-1		;There are 12 slots in LoROM (ranging from 0 to 11), or 22 in SA-1 (ranging from 0 to 21).
+
+		..Loop
+			TYA			;\Don't interact with its own slot/self.
+			CMP $15E9|!Base2	;|
+			BNE +
+			JMP ...NextSlot		;/>branch distance limit.
+
+			+
+			LDA !14C8,y		;>Sprite state
+			CMP #$08		;\No interaction on non-existent sprite and any form of death sprite.
+			BCC ...No
+			CMP #$0B
+			BCS ...No
+			BRA ...ValidStates
+			...No
+				JMP ...NextSlot		;>Powerup from goal as well as invalid states.
+			...ValidStates
+				JSR MainSpriteClipA		;>Get hitbox A of main sprite
+				....BobOmbExplosionCheck
+					LDA !9E,y
+					CMP #$0D				;\Other than bob-omb
+					BNE ....NonExplosionSprites		;/
+					LDA !7FAB10,y				;\Is custom sprite
+					BIT.b #%00001000			;|
+					BNE ....NonExplosionSprites		;/
+					LDA !1534,y				;\Is exploding
+					BNE ....ExplosionSprite			;/
+				....ExplodePrematurely
+					LDA !14C8,y
+					CMP #$08
+					BNE +
+					JMP ...NextSlot
+					+
+					;If hit directly with a Bob-omb before it exploded, make it explode immediately
+					JSR CarryableKickedClipB
+					JSL $03B72B|!bank			;>Check for contact
+					BCS +
+					JMP ...NextSlot
+					+
+					LDA #$01				;\Explode early
+					STA !1534,y				;|
+					LDA #$40				;|
+					STA !1540,y				;/>Explosion timer
+					LDA #$08				;\Make it a normal routine
+					STA !14C8,y				;/
+					JMP ...NextSlot				
+				....ExplosionSprite
+					LDA.b #!Setting_Bobomb_ExplosionApothem
+					STA $8B
+					%GetBobOmbExplosionClippingB()
+					JSL $03B72B|!bank
+					BCS +
+					JMP ...NextSlot
+					+
+					.....ExplosionContact
+						;------------------------------------------------------------------------------
+						;This handles Bob-omb explosion damage
+						;------------------------------------------------------------------------------
+						JSR CheckDamageIfZeroHPOrInvul
+						BCS +
+						JMP ...NextSlot
+						+
+						......Damage
+							LDA.b #90				;>invulnerability timer must be long enough to avoid multiple hits from the same explosion.
+							STA !InvulnerabilityTimer,x
+							%SpriteDamage(!Setting_Damage_BobOmbExplosion)
+							%SetHealCooldown()
+							LDA !Freeram_SpriteHP_CurrentHPLow,x	;\If HP != 0, don't kill
+							if !Setting_SpriteHP_TwoByte
+								ORA !Freeram_SpriteHP_CurrentHPHi,x	;|
+							endif
+							BNE ......NoDeath			;/
+							
+							......Death
+								JSR SpinjumpKillSprite
+								BRA ...NextSlot
+							......NoDeath
+								%PlaySoundEffect(!Setting_Damage_SfxNumber, !Setting_Damage_SfxPort)
+							
+				....NonExplosionSprites
+					JSR CarryableKickedClipB		;>You may need to change this if you have sprites other than "16x16" dimension.
+				....CheckContact
+					JSL $03B72B|!bank			;>If sprite B hits this sprite
+					BCC ...NextSlot
+			...Contact
+				;------------------------------------------------------------------------------
+				;here is where the contact happens. Make sure that it goes to [...NextSlot] so
+				;that in case if 2 bounce contacts at the same frame, each will run this. 
+				;
+				;Y = current bounce sprite slot.
+				;------------------------------------------------------------------------------
+				JSR CheckDamageIfZeroHPOrInvul
+				BCC ...ExitLoop				;/
+			
+				;Accepts states #$08 to #$0B here. My following example only includes carryable/kicked to damage.
+				LDA !14C8,y			;\only allow kicked/carryable sprites
+				CMP #$09			;|
+				BEQ ....CarryableKickedSpdChk	;|
+				CMP #$0A			;|
+				BEQ ....CarryableKickedSpdChk	;/
+				BRA ...NextSlot			;>check next slot
+			
+				....CarryableKickedSpdChk
+					.....XSpeed
+						LDA !B6,y		;\If X speed already positive, don't flip
+						BPL ......Positive	;/
+						EOR #$FF		;\Invert speed (absolute value)
+						INC			;/
+
+						......Positive
+							CMP #$08		;\If absolute speed bigger than #$08, hurt boss
+							BCS ...Damage		;/if not, check other speed
+
+					.....YSpeed
+						LDA !AA,y		;\If Y speed already positive, don't flip
+						BPL ......Positive	;/
+						EOR #$FF		;\Invert speed (absolute value)
+						INC			;/
+
+						......Positive
+							CMP #$08		;\If absolute speed less than #$08 on both, 
+							BCC ...NextSlot		;/no damage/interaction
+
+			...Damage
+				LDA.b #10
+				STA !InvulnerabilityTimer,x
+				%SpriteDamage(!Setting_Damage_KickedSprite)
+				%SetHealCooldown()
+				LDA !Freeram_SpriteHP_CurrentHPLow,x	;\If HP != 0, don't kill
+				if !Setting_SpriteHP_TwoByte
+					ORA !Freeram_SpriteHP_CurrentHPHi,x	;|
+				endif
+				BNE ....NoDeath			;/
+				JSR SpinjumpKillSprite
+				BRA ....SkipSfx
+
+				....NoDeath
+					%PlaySoundEffect(!Setting_Damage_SfxNumber, !Setting_Damage_SfxPort)
+				....SkipSfx
+					LDA #$02			;\Kill sprite (falling down screen).
+					STA !14C8,y			;/
+					LDA #$C8			;\Make it jump up before falling.
+					STA !AA,y			;/
+	
+					.....XSpeedDeflect
+						LDA !B6,y			;\same speed as smw's
+						BMI ......Leftwards
+						......Rightwards
+							LDA #$F0
+							BRA +
+						......Leftwards
+							LDA #$10
+							+
+							STA !B6,y
+
+			...NextSlot
+				DEY
+				BMI ...ExitLoop			;>long way up that branches cannot jump that far.
+				JMP ..Loop
+
+			...ExitLoop
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;Cape spin
 	;
@@ -474,6 +773,85 @@ MainSpriteClipA:
 	LDA #$0C	;\Hitbox width and height
 	STA $06		;|
 	STA $07		;/
+	RTS
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ExtSprFireballClipB:
+;Gets the clipping of an extended sprite's hitbox into B.
+	LDA $171F|!Base2,y	;\X position
+	STA $00			;|
+	LDA $1733|!Base2,y	;|
+	STA $08			;/
+	LDA $1715|!Base2,y	;\Y position
+	STA $01			;|
+	LDA $1729|!Base2,y	;|
+	STA $09			;/
+
+	.DifferentSize		
+	LDA $170B|!Base2,y		;\Determine the shape of hitbox
+	CMP #$05		;|depending on its extended sprite number
+	BEQ ..PlayerFireball	;|
+	CMP #$11		;|
+	BEQ ..YoshiFireball	;|
+	BRA .done		;/
+
+	..PlayerFireball
+	LDA #$08
+	BRA ..SetSize
+
+	..YoshiFireball
+	LDA #$10
+
+	..SetSize
+	STA $02
+	STA $03
+
+	.done
+	RTS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+BounceSprClipB:
+;Gets the clipping of a bounce sprite hitbox into B
+	LDA $16A5|!Base2,y	;\X position
+	STA $00			;|
+	LDA $16AD|!Base2,y	;|
+	STA $08			;/
+	LDA $16A1|!Base2,y	;\Y position
+	STA $01			;|
+	LDA $16A9|!Base2,y	;|
+	STA $09			;/
+
+	LDA #$10	;\#$10 by #$10 (16x16) hitbox.
+	STA $02		;|
+	STA $03		;/
+	RTS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+CarryableKickedClipB:
+;Gets the clipping of most "16x16" (actually 14x14?) carryable/kicked sprites
+	LDA !14E0,y	;\High byte x pos
+	XBA		;/
+	LDA !E4,y	;>low byte x pos (LDA $xx,y does not exist).
+	REP #$20	;\Add by #$0002 towards the right
+	CLC		;|
+	ADC #$0002	;|
+	SEP #$20	;/
+	STA $00		;>Store to low byte x position hitbox B
+	XBA		;\Same for high byte
+	STA $08		;/
+
+	LDA !14D4,y	;\High byte y pos
+	XBA		;/
+	LDA !D8,y	;>low byte y pos (LDA $xx,y does not exist).
+	REP #$20	;\Add by #$0002 downwards
+	CLC		;|
+	ADC #$0002	;|
+	SEP #$20	;/
+	STA $01		;>Store that to y position hitbox B
+	XBA		;\Same for high byte
+	STA $09		;/
+
+	LDA #$0E	;\#$0E by #$0E (14x14) hitbox
+	STA $02		;|
+	STA $03		;/
 	RTS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 CapeClipB:
@@ -628,201 +1006,3 @@ Heal:
 			STA !Freeram_SpriteHP_CurrentHPLow,x
 	endif
 	RTS
-	
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;Callback function when calling
-;%MasterHandleCollisionWithSprites(). See
-;routine "MasterHandleCollisionWithSprites.asm"
-;for important information.
-;
-;This code runs for every sprite colliding with
-;this main sprite.
-;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-HandleDamagesFromSprExtandBounceSpr:
-	;The values set prior calling this subroutines are:
-	; - $04-$07 (4 bytes), $0A-$0B (2 bytes) (*): Clipping A of main sprite
-	; - $8D-$8F (3 bytes) (*): The callback address, which is where the label
-	;   "HandleDamagesFromSprExtandBounceSpr" points to.
-	; - Values to use here are:
-	; -- Y register (*): Current sprite slot processed
-	; -- $8A: Type of sprite
-	; ---- $00 = Main sprite
-	; ---- $01 = Bob-omb explosion
-	; ---- $02 = Extended
-	; ---- $03 = Bounce block
-	;
-	;Any data marked with "(*)" must be preserved to the end of this callback
-	;if modified, else glitch, freeze (such as infinite loop), crash can occur.
-	JSR CheckDamageIfZeroHPOrInvul		;\Because this is checked in a per-sprite-slot bases
-	BCC .Done				;/2+ sprites colliding with this sprite at the same frame will not be registered.
-	LDA $8A
-	BEQ .HandleMainSprite
-	CMP #$01
-	BEQ .HandleBobOmbExplosion
-	CMP #$02
-	BEQ .HandleFireballs
-	CMP #$03
-	BEQ .HandleBounceBlocks
-	.Done
-		RTL ;>Failsafe
-	
-	.HandleMainSprite
-		
-		;Accepts states #$08 to #$0B here. My following example only includes carryable/kicked to damage.
-		LDA !14C8,y			;\only allow kicked/carryable sprites
-		CMP #$09			;|
-		BEQ ..CarryableKickedSpdChk	;|
-		CMP #$0A			;|
-		BEQ ..CarryableKickedSpdChk	;/
-		RTL
-		..CarryableKickedSpdChk
-			...XSpeed
-				LDA !B6,y		;\If X speed already positive, don't flip
-				BPL ....Positive	;/
-				EOR #$FF		;\Invert speed (absolute value)
-				INC			;/
-
-				....Positive
-					CMP #$08		;\If absolute speed bigger than #$08, hurt boss
-					BCS ...Damage		;/if not, check other speed
-
-			...YSpeed
-				LDA !AA,y		;\If Y speed already positive, don't flip
-				BPL ....Positive	;/
-				EOR #$FF		;\Invert speed (absolute value)
-				INC			;/
-
-				....Positive
-					CMP #$08		;\If absolute speed less than #$08 on both, 
-					BCC ..Done		;/no damage/interaction
-
-			...Damage
-				LDA.b #10
-				STA !InvulnerabilityTimer,x
-				%SpriteDamage(!Setting_Damage_KickedSprite)
-				JSR MainSpriteClipA				;>Restore hitbox values for next sprite processing
-				%SetHealCooldown()
-				LDA !Freeram_SpriteHP_CurrentHPLow,x	;\If HP != 0, don't kill
-				if !Setting_SpriteHP_TwoByte
-					ORA !Freeram_SpriteHP_CurrentHPHi,x	;|
-				endif
-				BNE ....NoDeath			;/
-				JSR SpinjumpKillSprite
-				BRA ....SkipSfx
-
-				....NoDeath
-					%PlaySoundEffect(!Setting_Damage_SfxNumber, !Setting_Damage_SfxPort)
-				....SkipSfx
-					LDA #$02			;\Kill sprite (falling down screen).
-					STA !14C8,y			;/
-					LDA #$C8			;\Make it jump up before falling.
-					STA !AA,y			;/
-	
-					.....XSpeedDeflect
-						LDA !B6,y			;\same speed as smw's
-						BMI ......Leftwards
-						......Rightwards
-							LDA #$F0
-							BRA +
-						......Leftwards
-							LDA #$10
-							+
-							STA !B6,y
-		
-		..Done
-			RTL
-	.HandleBobOmbExplosion
-		LDA.b #90				;>invulnerability timer must be long enough to avoid multiple hits from the same explosion.
-		STA !InvulnerabilityTimer,x
-		%SpriteDamage(!Setting_Damage_BobOmbExplosion)
-		JSR MainSpriteClipA				;>Restore hitbox values for next sprite processing
-		%SetHealCooldown()
-		LDA !Freeram_SpriteHP_CurrentHPLow,x	;\If HP != 0, don't kill
-		if !Setting_SpriteHP_TwoByte
-			ORA !Freeram_SpriteHP_CurrentHPHi,x	;|
-		endif
-		BNE ..NoDeath			;/
-		
-		..Death
-			JSR SpinjumpKillSprite
-			RTL
-		..NoDeath
-			%PlaySoundEffect(!Setting_Damage_SfxNumber, !Setting_Damage_SfxPort)
-		..Done
-			RTL
-	.HandleFireballs
-		LDA $170B|!Base2,y	;>Extended sprite number (do not clear it before reaching here)
-		CMP #$05		;\Player's fireball
-		BEQ ..PlayerFireball	;/
-		CMP #$11		;\Yoshi's fireball
-		BEQ ..YoshiFireball	;/
-		RTL
-	
-		..PlayerFireball
-			if !Setting_SpriteHP_TwoByte
-				REP #$20				;\Damage from player's fireball
-				LDA.w #!Setting_Damage_PlayerFireball	;|
-				STA $00					;|
-				SEP #$20				;/
-			else
-				LDA.b #!Setting_Damage_PlayerFireball
-				STA $00
-			endif
-			BRA ..Damage				;/
-	
-		..YoshiFireball
-			if !Setting_SpriteHP_TwoByte
-				REP #$20				;\Damage from yoshi's fireball
-				LDA.w #!Setting_Damage_YoshiFireball	;|
-				STA $00					;|
-				SEP #$20				;/
-			else
-				LDA.b #!Setting_Damage_YoshiFireball
-				STA $00
-			endif
-	
-		..Damage
-			LDA.b #10				;\Just to show the blinking and in case if projectile penetrates.
-			STA !InvulnerabilityTimer,x		;/
-			JSL !SharedSub_SpriteHPDamage				;>Lose HP
-			JSR MainSpriteClipA				;>Restore hitbox values for next sprite processing
-			%SetHealCooldown()
-			LDA !Freeram_SpriteHP_CurrentHPLow,x		;\If HP != 0, don't kill
-			if !Setting_SpriteHP_TwoByte
-				ORA !Freeram_SpriteHP_CurrentHPHi,x		;|
-			endif
-			BNE ...NoDeath			;/
-			JSR SpinjumpKillSprite			;>Make sprite die (sets !14C8,x and uses whats marked * to prevent executing multiple times).
-			BRA ...SkipSfx
-	
-			...NoDeath
-				%PlaySoundEffect(!Setting_Damage_SfxNumber, !Setting_Damage_SfxPort)
-	
-			...SkipSfx
-				LDA #$01		;\Turn fireball into smoke the same way it interacts with enemies and solid blocks in vanilla.
-				STA $170B|!Base2,y	;|
-				LDA #$0F		;|
-				STA $176F|!Base2,y	;/
-		
-		..Done
-			RTL
-	.HandleBounceBlocks
-		LDA.b #15			;\Prevent another damage on next frame
-		STA !InvulnerabilityTimer,x	;/
-		%SpriteDamage(!Setting_Damage_BounceBlock)
-		JSR MainSpriteClipA				;>Restore hitbox values for next sprite processing
-		%SetHealCooldown()
-		LDA !Freeram_SpriteHP_CurrentHPLow,x	;\If HP != 0, don't kill
-		if !Setting_SpriteHP_TwoByte
-			ORA !Freeram_SpriteHP_CurrentHPHi,x	;|
-		endif
-		BNE ..NoDeath			;/
-		JSR SpinjumpKillSprite	;>Make sprite die
-		BRA ..SkipSfx
-
-		..NoDeath
-			%PlaySoundEffect(!Setting_Damage_SfxNumber, !Setting_Damage_SfxPort)
-		..SkipSfx
-		..Done
-			RTL

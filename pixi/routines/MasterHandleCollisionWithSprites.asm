@@ -3,32 +3,35 @@
 ;Master handle collision with sprites.
 ;
 ;Handles collision with other main sprites, extended sprites,
-;and bounce block sprites.
-;
+;and bounce block sprites, with a callback function you can
+;customize behavior.
 ;
 ;Input:
-; - $04-$07 (4 bytes), $0A-$0B (2 bytes): Main sprite clipping (A):
+; NOTE: Stuff here marked with an asterisk "(*)" in parenthesis
+; means the values must be preserved to the end of the callback
+; routine, else glitches crashes, and infinite loops can occur.
+;
+; - $04-$07 (4 bytes), $0A-$0B (2 bytes) (*): Main sprite
+;   clipping A:
 ; -- X position: $04 (LowByte), $0A (HighByte)
 ; -- Y position: $05 (LowByte), $0B (HighByte)
 ; -- Width: $06
 ; -- Height: $07
-;   Make sure you preserve these values in the supplied subroutine
-;   code during a collision.
 ;
-; - $8D-$8F (3 bytes): 24-bit address location of a subroutine
-;   to call for each sprite colliding with this main sprite.
-;   Same above, make sure the provided subroutine preserve this
-;   value during a collision. Warning: Game may glitch or crash if
-;   this is an invalid address.
+; - $8D-$8F (3 bytes) (*): 24-bit address location of a
+;   callback subroutine to call for each sprite colliding with
+;   this main sprite. Must end with an RTL. Warning: Make sure
+;   this is a valid address else the game most-likely crashes.
 ; -- ^The subroutine is called with the following information:
-; --- Y register: Current index of a sprite colliding with.
+; --- Y register (*): Current index and an internal loop counter
+;     of a sprite colliding with.
 ; --- $8A: Type of Sprite:
 ; ---- $00 = Main sprite
 ; ---- $01 = Bob-omb explosion
 ; ---- $02 = Extended
 ; ---- $03 = Bounce block
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-?HandleSpriteCollisions:
+?MasterHandleSpriteCollisions:
 	?.MainSprites
 		LDY.b #!sprite_slots-1
 		?..Loop
@@ -116,6 +119,26 @@
 				BCC ?...Next
 			?...Contact
 				LDA #$02
+				STA $8A
+				JSL ?ExecuteCallBack
+			?...Next
+				DEY
+				BPL ?..Loop
+	?.BounceBlocks
+		LDY.b #$04-1
+		?..Loop
+			LDA $1699|!Base2,y	;\Non-existent bounce block = next slot
+			BEQ ?...Next		;/
+
+			CMP #$07		;\A spinning turn block does not hurt foes.
+			BEQ ?...Next		;/
+			
+			?...ActiveBounceBlock
+				JSR ?BounceSprClipB
+				JSL $03B72B|!bank
+				BCC ?...Next
+			?...Contact
+				LDA #$03
 				STA $8A
 				JSL ?ExecuteCallBack
 			?...Next
@@ -221,3 +244,19 @@
 
 	?.done
 		RTS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+?BounceSprClipB:
+;Gets the clipping of a bounce sprite hitbox into B
+	LDA $16A5|!Base2,y	;\X position
+	STA $00			;|
+	LDA $16AD|!Base2,y	;|
+	STA $08			;/
+	LDA $16A1|!Base2,y	;\Y position
+	STA $01			;|
+	LDA $16A9|!Base2,y	;|
+	STA $09			;/
+
+	LDA #$10	;\#$10 by #$10 (16x16) hitbox.
+	STA $02		;|
+	STA $03		;/
+	RTS
