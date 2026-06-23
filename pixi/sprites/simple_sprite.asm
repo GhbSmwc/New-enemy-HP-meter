@@ -37,8 +37,7 @@
 			; Warning: Having !Setting_UseModified5FireballsSystem set to 0
 			; and !Setting_SpriteHP_Modify5FireballsSystem set to 1
 			; (in "EnemyHPMeterDefines") may result in both the fireballs code
-			; to run, dealing additional damage that shouldn't (there's an assert
-			; preventing this however as a failsafe).
+			; to run, dealing additional damage that shouldn't.
 	
 		!Setting_StompBounceBack	= 1	;>bounce player away when stomping: 0 = false, 1 = true.
 		!Setting_DamagePlayer		= 1	;>0 = harmless, 1 = damage player on contact (besides stomping)
@@ -113,8 +112,6 @@
 		if !Setting_SpriteHP_TwoByte
 			!DamageSize = "dw"
 		endif
-		
-	assert not(and(notequal(!Setting_SpriteHP_Modify5FireballsSystem, 0), equal(!Setting_UseModified5FireballsSystem, 0))), "Invalid option, either use its own built in fireball damage, or the fireball damage from chucks, not both."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; sprite init JSL
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -661,9 +658,13 @@ HandleDamagesFromSprExtandBounceSpr:
 	CMP #$01
 	BEQ .HandleBobOmbExplosion
 	CMP #$02
-	BEQ .HandleFireballs
+	BNE +
+	JMP .HandleFireballs
+	+
 	CMP #$03
-	BEQ .HandleBounceBlocks
+	BNE +
+	JMP .HandleBounceBlocks
+	+
 	.Done
 		RTL ;>Failsafe
 	

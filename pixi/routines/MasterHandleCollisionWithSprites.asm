@@ -111,7 +111,7 @@
 			BEQ ?...Fireball		;/
 			CMP #$11			;\Yoshi's fireball after eating
 			BEQ ?...Fireball		;/a red shell
-			BRA ?...NextSlot		;>Others = next
+			BRA ?...Next			;>Others = next
 		
 			?...Fireball
 				JSR ?ExtSprFireballClipB
