@@ -28,8 +28,10 @@
 ; --- $8A: Type of Sprite:
 ; ---- $00 = Main sprite
 ; ---- $01 = Bob-omb explosion
-; ---- $02 = Extended
-; ---- $03 = Bounce block
+; ---- $02 = Bob-omb contact (can be used for auto-explode or
+;      bounce the bob-omb and fall down screen).
+; ---- $03 = Extended
+; ---- $04 = Bounce block
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ?MasterHandleSpriteCollisions:
 	?.MainSprites
@@ -63,31 +65,21 @@
 					BNE ?....NonExplosionSprites		;/
 					LDA !1534,y				;\Is exploding
 					BNE ?....ExplosionSprite		;/
-				?....ExplodePrematurely
+				?....BobOmbContactPriorExploding
 					LDA !14C8,y
 					CMP #$08
-					BNE ?+
-					JMP ?...Next
-					?+
-					;If hit directly with a Bob-omb before it exploded, make it explode immediately
+					BEQ ?...Next
 					JSR ?CarryableKickedClipB
 					JSL $03B72B|!bank			;>Check for contact
-					BCS ?+
-					JMP ?...Next
-					?+
-					LDA #$01				;\Explode early
-					STA !1534,y				;|
-					LDA #$40				;|
-					STA !1540,y				;/>Explosion timer
-					LDA #$08				;\Make it a normal routine
-					STA !14C8,y				;/
-					JMP ?...Next				
+					BCC ?...Next
+					LDA #$02
+					STA $8A
+					JSL ?ExecuteCallBack
+					BRA ?...Next				
 				?....ExplosionSprite
 					JSR ?BobOmbExplosionClippingB
 					JSL $03B72B|!bank
-					BCS ?+
-					JMP ?...Next
-					?+
+					BCC ?...Next
 					?.....ExplosionContact
 						LDA #$01
 						STA $8A
@@ -118,7 +110,7 @@
 				JSL $03B72B|!bank
 				BCC ?...Next
 			?...Contact
-				LDA #$02
+				LDA #$03
 				STA $8A
 				JSL ?ExecuteCallBack
 			?...Next
@@ -138,7 +130,7 @@
 				JSL $03B72B|!bank
 				BCC ?...Next
 			?...Contact
-				LDA #$03
+				LDA #$04
 				STA $8A
 				JSL ?ExecuteCallBack
 			?...Next

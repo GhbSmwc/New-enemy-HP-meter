@@ -335,10 +335,10 @@ SPRITE_CODE_START:
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		JSR MainSpriteClipA				;>Set up hitbox for main sprite
 		REP #$20					;\Set up callback function
-		LDA.w HandleDamagesFromSprExtandBounceSpr	;|
+		LDA.w #HandleDamagesFromSprExtandBounceSpr	;|
 		STA $8D						;|
 		SEP #$20					;|
-		LDA.b HandleDamagesFromSprExtandBounceSpr>>16	;|
+		LDA.b #HandleDamagesFromSprExtandBounceSpr>>16	;|
 		STA $8F						;/
 		%MasterHandleCollisionWithSprites()		;>Process custom interaction with sprites
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -656,12 +656,18 @@ HandleDamagesFromSprExtandBounceSpr:
 	LDA $8A
 	BEQ .HandleMainSprite
 	CMP #$01
-	BEQ .HandleBobOmbExplosion
+	BNE +
+	JMP .HandleBobOmbExplosion
+	+
 	CMP #$02
+	BNE +
+	JMP .HandleBobOmbAutoExplode
+	+
+	CMP #$03
 	BNE +
 	JMP .HandleFireballs
 	+
-	CMP #$03
+	CMP #$04
 	BNE +
 	JMP .HandleBounceBlocks
 	+
@@ -752,6 +758,14 @@ HandleDamagesFromSprExtandBounceSpr:
 			%PlaySoundEffect(!Setting_Damage_SfxNumber, !Setting_Damage_SfxPort)
 		..Done
 			RTL
+	.HandleBobOmbAutoExplode
+		LDA #$01				;\Explode early
+		STA !1534,y				;|
+		LDA #$40				;|
+		STA !1540,y				;/>Explosion timer
+		LDA #$08				;\Make it a normal routine
+		STA !14C8,y				;/
+		RTL
 	.HandleFireballs
 		LDA $170B|!Base2,y	;>Extended sprite number (do not clear it before reaching here)
 		CMP #$05		;\Player's fireball
