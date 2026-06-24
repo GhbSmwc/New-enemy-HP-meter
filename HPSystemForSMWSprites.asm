@@ -923,6 +923,9 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			.Done
 			RTS
 		StunnedKoopaShowHP: ;>JSL from $01AA14
+			LDA !14C8,x			;\If enemy is stunned or already dying, don't force HP bar to this enemy.
+			CMP #$08			;|
+			BNE .Restore			;/
 			.Display
 				%DealFixedDamage(0)
 			.Restore
