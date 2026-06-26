@@ -247,7 +247,7 @@
 			;   !Setting_SpriteHP_VanillaSprite_Chuck == 1 because otherwise their HP system would be broken
 			;   (Having !Setting_SpriteHP_VanillaSprite_Chuck == 0 would revert chuck to use $1528 when being
 			;   stomped, but the fireball damage code would not use $1528 but this patch's HP values instead,
-			;   resulting in them having 2 separate HP values that they die when either one of them reaches 0)).
+			;   resulting in them having 2 separate HP values that they die when either one of them reaches 0).
 			;
 			; - If a sprite have its own built-in fireball damage handler, like Ludwig/Morton/Roy, and have
 			;   $190F's "takes 5 fireballs to kill" be set, then it is possible the sprite takes both damage
