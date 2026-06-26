@@ -395,6 +395,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		%HijacksForFallingOffScrn($01B140, ShowHPForFallingOffScrn, x)
 		%HijacksForFallingOffScrn($02945B, ShowHPForFallingOffScrnCapeSpinQuakeNetPunch, x)
 		%HijacksForFallingOffScrn($02F29D, ShowHPForFallingOffScrn, x)
+		%HijacksForFallingOffScrn($028168, ShowHPForFallingOffScrnYregister, y) ;>Display HP for sprites blown up by bob-omb explosions
 	;Make Amazing Hammer bro platform when bonked by player to show HP
 		%HijacksForFallingOffScrn($02DBFD, ShowHPForFallingOffScrnYregister, y)
 	;Hijack the clear-sprite tables routine (when sprite spawns) to default sprites with a
