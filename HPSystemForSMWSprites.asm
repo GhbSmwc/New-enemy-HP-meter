@@ -911,6 +911,12 @@ incsrc "Defines/GraphicalBarDefines.asm"
 						%SpriteHPMeterBlacklist($46)		;>Diggin' chuck
 						%SpriteHPMeterBlacklist($AB)		;>Rex
 						%SpriteHPMeterBlacklist_Range($91, $98)	;>Sprite numbers $91-$98 are chucks, which already been handled.
+						%SpriteHPMeterBlacklist($9D)
+						%SpriteHPMeterBlacklist($D4)
+							;^These are bubbles with sprite inside, which are quite glitchy with
+							; kicked/carryable sprites (registers a hit every frame rather than once)
+							; and it also seemingly runs $asdf when popped, resulting in the HP meter
+							; system to think a sprite have been healed.
 
 			.DisplayHPMeterOfOneShotSprites
 				LDA.b #!SpriteHP_MaxHPAndDamageValue		;\Treat as the killing blow deals max damage to the sprite
