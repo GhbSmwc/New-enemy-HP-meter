@@ -295,11 +295,13 @@
 			;   see !Setting_SpriteHP_Koopas_StompedStunnedOutShells).
 			;
 			; If there are enemies/sprites that shouldn't have HP meter display for them when killed, see under the
-			; label "ZeroOutHPOfOneShotSprites" in HPSystemForSMWSprites.asm.
+			; label "ZeroOutHPOfOneShotSprites" in HPSystemForSMWSprites.asm. This runs once per sprite gets
+			; insta-killed.
 			;
 			; For enemies that are switching states or changing sprite number from a thing that should have an HP meter
 			; and currently displayed for, into another thing that should make its HP meter disappear, see
-			; "UberASMTool/level/DisplayEnemyHP.asm" under label "...Exists".
+			; "UberASMTool/level/DisplayEnemyHP.asm" under label "...Exists". Note that this runs EVERY FRAME while the
+			; meter is active.
 			;
 			;  Alternatively, for custom sprites, you can simply make it hide the meter like so in its sprite code:
 			;  ;[...]
