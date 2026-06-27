@@ -287,33 +287,44 @@
 			; of enemies. 0 = No, 1 = Yes. Note that this also modifies the sprite table clearing routine (when sprite
 			; spawns) due to not all sprites have an init to set its default HP.
 			;
-			; Other enemies listed below will show the health meter in unique ways:
-			; - Enemies that don't get killed at all by stomps but instead simply change states will show no damage
-			;   but will still display the meter: Wiggler, Dry Bones, Bony Beetle.
-			; - When regular Koopas are stomped, the HP meter will switch to the sprite slot of the shell, not the
-			;   shell-less koopa it spawned (with the exception that you do not wish koopas get forced out of shells,
-			;   see !Setting_SpriteHP_Koopas_StompedStunnedOutShells).
+			; Notes:
 			;
-			; If there are enemies/sprites that shouldn't have HP meter display for them when killed, see under the
-			; label "ZeroOutHPOfOneShotSprites" in HPSystemForSMWSprites.asm. This runs once per sprite gets
-			; insta-killed.
+			; - Other enemies listed below will show the health meter in unique ways:
+			; -- Enemies that don't get killed at all by stomps but instead simply change states will show no damage
+			;    but will still display the meter: Wiggler, Dry Bones, Bony Beetle.
+			; -- When regular Koopas are stomped, the HP meter will switch to the sprite slot of the shell, not the
+			;    shell-less koopa it spawned (with the exception that you do not wish koopas get forced out of shells,
+			;    see !Setting_SpriteHP_Koopas_StompedStunnedOutShells).
+			; - If there are enemies/sprites that shouldn't have HP meter display for them when killed, see under the
+			;   label "ZeroOutHPOfOneShotSprites" in HPSystemForSMWSprites.asm. This runs once per sprite gets
+			;   insta-killed.
 			;
-			; For enemies that are switching states or changing sprite number from a thing that should have an HP meter
-			; and currently displayed for, into another thing that should make its HP meter disappear, see
-			; "UberASMTool/level/DisplayEnemyHP.asm" under label "...Exists". Note that this runs EVERY FRAME while the
-			; meter is active.
+			; - For enemies that are switching states or changing sprite number from a thing that should have an HP meter
+			;   and currently displayed for, into another thing that should make its HP meter disappear, see
+			;   "UberASMTool/level/DisplayEnemyHP.asm" under label "...Exists". Note that this runs EVERY FRAME while the
+			;   meter is active.
 			;
-			;  Alternatively, for custom sprites, you can simply make it hide the meter like so in its sprite code:
-			;  ;[...]
-			;  ;Assuming X is the current sprite slot processed
-			;  JSL !SharedSub_SpriteHPGetSlotIndex
-			;  TXA
-			;  CMP !Scratchram_SpriteHP_SpriteSlotToDisplay ;>CPX $xxxxxx does not exists, 
-			;  BNE .DontHideMeter ;>If meter is on other sprite and not this, don't suppress it.
-			;  .HideHPMeter
-			;   LDA #$FF
-			;   STA !Freeram_SpriteHP_MeterState
-			;  .DontHideHPMeter
+			;   Alternatively, for custom sprites, you can simply make it hide the meter like so in its sprite code:
+			;    ;[...]
+			;    ;Assuming X is the current sprite slot processed
+			;    JSL !SharedSub_SpriteHPGetSlotIndex
+			;    TXA
+			;    CMP !Scratchram_SpriteHP_SpriteSlotToDisplay ;>CPX $xxxxxx does not exists, 
+			;    BNE .DontHideMeter ;>If meter is on other sprite and not this, don't suppress it.
+			;    .HideHPMeter
+			;     LDA #$FF
+			;     STA !Freeram_SpriteHP_MeterState
+			;    .DontHideHPMeter
+			; - If you are using custom sprites with their own stun/death handler for one-shots (either within sprite
+			;   code or pixi routine), you'll need to modify it if you wished to also make the HP meter switch to that
+			;   enemy. This can be done like so:
+			;    JSL !SharedSub_SpriteHPDamage
+			;   If it's another sprite it interacts with, and uses the Y register for that other sprite, then do this
+			;   instead:
+			;    PHX
+			;    TYX
+			;    JSL !SharedSub_SpriteHPDamage
+			;    PLX
 			
 		;Amount of HP SMW sprites has. NOTE: SMW only have hit counts being an 8-bit unsigned integer stored
 		;within various sprite tables (Chucks and any sprites using the 5 fireballs to kill: $1528,
