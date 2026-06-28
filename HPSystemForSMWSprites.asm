@@ -353,7 +353,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		else
 			%RemoveFreespaceCodeFromJMLJSL($01AA14)
 			org $01AA14
-			if !Setting_SpriteHP_Koopas_StompedStunnedOutShells == 0
+			if !Setting_SpriteHP_Koopas_ClassicBehavior != 0
 				LDA #$FF
 			else
 				LDA #$02
@@ -365,7 +365,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			endif
 		endif
 	;Optional feature if user wished to have stunned koopas not leave their shells
-		if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, equal(!Setting_SpriteHP_Koopas_StompedStunnedOutShells, 0))
+		if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, notequal(!Setting_SpriteHP_Koopas_ClassicBehavior, 0))
 			org $0196C5
 			BNE $04
 		else
@@ -937,7 +937,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				%DealFixedDamage(0)
 			.Restore
 				;We need the value of Y after this is done.
-				if !Setting_SpriteHP_Koopas_StompedStunnedOutShells == 0
+				if !Setting_SpriteHP_Koopas_ClassicBehavior != 0
 					LDA #$FF
 				else
 					LDA #$02

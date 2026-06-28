@@ -1367,6 +1367,8 @@ GraphicalBarNumberOfTiles:
 ;meter to that damaged sprite (unless meter is disabled).
 ;Input:
 ; - $00 to $00+!Setting_SpriteHP_TwoByte = Amount of damage.
+; - X register (8-bit): What sprite (slot) the meter to
+;   switch to.
 ;Output:
 ; - HP is already subtracted, if damage > currentHP, HP is
 ;   set to 0.

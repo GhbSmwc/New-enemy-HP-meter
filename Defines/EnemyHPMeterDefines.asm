@@ -294,7 +294,7 @@
 			;    but will still display the meter: Wiggler, Dry Bones, Bony Beetle.
 			; -- When regular Koopas are stomped, the HP meter will switch to the sprite slot of the shell, not the
 			;    shell-less koopa it spawned (with the exception that you do not wish koopas get forced out of shells,
-			;    see !Setting_SpriteHP_Koopas_StompedStunnedOutShells).
+			;    see !Setting_SpriteHP_Koopas_ClassicBehavior).
 			; - If there are enemies/sprites that shouldn't have HP meter display for them when killed, see under the
 			;   label "ZeroOutHPOfOneShotSprites" in HPSystemForSMWSprites.asm. This runs once per sprite gets
 			;   insta-killed.
@@ -399,10 +399,10 @@
 			;^Display RAM usage on Asar console window:
 			; - 0 = No
 			; - 1 = Yes, display the HP data RAM usage on asar console (would not work for pixi due to print command reserved for description).
-		!Setting_SpriteHP_Koopas_StompedStunnedOutShells = 1
+		!Setting_SpriteHP_Koopas_ClassicBehavior = 0
 			;^Koopas do what when stomped (this is because of a hijack at $01AA14):
-			; - 0 = Stay in their shells (equivalent to hex edits at $0196C6 and $01AA15).
-			; - 1 = Come out of shells (vanilla).
+			; - 0 = Come out of shells (vanilla).
+			; - 1 = Stay in their shells (equivalent to hex edits at $0196C6 and $01AA15).
 
 
 
