@@ -12,6 +12,12 @@ incsrc "Defines/GraphicalBarDefines.asm"
 ;For all 1-shot enemies, this is enabled by having both !Setting_SpriteHP_VanillaSprite_OneShotSprites
 ;and !Setting_SpriteHP_DisplayHPOfSMWSprites set to 1.
 
+
+;Note to self (at the time of writing this)
+; - In SA-1, assuming default settings, RAM $87 is a backup of the sprite number, $9E,x ($3200,x)
+;   defined as "!sprite_num_cache". This is because it needs to remap the addresses used without
+;   the code needing to be relocated. See "SA1-Pack-140/more_sprites/more_sprites.asm".
+
 ;Macros
 	macro RemoveFreespaceCodeFromJMLJSL(Addr)
 		;Addr is the address of the instruction byte itself.
@@ -865,14 +871,14 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				endif
 				JSL !SharedSub_SpriteHPDamage
 				RTL
-		StompWigglerShowHP:
+		StompWigglerShowHP: ;>JSL from $02F26B
 			.Restore
 				LDA #$03
 				STA $1DF9
 			.ShowHP
 				%DealFixedDamage(0)	;>Wiggler takes no damage, but still display HP.
 				RTL
-		StompDryBonesBonyBeetle:
+		StompDryBonesBonyBeetle: ;>JSL from $01E5FE
 			.Restore
 				LDA #$FF
 				STA !1540,x

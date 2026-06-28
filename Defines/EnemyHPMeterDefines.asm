@@ -289,12 +289,21 @@
 			;
 			; Notes:
 			;
+			; - Dino Rhino are included here since jumping on them transforms it into a Dino Torch, becomming a one-shot
+			;   sprite. I find it weird that if you do not wish one-shot sprites not have an HP meter and 2+ shots to have
+			;   an HP meter, it would be weird that enemies spawned as a Dino Torch lack a meter, but a Dino Torch spawned
+			;   after jumping on a Dino Rhino have a meter.
 			; - Other enemies listed below will show the health meter in unique ways:
 			; -- Enemies that don't get killed at all by stomps but instead simply change states will show no damage
 			;    but will still display the meter: Wiggler, Dry Bones, Bony Beetle.
-			; -- When regular Koopas are stomped, the HP meter will switch to the sprite slot of the shell, not the
-			;    shell-less koopa it spawned (with the exception that you do not wish koopas get forced out of shells,
-			;    see !Setting_SpriteHP_Koopas_ClassicBehavior).
+			; -- When regular Koopas Troopas are stomped, the HP meter will switch to the sprite slot of the shell, not
+			;    the shell-less koopa it spawned (with the exception that you do not wish koopas get forced out of shells,
+			;    see !Setting_SpriteHP_Koopas_ClassicBehavior). This is because the regular Koopa Troopas, the shell
+			;    (wheather it's empty or stunned inside their shell with eyes showing) are the same sprite, just with a
+			;    different state. When a shell-less koopa is launched out of the shell, that is a new sprite being spawned,
+			;    and when they enter a shell, the shell-less koopa despawns and the shell becomes a koopa troopa.
+			; --- That, along with the glitch of immidiately kicking the shell that the shell-less koopa just entered makes
+			;     the shell an empty shell is a reason I can't have the meter not be on an empty shell.
 			; - If there are enemies/sprites that shouldn't have HP meter display for them when killed, see under the
 			;   label "ZeroOutHPOfOneShotSprites" in HPSystemForSMWSprites.asm. This runs once per sprite gets
 			;   insta-killed.
@@ -402,8 +411,7 @@
 		!Setting_SpriteHP_Koopas_ClassicBehavior = 0
 			;^Koopas do what when stomped (this is because of a hijack at $01AA14):
 			; - 0 = Come out of shells (vanilla).
-			; - 1 = Stay in their shells (equivalent to hex edits at $0196C6 and $01AA15).
-
+			; - 1 = Stay in their shells (applies hex edits at $0196C6 and $01AA15).
 
 
 ;Don't touch these unless you know what you're doing
