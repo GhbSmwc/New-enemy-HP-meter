@@ -304,29 +304,30 @@
 ;    bar, overworld border, etc.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 SuppressLeadingZeros:
-	LDY #$00				;>Start looking at the leftmost (highest) digit
-	LDA #$00				;\When the value is 0, display it as single digit as zero
+	LDY #$00								;>Start looking at the leftmost (highest) digit
+	LDA #$00								;\When the value is 0, display it as single digit as zero
 	STA !Scratchram_CharacterTileTable,x	;/(gets overwritten should nonzero input exist)
 
 	.Loop
 		LDA.w !Scratchram_16bitHexDecOutput|!dp,Y	;\If there is a leading zero, move to the next digit to check without moving the position to
-		BEQ ..NextDigit					;/place the tile in the table
+		BEQ ..LeadingZero							;/place the tile in the table
 	
-		..FoundDigit
+		..NonLeadingZeroes
 			LDA.w !Scratchram_16bitHexDecOutput|!dp,Y	;\Place digit
-			STA !Scratchram_CharacterTileTable,x	;/
-			INX					;>Next string position in table
-			INY					;\Next digit
-			CPY #$05				;|
-			BCC ..FoundDigit			;/
+			STA !Scratchram_CharacterTileTable,x		;/
+			INX											;>Next string position in table
+			INY											;\Next digit
+			CPY #$05									;|
+			BCC ..NonLeadingZeroes						;/
 			RTL
 	
-		..NextDigit
+		..LeadingZero
 			INY			;>1 digit to the right
 			CPY #$05		;\Loop until no digits left (minimum is 1 digit)
 			BCC .Loop		;/
-			INX			;>Next item in table
-			RTL
+			...AllZeroes
+				INX			;>We wrote a default "0", thus X must be incremented here.
+				RTL
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;Write string to Status bar/OWB+
 ;
