@@ -446,7 +446,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				LDA #$FF
 				STA !1540,x
 			endif
-		;Winged enemies
+		;Winged enemies (Works like the Dino Rhino, having 2 HP, switches form with 1/2 HP)
 			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
 				org $01A99B
 				autoclean JSL WingedEnemies
@@ -853,6 +853,11 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			;
 			;The good news is that when a sprite is spawned, its sprite number ($9E/$7FAB9E) are set before
 			;calling $07F722
+			;
+			;Syntax:
+			; %SetSpriteDefaultHP(Spr_Numb, HP)
+			; %SetSpriteRangeDefaultHP(Min_Spr_Numb, Max_Spr_Numb, HP)
+			;
 			.Restore
 				STZ.w !160E,x
 				STZ.w !1594,x
@@ -874,6 +879,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				LDA !9E,x
 				%SetSpriteDefaultHP($6E, 2)		;>Dino Rhino
 				%SetSpriteDefaultHP($6F, 1)		;>Dino Torch
+					;^Dino Torch (note that Dino torch have a max of 2 HP if transformed from Dino Rhino, otherwise a max of 1 HP if spawned directly)
 				if !Setting_SpriteHP_VanillaSprite_Rex == 2
 					%SetSpriteDefaultHP($AB, !Setting_SpriteHP_VanillaSprite_Rex_HPAmount)		;>Set Rex's HP amount if set to use HP tables directly
 				endif
@@ -881,7 +887,8 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					%SetSpriteDefaultHP($46, !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount)
 					%SetSpriteRangeDefaultHP($91, $98, !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount)
 				endif
-					;^Dino Torch (note that Dino torch have a max of 2 HP if transformed from Dino Rhino, otherwise a max of 1 HP if spawned directly)
+				%SetSpriteRangeDefaultHP($08, $0C, 2)		;>Winged Koopas
+				%SetSpriteDefaultHP($10, 2)		;>Winged Goomba
 			.Done
 				RTL
 	endif
@@ -909,7 +916,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			;For Winged Koopas at $08-$0C and a winged Galoomba $10
 			.ShowHP
 				PHA
-				JSL DealNoDamage
+				%DealFixedDamage(1)
 				PLA
 			.Restore
 				;Restore has to be done towards end due to A being needed.
