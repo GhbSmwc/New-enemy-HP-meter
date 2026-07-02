@@ -17,6 +17,10 @@ incsrc "Defines/GraphicalBarDefines.asm"
 ; - In SA-1, assuming default settings, RAM $87 is a backup of the sprite number, $9E,x ($3200,x)
 ;   defined as "!sprite_num_cache". This is because it needs to remap the addresses used without
 ;   the code needing to be relocated. See "SA1-Pack-140/more_sprites/more_sprites.asm".
+; - A similar thing with RAM $B4, defined as "!sprite_num_pointer"
+
+	!sprite_num_cache = $87
+	!sprite_num_pointer = $B4
 
 ;Macros
 	macro RemoveFreespaceCodeFromJMLJSL(Addr)
@@ -367,7 +371,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			if !sa1 == 0
 				LDY $9E,x
 			else
-				LDY $87
+				LDY !sprite_num_cache
 			endif
 		endif
 	;Optional feature if user wished to have stunned koopas not leave their shells
@@ -427,20 +431,50 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			STZ.w !160E,x
 			STZ.w !1594,x
 		endif
-	;Make stomping on Dino Rhino to transform into Dino Torch to show HP going from 2 to 1 HP
-	;(Yeah, this code, is in the *general Mario interaction routine* rather than in Dino Rhino's
-	;code, unlike Rex when getting spin jumped. Why Nintendo? Why have sprite-specific interactions
-	;programmed in a general sprite interaction code?).
-		if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
-			org $01A981
-			autoclean JSL DinoRhino2HPToTorch1HP
-			NOP
-		else
-			%RemoveFreespaceCodeFromJMLJSL($01A981)
-			org $01A981
-			LDA #$FF
-			STA !1540,x
-		endif
+	;When sprite changes into another sprite when jumped on
+		;Make stomping on Dino Rhino to transform into Dino Torch to show HP going from 2 to 1 HP
+		;(Yeah, this code, is in the *general Mario interaction routine* rather than in Dino Rhino's
+		;code, unlike Rex when getting spin jumped. Why Nintendo? Why have sprite-specific interactions
+		;programmed in a general sprite interaction code?).
+			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
+				org $01A981
+				autoclean JSL DinoRhino2HPToTorch1HP
+				NOP
+			else
+				%RemoveFreespaceCodeFromJMLJSL($01A981)
+				org $01A981
+				LDA #$FF
+				STA !1540,x
+			endif
+		;Winged enemies
+			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
+				org $01A99B
+				autoclean JSL WingedEnemies
+				NOP
+			else
+				%RemoveFreespaceCodeFromJMLJSL($01A99B)
+				org $01A99B
+				if !sa1 == 0
+					STA $9E,x
+				else
+					STA.b (!sprite_num_pointer)
+				endif
+				LDA !15F6,x
+			endif
+		;Parachute enemies. NOTE: Unlike the Dino Rhino, which is treated as a 2HP enemy based on it turning
+		;into a dino torch, Parachute enemies however is treated as 1HP and taking no damage when becomming
+		;an equivalent enemy. This is because they automatically turn into the equivalent enemy when touching
+		;the ground (if parachute counts as 1 extra HP, they'd appear to take 1 damage when landing).
+			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
+				org $01A98E
+				autoclean JSL ParachuteEnemies
+				NOP
+			else
+				%RemoveFreespaceCodeFromJMLJSL($01A98E)
+				org $01A98E
+				LDA.b #$80
+				STA !1540,x
+			endif
 	;Enemies that don't get killed at all by stomps, but get changes state. The meter will just simply display
 	;without damage
 		;Wigglers
@@ -871,18 +905,42 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				endif
 				JSL !SharedSub_SpriteHPDamage
 				RTL
+		WingedEnemies: 	;>JSL from $01A99B
+			;For Winged Koopas at $08-$0C and a winged Galoomba $10
+			.ShowHP
+				PHA
+				JSL DealNoDamage
+				PLA
+			.Restore
+				;Restore has to be done towards end due to A being needed.
+				if !sa1 == 0
+					STA $9E,x
+				else
+					STA.b (!sprite_num_pointer)
+				endif
+				LDA !15F6,x
+				RTL
+
+		ParachuteEnemies:
+			.Restore
+				LDA #$80
+				STA !1540,x
+			.ShowHP
+				BRA DealNoDamage
+			
 		StompWigglerShowHP: ;>JSL from $02F26B
 			.Restore
 				LDA #$03
 				STA $1DF9
 			.ShowHP
-				%DealFixedDamage(0)	;>Wiggler takes no damage, but still display HP.
-				RTL
+				BRA DealNoDamage	;>Wiggler takes no damage, but still display HP.
 		StompDryBonesBonyBeetle: ;>JSL from $01E5FE
 			.Restore
 				LDA #$FF
 				STA !1540,x
-				%DealFixedDamage(0)	;>They crumble, but it's better to assume no damage, much like Super Paper Mario
+				;They crumble, but it's better to assume no damage, much like Super Paper Mario
+		DealNoDamage:
+			%DealFixedDamage(0)
 				RTL
 		ZeroOutHPOfOneShotSprites:
 			.CheckSprite
@@ -922,7 +980,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 						%SpriteHPMeterBlacklist($D4)
 							;^These are bubbles with sprite inside, which are quite glitchy with
 							; kicked/carryable sprites (registers a hit every frame rather than once)
-							; and it also seemingly runs $asdf when popped, resulting in the HP meter
+							; and it also seemingly runs $07F722 when popped, resulting in the HP meter
 							; system to think a sprite have been healed.
 
 			.DisplayHPMeterOfOneShotSprites
@@ -951,7 +1009,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				if !sa1 == 0
 					LDY $9E,x
 				else
-					LDY $87
+					LDY !sprite_num_cache
 				endif
 				RTL
 	endif
