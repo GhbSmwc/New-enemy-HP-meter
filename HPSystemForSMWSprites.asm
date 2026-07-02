@@ -431,7 +431,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			STZ.w !160E,x
 			STZ.w !1594,x
 		endif
-	;When sprite changes into another sprite when jumped on
+	;When sprite changes into another sprite (become a different sprite number) when jumped on
 		;Make stomping on Dino Rhino to transform into Dino Torch to show HP going from 2 to 1 HP
 		;(Yeah, this code, is in the *general Mario interaction routine* rather than in Dino Rhino's
 		;code, unlike Rex when getting spin jumped. Why Nintendo? Why have sprite-specific interactions
@@ -460,6 +460,17 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					STA.b (!sprite_num_pointer)
 				endif
 				LDA !15F6,x
+			endif
+		;Super Koopa (sprite $73). One with feather (flashing cape), becomes a shell-less blue koopa when jumped, thus
+		;having 2 HP, the other dies instantly (1 HP). RAM $1534 is 0 for no feather (1HP), otherwise 1 (2 HP)
+			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
+				org $018531
+				autoclean JSL FeatherSuperKoopaInit
+			else
+				%RemoveFreespaceCodeFromJMLJSL($018531)
+				org $018531
+				LDA !E4,x
+				AND.b #$10
 			endif
 		;Parachute enemies. NOTE: Unlike the Dino Rhino, which is treated as a 2HP enemy based on it turning
 		;into a dino torch, Parachute enemies however is treated as 1HP and taking no damage when becomming
@@ -927,7 +938,30 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				endif
 				LDA !15F6,x
 				RTL
-
+		FeatherSuperKoopaInit:
+			.Default1HP
+				LDA #$01
+				STA !Freeram_SpriteHP_CurrentHPLow,x
+				STA !Freeram_SpriteHP_MaxHPLow,x
+				if !Setting_SpriteHP_TwoByte
+					LDA #$00
+					STA !Freeram_SpriteHP_CurrentHPHi,x
+					STA !Freeram_SpriteHP_MaxHPHi,x
+				endif
+			.Restore
+				LDA !E4,x	;\Restore code
+				AND.b #$10	;/(Even block X position = Feather, and 2 HP)
+			.SetHP
+				BNE ..NonFeathered
+				
+				..Feathered
+					PHA
+					LDA #$02
+					STA !Freeram_SpriteHP_CurrentHPLow,x
+					STA !Freeram_SpriteHP_MaxHPLow,x
+					PLA
+				..NonFeathered
+				RTL
 		ParachuteEnemies:
 			.Restore
 				LDA #$80
