@@ -509,6 +509,46 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				LDA #$FF
 				STA !1540,x
 			endif
+	;Pokey. Notes:
+	; - We actually need to check how many segments the Pokey has, because there is a glitch that
+	;   if you throw a sprite into the top-most part of Pokey, it will spawn a Pokey Head but not actually remove
+	;   that segment.
+	; - When the last segment (head) is killed, the meter disappears immidiately because the sprite is programmed
+	;   to always spawn a segment when hit, including its head. When viewing frame-by-frame when the last segment
+	;   (head) is killed the main pokey sprite disappears ($14C8,x == $00) for 1 frame before spawning a segment
+	;   sprite.
+		PokeyInitHijack:
+			if !Setting_ModifySprAndDisplayHPOfSMWSpr
+				org $018554
+				autoclean JML PokeyInitHP
+			else
+				%RemoveFreespaceCodeFromJMLJSL($018554)
+				org $018554
+				STA !C2,x
+				BRA .FaceMario
+				
+				org $01857C
+				.FaceMario
+			endif
+		if !Setting_ModifySprAndDisplayHPOfSMWSpr
+			org $02B80D
+			autoclean JSL PokeyLostSegment
+			NOP
+		else
+			%RemoveFreespaceCodeFromJMLJSL($02B80D)
+			org $02B80D
+			LDA.w $02B829,y
+			STA $0D
+		endif
+		if and(!Setting_SpriteHP_RemoveOrApplyPatch, notequal(!Setting_SpriteHP_VanillaSprite_Pokey_Damage_SoundNumber, 0))
+			org $02B7DB
+			autoclean JSL PokeyThrownSprSfx
+		else
+			%RemoveFreespaceCodeFromJMLJSL($02B7DB)
+			org $02B7DB
+			LDA.w !D8,y
+			SEC
+		endif
 	;Bosses below (only applies to bosses with a HP system, and not bowser)
 		;Big boo boss
 			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Bosses)
@@ -1051,6 +1091,71 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				else
 					LDY !sprite_num_cache
 				endif
+				RTL
+	endif
+	if !Setting_ModifySprAndDisplayHPOfSMWSpr
+		PokeyInitHP_YoshiHPTable:
+			db $03, $05, $05		;>HP amounts based on riding yoshi. Indexed by $187A.
+		PokeyInitHP: ;>JML from $018554
+			.Restore ;>Y = Riding yoshi flag (for indexing) - #$00 = No, #$01-#$02 = Yes
+				STA !C2,x
+			.IndexHPBasedOnRidingYoshi
+				PHB ;\We are indexing via Y, which cannot have a base address of 24-bits (LDA $xxxxxx,y does not exists)
+				PHK ;|Thus we need to adjust the data bank so it reads the table at the correct address.
+				PLB ;/
+				LDA PokeyInitHP_YoshiHPTable,y
+				STA !Freeram_SpriteHP_CurrentHPLow,x
+				STA !Freeram_SpriteHP_MaxHPLow,x
+				if !Setting_SpriteHP_TwoByte
+					LDA #$00
+					STA !Freeram_SpriteHP_CurrentHPHi,x
+					STA !Freeram_SpriteHP_MaxHPHi,x
+				endif
+				PLB ;>Restore data bank.
+			.BackToSMW
+				JML $01857C|!bank
+		PokeyLostSegment: ;>JSL from $02B80D
+			PHY
+			REP #$20
+			LDA $00 ;>Prevent sprite flickering bug
+			PHA
+			SEP #$20
+			%DealFixedDamage(0)
+			;We are just calling the subroutine for 2 things: Switch HP meter, and meter animation.
+			;We then adjust the HP based on the value of $C2, which tracks the pokey segments.
+			;Like I said, because of a bug that causes pokey to not lose a segment but still spawn
+			;a segment sprite when a thrown sprite hits the very top of the sprite, this would've
+			;caused a desync between HP (HP decreases) and number of segments remaining (no segment
+			;lost).
+			.CountSegmentBits
+				LDY #$00
+				LDA !C2,x
+				..Loop
+					LSR
+					BCC ...Next
+					INY
+					...Next
+						CMP #$00		;>We compare A, not Y, thus CMP #$00 isn't redundant
+						BNE ..Loop
+				TYA
+				STA !Freeram_SpriteHP_CurrentHPLow,x
+			REP #$20
+			PLA
+			STA $00
+			SEP #$20
+			PLY
+			.Restore
+				LDA.w $02B829,y
+				STA $0D
+				RTL
+	endif
+	if and(!Setting_SpriteHP_RemoveOrApplyPatch, notequal(!Setting_SpriteHP_VanillaSprite_Pokey_Damage_SoundNumber, 0))
+		PokeyThrownSprSfx: ;JSL from $02B7DB
+			LDA.b #!Setting_SpriteHP_VanillaSprite_Pokey_Damage_SoundNumber
+			STA !Setting_SpriteHP_VanillaSprite_Pokey_Damage_SoundPort
+			.Restore
+				LDA.w !D8,y
+				SEC
 				RTL
 	endif
 	if and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_VanillaSprite_Bosses)

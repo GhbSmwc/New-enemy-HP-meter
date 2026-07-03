@@ -288,11 +288,14 @@
 			; spawns) due to not all sprites have an init to set its default HP.
 			;
 			; Notes:
-			;
-			; - Dino Rhino are included here since jumping on them transforms it into a Dino Torch, becomming a one-shot
-			;   sprite. I find it weird that if you do not wish one-shot sprites not have an HP meter and 2+ shots to have
-			;   an HP meter, it would be weird that enemies spawned as a Dino Torch lack a meter, but a Dino Torch spawned
-			;   after jumping on a Dino Rhino have a meter.
+			; - This includes enemies that turn into another sprite number when jumped on:
+			; -- Dino Rhino are included here since jumping on them transforms it into a Dino Torch, becomming a one-shot
+			;    sprite. I find it weird that if you do not wish one-shot sprites not have an HP meter and 2+ shots to have
+			;    an HP meter, it would be weird that enemies spawned as a Dino Torch lack a meter, but a Dino Torch spawned
+			;    after jumping on a Dino Rhino have a meter.
+			; -- Winged enemies like Koopas and Galoomba.
+			; -- It does not include parachute enemies (Galoomba and Bob-omb), because when they land, it would've shown
+			;    that they taken damage themselves.
 			; - Other enemies listed below will show the health meter in unique ways:
 			; -- Enemies that don't get killed at all by stomps but instead simply change states will show no damage
 			;    but will still display the meter: Wiggler, Dry Bones, Bony Beetle.
@@ -395,6 +398,10 @@
 			;Same but when shooting fireballs to Ludwig, Morton, and Roy.
 				!Setting_SpriteHP_VanillaSprite_LudwigMortonRoy_Damage_SoundNumber	= $28
 				!Setting_SpriteHP_VanillaSprite_LudwigMortonRoy_Damage_SoundPort	= $1DFC|!addr
+			;Sound effect when a thrown sprite hits Pokey (note that it does not count towards the consecutive
+			;enemies hit by shell).
+				!Setting_SpriteHP_VanillaSprite_Pokey_Damage_SoundNumber = $03
+				!Setting_SpriteHP_VanillaSprite_Pokey_Damage_SoundPort = $1DF9|!addr
 	;Size of the HP:
 		;Size of the HP data:
 		; - 0 = 8-bit HP (HP up to 255)
