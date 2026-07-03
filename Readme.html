@@ -430,10 +430,15 @@ autoclean JML SpriteHPIntroEffect</pre>
 	
 	<p>I provided an example test sprite under <kbd>pixi/sprites/simple_sprite.asm</kbd> for testing the HP system.</p>
 	
-	<p>Because HP-related defines are heavily involved here, it's important to include the define files at the top of your sprite's ASM file, like this:
-<div class="CodeBlock" style="height: 50px;"><pre>	incsrc "../SharedSubroutineDefs.asm"
-	incsrc "../EnemyHPMeterDefines.asm"
-	incsrc "../GraphicalBarDefines.asm"</pre></div><br>
+	<p>Because HP-related defines are heavily involved here, it's important to include the define files at the top of your sprite's ASM file, like this:</p>
+	
+	Number of (sub)folders deep: <input type="number" value="1" min="1" max="10" onchange="UpdateFilePathParentDirectory()">
+<div class="CodeBlock" style="height: 50px;"><pre>	incsrc "<span class="ParentDirectoryCount">../</span>SharedSubroutineDefs.asm"
+	incsrc "<span class="ParentDirectoryCount">../</span>EnemyHPMeterDefines.asm"
+	incsrc "<span class="ParentDirectoryCount">../</span>GraphicalBarDefines.asm"</pre></div><br>
+	Keep in mind that the custom sprite may be multiple folders deep from where the <kbd>pixi.exe</kbd> is at, if that's the case, you'll need to add more &ldquo;<kbd>../</kbd>&rdquo;
+	at the beginning of the file path (<kbd>../</kbd> means go to a parent directory, from where the ASM file in question is at).<br><br>
+	
 	Else you get define not being defined errors. Then after the include-defines, have the macros (the ones on this HTML file) being set/defined (anything with a <span class="NoLineBreak">macro MacroName(Pram1, Pram2...) ... endmacro</span>).</p>
 	
 	<p>The following stuff is transferring its health and damage RAM to this resource's HP RAM so that it gets displayed. Yes you can modify the custom sprite not to use its own vanilla sprite table RAM
@@ -868,4 +873,24 @@ function getClosest(el, tagName) {
 
   return null;
 }
+
+	function UpdateFilePathParentDirectory() {
+		let FilePaths = [...document.querySelectorAll(".ParentDirectoryCount")]
+		let LevelsDeep = clamp(parseInt(event.target.value), 1, 9)
+		event.target.value = LevelsDeep.toString()
+		FilePaths.forEach(Ele => {
+			let StrToInsert = ""
+			for (let i=0; i < LevelsDeep; i++) {
+				StrToInsert += "../"
+			}
+			Ele.textContent = StrToInsert
+		})
+	}
+	function clamp(num, min, max) {
+		//Restrict a number within a specified range.
+			if (isNaN(num) == true) {
+				num = 0
+			}
+			return num <= min ? min : num >= max ? max : num;
+	}
 </script>

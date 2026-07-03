@@ -8,11 +8,14 @@ Thing(s) to fix:
 
 06/14/2026
  -Optional features added:
- --Added HP system for Rex.
- -Added a feature to completely change how "take 5 fireballs to kill" works. It now decreases this
+ --Added HP system for Rex, including how much HP it has.
+ --Added HP display for Pokey (each segment, and including the head, is 1 HP).
+ --Dino Rhino, Super Koopa that spawns a feather and Winged enemies count as 2 HP. Note that Parachute enemies
+   will still have 1 HP due to the automatically reverting to their equivilants when touching the ground.
+ -Added an optional feature to completely change how "take 5 fireballs to kill" works. It now decreases this
   ASM resource's HP RAM value directly.
- -Added afeature for HP meter display for one-shot sprites.
- -Added Rex HP customization support.
+ -Added a feature for HP meter display for one-shot sprites.
+ -Readme instruction on adding incsrc to include defines now lets user easily adjust how many subfolders deep.
 3/16/2025
  -Fixed a very minor copy-paste issue where option "!Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull" seems
   to incorrectly use the round-away functions on certain values.

@@ -517,29 +517,29 @@ incsrc "Defines/GraphicalBarDefines.asm"
 	;   to always spawn a segment when hit, including its head. When viewing frame-by-frame when the last segment
 	;   (head) is killed the main pokey sprite disappears ($14C8,x == $00) for 1 frame before spawning a segment
 	;   sprite.
-		PokeyInitHijack:
-			if !Setting_ModifySprAndDisplayHPOfSMWSpr
-				org $018554
-				autoclean JML PokeyInitHP
+			PokeyInitHijack:
+				if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, notequal(!Setting_SpriteHP_VanillaSprite_Pokey, 0))
+					org $018554
+					autoclean JML PokeyInitHP
+				else
+					%RemoveFreespaceCodeFromJMLJSL($018554)
+					org $018554
+					STA !C2,x
+					BRA .FaceMario
+					
+					org $01857C
+					.FaceMario
+				endif
+			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, notequal(!Setting_SpriteHP_VanillaSprite_Pokey, 0))
+				org $02B80D
+				autoclean JSL PokeyLostSegment
+				NOP
 			else
-				%RemoveFreespaceCodeFromJMLJSL($018554)
-				org $018554
-				STA !C2,x
-				BRA .FaceMario
-				
-				org $01857C
-				.FaceMario
+				%RemoveFreespaceCodeFromJMLJSL($02B80D)
+				org $02B80D
+				LDA.w $02B829,y
+				STA $0D
 			endif
-		if !Setting_ModifySprAndDisplayHPOfSMWSpr
-			org $02B80D
-			autoclean JSL PokeyLostSegment
-			NOP
-		else
-			%RemoveFreespaceCodeFromJMLJSL($02B80D)
-			org $02B80D
-			LDA.w $02B829,y
-			STA $0D
-		endif
 		if and(!Setting_SpriteHP_RemoveOrApplyPatch, notequal(!Setting_SpriteHP_VanillaSprite_Pokey_Damage_SoundNumber, 0))
 			org $02B7DB
 			autoclean JSL PokeyThrownSprSfx

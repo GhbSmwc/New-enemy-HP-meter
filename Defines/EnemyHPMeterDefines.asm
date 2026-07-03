@@ -268,7 +268,11 @@
 				; - 2 = Yes (uses the new HP RAM directly, which allows more than 255 HP if
 				;   !Setting_SpriteHP_TwoByte == 1). $C2 is now a state handler to determine if
 				;   the sprite is normal, or half-squished.
-				;
+			
+			!Setting_SpriteHP_VanillaSprite_Pokey		= 1
+				;^Show HP of Pokey (HP = how many segments, including the head)
+				; - 0 = No
+				; - 1 = Yes
 				
 			!Setting_SpriteHP_VanillaSprite_Bosses			= 1
 				;^Same with bosses. It includes:
@@ -391,17 +395,19 @@
 				; !Setting_SpriteHP_TwoByte == 1, then 65535 is the limit instead.
 			
 		;Fixes and additions
-			;Sound effect when the fireball damages enemies with the "take 5 fireballs to kill" bit being set.
-			;See: https://www.smwcentral.net/?p=viewthread&t=6665
-				!Setting_SpriteHP_VanillaSprite_5FireballsToKill_SoundNumber	= $28		;>Set to 0 to disable.
-				!Setting_SpriteHP_VanillaSprite_5FireballsToKill_SoundPort	= $1DFC|!addr
-			;Same but when shooting fireballs to Ludwig, Morton, and Roy.
-				!Setting_SpriteHP_VanillaSprite_LudwigMortonRoy_Damage_SoundNumber	= $28
-				!Setting_SpriteHP_VanillaSprite_LudwigMortonRoy_Damage_SoundPort	= $1DFC|!addr
-			;Sound effect when a thrown sprite hits Pokey (note that it does not count towards the consecutive
-			;enemies hit by shell).
-				!Setting_SpriteHP_VanillaSprite_Pokey_Damage_SoundNumber = $03
-				!Setting_SpriteHP_VanillaSprite_Pokey_Damage_SoundPort = $1DF9|!addr
+			;Sound effects. Setting Sound numbers to $00 will not play any sound nor suppress any existing sound effect
+			;on the channel.
+				;When the fireball damages enemies with the "take 5 fireballs to kill" bit being set.
+				;See: https://www.smwcentral.net/?p=viewthread&t=6665
+					!Setting_SpriteHP_VanillaSprite_5FireballsToKill_SoundNumber	= $28		;>Set to 0 to disable.
+					!Setting_SpriteHP_VanillaSprite_5FireballsToKill_SoundPort	= $1DFC|!addr
+				;Same but when shooting fireballs to Ludwig, Morton, and Roy.
+					!Setting_SpriteHP_VanillaSprite_LudwigMortonRoy_Damage_SoundNumber	= $28
+					!Setting_SpriteHP_VanillaSprite_LudwigMortonRoy_Damage_SoundPort	= $1DFC|!addr
+				;Sound effect when a thrown sprite hits Pokey (note that it does not count towards the consecutive
+				;enemies hit by shell).
+					!Setting_SpriteHP_VanillaSprite_Pokey_Damage_SoundNumber = $03 ;>Setting this to 0 will revert a hijack at $02B7DB
+					!Setting_SpriteHP_VanillaSprite_Pokey_Damage_SoundPort = $1DF9|!addr
 	;Size of the HP:
 		;Size of the HP data:
 		; - 0 = 8-bit HP (HP up to 255)
