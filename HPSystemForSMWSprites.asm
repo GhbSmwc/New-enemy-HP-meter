@@ -1017,8 +1017,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 						%SpriteHPMeterBlacklist($46)		;>Diggin' chuck
 						%SpriteHPMeterBlacklist($AB)		;>Rex
 						%SpriteHPMeterBlacklist_Range($91, $98)	;>Sprite numbers $91-$98 are chucks, which already been handled.
-						%SpriteHPMeterBlacklist($9D)
-						%SpriteHPMeterBlacklist($D4)
+						%SpriteHPMeterBlacklist($9D)	;>Bubble (Galoomba, Bob-omb, Fish)
 							;^These are bubbles with sprite inside, which are quite glitchy with
 							; kicked/carryable sprites (registers a hit every frame rather than once)
 							; and it also seemingly runs $07F722 when popped, resulting in the HP meter
