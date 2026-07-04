@@ -166,8 +166,8 @@
 			!Setting_SpriteHP_BarFillRoundDirection = 0
 				;^Rounding to nearest integer fill amount of the bar:
 				; - 0 = Round to nearest
-				; - 1 = Round down (floor, bar may display 0 fill amount when !Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull isn't 1 or 3)
-				; - 2 = Round up (ceiling)
+				; - 1 = Round down (floor, bar may display 0 fill amount when close to when !Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull isn't 1 or 3).
+				; - 2 = Round up (ceiling, bar may display full when close to when !Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull isn't 2 or 3).
 			;Fill direction. 0 = Left-to-right, 1 = Right-to-left. Note that the given XY position will occupy that position and N tiles towards
 			;the right regardless of leftwards or not.
 				!Setting_SpriteHP_LeftwardsBar                       = 1
@@ -181,7 +181,8 @@
 					; - 0 = HP bar instantly updates when the enemy heals or take damage
 					;   (!Freeram_SpriteHP_BarRecord and introfill is no longer used).
 					; - 1 = Shows animation (gradual change, rapid-flicker, transparent
-					;   effect to display previous and current HP fill amounts).
+					;   effect to display previous and current HP fill amounts to indicate
+					;   damage and healing).
 
 				!Setting_SpriteHP_FillDelayFrames				= $00
 					;^Speed that the bar fills up. Only use these values:

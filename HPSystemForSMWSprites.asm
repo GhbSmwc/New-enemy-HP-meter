@@ -391,6 +391,9 @@ incsrc "Defines/GraphicalBarDefines.asm"
 	;The following hijacks a 5-byte area being:
 	;  Addr+0  LDA.b #$02
 	;  Addr+2  STA $14C8,x (or STA $14C8,y)
+	;To be replaced with at that location:
+	;  Addr+0  JSL PatchCode
+	;  Addr+4  NOP
 	;
 	;NOTE: If your custom sprites uses a vanilla death routine and you don't want a health meter
 	;for those sprites, see "ZeroOutHPOfOneShotSprites:" (without quotes and including the colon)
