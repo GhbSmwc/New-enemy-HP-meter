@@ -954,7 +954,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			.DisplayOneHP
 				JSR ZeroOutHPOfOneShotSprites
 			RTL
-		DinoRhino2HPToTorch1HP:
+		DinoRhino2HPToTorch1HP:	;>JSL from $01A981
 			.Restore
 				LDA #$FF
 				STA !1540,x
@@ -968,6 +968,19 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				RTL
 		WingedEnemies: 	;>JSL from $01A99B
 			;For Winged Koopas at $08-$0C and a winged Galoomba $10
+			.CheckIfNotDinoRhino
+				if !sa1 == 0
+					LDY $9E,x
+				else
+					LDY !sprite_num_cache
+				endif
+				CPY #$08
+				BCC .Restore
+				CPY #$0D
+				BCC .ShowHP
+				CPY #$10
+				BEQ .ShowHP
+				BRA .Restore
 			.ShowHP
 				PHA
 				%DealFixedDamage(1)
