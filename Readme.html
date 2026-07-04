@@ -60,7 +60,7 @@
 	<p>This is similar to <i>Kirby & The Amazing Mirror</i>. With the differences being:</p>
 	<ul>
 		<li>The bar in this resource displays its current HP percentage and its previous HP via a rapid-flicker. In K&tAM, the bar
-		updates with a gradual decrease without showing the previous HP percentage. Note that this can be re-created in the settings</li>
+		updates with a gradual decrease without showing the previous HP percentage. Note that this can be re-created in the settings.</li>
 		
 		<li>Touching enemies will not display the meter.</li>
 		
@@ -300,7 +300,7 @@ autoclean JML SpriteHPIntroEffect</pre>
 			<li>Patch a status bar/HUD enhancement patch into your game. Note that this ASM resource by default, assumes you are using the Super Status Bar patch. If this is not the case, you need to open <kbd>StatusBarDefines.asm</kbd>
 			of this package and change the base address to match with whatever status bar patch you're using that are the tile data, then reinsert UAT and pixi if you have inserted prior.</li>
 			
-			<li>Patch <kbd>HPSystemForSMWSprites.asm</kbd> to your game. This adds a proper health system for some sprites and bosses and fixes <a href="#HitCountJank">an anomaly for SMW</a>.
+			<li>Patch <kbd>HPSystemForSMWSprites.asm</kbd> to your game. This adds a proper health system for most sprites, one-shot enemies and bosses and fixes <a href="#HitCountJank">an anomaly for SMW</a>.
 			This alone does not display meter, but will write to various RAM for the uberasm tool code to display it.</li>
 			<li>
 				Uberasm tool:
@@ -806,12 +806,24 @@ Change that to this:
 			</ul>
 			
 			In other cases, the custom sprite you're using may have an even weirder or unusual format on how it handles HP/Damage. I strongly recommend checking how the code read and writes its HP value, and use a debugger and spot any behavior patterns with it.
-			If it's a sprite on SMWC, I or someone else may post instructions on how to get it to work with this ASM resource. If you have the knowledge to get it working, you are free to post it if you wish.
+			If it's a sprite on SMWC, I or someone else may post instructions in the comments on how to get it to work with this ASM resource. If you have the knowledge to get it working, you are free to post it if you wish.
 		</li>
 		<li>
 			Q: I tried inserting the ASM files, ran the <kbd>.exe</kbd> programs and Shared Subroutines via asar to insert it into the game, and got errors like &ldquo;<kbd>Efile_not_found</kbd>&rdquo; and &ldquo;<kbd>Define &lt;Define_name&gt; wasn't found.</kbd>&rdquo;<br><br>
-			A: Most likely you forgot to paste (copies of) the define files (from here and Shared Subroutine's <kbd>SharedSubroutineDefs.asm</kbd>) in the respective tools and Shared Subroutines patch. For tools, they must be located where their <kbd>.exe</kbd>s are at,
-			for Shared Subroutines, they must be placed inside its <kbd>SharedSub_Defines</kbd> folder.
+			A: Possible causes:
+			<ul>
+				<li>
+					You forgot to paste (copies of) the define files (from here and Shared Subroutine's <kbd>SharedSubroutineDefs.asm</kbd>) in the respective tools and Shared Subroutines patch. For tools, they must be located where their <kbd>.exe</kbd>s are at,
+					for Shared Subroutines, they must be placed inside its <kbd>SharedSub_Defines</kbd> folder.
+				</li>
+				<li>
+					You forgot to include the define files (using <kbd class="NoLineBreak">incsrc &lt;Path_to_Define&gt;</kbd>), or the path is incorrect.
+				</li>
+				<li>
+					You've used an incorrect define settings, for example, with <kbd>!Setting_SpriteHP_TwoByte = 0</kbd> setting, defines involving the HP high bytes (<kbd>!Freeram_SpriteHP_CurrentHPHi</kbd>, <kbd>!Freeram_SpriteHP_MaxHPHi</kbd>) don't exists.
+					This is caused by having copies of the define settings not matching across tools, and/or not checking if <kbd>!Setting_SpriteHP_TwoByte</kbd> is set to 1.
+				</li>
+			</ul>
 		</li>
 		<li>
 			Q: For most sprites (espically vanilla), whenever a sprite instantly dies, the meter simply disappears rather than go empty then disappear!<br><br>
