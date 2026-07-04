@@ -485,6 +485,8 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			else
 				%RemoveFreespaceCodeFromJMLJSL($02F26B)
 				org $02F26B
+				LDA #$03
+				STA $1DF9|!addr
 			endif
 		;Dry bones and Bony Beetle. NOTE: They seemingly process offscreen when they are in their crumbled state,
 		;causing the HP meter to continue to display even far offscreen.
@@ -995,7 +997,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		StompWigglerShowHP: ;>JSL from $02F26B
 			.Restore
 				LDA #$03
-				STA $1DF9
+				STA $1DF9|!addr
 			.ShowHP
 				BRA DealNoDamage	;>Wiggler takes no damage, but still display HP.
 		StompDryBonesBonyBeetle: ;>JSL from $01E5FE
