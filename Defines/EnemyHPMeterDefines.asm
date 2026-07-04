@@ -288,6 +288,7 @@
 				; - Wendy and Lemmy (share most of the same code)
 				; - Ludwig, Morton, and Roy (same as above). NOTE: Like the Chuck enemies, they also have fireball/stomp
 				;   jank that needs to be fixed for a proper HP system (and to display it).
+				; - Reznor (each of them). Note that this is catagorized as bosses rather than one-shot sprites.
 				
 			!Setting_SpriteHP_DisplayHPOfSMWSprites			= 1
 				;^Simply display the HP of smw sprites?
@@ -349,6 +350,7 @@
 			;    TYX
 			;    JSL !SharedSub_SpriteHPDamage
 			;    PLX
+			; - This does not include Reznor, however it is catagorized as "bosses" instead.
 			
 		;Amount of HP SMW sprites has. NOTE: SMW only have hit counts being an 8-bit unsigned integer stored
 		;within various sprite tables (Chucks and any sprites using the 5 fireballs to kill: $1528,

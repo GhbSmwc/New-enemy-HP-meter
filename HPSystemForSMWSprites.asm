@@ -395,9 +395,12 @@ incsrc "Defines/GraphicalBarDefines.asm"
 	;  Addr+0  JSL PatchCode
 	;  Addr+4  NOP
 	;
-	;NOTE: If your custom sprites uses a vanilla death routine and you don't want a health meter
-	;for those sprites, see "ZeroOutHPOfOneShotSprites:" (without quotes and including the colon)
-	;on this ASM file.
+	;NOTES:
+	; - If your custom sprites uses a vanilla death routine and you don't want a health meter
+	;   for those sprites, see "ZeroOutHPOfOneShotSprites:" (without quotes and including the colon)
+	;   on this ASM file.
+	; - Reznor is not included here and is handled differently because trying to hijack at $039ACC
+	;   results in a full HP meter due to a call to clear and load sprite tables at $039AEE aftwards.
 	
 		%HijacksForFallingOffScrn($01A5E3, ShowHPForFallingOffScrnYregister, y)
 		%HijacksForFallingOffScrn($01A66B, ShowHPForFallingOffScrn, x)
@@ -539,6 +542,17 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			org $02B7DB
 			LDA.w !D8,y
 			SEC
+		endif
+	;Reznor. Note that when killed, it calls the "InitSpriteTables" subroutine at $xxxxxx.
+	;Thus resulting in the meter jumping to 0 back to 1. I had to hijack at $039AF2 to force it to be zero
+		if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Bosses)
+			org $039AF2
+			autoclean JSL ReznorDead
+		else
+			%RemoveFreespaceCodeFromJMLJSL($039AF2)
+			org $039AF2
+			LDA #$C0
+			STA !AA,x
 		endif
 	;Bosses below (only applies to bosses with a HP system, and not bowser)
 		;Big boo boss
@@ -1227,5 +1241,13 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			.Restore
 				LDA #$28
 				STA $1DFC|!addr
+				RTL
+		ReznorDead: ;>JSL from $039AF2
+			;Hijacking at $039ACC using %HijacksForFallingOffScrn() doesn't work because it clears sprite tables at $039AEE, which is hijacked
+			;to default sprite HP to 1/1. Thus hijacking after that ($039AF2) seems to work best.
+			%DealFixedDamage(!SpriteHP_MaxHPAndDamageValue)
+			.Restore
+				LDA #$C0
+				STA !AA,x
 				RTL
 	endif

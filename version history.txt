@@ -15,6 +15,7 @@ Thing(s) to fix:
  -Added an optional feature to completely change how "take 5 fireballs to kill" works. It now decreases this
   ASM resource's HP RAM value directly.
  -Added a feature for HP meter display for one-shot sprites.
+ -Added HP display for Reznor (each), which are counted as bosses in SMW.
  -Readme instruction on adding incsrc to include defines now lets user easily adjust how many subfolders deep.
 3/16/2025
  -Fixed a very minor copy-paste issue where option "!Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull" seems
