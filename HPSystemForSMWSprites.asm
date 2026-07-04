@@ -824,10 +824,11 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				LDA #$08
 				STA $1DF9|!addr
 			.CheckSprite
-				LDA !7FAB10,x
-				AND.b #%00001000
-				BNE ..CustomSprite
-				
+				if !Setting_SpriteHP_UsingCustomSprites
+					LDA !7FAB10,x
+					AND.b #%00001000
+					BNE ..CustomSprite
+				endif
 				..Vanilla
 					LDA !9E,x
 					if !Setting_SpriteHP_VanillaSprite_Rex
@@ -837,7 +838,9 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					if !Setting_SpriteHP_VanillaSprite_OneShotSprites
 						JSR ZeroOutHPOfOneShotSprites
 					endif
-				..CustomSprite
+				if !Setting_SpriteHP_UsingCustomSprites
+					..CustomSprite
+				endif
 					RTL
 				if !Setting_SpriteHP_VanillaSprite_Rex
 					..Rex
@@ -910,12 +913,14 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					STA !Freeram_SpriteHP_CurrentHPHi,x
 					STA !Freeram_SpriteHP_MaxHPHi,x
 				endif
-				LDA !7FAB10,x
-				AND.b #%00001000
-				;BNE .Done
-				BEQ +
-				RTL
-				+
+				if !Setting_SpriteHP_UsingCustomSprites
+					LDA !7FAB10,x
+					AND.b #%00001000
+					;BNE .Done
+					BEQ +
+					RTL ;>Leave custom sprite as is and let them run their init code to adjust starting HP.
+					+
+				endif
 				LDA !9E,x
 				%SetSpriteDefaultHP($6E, 2)		;>Dino Rhino
 				%SetSpriteDefaultHP($6F, 1)		;>Dino Torch
@@ -1003,28 +1008,30 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				RTL
 		ZeroOutHPOfOneShotSprites:
 			.CheckSprite
-				LDA !7FAB10,x
-				AND.b #%00001000
-				BEQ ..VanillaSMWSpr
-				..CustomSpr
-					LDA !7FAB9E,x
-					;Add your list of custom sprites here to not display HP
-					;(It only has to be enemies that run a vanilla kill routine).
-					;The syntax is:
-					;  %SpriteHPMeterBlacklist(<Enter_Sprite_Number_Here>)
-					;
-					;If you get branch-out-of-bounds error, use this instead:
-					;  %SpriteHPMeterBlacklist_UnlimitedDistance(<Enter_Sprite_Number_Here>)
-					;
-					;If you want a range (inclusive) of sprite numbers blacklisted, then do this:
-					;  %SpriteHPMeterBlacklist_Range(<Enter_Sprite_Number_Min_Here>, <Enter_Sprite_Number_Max_Here>)
-					;This is immune to branch-out-of-bounds error.
-					
-					
-					;Do not remove this code here, as it is needed so if a non-blacklisted sprite
-					;runs this code, it passes though all the items in the list and proceeds to
-					;display the HP meter.
-						JMP .DisplayHPMeterOfOneShotSprites ;>Used JMP instead of BRA as a failsafe if you added a long enough list for vanilla sprites.
+				if !Setting_SpriteHP_UsingCustomSprites
+					LDA !7FAB10,x
+					AND.b #%00001000
+					BEQ ..VanillaSMWSpr
+					..CustomSpr
+						LDA !7FAB9E,x
+						;Add your list of custom sprites here to not display HP
+						;(It only has to be enemies that run a vanilla kill routine).
+						;The syntax is:
+						;  %SpriteHPMeterBlacklist(<Enter_Sprite_Number_Here>)
+						;
+						;If you get branch-out-of-bounds error, use this instead:
+						;  %SpriteHPMeterBlacklist_UnlimitedDistance(<Enter_Sprite_Number_Here>)
+						;
+						;If you want a range (inclusive) of sprite numbers blacklisted, then do this:
+						;  %SpriteHPMeterBlacklist_Range(<Enter_Sprite_Number_Min_Here>, <Enter_Sprite_Number_Max_Here>)
+						;This is immune to branch-out-of-bounds error.
+						
+						
+						;Do not remove this code here, as it is needed so if a non-blacklisted sprite
+						;runs this code, it passes though all the items in the list and proceeds to
+						;display the HP meter.
+							JMP .DisplayHPMeterOfOneShotSprites ;>Used JMP instead of BRA as a failsafe if you added a long enough list for vanilla sprites.
+				endif
 				..VanillaSMWSpr
 					LDA !9E,x
 					;This is the same as above, but for vanilla sprite numbers.

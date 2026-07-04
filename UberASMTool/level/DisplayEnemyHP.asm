@@ -206,10 +206,11 @@ main:
 				JMP .Done
 			...Exists
 				if !Setting_SpriteHP_VanillaSprite_OneShotSprites
-					LDA !7FAB10,x			;\If sprite is custom, allow display
-					AND.b #%00001000		;/(can be overridden within sprite code to not display)
-					BNE ....CustomSprite		;>For custom sprites, you'll need to edit the custom sprite's code.
-
+					if !Setting_SpriteHP_UsingCustomSprites
+						LDA !7FAB10,x			;\If sprite is custom, allow display
+						AND.b #%00001000		;/(can be overridden within sprite code to not display)
+						BNE ....CustomSprite		;>For custom sprites, you'll need to edit the custom sprite's code.
+					endif
 					;Here are sprites with special behaviors. Sprites that in a situation that have an HP system, but becomes in a state
 					;that shouldn't have, either because it changed sprite numbers or changed its state while keeping its sprite number.
 					....VanillaSprite
@@ -232,9 +233,13 @@ main:
 							.....BombOmb
 								LDA !1534,x			;\If Bob-omb exploded, hide it's HP meter.
 								BNE ...HideHPMeter		;/
-								BRA ...DisplayNormally
-					....CustomSprite
-						;Same as under "....VanillaSprite" but for custom sprites through pixi.
+								if !Setting_SpriteHP_UsingCustomSprites
+									BRA ...DisplayNormally
+								endif
+					if !Setting_SpriteHP_UsingCustomSprites
+						....CustomSprite
+							;Same as under "....VanillaSprite" but for custom sprites through pixi.
+					endif
 				endif
 			...DisplayNormally
 	.DisplayNumerical

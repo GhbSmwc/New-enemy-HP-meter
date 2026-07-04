@@ -254,6 +254,13 @@
 			;   $190F's "takes 5 fireballs to kill" be set, then it is possible the sprite takes both damage
 			;   from the fireball's code and its own built-in.
 			
+		!Setting_SpriteHP_UsingCustomSprites = 1
+			;^You using custom sprites (pixi)? 0 = No, 1 = Yes. This basically ignores RAM $7FAB10
+			; when 0. Warning, having this set to 1 without custom sprite system installed results
+			; in $7FAB10 being garbage values on certain emulators, which can cause glitches on
+			; those emulators related to the HP meter system to incorrectly think sprites are
+			; custom or not.
+			
 		;Apply (proper) HP system on various vanilla SMW sprites that are not strictly one-shot: 0 = no, 1 = yes.
 		;Use only mentioned values, unless stated otherwise. Having these turned off will COMPLETELY revert back
 		;to original format including the fireball and stomp damage jank (see readme under "...from a damage counter").
