@@ -435,24 +435,10 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			STZ.w !1594,x
 		endif
 	;When sprite changes into another sprite (become a different sprite number) when jumped on
-		;Make stomping on Dino Rhino to transform into Dino Torch to show HP going from 2 to 1 HP
-		;(Yeah, this code, is in the *general Mario interaction routine* rather than in Dino Rhino's
-		;code, unlike Rex when getting spin jumped. Why Nintendo? Why have sprite-specific interactions
-		;programmed in a general sprite interaction code?).
-			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
-				org $01A981
-				autoclean JSL DinoRhino2HPToTorch1HP
-				NOP
-			else
-				%RemoveFreespaceCodeFromJMLJSL($01A981)
-				org $01A981
-				LDA #$FF
-				STA !1540,x
-			endif
-		;Winged enemies (Works like the Dino Rhino, having 2 HP, switches form with 1/2 HP)
+	;Covers winged enemies and Dino Rhino.
 			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
 				org $01A99B
-				autoclean JSL WingedEnemies
+				autoclean JSL TransformWhenStomped
 				NOP
 			else
 				%RemoveFreespaceCodeFromJMLJSL($01A99B)
@@ -954,33 +940,9 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			.DisplayOneHP
 				JSR ZeroOutHPOfOneShotSprites
 			RTL
-		DinoRhino2HPToTorch1HP:	;>JSL from $01A981
-			.Restore
-				LDA #$FF
-				STA !1540,x
-			.SimulateDamage
-				LDA #$01
-				STA $00
-				if !Setting_SpriteHP_TwoByte
-					STZ $01
-				endif
-				JSL !SharedSub_SpriteHPDamage
-				RTL
-		WingedEnemies: 	;>JSL from $01A99B
+		TransformWhenStomped: 	;>JSL from $01A99B
 			;For Winged Koopas at $08-$0C and a winged Galoomba $10
-			.CheckIfNotDinoRhino
-				if !sa1 == 0
-					LDY $9E,x
-				else
-					LDY !sprite_num_cache
-				endif
-				CPY #$08
-				BCC .Restore
-				CPY #$0D
-				BCC .ShowHP
-				CPY #$10
-				BEQ .ShowHP
-				BRA .Restore
+			;This also executes when Dino Rhino turns into Dino Torch
 			.ShowHP
 				PHA
 				%DealFixedDamage(1)
