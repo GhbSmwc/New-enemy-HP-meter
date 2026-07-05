@@ -170,21 +170,25 @@ main:
 	PHB
 	PHK
 	PLB
-	.SlotStateCheck
+	.HPMeterStateCheck
 		LDA !Freeram_SpriteHP_MeterState
-		if !Setting_SpriteHP_BarAnimation
+		if !Setting_SpriteHP_BarAnimation == 0
+			;With no bar animation, then only 0 to 11 or 0 to 21 are valid
+			CMP.b #!sprite_slots
+		else
 			;LoROM: Index ranging 0 to 11 and 12 to 23 are valid.
 			;SA-1: Index ranging from 0 to 21 and 22 to 43 are valid.
 			CMP.b #!sprite_slots*2
-		else
-			;With no bar animation, then only 0 to 11 or 0 to 21 are valid
-			CMP.b #!sprite_slots
 		endif
-		BCC ..ValidDisplay							;>Valid range, continue
-		JMP .ClearHPDisplay							;>Otherwise, don't display at all.
-		..ValidDisplay
+		BCC ..IndividualSpritesHPMode							;>Valid range, continue (failsafe)
+		if !Setting_SpriteHP_TotalHPMode
+			CMP #(!sprite_slots*2)+2
+			BCC ..TotalHPMode
+		endif
+		JMP .ClearHPDisplay						;>Failsafe
+		..IndividualSpritesHPMode
 			if !Setting_SpriteHP_BarAnimation
-				CMP.b #!sprite_slots					;This converts a range representing an intro-fill mode to the regular HP display mode
+				CMP.b #!sprite_slots					;This gets the equivilant sprite slots
 				BCC ...NonIntroFillMode
 				...IntroFillMode
 					SEC
@@ -194,7 +198,61 @@ main:
 			else
 				STA !Scratchram_SpriteHP_SpriteSlotToDisplay
 			endif
-	.CheckIfSlotIsCorrect
+			TAX
+			LDA !Freeram_SpriteHP_CurrentHPLow,x
+			STA !Scratchram_GraphicalBar_FillByteTbl
+			LDA !Freeram_SpriteHP_MaxHPLow,x
+			STA !Scratchram_GraphicalBar_FillByteTbl+2
+			if !Setting_SpriteHP_TwoByte == 0
+				LDA #$00
+				STA !Scratchram_GraphicalBar_FillByteTbl+1
+				STA !Scratchram_GraphicalBar_FillByteTbl+3
+			else
+				LDA !Freeram_SpriteHP_CurrentHPHi,x
+				STA !Scratchram_GraphicalBar_FillByteTbl+1
+				LDA !Freeram_SpriteHP_MaxHPHi,x
+				STA !Scratchram_GraphicalBar_FillByteTbl+3
+			endif
+		if !Setting_SpriteHP_TotalHPMode
+			BRA .CheckIfSpriteStateValid
+			..TotalHPMode
+				...GetTotalHPOfLoaded
+					LDA #$00
+					STA !Scratchram_GraphicalBar_FillByteTbl   ;\This will be the running total
+					STA !Scratchram_GraphicalBar_FillByteTbl+1 ;/
+					LDX.b #!sprite_slots-1
+					....Loop
+						LDA !14C8,x
+						CMP #$08
+						BNE .....Next
+						LDA !Freeram_SpriteHP_CurrentHPLow,x
+						CLC
+						ADC !Scratchram_GraphicalBar_FillByteTbl
+						STA !Scratchram_GraphicalBar_FillByteTbl
+						if !Setting_SpriteHP_TwoByte
+							LDA !Freeram_SpriteHP_CurrentHPHi,x
+							ADC !Scratchram_GraphicalBar_FillByteTbl+1
+							STA !Scratchram_GraphicalBar_FillByteTbl+1
+						endif
+						.....Next
+							DEX
+							BPL ....Loop
+					....AddWithUnloaded
+						if !Setting_SpriteHP_TwoByte
+							REP #$20
+						endif
+						LDA !Scratchram_GraphicalBar_FillByteTbl
+						CLC
+						ADC !Freeram_SpriteHP_TotalHPOfUnloadedSprites
+						STA !Scratchram_GraphicalBar_FillByteTbl
+						LDA !Freeram_SpriteHP_TotalMaxHP
+						STA !Scratchram_GraphicalBar_FillByteTbl+2
+						if !Setting_SpriteHP_TwoByte
+							SEP #$20
+						endif
+						JML .DisplayNumerical
+		endif
+	.CheckIfSpriteStateValid
 		..DisplayMeter
 			LDX !Scratchram_SpriteHP_SpriteSlotToDisplay
 			LDA !14C8,x				;>Sprite status table
@@ -243,7 +301,13 @@ main:
 				endif
 			...DisplayNormally
 	.DisplayNumerical
-		;Detect user trying to make a right-aligned single number (which avoids unnecessarily uses suppress leading zeroes)
+		;After this point:
+		; - !Scratchram_GraphicalBar_FillByteTbl (and !Scratchram_GraphicalBar_FillByteTbl+1) are used as scratch RAM to either
+		;   hold the amount of either the HP of a selected sprite, or the total HP across many sprites.
+		; - !Scratchram_GraphicalBar_FillByteTbl+2 (and !Scratchram_GraphicalBar_FillByteTbl+3) are used as maximum HP for individual
+		;   sprites or total maximum HP across multiple sprites
+	
+		;Detect user trying to make a right-aligned single number (which avoids unnecessarily use suppress leading zeroes)
 			!IsUsingRightAlignedSingleNumber = and(equal(!Setting_SpriteHP_NumericalTextAlignment, 2),equal(!Setting_SpriteHP_DisplayNumerical, 1))
 		if !Setting_SpriteHP_DisplayNumerical != 0 ;User allow displaying HP numerically
 			;Clear the tiles. To prevent leftover "ghost" tiles that should've
@@ -252,36 +316,33 @@ main:
 			if !IsUsingRightAlignedSingleNumber == 0 ;if using suppressed zeroes
 				%ClearNumerical()
 			endif
-			..SpriteSlotIndexing
-				LDX !Scratchram_SpriteHP_SpriteSlotToDisplay
+			..IndividualSpriteWriteString
 			if or(equal(!Setting_SpriteHP_NumericalTextAlignment, 0), equal(!IsUsingRightAlignedSingleNumber, 1)) ;Fixed digit location
 				if !Setting_SpriteHP_TwoByte == 0
-					%GetHealthDigits8Bit("Freeram_SpriteHP_CurrentHPLow,x")
+					%GetHealthDigits8Bit("Scratchram_GraphicalBar_FillByteTbl")
 				else
-					%GetHealthDigits16Bit("Freeram_SpriteHP_CurrentHPLow,x", "Freeram_SpriteHP_CurrentHPHi,x")
+					%GetHealthDigits16Bit("Scratchram_GraphicalBar_FillByteTbl", "Scratchram_GraphicalBar_FillByteTbl+1")
 				endif
+			
 				JSL !SharedSub_RemoveLeadingZeroes16Bit
 				%WriteFixedDigitsToLayer3(!Setting_SpriteHP_NumericalPos_XYPos, !Setting_SpriteHP_NumericalPos_XYPosProp)
 			elseif and(greaterequal(!Setting_SpriteHP_NumericalTextAlignment, 1), lessequal(!Setting_SpriteHP_NumericalTextAlignment, 2)) ;left/right aligned
 				if !Setting_SpriteHP_TwoByte == 0
-					%GetHealthDigits8Bit("Freeram_SpriteHP_CurrentHPLow,x")
+					%GetHealthDigits8Bit("Scratchram_GraphicalBar_FillByteTbl")
 				else
-					%GetHealthDigits16Bit("Freeram_SpriteHP_CurrentHPLow,x", "Freeram_SpriteHP_CurrentHPHi,x")
+					%GetHealthDigits16Bit("Scratchram_GraphicalBar_FillByteTbl", "Scratchram_GraphicalBar_FillByteTbl+1")
 				endif
 				LDX #$00
 				JSL !SharedSub_SuppressLeadingZeros
-				if !Setting_SpriteHP_DisplayNumerical == 2
+				if !Setting_SpriteHP_DisplayNumerical == 2 ;>Current/Max display
 					LDA #!StatusBarSlashCharacterTileNumb
 					STA !Scratchram_CharacterTileTable,x
 					INX
-					PHX
-					LDX !Scratchram_SpriteHP_SpriteSlotToDisplay
 					if !Setting_SpriteHP_TwoByte == 0
-						%GetHealthDigits8Bit("Freeram_SpriteHP_MaxHPLow,x")
+						%GetHealthDigits8Bit("Scratchram_GraphicalBar_FillByteTbl+2")
 					else
-						%GetHealthDigits16Bit("Freeram_SpriteHP_MaxHPLow,x", "Freeram_SpriteHP_MaxHPHi,x")
+						%GetHealthDigits16Bit("Scratchram_GraphicalBar_FillByteTbl+2", "Scratchram_GraphicalBar_FillByteTbl+3")
 					endif
-					PLX
 					JSL !SharedSub_SuppressLeadingZeros
 				endif
 				if !Setting_SpriteHP_ExcessDigitProt
@@ -312,20 +373,6 @@ main:
 				LDA.b #!Setting_SpriteHP_GraphicalBarMiddleLength
 				STA !Scratchram_GraphicalBar_TempLength
 				LDX !Scratchram_SpriteHP_SpriteSlotToDisplay
-				LDA !Freeram_SpriteHP_CurrentHPLow,x
-				STA !Scratchram_GraphicalBar_FillByteTbl
-				LDA !Freeram_SpriteHP_MaxHPLow,x
-				STA !Scratchram_GraphicalBar_FillByteTbl+2
-				if !Setting_SpriteHP_TwoByte
-					LDA !Freeram_SpriteHP_CurrentHPHi,x
-					STA !Scratchram_GraphicalBar_FillByteTbl+1
-					LDA !Freeram_SpriteHP_MaxHPHi,x
-					STA !Scratchram_GraphicalBar_FillByteTbl+3
-				else
-					LDA #$00
-					STA !Scratchram_GraphicalBar_FillByteTbl+1
-					STA !Scratchram_GraphicalBar_FillByteTbl+3
-				endif
 				PHX
 				if !Setting_SpriteHP_BarFillRoundDirection == 0
 					JSL !SharedSub_CalculateGraphicalBarPercentage
