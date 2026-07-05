@@ -6,11 +6,14 @@
 	;    12 * (1 && 1) would be ( "&&" is an AND boolean operator):
 	;    12 * 1
 	;    = 12
+	;    
+	;    !sprite_slots = Number of sprite slots: 12 for LoROM, 22 for SA-1
 	;
-	;[BytesUsed = 1 + (!sprite_slots*2) + ((!sprite_slots*2) * !Setting_SpriteHP_TwoByte) +
-	; (!Setting_SpriteHP_DisplayGraphicalBar * !Setting_SpriteHP_BarAnimation) +
-	; (!Setting_SpriteHP_DisplayGraphicalBar * !Setting_SpriteHP_BarAnimation) *
-	; (!Setting_SpriteHP_BarAnimation != 0)]
+	;[BytesUsed = 1                                                                                                       ;>1 Byte for HP meter state
+	; + (!sprite_slots*2)                                                                                                 ;>Bytes used for low bytes of current and max HP.
+	; + ((!sprite_slots*2) * !Setting_SpriteHP_TwoByte)                                                                   ;>Bytes used for the high bytes of current and max HP, if !Setting_SpriteHP_TwoByte == 1
+	; + (!Setting_SpriteHP_DisplayGraphicalBar * !Setting_SpriteHP_BarAnimation)                                          ;>Byte used as a secondary fill amount for animation.
+	; + ((!Setting_SpriteHP_DisplayGraphicalBar * !Setting_SpriteHP_BarAnimation)*(!Setting_SpriteHP_BarAnimation != 0))] ;>Byte used as a timer of how long the secondary fill amount pauses before following current HP fill.
 	;
 	;A series of HP data stored in memory, in this order (placed contiguously):
 	;
@@ -59,7 +62,7 @@
 	;    the sprite's current HP fill amount. This is ignored if "IntroFill" mode is active.
 	;
 	; Summary:
-	; - LoROM number of bytes used: 25 to 73.
+	; - LoROM number of bytes used: 25 to 51.
 	; - SA-1 ROM number of bytes used: 45 to 91.
 	;
 	;If you want to know display the RAM usage of this, have !Setting_SpriteHP_DisplaySpriteHPDataOnConsole set to 1 and

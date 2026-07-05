@@ -29,6 +29,14 @@
 				resize: both;
 				background-color: #101010;
 			}
+			div.CalculatorBox {
+				overflow: auto;
+				width: 1000px;
+				height: 500px;
+				border: 1px solid white;
+				resize: both;
+				background-color: #101010;
+			}
 			pre {
 				margin: 0px;
 			}
@@ -49,6 +57,14 @@
 			}
 			tr.RedBackground {
 				background-color: #400000;
+			}
+			.Settings {
+				font-family: monospace;
+				white-space: pre;
+			}
+			label { display: block; }
+			input {
+				font-family: monospace;
 			}
 		</style>
 	</head>
@@ -413,9 +429,27 @@ autoclean JML SpriteHPIntroEffect</pre>
 					<td>if <kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd>, <kbd>!Setting_SpriteHP_BarAnimation</kbd>, and <kbd>!Setting_SpriteHP_BarChangeDelay</kbd> is set to nonzero values.</td>
 				</tr>
 			</table><br>
-			Anything with a red background indicates those are optional features you can disable and will not be used. In LoROM, 25 to 73 bytes will be used, in SA-1, 45 to 91 bytes will be used instead.<br><br>
+			Anything with a red background indicates those are optional features you can disable and will not be used. In LoROM, 25 to 51 bytes will be used, in SA-1, 45 to 91 bytes will be used instead.<br><br>
 			If you want to know exactly where they are located, open <kbd>EnemyHPMeterDefines.asm</kbd> and set <kbd>!Setting_SpriteHP_DisplaySpriteHPDataOnConsole</kbd> to <kbd>1</kbd> and reinsert (works on any tool except pixi since <kbd>print</kbd>
-			command behaves differently). On the asar console window, will display the address of each subsection of the sprite HP data (this is in <a href="https://www.smwcentral.net/?p=section&a=details&id=39887">address tracker format</a> along with other summaries.).
+			command behaves differently). On the asar console window, will display the address of each subsection of the sprite HP data (this is in <a href="https://www.smwcentral.net/?p=section&a=details&id=39887">address tracker format</a> along with other summaries.).<br><br>
+			
+			Alternatively, you can figure out how much memory and where they are by using the calculator below:
+			
+			<div class="CalculatorBox" style="width: 685px; height: 297px;" id="SpriteHPDataCalculator">
+				<table>
+					<tr><td>Using SA-1?</td><td><label><input type="checkbox" id="Setting_UsingSa1"></label></td></tr>
+					<tr><td><kbd>!Freeram_SpriteHP_SpriteHPData = </kbd></td><td class="Settings">$<input type="text" value="7FACC4" class="HexInput" data-radix="16" id="Setting_FreeramUse_SpriteHPData" list="HPDataAddrSuggestions" onchange="UpdateHPDataDisplay()"></td></tr>
+					<tr><td><kbd>!Setting_SpriteHP_TwoByte</kbd></td><td><label><input type="checkbox" checked id="Setting_FreeramUse_TwoByte"> (unchecked is 0, otherwise 1)</label></td></tr>
+					<tr><td><kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd></td><td><label><input type="checkbox" checked id="Setting_FreeramUse_DisplayGraphicalBar"> (unchecked is 0, otherwise 1)</label></td></tr>
+					<tr><td><kbd>!Setting_SpriteHP_BarAnimation</kbd></td><td><label><input type="checkbox" checked id="Setting_FreeramUse_BarAnimation"> (unchecked is 0, otherwise 1)</label></td></tr>
+					<tr><td><kbd>!Setting_SpriteHP_BarChangeDelay</kbd></td><td><label><input type="checkbox" checked id="Setting_FreeramUse_BarChangeDelay"> (unchecked is 0, any nonzero value is checked)</label></td></tr>
+				</table>
+				<div class="CodeBlock" style="height: 145px; width: 525px;"><pre id="HPDataOutput"></pre></div>
+				<datalist id="HPDataAddrSuggestions">
+					<option value="7FACC4">LoROM</option>
+					<option value="418AFF">SA-1</option>
+				</datalist>
+			</div>
 		</p>
 	<hr>
 	<h2><a href="#ToC_MakeSpritesDisplayHP" id="JMPTo_MakeSpritesDisplayHP">^</a>Making sprites display their HP</h2>
@@ -885,6 +919,19 @@ function getClosest(el, tagName) {
 
   return null;
 }
+	LoadDocumentBehavior();
+	UpdateHPDataDisplay()
+	function LoadDocumentBehavior() {
+		let HexInputs = [...document.querySelectorAll(".HexInput")]
+		HexInputs.forEach(Ele => {
+			UpDownArrowTriggers(Ele)
+		})
+		
+		let HPDataInputs = [...document.getElementById("SpriteHPDataCalculator").querySelectorAll("input[type=checkbox]")]
+		HPDataInputs.forEach(InputEle => {
+			InputEle.addEventListener("change", UpdateHPDataDisplay)
+		})
+	}
 
 	function UpdateFilePathParentDirectory() {
 		let FilePaths = [...document.querySelectorAll(".ParentDirectoryCount")]
@@ -905,4 +952,114 @@ function getClosest(el, tagName) {
 			}
 			return num <= min ? min : num >= max ? max : num;
 	}
+	function UpDownArrowTriggers(ele) {
+		ele.addEventListener(
+			"keydown",
+			function (e) {
+				let KeyName = e.key
+				if (e.altKey) {
+					return
+				}
+				if (/(ArrowDown|ArrowUp)/.test(KeyName)) {
+					e.preventDefault()
+					let IncrementDecrement = 1n
+					if (KeyName == "ArrowDown") {
+						IncrementDecrement *= -1n
+					}
+					let EnteredNumber = ParseBigIntValue(e.target.value, parseInt(e.target.dataset.radix)) + IncrementDecrement
+					event.target.value = (EnteredNumber.toString(parseInt(e.target.dataset.radix))).toUpperCase()
+					event.target.onchange()
+				}
+			}
+		)
+	}
+	function UpdateHPDataDisplay() {
+		let SA1 = BigInt(Number(document.getElementById("Setting_UsingSa1").checked))
+		let HPDataStartingAddr = BigintClamp(ParseBigIntValue(document.getElementById("Setting_FreeramUse_SpriteHPData").value, 16), BigInt("0x0"), BigInt("0xFFFFFF"))
+			document.getElementById("Setting_FreeramUse_SpriteHPData").value = HPDataStartingAddr.toString(16).toUpperCase()
+		let CurrentAddress = HPDataStartingAddr
+		let Setting_TwoByte = BigInt(Number(document.getElementById("Setting_FreeramUse_TwoByte").checked))
+		let Setting_DisplayGraphicalBar = BigInt(Number(document.getElementById("Setting_FreeramUse_DisplayGraphicalBar").checked))
+		let Setting_BarAnimation = BigInt(Number(document.getElementById("Setting_FreeramUse_BarAnimation").checked))
+		let Setting_BarChangeDelay = BigInt(Number(document.getElementById("Setting_FreeramUse_BarChangeDelay").checked))
+		
+		let SpriteTableSize = 12n
+		if (SA1 != 0) {
+			SpriteTableSize = 22n
+		}
+		
+		let OutputString1 = ""
+		let OutputString2 = ""
+		
+		OutputString2 += "    $" + CurrentAddress.toString(16).toUpperCase() + " (1 byte): !Freeram_SpriteHP_MeterState\n"
+		CurrentAddress++
+		
+		OutputString2 += "    $" + CurrentAddress.toString(16).toUpperCase() + "-$" + (CurrentAddress+SpriteTableSize-1n).toString(16).toUpperCase() + " (" + SpriteTableSize.toString() + " bytes): !Freeram_SpriteHP_CurrentHPLow\n"
+		CurrentAddress = CurrentAddress + SpriteTableSize
+		
+		OutputString2 += "    $" + CurrentAddress.toString(16).toUpperCase() + "-$" + (CurrentAddress+SpriteTableSize-1n).toString(16).toUpperCase() + " (" + SpriteTableSize.toString() + " bytes): !Freeram_SpriteHP_MaxHPLow\n"
+		CurrentAddress = CurrentAddress + SpriteTableSize
+		
+		if (Setting_TwoByte != 0n) {
+			OutputString2 += "    $" + CurrentAddress.toString(16).toUpperCase() + "-$" + (CurrentAddress+SpriteTableSize-1n).toString(16).toUpperCase() + " (" + SpriteTableSize.toString() + " bytes): !Freeram_SpriteHP_CurrentHPHi\n"
+			CurrentAddress = CurrentAddress + SpriteTableSize
+			
+			OutputString2 += "    $" + CurrentAddress.toString(16).toUpperCase() + "-$" + (CurrentAddress+SpriteTableSize-1n).toString(16).toUpperCase() + " (" + SpriteTableSize.toString() + " bytes): !Freeram_SpriteHP_MaxHPHi\n"
+			CurrentAddress = CurrentAddress + SpriteTableSize
+		}
+		if (Setting_DisplayGraphicalBar && Setting_BarAnimation) {
+			OutputString2 += "    $" + CurrentAddress.toString(16).toUpperCase() + " (1 byte): !Freeram_SpriteHP_BarAnimationFill\n"
+			CurrentAddress++
+			if (Setting_BarChangeDelay) {
+				OutputString2 += "    $" + CurrentAddress.toString(16).toUpperCase() + " (1 byte): !Freeram_SpriteHP_BarAnimationTimer\n"
+				CurrentAddress++
+			}
+		}
+		let TotalBytes = (CurrentAddress-HPDataStartingAddr)
+		
+		OutputString1 += "Sprite HP data: " + "$" + HPDataStartingAddr.toString(16).toUpperCase() + "-$" + (CurrentAddress-1n).toString(16).toUpperCase() + " (" + TotalBytes.toString() + " total bytes) used.\n"
+		
+		document.getElementById("HPDataOutput").textContent = OutputString1+OutputString2
+	}
+		function ParseBigIntValue(string, radix) {
+			//Acts more closely to parseInt, unlike other methods (other functions, like CorrectBinBigIntValue)
+			//this works with bigInt.
+			try {
+				let Output = 0n
+				let NegativeNumber = 1n
+				if ((/^-/).test(string)) {
+					NegativeNumber = -1n
+				}
+				let DigitPart = string.substring((string.search(/[0-9a-zA-Z]/)))
+				switch (radix) {
+					//decimal
+						default:
+						if ((/^-?\d+$/).test(string)) {
+							Output = BigInt(string)
+						}
+						break
+					//Hexadecimal
+						case 16:
+						case "0x":
+						case "0X":
+						if ((/^-?[0-9A-Fa-f]+$/).test(string)) {
+							Output = BigInt("0x" + DigitPart) * NegativeNumber
+						}
+						break
+					//Binary
+						case 2:
+						case "0b":
+						case "0B":
+						if ((/^-?[01]+$/).test(string)) {
+							Output = BigInt("0b" + DigitPart) * NegativeNumber
+						}
+				
+				}
+				return Output
+			} catch {}
+		}
+		function BigintClamp(num, min, max) {
+			//Restrict a number within a specified range, bigInt edition.
+				return num <= min ? min : num >= max ? max : num;
+		}
 </script>
