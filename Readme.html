@@ -435,7 +435,7 @@ autoclean JML SpriteHPIntroEffect</pre>
 			
 			Alternatively, you can figure out how much memory and where they are by using the calculator below:
 			
-			<div class="CalculatorBox" style="width: 685px; height: 297px;" id="SpriteHPDataCalculator">
+			<div class="CalculatorBox" style="width: 685px; height: 307px;" id="SpriteHPDataCalculator">
 				<table>
 					<tr><td>Using SA-1?</td><td><label><input type="checkbox" id="Setting_UsingSa1"></label></td></tr>
 					<tr><td><kbd>!Freeram_SpriteHP_SpriteHPData = </kbd></td><td class="Settings">$<input type="text" value="7FACC4" class="HexInput" data-radix="16" id="Setting_FreeramUse_SpriteHPData" list="HPDataAddrSuggestions" onchange="UpdateHPDataDisplay()"></td></tr>
@@ -444,7 +444,9 @@ autoclean JML SpriteHPIntroEffect</pre>
 					<tr><td><kbd>!Setting_SpriteHP_BarAnimation</kbd></td><td><label><input type="checkbox" checked id="Setting_FreeramUse_BarAnimation"> (unchecked is 0, otherwise 1)</label></td></tr>
 					<tr><td><kbd>!Setting_SpriteHP_BarChangeDelay</kbd></td><td><label><input type="checkbox" checked id="Setting_FreeramUse_BarChangeDelay"> (unchecked is 0, any nonzero value is checked)</label></td></tr>
 				</table>
-				<div class="CodeBlock" style="height: 145px; width: 525px;"><pre id="HPDataOutput"></pre></div>
+				<div class="CodeBlock" style="height: 145px; width: 525px;">
+					<pre id="HPDataOutput"></pre>
+				</div><button onclick="setClipboard(AddressTracker_HPData);" style="width: 200px">Get Address Tracker format</button>
 				<datalist id="HPDataAddrSuggestions">
 					<option value="7FACC4">LoROM</option>
 					<option value="418AFF">SA-1</option>
@@ -905,7 +907,6 @@ document.addEventListener('dblclick', e => {
     document.getSelection().addRange(range);
   }
 });
-
 function getClosest(el, tagName) {
   tagName = tagName && tagName.toUpperCase();
 
@@ -920,7 +921,8 @@ function getClosest(el, tagName) {
   return null;
 }
 	LoadDocumentBehavior();
-	UpdateHPDataDisplay()
+	let AddressTracker_HPData = "";
+	UpdateHPDataDisplay();
 	function LoadDocumentBehavior() {
 		let HexInputs = [...document.querySelectorAll(".HexInput")]
 		HexInputs.forEach(Ele => {
@@ -990,34 +992,42 @@ function getClosest(el, tagName) {
 		
 		let OutputString1 = ""
 		let OutputString2 = ""
+		AddressTracker_HPData = ""
 		
 		OutputString2 += "    $" + CurrentAddress.toString(16).toUpperCase() + " (1 byte): !Freeram_SpriteHP_MeterState\n"
+		AddressTracker_HPData += CurrentAddress.toString(16).toUpperCase() + " 1 Sprite\'s HP meter state (!Freeram_SpriteHP_MeterState)\n"
 		CurrentAddress++
 		
 		OutputString2 += "    $" + CurrentAddress.toString(16).toUpperCase() + "-$" + (CurrentAddress+SpriteTableSize-1n).toString(16).toUpperCase() + " (" + SpriteTableSize.toString() + " bytes): !Freeram_SpriteHP_CurrentHPLow\n"
+		AddressTracker_HPData += CurrentAddress.toString(16).toUpperCase() + " " + SpriteTableSize.toString() + " Sprite\'s current HP (low byte, !Freeram_SpriteHP_CurrentHPLow)\n"
 		CurrentAddress = CurrentAddress + SpriteTableSize
 		
 		OutputString2 += "    $" + CurrentAddress.toString(16).toUpperCase() + "-$" + (CurrentAddress+SpriteTableSize-1n).toString(16).toUpperCase() + " (" + SpriteTableSize.toString() + " bytes): !Freeram_SpriteHP_MaxHPLow\n"
+		AddressTracker_HPData += CurrentAddress.toString(16).toUpperCase() + " " + SpriteTableSize.toString() + " Sprite\'s max HP (low byte, !Freeram_SpriteHP_MaxHPLow)\n"
 		CurrentAddress = CurrentAddress + SpriteTableSize
 		
 		if (Setting_TwoByte != 0n) {
 			OutputString2 += "    $" + CurrentAddress.toString(16).toUpperCase() + "-$" + (CurrentAddress+SpriteTableSize-1n).toString(16).toUpperCase() + " (" + SpriteTableSize.toString() + " bytes): !Freeram_SpriteHP_CurrentHPHi\n"
+			AddressTracker_HPData += CurrentAddress.toString(16).toUpperCase() + " " + SpriteTableSize.toString() + " Sprite\'s current HP (high  byte, !Freeram_SpriteHP_CurrentHPHi)\n"
 			CurrentAddress = CurrentAddress + SpriteTableSize
 			
 			OutputString2 += "    $" + CurrentAddress.toString(16).toUpperCase() + "-$" + (CurrentAddress+SpriteTableSize-1n).toString(16).toUpperCase() + " (" + SpriteTableSize.toString() + " bytes): !Freeram_SpriteHP_MaxHPHi\n"
+			AddressTracker_HPData += CurrentAddress.toString(16).toUpperCase() + " " + SpriteTableSize.toString() + " Sprite\'s max HP (high byte, !Freeram_SpriteHP_MaxHPHi)\n"
 			CurrentAddress = CurrentAddress + SpriteTableSize
 		}
 		if (Setting_DisplayGraphicalBar && Setting_BarAnimation) {
 			OutputString2 += "    $" + CurrentAddress.toString(16).toUpperCase() + " (1 byte): !Freeram_SpriteHP_BarAnimationFill\n"
+			AddressTracker_HPData += CurrentAddress.toString(16).toUpperCase() + " 1 Sprite\'s HP meter, fill amount for animation (!Freeram_SpriteHP_BarAnimationFill)\n"
 			CurrentAddress++
 			if (Setting_BarChangeDelay) {
 				OutputString2 += "    $" + CurrentAddress.toString(16).toUpperCase() + " (1 byte): !Freeram_SpriteHP_BarAnimationTimer\n"
+				AddressTracker_HPData += CurrentAddress.toString(16).toUpperCase() + " 1 Sprite\'s HP meter, fill amount delay timer for animation (!Freeram_SpriteHP_BarAnimationTimer)\n"
 				CurrentAddress++
 			}
 		}
 		let TotalBytes = (CurrentAddress-HPDataStartingAddr)
 		
-		OutputString1 += "Sprite HP data: " + "$" + HPDataStartingAddr.toString(16).toUpperCase() + "-$" + (CurrentAddress-1n).toString(16).toUpperCase() + " (" + TotalBytes.toString() + " total bytes) used.\n"
+		OutputString1 += "Sprite HP data: " + "$" + HPDataStartingAddr.toString(16).toUpperCase() + "-$" + (CurrentAddress-1n).toString(16).toUpperCase() + " (" + TotalBytes.toString() + " bytes) used.\n"
 		
 		document.getElementById("HPDataOutput").textContent = OutputString1+OutputString2
 	}
@@ -1062,4 +1072,33 @@ function getClosest(el, tagName) {
 			//Restrict a number within a specified range, bigInt edition.
 				return num <= min ? min : num >= max ? max : num;
 		}
+	function RevertCopyMessage(HTMLElement, RestoredString) {
+		HTMLElement.textContent = RestoredString
+		HTMLElement.style.color = ""
+	}
+	function setClipboard(String) {
+		//Credit goes to Mozilla: https://developer.mozilla.org/en-US/docs/Web/API/Clipboard/write
+		const type = "text/plain";
+		const blob = new Blob([String], { type });
+		const data = [new ClipboardItem({ [type]: blob })];
+		
+		let EventElement = event.target
+	
+		navigator.clipboard.write(data).then(
+			((EventElement) => {
+			/* success */
+				let OriginalText = EventElement.textContent
+				EventElement.textContent = "Copied!"
+				EventElement.style.color = "#008000"
+				setTimeout(RevertCopyMessage.bind(null, EventElement, OriginalText), 1500)
+			}).bind(null, EventElement),
+			((EventElement) => {
+			/* failure */
+				let OriginalText = EventElement.textContent
+				EventElement.textContent = "Failed!"
+				EventElement.style.color = "#800000"
+				setTimeout(RevertCopyMessage.bind(null, EventElement, OriginalText), 1500)
+			}).bind(null, EventElement)
+		);
+	}
 </script>
