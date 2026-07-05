@@ -371,10 +371,18 @@ autoclean JML SpriteHPIntroEffect</pre>
 					<td>
 						HP meter state, the values are:
 						<ul>
-							<li>From <kbd>$00</kbd> to <kbd>!sprite_slots-1</kbd> will make the bar visible and display HP of the sprite of the slot corresponding to this value.</li>
 							<li>
-								From <kbd>!sprite_slots</kbd> to <kbd>(!sprite_slots*2)-1</kbd> is the same as above (subtract by <kbd>!sprite_slots</kbd> to obtain the sprite slot number) but for the <kbd>intro-fill</kbd> animation (bar appears empty, and fills up, useful for boss fights). This only applies
+								From <abbr title="LoROM: $00-$0B (0-11)&#013;SA-1: $00-$15 (0-21)"><kbd>$00</kbd> to <kbd>!sprite_slots-1</kbd></abbr> will make the bar visible and display HP of the sprite of the slot corresponding to this value.
+							</li>
+							<li>
+								From <abbr title="LoROM: $0C-$17 (12-23)&#013;SA-1: $16-$2B (22-43)"><kbd>!sprite_slots</kbd> to <kbd>(!sprite_slots*2)-1</kbd></abbr> is the same as above (subtract by <kbd>!sprite_slots</kbd> to obtain the sprite slot number) but for the <kbd>intro-fill</kbd> animation (bar appears empty, and fills up, useful for boss fights). This only applies
 								if <kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd> and <kbd>!Setting_SpriteHP_BarAnimation</kbd> set to <kbd>1</kbd>.
+							</li>
+							<li>
+								<abbr title="LoROM: $18 (24)&#013; SA-1: $2C (44)"><kbd>!sprite_slots*2</kbd></abbr> Is &ldquo;Total HP&rdquo; mode, which results in the game displaying the total HP of all active sprites, plus whatever value is in <kbd>!Freeram_SpriteHP_TotalHPOfUnloadedSprites</kbd>. Only usable if <kbd>!Setting_SpriteHP_TotalHPMode</kbd> is set to 1.
+							</li>
+							<li>
+								<abbr title="LoROM: $19 (25)&#013; SA-1: $2D (45)"><kbd>(!sprite_slots*2)+1</kbd></abbr> Same as above but for intro fill mode.
 							</li>
 							<li><kbd>$FF</kbd> Means don't display the meter, which occurs when the enemy despawns or dies the meter is displaying for. Note that this will write blank tiles every frame.</li>
 							<li><kbd>$FE</kbd> is &ldquo;disabled&rdquo;, will only write blank tiles to clear the HP meter display once, then set itself to <kbd>$FD</kbd>. Make sure you do not set this to <kbd>$FE</kbd> every frame though.</li>
@@ -428,14 +436,33 @@ autoclean JML SpriteHPIntroEffect</pre>
 					before incrementing or decrementing to its current HP fill amount.</td>
 					<td>if <kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd>, <kbd>!Setting_SpriteHP_BarAnimation</kbd>, and <kbd>!Setting_SpriteHP_BarChangeDelay</kbd> is set to nonzero values.</td>
 				</tr>
+				<tr class="RedBackground">
+					<th><kbd>!Freeram_SpriteHP_TotalHPOfUnloadedSprites</kbd></th>
+					<td class="Center">TotalHP</td>
+					<td class="NoLineBreak Center"><kbd>1 + !sprite_slots</kbd></td>
+					<td>
+						The total amount HP of sprites that aren't loaded. This system adds HP of all loaded sprite slots, then add by a value in this RAM address, then uses that value for display. Useful for something like an ambush
+						systems where enemies are spawned after killing a certain number of them.
+					</td>
+					<td>If <kbd>!Setting_SpriteHP_TotalHPMode</kbd> is nonzero.</td>
+				</tr>
+				<tr class="RedBackground">
+					<th><kbd>!Freeram_SpriteHP_TotalMaxHP</kbd></th>
+					<td class="Center">TotalHP</td>
+					<td class="NoLineBreak Center"><kbd>1 + !sprite_slots</kbd></td>
+					<td>
+						The amount of max HP of sprites when HP meter is in &ldquo;total mode&rdquo;.
+					</td>
+					<td>If <kbd>!Setting_SpriteHP_TotalHPMode</kbd> is nonzero.</td>
+				</tr>
 			</table><br>
-			Anything with a red background indicates those are optional features you can disable and will not be used. In LoROM, 25 to 51 bytes will be used, in SA-1, 45 to 91 bytes will be used instead.<br><br>
+			Anything with a red background indicates those are optional features you can disable and will not be used. In LoROM, 25 to 55 bytes will be used, in SA-1, 45 to 95 bytes will be used instead.<br><br>
 			If you want to know exactly where they are located, open <kbd>EnemyHPMeterDefines.asm</kbd> and set <kbd>!Setting_SpriteHP_DisplaySpriteHPDataOnConsole</kbd> to <kbd>1</kbd> and reinsert (works on any tool except pixi since <kbd>print</kbd>
 			command behaves differently). On the asar console window, will display the address of each subsection of the sprite HP data (this is in <a href="https://www.smwcentral.net/?p=section&a=details&id=39887">address tracker format</a> along with other summaries.).<br><br>
 			
 			Alternatively, you can figure out how much memory and where they are by using the calculator below:
 			
-			<div class="CalculatorBox" style="width: 685px; height: 307px;" id="SpriteHPDataCalculator">
+			<div class="CalculatorBox" style="width: 861px; height: 362px;" id="SpriteHPDataCalculator">
 				<table>
 					<tr><td>Using SA-1?</td><td><label><input type="checkbox" id="Setting_UsingSa1"></label></td></tr>
 					<tr><td><kbd>!Freeram_SpriteHP_SpriteHPData = </kbd></td><td class="Settings">$<input type="text" value="7FACC4" class="HexInput" data-radix="16" id="Setting_FreeramUse_SpriteHPData" list="HPDataAddrSuggestions" onchange="UpdateHPDataDisplay()"></td></tr>
@@ -443,8 +470,9 @@ autoclean JML SpriteHPIntroEffect</pre>
 					<tr><td><kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd></td><td><label><input type="checkbox" checked id="Setting_FreeramUse_DisplayGraphicalBar"> (unchecked is 0, otherwise 1)</label></td></tr>
 					<tr><td><kbd>!Setting_SpriteHP_BarAnimation</kbd></td><td><label><input type="checkbox" checked id="Setting_FreeramUse_BarAnimation"> (unchecked is 0, otherwise 1)</label></td></tr>
 					<tr><td><kbd>!Setting_SpriteHP_BarChangeDelay</kbd></td><td><label><input type="checkbox" checked id="Setting_FreeramUse_BarChangeDelay"> (unchecked is 0, any nonzero value is checked)</label></td></tr>
+					<tr><td><kbd>!Setting_SpriteHP_TotalHPMode</kbd></td><td><label><input type="checkbox" checked id="Setting_FreeramUse_TotalHPMode"> (unchecked is 0, any nonzero value is checked)</label></td></tr>
 				</table>
-				<div class="CodeBlock" style="height: 145px; width: 525px;">
+				<div class="CodeBlock" style="height: 162px; width: 629px;">
 					<pre id="HPDataOutput"></pre>
 				</div><button onclick="setClipboard(AddressTracker_HPData);" style="width: 200px">Get Address Tracker format</button>
 				<datalist id="HPDataAddrSuggestions">
@@ -984,11 +1012,14 @@ function getClosest(el, tagName) {
 		let Setting_DisplayGraphicalBar = BigInt(Number(document.getElementById("Setting_FreeramUse_DisplayGraphicalBar").checked))
 		let Setting_BarAnimation = BigInt(Number(document.getElementById("Setting_FreeramUse_BarAnimation").checked))
 		let Setting_BarChangeDelay = BigInt(Number(document.getElementById("Setting_FreeramUse_BarChangeDelay").checked))
+		let Setting_TotalHPMode = BigInt(Number(document.getElementById("Setting_FreeramUse_TotalHPMode").checked))
 		
 		let SpriteTableSize = 12n
 		if (SA1 != 0) {
 			SpriteTableSize = 22n
 		}
+		
+		let HealthSizeInBytes = 1n + Setting_TwoByte
 		
 		let OutputString1 = ""
 		let OutputString2 = ""
@@ -1025,6 +1056,32 @@ function getClosest(el, tagName) {
 				CurrentAddress++
 			}
 		}
+		if (Setting_TotalHPMode) {
+			OutputString2 += "    $" + CurrentAddress.toString(16).toUpperCase()
+			if (Setting_TwoByte) {
+				OutputString2 += "-$" + (CurrentAddress+Setting_TwoByte).toString(16).toUpperCase()
+			}
+			OutputString2 += " (" + HealthSizeInBytes.toString() + " byte"
+			if (Setting_TwoByte) {
+				OutputString2 += "s"
+			}
+			OutputString2 += "): !Freeram_SpriteHP_TotalHPOfUnloadedSprites\n"
+			AddressTracker_HPData += CurrentAddress.toString(16).toUpperCase() + " " + HealthSizeInBytes + " Total HP of sprites that are yet to be loaded (!Freeram_SpriteHP_TotalHPOfUnloadedSprites).\n"
+			CurrentAddress = CurrentAddress + HealthSizeInBytes
+			
+			OutputString2 += "    $" + CurrentAddress.toString(16).toUpperCase()
+			if (Setting_TwoByte) {
+				OutputString2 += "-$" + (CurrentAddress+Setting_TwoByte).toString(16).toUpperCase()
+			}
+			OutputString2 += " (" + HealthSizeInBytes.toString() + " byte"
+			if (Setting_TwoByte) {
+				OutputString2 += "s"
+			}
+			OutputString2 += "): !Freeram_SpriteHP_TotalMaxHP\n"
+			AddressTracker_HPData += CurrentAddress.toString(16).toUpperCase() + " " + HealthSizeInBytes + " Total max HP of sprites when meter is in \"total mode\" (!Freeram_SpriteHP_TotalMaxHP)."
+			CurrentAddress = CurrentAddress + HealthSizeInBytes
+		}
+		
 		let TotalBytes = (CurrentAddress-HPDataStartingAddr)
 		
 		OutputString1 += "Sprite HP data: " + "$" + HPDataStartingAddr.toString(16).toUpperCase() + "-$" + (CurrentAddress-1n).toString(16).toUpperCase() + " (" + TotalBytes.toString() + " bytes) used.\n"

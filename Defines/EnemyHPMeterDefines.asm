@@ -14,6 +14,7 @@
 	; + ((!sprite_slots*2) * !Setting_SpriteHP_TwoByte)                                                                   ;>Bytes used for the high bytes of current and max HP, if !Setting_SpriteHP_TwoByte == 1
 	; + (!Setting_SpriteHP_DisplayGraphicalBar * !Setting_SpriteHP_BarAnimation)                                          ;>Byte used as a secondary fill amount for animation.
 	; + ((!Setting_SpriteHP_DisplayGraphicalBar * !Setting_SpriteHP_BarAnimation)*(!Setting_SpriteHP_BarAnimation != 0))] ;>Byte used as a timer of how long the secondary fill amount pauses before following current HP fill.
+	; + (2 * (1 + !Setting_SpriteHP_TwoByte) * (!Setting_SpriteHP_TotalHPMode != 0))                                      ;>Bytes used to track the total HP of multiple sprites.
 	;
 	;A series of HP data stored in memory, in this order (placed contiguously):
 	;
@@ -61,9 +62,19 @@
 	; -- Description: Delay timer (decreases itself once per frame) before !Freeram_SpriteHP_BarAnimationFill updates to
 	;    the sprite's current HP fill amount. This is ignored if "IntroFill" mode is active.
 	;
+	; - Define: !Freeram_SpriteHP_TotalHPOfUnloadedSprites
+	; -- BytesUsed: [BytesUsed = (1 + !Setting_SpriteHP_TwoByte) * !Setting_SpriteHP_TotalHPMode]
+	; -- Description: The amount of HP of sprites not currently loaded (can be used as an ambush system where total HP includes enemies that aren't
+	;    loaded until later after a certain number of them are defeated). This ASM will add the HPs of the currently loaded sprite slots, then add by
+	;    this value, and the final result is the total HP.
+	;
+	; - Define: !Freeram_SpriteHP_TotalMaxHP
+	; -- BytesUsed: [BytesUsed = (1 + !Setting_SpriteHP_TwoByte) * !Setting_SpriteHP_TotalHPMode]
+	; -- Description: The amount of max HP of sprites when HP meter is in "total mode".
+	;
 	; Summary:
-	; - LoROM number of bytes used: 25 to 51.
-	; - SA-1 ROM number of bytes used: 45 to 91.
+	; - LoROM number of bytes used: 25 to 55.
+	; - SA-1 ROM number of bytes used: 45 to 95.
 	;
 	;If you want to know display the RAM usage of this, have !Setting_SpriteHP_DisplaySpriteHPDataOnConsole set to 1 and
 	;insert via uberasm tool. The console window will show the list of itemized used RAM, in "Address Tracker" format:
@@ -438,6 +449,10 @@
 			;^Koopas do what when stomped (this is because of a hijack at $01AA14):
 			; - 0 = Come out of shells (vanilla).
 			; - 1 = Stay in their shells (applies hex edits at $0196C6 and $01AA15).
+		!Setting_SpriteHP_TotalHPMode = 1
+			;^Apply a mode where the meter shows total HP across multiple sprites:
+			; - 0 = No
+			; - 1 = Yes
 
 
 ;Don't touch these unless you know what you're doing
@@ -515,6 +530,10 @@
 						%MacroAssignDefineOneAfterAnother(Freeram_SpriteHP_BarAnimationTimer, 1, CurrentAddressToAssignDefine_SpriteHPData)
 					endif
 				endif
+				if !Setting_SpriteHP_TotalHPMode
+					%MacroAssignDefineOneAfterAnother(Freeram_SpriteHP_TotalHPOfUnloadedSprites, 1+!Setting_SpriteHP_TwoByte, CurrentAddressToAssignDefine_SpriteHPData)
+					%MacroAssignDefineOneAfterAnother(Freeram_SpriteHP_TotalMaxHP, 1+!Setting_SpriteHP_TwoByte, CurrentAddressToAssignDefine_SpriteHPData)
+				endif
 	;Get status bar addresses
 		!Setting_SpriteHP_NumericalPos_XYPos = VanillaStatusBarXYToAddress(!Setting_SpriteHP_NumericalPos_x, !Setting_SpriteHP_NumericalPos_y, !RAM_0EF9)
 		!Setting_SpriteHP_NumericalPosRightAligned_XYPos = VanillaStatusBarXYToAddress(!Setting_SpriteHP_NumericalPosRightAligned_x, !Setting_SpriteHP_NumericalPosRightAligned_y, !RAM_0EF9)
@@ -559,7 +578,7 @@
 			print "---------------------------------------------------------------------------------"
 			print "\!Freeram_SpriteHP_SpriteHPData (Address Tracker format)"
 			print "---------------------------------------------------------------------------------"
-			print "$", hex(!Freeram_SpriteHP_MeterState), " 1 Current index to display sprite's HP (\!Freeram_SpriteHP_MeterState)."
+			print "$", hex(!Freeram_SpriteHP_MeterState), " 1 HP Meter state (\!Freeram_SpriteHP_MeterState)."
 			print "$", hex(!Freeram_SpriteHP_CurrentHPLow), " ", dec(!sprite_slots), " Sprite current HP, low byte (\!Freeram_SpriteHP_CurrentHPLow)."
 			print "$", hex(!Freeram_SpriteHP_MaxHPLow), " ", dec(!sprite_slots), " Sprite max HP, low byte (\!Freeram_SpriteHP_MaxHPLow)."
 			if !Setting_SpriteHP_TwoByte
@@ -571,6 +590,10 @@
 				if !Setting_SpriteHP_BarChangeDelay
 					print "$", hex(!Freeram_SpriteHP_BarAnimationTimer), " 1 Sprite graphical bar fill delay timer (\!Freeram_SpriteHP_BarAnimationTimer)."
 				endif
+			endif
+			if !Setting_SpriteHP_TotalHPMode
+				print "$" hex(!Freeram_SpriteHP_TotalHPOfUnloadedSprites), dec(!sprite_slots), " Total HP of sprites that are unloaded (\!Freeram_SpriteHP_TotalHPOfUnloadedSprites)."
+				print "$" hex(!Freeram_SpriteHP_TotalMaxHP), dec(!sprite_slots), " Total max HP of sprites (\!Freeram_SpriteHP_TotalMaxHP)."
 			endif
 			print "---------------------------------------------------------------------------------"
 		endif
