@@ -189,8 +189,8 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		assert <SpriteNumbMin> <= <SpriteNumbMax>, "blacklisted sprite range's minimum is greater than max."
 		CMP.b #clamp(<SpriteNumbMin>, $00, $FF)
 		BCC ?OutOfBlacklistedRange
-		CMP.b #clamp(<SpriteNumbMax>+1, $00, $FF)
 		if (<SpriteNumbMax>+1) < $FF ;>Optimization technique, there are no values beyond $FF, thus checking with a max of $FF is redundant.
+			CMP.b #<SpriteNumbMax>+1
 			BCS ?OutOfBlacklistedRange
 		endif
 		?InBlacklistedRange:
@@ -1278,14 +1278,16 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					JSL !SharedSub_SpritesTotalHPIntroEffect
 				endif
 			.NoUnloadedSprites
-				LDA #$00
-				STA !Freeram_SpriteHP_TotalHPOfUnloadedSprites
-				if !Setting_SpriteHP_TwoByte
-					STA !Freeram_SpriteHP_TotalHPOfUnloadedSprites+1
-					STA !Freeram_SpriteHP_TotalMaxHP+1
+				if !Setting_SpriteHP_TotalHPMode
+					LDA #$00
+					STA !Freeram_SpriteHP_TotalHPOfUnloadedSprites
+					if !Setting_SpriteHP_TwoByte
+						STA !Freeram_SpriteHP_TotalHPOfUnloadedSprites+1
+						STA !Freeram_SpriteHP_TotalMaxHP+1
+					endif
+					LDA #$04
+					STA !Freeram_SpriteHP_TotalMaxHP
 				endif
-				LDA #$04
-				STA !Freeram_SpriteHP_TotalMaxHP
 			.Restore
 				CPX #$07
 				BNE ..CODE_03987E

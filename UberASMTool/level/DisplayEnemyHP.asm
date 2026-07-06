@@ -9,120 +9,132 @@ incsrc "../EnemyHPMeterDefines.asm"
 incsrc "../GraphicalBarDefines.asm"
 incsrc "../NumberDisplayRoutinesDefines.asm"
 
-
-macro WriteFixedDigitsToLayer3(TileLocation, TileLocationProps)
-	if !StatusbarFormat == $01
-		LDX.b #(!Setting_SpriteHP_MaxDigits-1)
-		-
-		LDA.b !Scratchram_16bitHexDecOutput+$04-(!Setting_SpriteHP_MaxDigits-1),x
-		STA <TileLocation>,x
-		
-		if !StatusBar_UsingCustomProperties
-			LDA.b #!Setting_SpriteHP_NumericalProp
-			STA <TileLocationProps>,x
+;Status bar display handler macros
+	macro WriteFixedDigitsToLayer3(TileLocation, TileLocationProps)
+		if !StatusbarFormat == $01
+			LDX.b #(!Setting_SpriteHP_MaxDigits-1)
+			-
+			LDA.b !Scratchram_16bitHexDecOutput+$04-(!Setting_SpriteHP_MaxDigits-1),x
+			STA <TileLocation>,x
+			
+			if !StatusBar_UsingCustomProperties
+				LDA.b #!Setting_SpriteHP_NumericalProp
+				STA <TileLocationProps>,x
+			endif
+			
+			DEX
+			BPL -
+		else
+			LDX.b #((!Setting_SpriteHP_MaxDigits-1)*2)
+			LDY.b #(!Setting_SpriteHP_MaxDigits-1)
+			-
+			LDA.w !Scratchram_16bitHexDecOutput+$04-(!Setting_SpriteHP_MaxDigits-1)|!dp,y
+			STA <TileLocation>,x
+			
+			if !StatusBar_UsingCustomProperties
+				LDA.b #!Setting_SpriteHP_NumericalProp
+				STA <TileLocationProps>,x
+			endif
+			
+			DEY
+			DEX #2
+			BPL -
 		endif
-		
-		DEX
-		BPL -
-	else
-		LDX.b #((!Setting_SpriteHP_MaxDigits-1)*2)
-		LDY.b #(!Setting_SpriteHP_MaxDigits-1)
-		-
-		LDA.w !Scratchram_16bitHexDecOutput+$04-(!Setting_SpriteHP_MaxDigits-1)|!dp,y
-		STA <TileLocation>,x
-		
-		if !StatusBar_UsingCustomProperties
-			LDA.b #!Setting_SpriteHP_NumericalProp
-			STA <TileLocationProps>,x
-		endif
-		
-		DEY
-		DEX #2
-		BPL -
-	endif
-endmacro
-
-macro WriteAlignedDigitsToLayer3()
-	if !StatusbarFormat == $01
-		JSL !SharedSub_WriteStringDigitsToHUD
-	else
-		JSL !SharedSub_WriteStringDigitsToHUDFormat2
-	endif
-endmacro
-
-macro WriteTileAddress(TileLocation, PropLocation, PropValue)
-	LDA.b #<TileLocation>
-	STA $00
-	LDA.b #<TileLocation>>>8
-	STA $01
-	LDA.b #<TileLocation>>>16
-	STA $02
-	if !StatusBar_UsingCustomProperties != 0
-		LDA.b #<PropLocation>
-		STA $03
-		LDA.b #<PropLocation>>>8
-		STA $04
-		LDA.b #<PropLocation>>>16
-		STA $05
-		LDA.b #<PropValue>
-		STA $06
-	endif
-endmacro
-
-macro ClearNumerical()
-	LDX.b #(!Setting_SpriteHP_MaxStringLength-1)*!StatusbarFormat	;>2 Setting_SpriteHP_MaxDigits due to 2 numbers displayed, plus 1 because of the "/" symbol.
-	-
-	LDA #!StatusBarBlankTile
-	if !Setting_SpriteHP_NumericalTextAlignment == 1
-		STA !Setting_SpriteHP_NumericalPos_XYPos,x
-	elseif !Setting_SpriteHP_NumericalTextAlignment == 2
-		STA !Setting_SpriteHP_NumericalPosRightAligned_XYPos-((!Setting_SpriteHP_MaxStringLength-1)*!StatusbarFormat),x
-	endif
-	if !StatusBar_UsingCustomProperties != 0
-		LDA.b #!Setting_SpriteHP_NumericalProp
-		if !Setting_SpriteHP_NumericalTextAlignment == 1
-			STA !Setting_SpriteHP_NumericalPos_XYPosProp,x
-		elseif !Setting_SpriteHP_NumericalTextAlignment == 2
-			STA !Setting_SpriteHP_NumericalPosRightAligned_XYPosProp-((!Setting_SpriteHP_MaxStringLength-1)*!StatusbarFormat),x
-		endif
-	endif
-	DEX #!StatusbarFormat
-	BPL -
-endmacro
-
-macro GetHealthDigits8Bit(ValueToDisplay)
-		LDA !<ValueToDisplay>
-		STA $00
-		STZ $01
-		JSL !SharedSub_SixteenBitHexDecDivision
-endmacro
-
-macro GetHealthDigits16Bit(ValueToDisplayLo, ValueToDisplayHi)
-		LDA !<ValueToDisplayLo>
-		STA $00
-		LDA !<ValueToDisplayHi>
-		STA $01
-		JSL !SharedSub_SixteenBitHexDecDivision
-endmacro
-
-macro ConvertToRightAligned()
-	if !StatusbarFormat == $01
-		JSL !SharedSub_ConvertToRightAligned
-	else
-		JSL !SharedSub_ConvertToRightAlignedFormat2
-	endif
-endmacro
-macro TurnOffHPMeterOfCertainSpr(SprNumb, LabelToJump)
-	CMP.b #<SprNumb>
-	BEQ <LabelToJump>
-endmacro
-macro TurnOffHPMeterOfCertainSpr_UnlimitedDistance(SprNumb, LabelToJump)
-	CMP.b #<SprNumb>
-	BNE ?+
-	JMP <LabelToJump>
-	+
+	endmacro
 	
-endmacro
+	macro WriteAlignedDigitsToLayer3()
+		if !StatusbarFormat == $01
+			JSL !SharedSub_WriteStringDigitsToHUD
+		else
+			JSL !SharedSub_WriteStringDigitsToHUDFormat2
+		endif
+	endmacro
+	
+	macro WriteTileAddress(TileLocation, PropLocation, PropValue)
+		LDA.b #<TileLocation>
+		STA $00
+		LDA.b #<TileLocation>>>8
+		STA $01
+		LDA.b #<TileLocation>>>16
+		STA $02
+		if !StatusBar_UsingCustomProperties != 0
+			LDA.b #<PropLocation>
+			STA $03
+			LDA.b #<PropLocation>>>8
+			STA $04
+			LDA.b #<PropLocation>>>16
+			STA $05
+			LDA.b #<PropValue>
+			STA $06
+		endif
+	endmacro
+	macro ClearNumerical()
+		LDX.b #(!Setting_SpriteHP_MaxStringLength-1)*!StatusbarFormat	;>2 Setting_SpriteHP_MaxDigits due to 2 numbers displayed, plus 1 because of the "/" symbol.
+		-
+		LDA #!StatusBarBlankTile
+		if !Setting_SpriteHP_NumericalTextAlignment == 1
+			STA !Setting_SpriteHP_NumericalPos_XYPos,x
+		elseif !Setting_SpriteHP_NumericalTextAlignment == 2
+			STA !Setting_SpriteHP_NumericalPosRightAligned_XYPos-((!Setting_SpriteHP_MaxStringLength-1)*!StatusbarFormat),x
+		endif
+		if !StatusBar_UsingCustomProperties != 0
+			LDA.b #!Setting_SpriteHP_NumericalProp
+			if !Setting_SpriteHP_NumericalTextAlignment == 1
+				STA !Setting_SpriteHP_NumericalPos_XYPosProp,x
+			elseif !Setting_SpriteHP_NumericalTextAlignment == 2
+				STA !Setting_SpriteHP_NumericalPosRightAligned_XYPosProp-((!Setting_SpriteHP_MaxStringLength-1)*!StatusbarFormat),x
+			endif
+		endif
+		DEX #!StatusbarFormat
+		BPL -
+	endmacro
+	macro GetHealthDigits8Bit(ValueToDisplay)
+			LDA !<ValueToDisplay>
+			STA $00
+			STZ $01
+			JSL !SharedSub_SixteenBitHexDecDivision
+	endmacro
+	
+	macro GetHealthDigits16Bit(ValueToDisplayLo, ValueToDisplayHi)
+			LDA !<ValueToDisplayLo>
+			STA $00
+			LDA !<ValueToDisplayHi>
+			STA $01
+			JSL !SharedSub_SixteenBitHexDecDivision
+	endmacro
+	
+	macro ConvertToRightAligned()
+		if !StatusbarFormat == $01
+			JSL !SharedSub_ConvertToRightAligned
+		else
+			JSL !SharedSub_ConvertToRightAlignedFormat2
+		endif
+	endmacro
+;Blacklisted sprite macros
+	macro SpriteHPMeterBlacklist(SpriteNumb, LabelToJump)
+		CMP.b #<SpriteNumb>
+		BEQ <LabelToJump>
+	endmacro
+	
+	macro SpriteHPMeterBlacklist_UnlimitedDistance(SpriteNumb, LabelToJump)
+		CMP.b #<SpriteNumb>
+		BNE ?+
+		JMP <LabelToJump>
+		?+
+	endmacro
+	
+	macro SpriteHPMeterBlacklist_Range(SpriteNumbMin, SpriteNumbMax, LabelToJump)
+		assert <SpriteNumbMin> <= <SpriteNumbMax>, "blacklisted sprite range's minimum is greater than max."
+		CMP.b #clamp(<SpriteNumbMin>, $00, $FF)
+		BCC ?+
+		if <SpriteNumbMax>+1 < $FF
+			CMP.b #<SpriteNumbMax>+1
+			BCS ?+
+		endif
+		JMP <LabelToJump>
+		?+
+	endmacro
+
 load:
 	;To ASM hackers, when a sprite is placed in a level so that the player entering the level
 	;would immediately load the sprite, the codes are executed in this order:
@@ -266,42 +278,8 @@ main:
 				STA !Freeram_SpriteHP_MeterState	;/(like before it was turned into a coin from a fireball, or bob-omb exploding)
 				JMP .Done
 			...Exists
-				if !Setting_SpriteHP_VanillaSprite_OneShotSprites
-					if !Setting_SpriteHP_UsingCustomSprites
-						LDA !7FAB10,x			;\If sprite is custom, allow display
-						AND.b #%00001000		;/(can be overridden within sprite code to not display)
-						BNE ....CustomSprite		;>For custom sprites, you'll need to edit the custom sprite's code.
-					endif
-					;Here are sprites with special behaviors. Sprites that in a situation that have an HP system, but becomes in a state
-					;that shouldn't have, either because it changed sprite numbers or changed its state while keeping its sprite number.
-					....VanillaSprite
-						LDA !9E,x
-						%TurnOffHPMeterOfCertainSpr($21, ...HideHPMeter) ;>If sprite the meter is on *transforms* into moving coin, turn off meter
-						%TurnOffHPMeterOfCertainSpr($0D, .....BombOmb) ;>Handle Bob-omb. If not exploding, show HP as normal, otherwise turn off meter.
-						;To add more sprites here, syntax is:
-						; %TurnOffHPMeterOfCertainSpr($xx, Label)
-						;  - xx is the hexadecimal value representing a sprite number
-						;  - Label is the label to jump to. Either to "...HideHPMeter" to hide the meter immediately
-						;    when certain cases like the sprite becomes another sprite that shouldn't have a HP meter
-						;    or to whatever label for custom handling (such as ".....BombOmb") if it should not have
-						;    a HP meter at certain states.
-						;If you happened to have "branch out of bounds" error, use
-						;TurnOffHPMeterOfCertainSpr_UnlimitedDistance($xx, Label) instead
-						
-						;Don't remove this. If not any of the listed sprites, it should display normally.
-							BRA ...DisplayNormally
-						;Custom or special handlers here, based on a sprite does have HP, but only on certain conditions.
-							.....BombOmb
-								LDA !1534,x			;\If Bob-omb exploded, hide it's HP meter.
-								BNE ...HideHPMeter		;/
-								if !Setting_SpriteHP_UsingCustomSprites
-									BRA ...DisplayNormally
-								endif
-					if !Setting_SpriteHP_UsingCustomSprites
-						....CustomSprite
-							;Same as under "....VanillaSprite" but for custom sprites through pixi.
-					endif
-				endif
+				JSR .CheckForBlacklistedSprites
+				BCS ...HideHPMeter
 			...DisplayNormally
 	.DisplayNumerical
 		;After this point:
@@ -638,3 +616,108 @@ main:
 	.Done
 	PLB
 	RTL
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Check for blacklisted sprites.
+;
+;This subroutine is used to prevent showing HP of sprites that shouldn't use the
+;HP system. This runs every frame while the meter is active, and espically so
+;during total HP mode. This handles sprites either turning into blacklisted
+;sprites or sprites changing their states into blacklisted states.
+;
+;To add a sprite number here you wish not to show/use the HP system, the syntax
+;is:
+; - %SpriteHPMeterBlacklist(SpriteNumber, Label)
+; - %SpriteHPMeterBlacklist_UnlimitedDistance(SpriteNumber, Label)
+;    ;^Use this instead of "SpriteHPMeterBlacklist" if you have
+;    ; branch-out-of-bounds issues.
+; - %SpriteHPMeterBlacklist_Range(SpriteNumberMin, SpriteNumberMax, Label)
+;    ;^Use this if you have consecutive values of blacklisted sprite numbers.
+;Legend:
+; - SpriteNumber is obvious (enter $xx where xx is the hexadecimal value of the
+;   sprite number), including the min and max variants.
+; - Label is a label that specifies a jump if equal to or in between min and
+;   max. Oftentimes you can just branch to "..Blacklisted", or for conditionally
+;   blacklisted sprites, add your own label and code for checking the state of
+;   the sprite.
+;
+;
+;Input:
+; - X: Sprite slot to check
+;Output:
+; - Carry:
+; -- Clear (0): if it should be allowed
+; -- Set (1):if it should not be allowed.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	.CheckForBlacklistedSprites
+		if !Setting_SpriteHP_UsingCustomSprites
+			LDA !7FAB10,x			;\If sprite is custom, allow display
+			AND.b #%00001000		;/(can be overridden within sprite code to not display)
+			BNE ..CustomSprite		;>For custom sprites, you'll need to edit the custom sprite's code.
+		endif
+		..VanillaSprite
+			LDA !9E,x
+			;Here is the blacklist for vanilla sprite numbers.
+			%SpriteHPMeterBlacklist($0D, ..BobOmb) ;>Bobomb (blacklisted if its an explosion)
+			%SpriteHPMeterBlacklist($0E, ..Blacklisted) ;>Keyhole
+			%SpriteHPMeterBlacklist($19, ..Blacklisted) ;>Display text from Level Message 1
+			%SpriteHPMeterBlacklist($21, ..Blacklisted) ;>Moving coin
+
+
+			...Allowed
+				CLC
+				RTS
+				
+			;Custom handler for conditionally blacklisted sprites here.
+			..BobOmb
+				LDA !1534,x
+				BNE ..Blacklisted	;>If its an explosion, it's blacklisted
+				BRA ...Allowed
+		if !Setting_SpriteHP_UsingCustomSprites
+			..CustomSprite
+				;Here is the blacklist for custom sprite numbers
+				
+				...Allowed
+					CLC
+					RTS
+				;Custom handler for conditionally blacklisted custom sprites here.
+		endif
+		..Blacklisted
+			SEC
+			RTS
+if !Setting_SpriteHP_TotalHPMode
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	;Check for blacklisted sprites, for total HP mode
+	;Same as before, but can be used to prevent showing HP of things like Magikoopa
+	;magic and summoned bullet bills.
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+		.CheckForBlacklistedSpritesTotalHP
+			if !Setting_SpriteHP_UsingCustomSprites
+				LDA !7FAB10,x			;\If sprite is custom, allow display
+				AND.b #%00001000		;/(can be overridden within sprite code to not display)
+				BNE ..CustomSprite		;>For custom sprites, you'll need to edit the custom sprite's code.
+			endif
+			..VanillaSprite
+				LDA !9E,x
+				;Here is the blacklist for vanilla sprite numbers.
+				%SpriteHPMeterBlacklist($0D, ..Blacklisted) ;>Bobomb (blacklisted if its an explosion)
+	
+	
+				...Allowed
+					CLC
+					RTS
+					
+				;Custom handler for conditionally blacklisted sprites here.
+			if !Setting_SpriteHP_UsingCustomSprites
+				..CustomSprite
+					;Here is the blacklist for custom sprite numbers
+					
+					...Allowed
+						CLC
+						RTS
+					;Custom handler for conditionally blacklisted custom sprites here.
+			endif
+			..Blacklisted
+				SEC
+				RTS
+
+endif
