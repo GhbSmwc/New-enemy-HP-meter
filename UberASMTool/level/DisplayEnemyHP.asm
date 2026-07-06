@@ -450,9 +450,19 @@ main:
 								
 								......Terminate
 									LDA !Freeram_SpriteHP_MeterState
+									if !Setting_SpriteHP_TotalHPMode
+										CMP.b #(!sprite_slots*2)+1
+										BEQ .......TotalHPTerminate
+									endif
 									SEC
 									SBC.b #!sprite_slots
 									STA !Freeram_SpriteHP_MeterState
+									if !Setting_SpriteHP_TotalHPMode
+										BRA ......NoTerminate
+										.......TotalHPTerminate
+											DEC A
+											STA !Freeram_SpriteHP_MeterState
+									endif
 								......NoTerminate
 							if !Setting_SpriteHP_ShowHealedTransparent
 								LDA !Freeram_SpriteHP_MeterState
@@ -489,9 +499,21 @@ main:
 							LDA !Freeram_SpriteHP_MeterState
 							CMP.b #!sprite_slots
 							BCC .....AlreadyTerminated
-							SEC
-							SBC.b #!sprite_slots
-							STA !Freeram_SpriteHP_MeterState
+							CMP.b #!sprite_slots*2
+							if !Setting_SpriteHP_TotalHPMode
+								BCC .....ConvertIntroFillSlotsToRegularSlots
+								BEQ .....AlreadyTerminated
+								CMP.b #(!sprite_slots*2)+2
+								BCC .....ConvertTotalModeIntroFillToJustTotalMode
+							endif
+							.....ConvertIntroFillSlotsToRegularSlots
+								SEC
+								SBC.b #!sprite_slots
+								BRA .....Write
+							.....ConvertTotalModeIntroFillToJustTotalMode
+								DEC A
+							.....Write
+								STA !Freeram_SpriteHP_MeterState
 							.....AlreadyTerminated
 						if and(notequal(!Setting_SpriteHP_EmptyDelayFrames, 0), less(!Setting_SpriteHP_BarEmptyPerFrame, 2))
 							LDA $13							;\Decrement every 2^n frames

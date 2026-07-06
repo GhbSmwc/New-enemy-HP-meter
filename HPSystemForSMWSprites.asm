@@ -545,14 +545,28 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		endif
 	;Reznor. Note that when killed, it calls the "InitSpriteTables" subroutine at $xxxxxx.
 	;Thus resulting in the meter jumping to 0 back to 1. I had to hijack at $039AF2 to force it to be zero
+		ReznorHijack:
+			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Bosses)
+				org $039872
+				autoclean JML ReznorIntroFill
+			else
+				%RemoveFreespaceCodeFromJMLJSL($039872)
+				org $039872
+				CPX #$07
+				BNE .NotBaseSprite
+				
+				org $03987E
+				.NotBaseSprite
+			endif
 		if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Bosses)
-			org $039AF2
+			org $039ABB
 			autoclean JSL ReznorDead
+			NOP
 		else
-			%RemoveFreespaceCodeFromJMLJSL($039AF2)
-			org $039AF2
-			LDA #$C0
-			STA !AA,x
+			%RemoveFreespaceCodeFromJMLJSL($039ABB)
+			org $039ABB
+			LDA #$03
+			STA $1DF9|!addr
 		endif
 	;Bosses below (only applies to bosses with a HP system, and not bowser)
 		;Big boo boss
@@ -921,6 +935,10 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				STZ.w !160E,x
 				STZ.w !1594,x
 			.SetDefault1HP
+				LDA !14C8,x
+				BNE +
+				RTL
+				+
 				LDA #$01
 				STA !Freeram_SpriteHP_CurrentHPLow,x
 				STA !Freeram_SpriteHP_MaxHPLow,x
@@ -1242,12 +1260,35 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				LDA #$28
 				STA $1DFC|!addr
 				RTL
-		ReznorDead: ;>JSL from $039AF2
-			;Hijacking at $039ACC using %HijacksForFallingOffScrn() doesn't work because it clears sprite tables at $039AEE, which is hijacked
-			;to default sprite HP to 1/1. Thus hijacking after that ($039AF2) seems to work best.
-			%DealFixedDamage(!SpriteHP_MaxHPAndDamageValue)
+		ReznorIntroFill: ;>JML from $039872
+			.IntroFill
+				if !Setting_SpriteHP_TotalHPMode == 0
+					JSL !SharedSub_SpriteHPIntroEffect
+				else
+					JSL !SharedSub_SpritesTotalHPIntroEffect
+				endif
+			.NoUnloadedSprites
+				LDA #$00
+				STA !Freeram_SpriteHP_TotalHPOfUnloadedSprites
+				if !Setting_SpriteHP_TwoByte
+					STA !Freeram_SpriteHP_TotalHPOfUnloadedSprites+1
+					STA !Freeram_SpriteHP_TotalMaxHP+1
+				endif
+				LDA #$04
+				STA !Freeram_SpriteHP_TotalMaxHP
 			.Restore
-				LDA #$C0
-				STA !AA,x
+				CPX #$07
+				BNE ..CODE_03987E
+				JML $039876|!bank
+				..CODE_03987E
+					JML $03987E|!bank
+		
+		ReznorDead: ;>JSL from $039ABB
+			PHX
+			%DealFixedDamage(!SpriteHP_MaxHPAndDamageValue)
+			PLX
+			.Restore
+				LDA #$03
+				STA $1DF9|!addr
 				RTL
 	endif

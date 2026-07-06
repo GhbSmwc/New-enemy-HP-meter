@@ -1384,6 +1384,11 @@ SpriteHPDamage:
 	BEQ .Disabled					;|
 	CMP #$FD					;|
 	BEQ .Disabled					;/
+	CMP.b #!sprite_slots*2
+	BCC .Normal
+	CMP.b #(!sprite_slots*2)+1
+	BCC .TotalHPIntroFill
+	.Normal
 	if !Setting_SpriteHP_BarAnimation == 0
 		TXA
 		STA !Freeram_SpriteHP_MeterState
@@ -1410,6 +1415,7 @@ SpriteHPDamage:
 		STA $00
 	endif
 	.Disabled
+	.TotalHPIntroFill
 	if and(notequal(!Setting_SpriteHP_BarAnimation, 0), notequal(!Setting_SpriteHP_BarChangeDelay, 0))
 		LDA.b #!Setting_SpriteHP_BarChangeDelay		;\Freeze damage indicator (this makes the bar animation hangs before decreasing towards current HP fill amount)
 		STA !Freeram_SpriteHP_BarAnimationTimer		;/
@@ -1545,8 +1551,8 @@ SpriteHPRemoveRecordEffect:
 ; - X: Current sprite slot index.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 SpriteHPIntroEffect:
-	LDA !Freeram_SpriteHP_MeterState                                                    ;\First check if the meter is locked from displaying
-	CMP #$FE                                                                            ;|if so, then don't set the meter state
+	LDA !Freeram_SpriteHP_MeterState                                                   ;\First check if the meter is locked from displaying
+	CMP #$FE                                                                           ;|if so, then don't set the meter state
 	BEQ .Disabled                                                                      ;|
 	CMP #$FD                                                                           ;|
 	BEQ .Disabled                                                                      ;/
@@ -1558,11 +1564,31 @@ SpriteHPIntroEffect:
 		LDA #$00                                                                    ;\Start the meter at 0%
 		STA !Freeram_SpriteHP_BarAnimationFill                                      ;/
 		if !Setting_SpriteHP_BarChangeDelay                                         ;
-			STA !Freeram_SpriteHP_BarAnimationTimer                             ;>Set timer to 0 to make sure the animation plays correctly (allow SFX)
+			STA !Freeram_SpriteHP_BarAnimationTimer                                 ;>Set timer to 0 to make sure the animation plays correctly (allow SFX)
 		endif                                                                       ;
 	else
 		TXA
 		STA !Freeram_SpriteHP_MeterState
 	endif
+	.Disabled
+	RTL
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Sprite total HP Intro fill effect
+;To be used in ambush-like fights and not to be
+;executed every frame.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+SpritesTotalHPIntroEffect:
+	LDA !Freeram_SpriteHP_MeterState                                                   ;\First check if the meter is locked from displaying
+	CMP #$FE                                                                           ;|if so, then don't set the meter state
+	BEQ .Disabled                                                                      ;|
+	CMP #$FD                                                                           ;|
+	BEQ .Disabled                                                                      ;/
+	LDA.b #(!sprite_slots*2)+1
+	STA !Freeram_SpriteHP_MeterState
+	LDA #$00                                                                    ;\Start the meter at 0%
+	STA !Freeram_SpriteHP_BarAnimationFill                                      ;/
+	if !Setting_SpriteHP_BarChangeDelay                                         ;
+		STA !Freeram_SpriteHP_BarAnimationTimer                                 ;>Set timer to 0 to make sure the animation plays correctly (allow SFX)
+	endif                                                                       ;
 	.Disabled
 	RTL

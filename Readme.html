@@ -271,7 +271,8 @@ autoclean JML WriteStringDigitsToHUDFormat2
 autoclean JML SpriteHPDamage
 autoclean JML SpriteHPRemoveRecordEffect
 autoclean JML SpriteHPGetSlotIndex
-autoclean JML SpriteHPIntroEffect</pre>
+autoclean JML SpriteHPIntroEffect
+autoclean JML SpritesTotalHPIntroEffect</pre>
 </div>
 					</li>
 					<li>
@@ -301,7 +302,8 @@ autoclean JML SpriteHPIntroEffect</pre>
 		%SetSharedSubDefine(SharedSub_SpriteHPDamage)
 		%SetSharedSubDefine(SharedSub_SpriteHPRemoveRecordEffect)
 		%SetSharedSubDefine(SharedSub_SpriteHPGetSlotIndex)
-		%SetSharedSubDefine(SharedSub_SpriteHPIntroEffect)</pre>
+		%SetSharedSubDefine(SharedSub_SpriteHPIntroEffect)
+		%SetSharedSubDefine(SharedSub_SpritesTotalHPIntroEffect)</pre>
 </div>
 					Now make sure their order and positions in the list of the entire JML and define list matches (if you paste the JML list starting at the 51st item, then the define list must also be placed starting at the 51st item),
 					else define names gets assigned to the wrong subroutine label, which causes glitches or crashes.</li>

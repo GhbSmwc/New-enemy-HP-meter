@@ -77,7 +77,7 @@
 		%SetSharedSubDefine(SharedSub_SpriteHPRemoveRecordEffect)		;
 		%SetSharedSubDefine(SharedSub_SpriteHPGetSlotIndex)		;
 		%SetSharedSubDefine(SharedSub_SpriteHPIntroEffect)		;
-		%SetSharedSubDefine(SharedSub_Placeholder)		;Dummy JSL to reserve space.
+		%SetSharedSubDefine(SharedSub_SpritesTotalHPIntroEffect)		;
 		%SetSharedSubDefine(SharedSub_Placeholder)		;Dummy JSL to reserve space.
 		%SetSharedSubDefine(SharedSub_Placeholder)		;Dummy JSL to reserve space.
 		%SetSharedSubDefine(SharedSub_Placeholder)		;Dummy JSL to reserve space.
