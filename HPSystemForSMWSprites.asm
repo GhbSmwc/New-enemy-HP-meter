@@ -558,6 +558,16 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				org $03987E
 				.NotBaseSprite
 			endif
+		if and(and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Bosses), !Setting_SpriteHP_TotalHPMode)
+			org $0398E1
+			autoclean JSL ReznorClearHPMeter
+			NOP
+		else
+			%RemoveFreespaceCodeFromJMLJSL($0398E1)
+			org $0398E1
+			LDA #$FF
+			STA $1493|!addr
+		endif
 		if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Bosses)
 			org $039ABB
 			autoclean JSL ReznorDead
@@ -1291,4 +1301,13 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				LDA #$03
 				STA $1DF9|!addr
 				RTL
+		if !Setting_SpriteHP_TotalHPMode
+			ReznorClearHPMeter: ;>JSL from $0398E1
+				LDA #$FF
+				STA !Freeram_SpriteHP_MeterState
+				.Restore
+					LDA #$FF
+					STA $1493|!addr
+					RTL
+		endif
 	endif
