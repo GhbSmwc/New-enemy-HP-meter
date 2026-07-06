@@ -217,8 +217,15 @@ main:
 			BRA .CheckIfSpriteStateValid
 			..TotalHPMode
 				...GetTotalHPOfLoaded
-					LDA #$00
-					STA !Scratchram_GraphicalBar_FillByteTbl   ;\This will be the running total
+					if !Setting_SpriteHP_TwoByte
+						REP #$20
+					endif
+					LDA !Freeram_SpriteHP_TotalHPOfUnloadedSprites
+					STA !Scratchram_GraphicalBar_FillByteTbl
+					if !Setting_SpriteHP_TwoByte
+						SEP #$20
+					endif
+					STA !Scratchram_GraphicalBar_FillByteTbl   ;\This will be the running total, starting with unloaded enemies.
 					STA !Scratchram_GraphicalBar_FillByteTbl+1 ;/
 					LDX.b #!sprite_slots-1
 					....Loop
@@ -237,14 +244,10 @@ main:
 						.....Next
 							DEX
 							BPL ....Loop
-					....AddWithUnloaded
+					....SetMaxHP
 						if !Setting_SpriteHP_TwoByte
 							REP #$20
 						endif
-						LDA !Scratchram_GraphicalBar_FillByteTbl
-						CLC
-						ADC !Freeram_SpriteHP_TotalHPOfUnloadedSprites
-						STA !Scratchram_GraphicalBar_FillByteTbl
 						LDA !Freeram_SpriteHP_TotalMaxHP
 						STA !Scratchram_GraphicalBar_FillByteTbl+2
 						if !Setting_SpriteHP_TwoByte
