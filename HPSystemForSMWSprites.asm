@@ -1284,7 +1284,9 @@ incsrc "Defines/GraphicalBarDefines.asm"
 						STA !Freeram_SpriteHP_TotalHPOfUnloadedSprites ;>There is never additional enemies during a Reznor fight yet to spawn.
 					endif
 					if !Setting_SpriteHP_TwoByte
-						STA !Freeram_SpriteHP_TotalHPOfUnloadedSprites+1 ;\Rid high bytes
+						if !Setting_SpriteHP_TotalHPMode == 2
+							STA !Freeram_SpriteHP_TotalHPOfUnloadedSprites+1 ;\Rid high bytes
+						endif
 						STA !Freeram_SpriteHP_TotalMaxHP+1               ;/
 					endif
 					LDA #$04
