@@ -229,16 +229,23 @@ main:
 			BRA .CheckIfSpriteStateValid
 			..TotalHPMode
 				...GetTotalHPOfLoaded
-					if !Setting_SpriteHP_TwoByte
+					if !Setting_SpriteHP_TwoByte == 0
+						LDA #$00
+						STA !Scratchram_GraphicalBar_FillByteTbl+1              ;>Rid high byte
+						if !Setting_SpriteHP_TotalHPMode == 2
+							LDA !Freeram_SpriteHP_TotalHPOfUnloadedSprites
+						endif
+						STA !Scratchram_GraphicalBar_FillByteTbl
+					else
 						REP #$20
-					endif
-					LDA !Freeram_SpriteHP_TotalHPOfUnloadedSprites
-					STA !Scratchram_GraphicalBar_FillByteTbl
-					if !Setting_SpriteHP_TwoByte
+						if !Setting_SpriteHP_TotalHPMode == 2
+							LDA !Freeram_SpriteHP_TotalHPOfUnloadedSprites      ;>Start with amount of HP of unloaded sprites before adding HPs of the loaded
+						else
+							LDA #$0000                                          ;>Start at zero and only count what's loaded
+						endif
+						STA !Scratchram_GraphicalBar_FillByteTbl
 						SEP #$20
 					endif
-					STA !Scratchram_GraphicalBar_FillByteTbl   ;\This will be the running total, starting with unloaded enemies.
-					STA !Scratchram_GraphicalBar_FillByteTbl+1 ;/
 					LDX.b #!sprite_slots-1
 					....Loop
 						LDA !14C8,x
@@ -266,6 +273,10 @@ main:
 						STA !Scratchram_GraphicalBar_FillByteTbl+2
 						if !Setting_SpriteHP_TwoByte
 							SEP #$20
+						endif
+						if !Setting_SpriteHP_TwoByte == 0
+							LDA #$00
+							STA !Scratchram_GraphicalBar_FillByteTbl+3
 						endif
 						JML .DisplayNumerical
 		endif

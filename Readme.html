@@ -357,7 +357,7 @@ autoclean JML SpritesTotalHPIntroEffect</pre>
 		</p>
 		<p>
 			Other than the RAM data for graphical bar and HexDec routines (defines are in <kbd>GraphicalBarDefines.asm</kbd> and <kbd>NumberDisplayRoutinesDefines.asm</kbd>), the sprite HP data and display handler are in <kbd>EnemyHPMeterDefines.asm</kbd>,
-			defined as <kbd>!Freeram_SpriteHP_SpriteHPData</kbd>. It's layout are (in this order, starting at an address defined as <kbd>!Freeram_SpriteHP_SpriteHPData</kbd>, and advancing to higher-addresses, placed contiguously):
+			defined as <kbd>!Freeram_SpriteHP_SpriteHPData</kbd>. It's layout are (in this order, starting at an address defined as <kbd>!Freeram_SpriteHP_SpriteHPData</kbd>, and advancing to higher-addresses, <abbr title="Any data disabled from using RAM results in following data to be placed after the last occupied data without gaps in between.">placed contiguously</abbr>):
 			<table>
 				<tr>
 					<th>Define</th>
@@ -381,7 +381,7 @@ autoclean JML SpritesTotalHPIntroEffect</pre>
 								if <kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd> and <kbd>!Setting_SpriteHP_BarAnimation</kbd> set to <kbd>1</kbd>.
 							</li>
 							<li>
-								<abbr title="LoROM: $18 (24)&#013; SA-1: $2C (44)"><kbd>!sprite_slots*2</kbd></abbr> Is &ldquo;Total HP&rdquo; mode, which results in the game displaying the total HP of all active sprites, plus whatever value is in <kbd>!Freeram_SpriteHP_TotalHPOfUnloadedSprites</kbd>. Only usable if <kbd>!Setting_SpriteHP_TotalHPMode</kbd> is set to 1.
+								<abbr title="LoROM: $18 (24)&#013; SA-1: $2C (44)"><kbd>!sprite_slots*2</kbd></abbr> Is &ldquo;Total HP&rdquo; mode, which results in the game displaying the total HP of all active applicable sprites. If <kbd>!Setting_SpriteHP_TotalHPMode == 2</kbd>, then its all sprites plus whatever value is in <kbd>!Freeram_SpriteHP_TotalHPOfUnloadedSprites</kbd>. Only usable if <kbd>!Setting_SpriteHP_TotalHPMode</kbd> is set to 1 or 2.
 							</li>
 							<li>
 								<abbr title="LoROM: $19 (25)&#013; SA-1: $2D (45)"><kbd>(!sprite_slots*2)+1</kbd></abbr> Same as above but for intro fill mode.
@@ -446,7 +446,7 @@ autoclean JML SpritesTotalHPIntroEffect</pre>
 						The total amount HP of sprites that aren't loaded. This system adds HP of all loaded sprite slots, then add by a value in this RAM address, then uses that value for display. Useful for something like an ambush
 						systems where enemies are spawned after killing a certain number of them.
 					</td>
-					<td>If <kbd>!Setting_SpriteHP_TotalHPMode</kbd> is nonzero.</td>
+					<td>If <kbd>!Setting_SpriteHP_TotalHPMode</kbd> is set to <kbd>2</kbd>.</td>
 				</tr>
 				<tr class="RedBackground">
 					<th><kbd>!Freeram_SpriteHP_TotalMaxHP</kbd></th>
@@ -472,8 +472,17 @@ autoclean JML SpritesTotalHPIntroEffect</pre>
 					<tr><td><kbd>!Setting_SpriteHP_TwoByte</kbd></td><td><label><input type="checkbox" checked id="Setting_TwoByte"> (unchecked is 0, otherwise 1)</label></td></tr>
 					<tr><td><kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd></td><td><label><input type="checkbox" checked id="Setting_DisplayGraphicalBar"> (unchecked is 0, otherwise 1)</label></td></tr>
 					<tr><td><kbd>!Setting_SpriteHP_BarAnimation</kbd></td><td><label><input type="checkbox" checked id="Setting_BarAnimation"> (unchecked is 0, otherwise 1)</label></td></tr>
-					<tr><td><kbd>!Setting_SpriteHP_BarChangeDelay</kbd></td><td><label><input type="checkbox" checked id="Setting_BarChangeDelay"> (unchecked is 0, any nonzero value is checked)</label></td></tr>
-					<tr><td><kbd>!Setting_SpriteHP_TotalHPMode</kbd></td><td><label><input type="checkbox" checked id="Setting_TotalHPMode"> (unchecked is 0, any nonzero value is checked)</label></td></tr>
+					<tr><td><kbd>!Setting_SpriteHP_BarChangeDelay</kbd></td><td><label><input type="checkbox" checked id="Setting_BarChangeDelay"> (unchecked is 0 or 1, any nonzero value is checked)</label></td></tr>
+					<tr>
+						<td>
+							<kbd>!Setting_SpriteHP_TotalHPMode</kbd></td><td>
+							<select style="font-family: monospace;" id="Setting_TotalHPMode" onchange="UpdateHPDataDisplay()">
+								<option id="TotalHPSetting_0">0 = Disabled</option>
+								<option id="TotalHPSetting_1">1 = Enabled</option>
+								<option id="TotalHPSetting_2" selected>2 = Enabled and counting unloaded sprites</option>
+							</select>
+						</td>
+					</tr>
 				</table>
 				<div class="CodeBlock" style="height: 162px; width: 629px;">
 					<pre id="HPDataOutput"></pre>
@@ -968,7 +977,7 @@ function getClosest(el, tagName) {
 			Setting_DisplayGraphicalBar: true,
 			Setting_BarAnimation: true,
 			Setting_BarChangeDelay: true,
-			Setting_TotalHPMode: true
+			Setting_TotalHPMode: 2
 		},
 		{
 			ButtonTitle: "Default SA-1",
@@ -978,7 +987,7 @@ function getClosest(el, tagName) {
 			Setting_DisplayGraphicalBar: true,
 			Setting_BarAnimation: true,
 			Setting_BarChangeDelay: true,
-			Setting_TotalHPMode: true
+			Setting_TotalHPMode: 2
 		},
 	]
 	
@@ -1018,7 +1027,17 @@ function getClosest(el, tagName) {
 						"Setting_TotalHPMode"
 					]
 					ListOfSettings.forEach(Setting => {
-						document.getElementById(Setting).checked = Preset[Setting]
+						let HTMLElement = document.getElementById(Setting)
+						if (HTMLElement.tagName == "INPUT") {
+							if (HTMLElement.type == "checkbox") {
+								document.getElementById(Setting).checked = Preset[Setting]
+							}
+						} else {
+							if (HTMLElement.tagName == "SELECT") {
+								document.getElementById(Setting).selectedIndex = Preset[Setting]
+							}
+						}
+						
 					})
 					document.getElementById("Setting_SpriteHPData").value = BigInt(Preset.Address).toString(16).toUpperCase()
 					UpdateHPDataDisplay()
@@ -1086,7 +1105,7 @@ function getClosest(el, tagName) {
 		let Setting_DisplayGraphicalBar = BigInt(Number(document.getElementById("Setting_DisplayGraphicalBar").checked))
 		let Setting_BarAnimation = BigInt(Number(document.getElementById("Setting_BarAnimation").checked))
 		let Setting_BarChangeDelay = BigInt(Number(document.getElementById("Setting_BarChangeDelay").checked))
-		let Setting_TotalHPMode = BigInt(Number(document.getElementById("Setting_TotalHPMode").checked))
+		let Setting_TotalHPMode = document.getElementById("Setting_TotalHPMode").selectedIndex
 		
 		let SpriteTableSize = 12n
 		if (SA1 != 0) {
@@ -1128,8 +1147,10 @@ function getClosest(el, tagName) {
 				AssignRAMToUseOneAfterAnother(1n, "Freeram_SpriteHP_BarAnimationTimer", "Sprite's HP meter, graphical bar fill animation delay timer.")
 			}
 		}
-		if (Setting_TotalHPMode) {
-			AssignRAMToUseOneAfterAnother(HealthSizeInBytes, "Freeram_SpriteHP_TotalHPOfUnloadedSprites", "Total HP of sprites that are yet to be loaded.")
+		if (Setting_TotalHPMode != 0) {
+			if (Setting_TotalHPMode == 2) {
+				AssignRAMToUseOneAfterAnother(HealthSizeInBytes, "Freeram_SpriteHP_TotalHPOfUnloadedSprites", "Total HP of sprites that are yet to be loaded.")
+			}
 			AssignRAMToUseOneAfterAnother(HealthSizeInBytes, "Freeram_SpriteHP_TotalMaxHP", "Total max HP of sprites when meter is in \"total mode\".")
 		}
 		

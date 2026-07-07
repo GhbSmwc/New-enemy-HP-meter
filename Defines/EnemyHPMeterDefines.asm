@@ -14,9 +14,11 @@
 	; + ((!sprite_slots*2) * !Setting_SpriteHP_TwoByte)                                                                   ;>Bytes used for the high bytes of current and max HP, if !Setting_SpriteHP_TwoByte == 1
 	; + (!Setting_SpriteHP_DisplayGraphicalBar * !Setting_SpriteHP_BarAnimation)                                          ;>Byte used as a secondary fill amount for animation.
 	; + ((!Setting_SpriteHP_DisplayGraphicalBar * !Setting_SpriteHP_BarAnimation)*(!Setting_SpriteHP_BarAnimation != 0))] ;>Byte used as a timer of how long the secondary fill amount pauses before following current HP fill.
-	; + (2 * (1 + !Setting_SpriteHP_TwoByte) * (!Setting_SpriteHP_TotalHPMode != 0))                                      ;>Bytes used to track the total HP of multiple sprites.
+	; + ((1 + !Setting_SpriteHP_TwoByte) * (!Setting_SpriteHP_TotalHPMode == 2))                                          ;>1-2 bytes used for how much HP of sprites yet to spawn (HP of unloaded sprites)
+	; + ((1 + !Setting_SpriteHP_TwoByte) * (!Setting_SpriteHP_TotalHPMode != 0))                                          ;>1-2 bytes used to track the max HP of total sprites.
 	;
-	;A series of HP data stored in memory, in this order (placed contiguously):
+	;A series of HP data stored in memory, in this order (placed contiguously, if any of these disabled, following RAM
+	;occupies after the last used data without gaps in between):
 	;
 	; - Define: !Freeram_SpriteHP_MeterState
 	; -- BytesUsed: 1
@@ -63,13 +65,13 @@
 	;    the sprite's current HP fill amount. This is ignored if "IntroFill" mode is active.
 	;
 	; - Define: !Freeram_SpriteHP_TotalHPOfUnloadedSprites
-	; -- BytesUsed: [BytesUsed = (1 + !Setting_SpriteHP_TwoByte) * !Setting_SpriteHP_TotalHPMode]
+	; -- BytesUsed: [BytesUsed = (1 + !Setting_SpriteHP_TwoByte) * (!Setting_SpriteHP_TotalHPMode == 2)]
 	; -- Description: The amount of HP of sprites not currently loaded (can be used as an ambush system where total HP includes enemies that aren't
 	;    loaded until later after a certain number of them are defeated). This ASM will add the HPs of the currently loaded sprite slots, then add by
 	;    this value, and the final result is the total HP.
 	;
 	; - Define: !Freeram_SpriteHP_TotalMaxHP
-	; -- BytesUsed: [BytesUsed = (1 + !Setting_SpriteHP_TwoByte) * !Setting_SpriteHP_TotalHPMode]
+	; -- BytesUsed: [BytesUsed = (1 + !Setting_SpriteHP_TwoByte) * (!Setting_SpriteHP_TotalHPMode != 0)]
 	; -- Description: The amount of max HP of sprites when HP meter is in "total mode".
 	;
 	; Summary:
@@ -432,6 +434,12 @@
 				;enemies hit by shell).
 					!Setting_SpriteHP_VanillaSprite_Pokey_Damage_SoundNumber = $03 ;>Setting this to 0 will revert a hijack at $02B7DB
 					!Setting_SpriteHP_VanillaSprite_Pokey_Damage_SoundPort = $1DF9|!addr
+			;Other
+				!Setting_SpriteHP_TotalHPMode = 1
+					;^Apply a mode where the meter shows total HP across multiple sprites:
+					; - 0 = No
+					; - 1 = Yes (takes the total HP of all applicable loaded sprites)
+					; - 2 = Yes (same as above but also including the value in !Freeram_SpriteHP_TotalHPOfUnloadedSprites)
 	;Size of the HP:
 		;Size of the HP data:
 		; - 0 = 8-bit HP (HP up to 255)
@@ -449,10 +457,6 @@
 			;^Koopas do what when stomped (this is because of a hijack at $01AA14):
 			; - 0 = Come out of shells (vanilla).
 			; - 1 = Stay in their shells (applies hex edits at $0196C6 and $01AA15).
-		!Setting_SpriteHP_TotalHPMode = 1
-			;^Apply a mode where the meter shows total HP across multiple sprites:
-			; - 0 = No
-			; - 1 = Yes
 
 
 ;Don't touch these unless you know what you're doing
@@ -531,7 +535,9 @@
 					endif
 				endif
 				if !Setting_SpriteHP_TotalHPMode
-					%MacroAssignDefineOneAfterAnother(Freeram_SpriteHP_TotalHPOfUnloadedSprites, 1+!Setting_SpriteHP_TwoByte, CurrentAddressToAssignDefine_SpriteHPData)
+					if !Setting_SpriteHP_TotalHPMode == 2
+						%MacroAssignDefineOneAfterAnother(Freeram_SpriteHP_TotalHPOfUnloadedSprites, 1+!Setting_SpriteHP_TwoByte, CurrentAddressToAssignDefine_SpriteHPData)
+					endif
 					%MacroAssignDefineOneAfterAnother(Freeram_SpriteHP_TotalMaxHP, 1+!Setting_SpriteHP_TwoByte, CurrentAddressToAssignDefine_SpriteHPData)
 				endif
 	;Get status bar addresses
@@ -592,7 +598,9 @@
 				endif
 			endif
 			if !Setting_SpriteHP_TotalHPMode
-				print "$" hex(!Freeram_SpriteHP_TotalHPOfUnloadedSprites), dec(!sprite_slots), " Total HP of sprites that are unloaded (\!Freeram_SpriteHP_TotalHPOfUnloadedSprites)."
+				if !Setting_SpriteHP_TotalHPMode == 2
+					print "$" hex(!Freeram_SpriteHP_TotalHPOfUnloadedSprites), dec(!sprite_slots), " Total HP of sprites that are unloaded (\!Freeram_SpriteHP_TotalHPOfUnloadedSprites)."
+				endif
 				print "$" hex(!Freeram_SpriteHP_TotalMaxHP), dec(!sprite_slots), " Total max HP of sprites (\!Freeram_SpriteHP_TotalMaxHP)."
 			endif
 			print "---------------------------------------------------------------------------------"

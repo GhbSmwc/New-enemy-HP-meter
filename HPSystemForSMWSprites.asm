@@ -558,9 +558,9 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				org $03987E
 				.NotBaseSprite
 			endif
-		if and(and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Bosses), !Setting_SpriteHP_TotalHPMode)
+		if and(and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Bosses), notequal(!Setting_SpriteHP_TotalHPMode, 0))
 			org $0398E1
-			autoclean JSL ReznorClearHPMeter
+			autoclean JSL ReznorDefeatedClearHPMeter
 			NOP
 		else
 			%RemoveFreespaceCodeFromJMLJSL($0398E1)
@@ -1280,10 +1280,12 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			.NoUnloadedSprites
 				if !Setting_SpriteHP_TotalHPMode
 					LDA #$00
-					STA !Freeram_SpriteHP_TotalHPOfUnloadedSprites
+					if !Setting_SpriteHP_TotalHPMode == 2
+						STA !Freeram_SpriteHP_TotalHPOfUnloadedSprites ;>There is never additional enemies during a Reznor fight yet to spawn.
+					endif
 					if !Setting_SpriteHP_TwoByte
-						STA !Freeram_SpriteHP_TotalHPOfUnloadedSprites+1
-						STA !Freeram_SpriteHP_TotalMaxHP+1
+						STA !Freeram_SpriteHP_TotalHPOfUnloadedSprites+1 ;\Rid high bytes
+						STA !Freeram_SpriteHP_TotalMaxHP+1               ;/
 					endif
 					LDA #$04
 					STA !Freeram_SpriteHP_TotalMaxHP
@@ -1304,7 +1306,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				STA $1DF9|!addr
 				RTL
 		if !Setting_SpriteHP_TotalHPMode
-			ReznorClearHPMeter: ;>JSL from $0398E1
+			ReznorDefeatedClearHPMeter: ;>JSL from $0398E1
 				LDA #$FF
 				STA !Freeram_SpriteHP_MeterState
 				.Restore
