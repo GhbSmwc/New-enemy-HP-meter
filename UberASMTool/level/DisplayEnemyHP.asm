@@ -244,6 +244,8 @@ main:
 						LDA !14C8,x
 						CMP #$08
 						BNE .....Next
+						JSR .CheckForBlacklistedSpritesTotalHP
+						BCS .....Next
 						LDA !Freeram_SpriteHP_CurrentHPLow,x
 						CLC
 						ADC !Scratchram_GraphicalBar_FillByteTbl
@@ -620,9 +622,8 @@ main:
 ;Check for blacklisted sprites.
 ;
 ;This subroutine is used to prevent showing HP of sprites that shouldn't use the
-;HP system. This runs every frame while the meter is active, and espically so
-;during total HP mode. This handles sprites either turning into blacklisted
-;sprites or sprites changing their states into blacklisted states.
+;HP system based on its state or it changing to another sprite. This runs every
+;frame while the meter is active, and espically so during total HP mode.
 ;
 ;To add a sprite number here you wish not to show/use the HP system, the syntax
 ;is:
@@ -640,6 +641,11 @@ main:
 ;   blacklisted sprites, add your own label and code for checking the state of
 ;   the sprite.
 ;
+;Protip: Most optimized way of handling custom sprites without a massive list
+;(which takes up space in the ROM) is to have custom sprites that should have
+;HP in one group, sprites that conditionally have HP in another seperate group,
+;and sprites that shouldn't at all use it in another seperate group. Then you
+;use "SpriteHPMeterBlacklist_Range" on each of these groups.
 ;
 ;Input:
 ; - X: Sprite slot to check
@@ -657,18 +663,17 @@ main:
 		..VanillaSprite
 			LDA !9E,x
 			;Here is the blacklist for vanilla sprite numbers.
-			%SpriteHPMeterBlacklist($0D, ..BobOmb) ;>Bobomb (blacklisted if its an explosion)
-			%SpriteHPMeterBlacklist($0E, ..Blacklisted) ;>Keyhole
-			%SpriteHPMeterBlacklist($19, ..Blacklisted) ;>Display text from Level Message 1
+			;Most sprites that don't get damaged doesn't even call
+			;such subroutines, thus they don't need to be listed here,
+			;except for total HP mode (see ".CheckForBlacklistedSpritesTotalHP").
+			%SpriteHPMeterBlacklist($0D, ...BobOmb) ;>Bobomb (blacklisted if its an explosion)
 			%SpriteHPMeterBlacklist($21, ..Blacklisted) ;>Moving coin
-
-
 			...Allowed
 				CLC
 				RTS
 				
 			;Custom handler for conditionally blacklisted sprites here.
-			..BobOmb
+			...BobOmb
 				LDA !1534,x
 				BNE ..Blacklisted	;>If its an explosion, it's blacklisted
 				BRA ...Allowed
@@ -700,7 +705,19 @@ if !Setting_SpriteHP_TotalHPMode
 				LDA !9E,x
 				;Here is the blacklist for vanilla sprite numbers.
 				%SpriteHPMeterBlacklist($0D, ..Blacklisted) ;>Bobomb (blacklisted if its an explosion)
-	
+				%SpriteHPMeterBlacklist($53, ..Blacklisted) ;>Throwblock
+				%SpriteHPMeterBlacklist_Range($55, $5F, ..Blacklisted) ;\Various platforms
+				%SpriteHPMeterBlacklist_Range($62, $63, ..Blacklisted) ;/
+				%SpriteHPMeterBlacklist($6D, ..Blacklisted) ;>Invisible solid block
+				%SpriteHPMeterBlacklist_Range($74, $78, ..Blacklisted) ;>Consumable sprites (powerups, 1-up)
+				%SpriteHPMeterBlacklist_Range($83, $84, ..Blacklisted) ;>Flying question blocks
+				%SpriteHPMeterBlacklist($8F, ..Blacklisted) ;>Scale platforms
+				%SpriteHPMeterBlacklist($9C, ..Blacklisted) ;>Hammer Bro platform
+				%SpriteHPMeterBlacklist($A3, ..Blacklisted) ;>Rotating grey platform
+				%SpriteHPMeterBlacklist($B1, ..Blacklisted)
+				%SpriteHPMeterBlacklist($BB, ..Blacklisted)
+				%SpriteHPMeterBlacklist_Range($C0, $C1, ..Blacklisted)
+				%SpriteHPMeterBlacklist($C4, ..Blacklisted)
 	
 				...Allowed
 					CLC

@@ -465,22 +465,20 @@ autoclean JML SpritesTotalHPIntroEffect</pre>
 			Alternatively, you can figure out how much memory and where they are by using the calculator below:
 			
 			<div class="CalculatorBox" style="width: 861px; height: 362px;" id="SpriteHPDataCalculator">
+				Preset Settings: <span id="PresetLists"></span>
 				<table>
 					<tr><td>Using SA-1?</td><td><label><input type="checkbox" id="Setting_UsingSa1"></label></td></tr>
-					<tr><td><kbd>!Freeram_SpriteHP_SpriteHPData = </kbd></td><td class="Settings">$<input type="text" value="7FACC4" class="HexInput" data-radix="16" id="Setting_FreeramUse_SpriteHPData" list="HPDataAddrSuggestions" onchange="UpdateHPDataDisplay()"></td></tr>
-					<tr><td><kbd>!Setting_SpriteHP_TwoByte</kbd></td><td><label><input type="checkbox" checked id="Setting_FreeramUse_TwoByte"> (unchecked is 0, otherwise 1)</label></td></tr>
-					<tr><td><kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd></td><td><label><input type="checkbox" checked id="Setting_FreeramUse_DisplayGraphicalBar"> (unchecked is 0, otherwise 1)</label></td></tr>
-					<tr><td><kbd>!Setting_SpriteHP_BarAnimation</kbd></td><td><label><input type="checkbox" checked id="Setting_FreeramUse_BarAnimation"> (unchecked is 0, otherwise 1)</label></td></tr>
-					<tr><td><kbd>!Setting_SpriteHP_BarChangeDelay</kbd></td><td><label><input type="checkbox" checked id="Setting_FreeramUse_BarChangeDelay"> (unchecked is 0, any nonzero value is checked)</label></td></tr>
-					<tr><td><kbd>!Setting_SpriteHP_TotalHPMode</kbd></td><td><label><input type="checkbox" checked id="Setting_FreeramUse_TotalHPMode"> (unchecked is 0, any nonzero value is checked)</label></td></tr>
+					<tr><td><kbd>!Freeram_SpriteHP_SpriteHPData = </kbd></td><td class="Settings">$<input type="text" value="7FACC4" class="HexInput" data-radix="16" id="Setting_SpriteHPData" list="HPDataAddrSuggestions" onchange="UpdateHPDataDisplay()"></td></tr>
+					<tr><td><kbd>!Setting_SpriteHP_TwoByte</kbd></td><td><label><input type="checkbox" checked id="Setting_TwoByte"> (unchecked is 0, otherwise 1)</label></td></tr>
+					<tr><td><kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd></td><td><label><input type="checkbox" checked id="Setting_DisplayGraphicalBar"> (unchecked is 0, otherwise 1)</label></td></tr>
+					<tr><td><kbd>!Setting_SpriteHP_BarAnimation</kbd></td><td><label><input type="checkbox" checked id="Setting_BarAnimation"> (unchecked is 0, otherwise 1)</label></td></tr>
+					<tr><td><kbd>!Setting_SpriteHP_BarChangeDelay</kbd></td><td><label><input type="checkbox" checked id="Setting_BarChangeDelay"> (unchecked is 0, any nonzero value is checked)</label></td></tr>
+					<tr><td><kbd>!Setting_SpriteHP_TotalHPMode</kbd></td><td><label><input type="checkbox" checked id="Setting_TotalHPMode"> (unchecked is 0, any nonzero value is checked)</label></td></tr>
 				</table>
 				<div class="CodeBlock" style="height: 162px; width: 629px;">
 					<pre id="HPDataOutput"></pre>
 				</div><button onclick="setClipboard(AddressTracker_HPData);" style="width: 200px">Get Address Tracker format</button>
-				<datalist id="HPDataAddrSuggestions">
-					<option value="7FACC4">LoROM</option>
-					<option value="418AFF">SA-1</option>
-				</datalist>
+				<datalist id="HPDataAddrSuggestions"></datalist>
 			</div>
 		</p>
 	<hr>
@@ -950,6 +948,40 @@ function getClosest(el, tagName) {
 
   return null;
 }
+	const Default_SpriteHPData_SuggestedAddresses = [
+		{
+			Address: "0x7FACC4",
+			Description: "LoROM default"
+		},
+		{
+			Address: "0x418AFF",
+			Description: "SA-1 default"
+		}
+	]
+	
+	const PresetLists = [
+		{
+			ButtonTitle: "Default LoROM",
+			Address: "0x7FACC4",
+			Setting_UsingSa1: false,
+			Setting_TwoByte: true,
+			Setting_DisplayGraphicalBar: true,
+			Setting_BarAnimation: true,
+			Setting_BarChangeDelay: true,
+			Setting_TotalHPMode: true
+		},
+		{
+			ButtonTitle: "Default SA-1",
+			Address: "0x418AFF",
+			Setting_UsingSa1: true,
+			Setting_TwoByte: true,
+			Setting_DisplayGraphicalBar: true,
+			Setting_BarAnimation: true,
+			Setting_BarChangeDelay: true,
+			Setting_TotalHPMode: true
+		},
+	]
+	
 	LoadDocumentBehavior();
 	let AddressTracker_HPData = "";
 	UpdateHPDataDisplay();
@@ -962,6 +994,40 @@ function getClosest(el, tagName) {
 		let HPDataInputs = [...document.getElementById("SpriteHPDataCalculator").querySelectorAll("input[type=checkbox]")]
 		HPDataInputs.forEach(InputEle => {
 			InputEle.addEventListener("change", UpdateHPDataDisplay)
+		})
+		Default_SpriteHPData_SuggestedAddresses.forEach(DefaultOption => {
+			let HTML_Element_SuggestedListItem = document.createElement("option")
+			HTML_Element_SuggestedListItem.value = BigInt(DefaultOption.Address).toString(16).toUpperCase()
+			HTML_Element_SuggestedListItem.appendChild(document.createTextNode(DefaultOption.Description))
+			
+			document.getElementById("HPDataAddrSuggestions").appendChild(HTML_Element_SuggestedListItem)
+		});
+		
+		PresetLists.forEach(Preset => {
+			let PresetButton = document.createElement("button")
+			PresetButton.textContent = Preset.ButtonTitle
+			PresetButton.addEventListener(
+				"click",
+				function () {
+					let ListOfSettings = [
+						"Setting_UsingSa1",
+						"Setting_TwoByte",
+						"Setting_DisplayGraphicalBar",
+						"Setting_BarAnimation",
+						"Setting_BarChangeDelay",
+						"Setting_TotalHPMode"
+					]
+					ListOfSettings.forEach(Setting => {
+						document.getElementById(Setting).checked = Preset[Setting]
+					})
+					document.getElementById("Setting_SpriteHPData").value = BigInt(Preset.Address).toString(16).toUpperCase()
+					UpdateHPDataDisplay()
+				}.bind(null, Preset)
+			)
+			
+			
+			
+			document.getElementById("PresetLists").appendChild(PresetButton)
 		})
 	}
 
@@ -1005,83 +1071,66 @@ function getClosest(el, tagName) {
 			}
 		)
 	}
+	
+	function SpriteHPData_Default(PresetValue) {
+		document.getElementById("Setting_UsingSa1").checked = Presets[PresetValue].IsSA1
+		document.getElementById("Setting_SpriteHPData").value = BigInt(Presets[PresetValue].Address).toString(16).toUpperCase()
+		UpdateHPDataDisplay()
+	}
 	function UpdateHPDataDisplay() {
 		let SA1 = BigInt(Number(document.getElementById("Setting_UsingSa1").checked))
-		let HPDataStartingAddr = BigintClamp(ParseBigIntValue(document.getElementById("Setting_FreeramUse_SpriteHPData").value, 16), BigInt("0x0"), BigInt("0xFFFFFF"))
-			document.getElementById("Setting_FreeramUse_SpriteHPData").value = HPDataStartingAddr.toString(16).toUpperCase()
+		let HPDataStartingAddr = BigintClamp(ParseBigIntValue(document.getElementById("Setting_SpriteHPData").value, 16), BigInt("0x0"), BigInt("0xFFFFFF"))
+			document.getElementById("Setting_SpriteHPData").value = HPDataStartingAddr.toString(16).toUpperCase()
 		let CurrentAddress = HPDataStartingAddr
-		let Setting_TwoByte = BigInt(Number(document.getElementById("Setting_FreeramUse_TwoByte").checked))
-		let Setting_DisplayGraphicalBar = BigInt(Number(document.getElementById("Setting_FreeramUse_DisplayGraphicalBar").checked))
-		let Setting_BarAnimation = BigInt(Number(document.getElementById("Setting_FreeramUse_BarAnimation").checked))
-		let Setting_BarChangeDelay = BigInt(Number(document.getElementById("Setting_FreeramUse_BarChangeDelay").checked))
-		let Setting_TotalHPMode = BigInt(Number(document.getElementById("Setting_FreeramUse_TotalHPMode").checked))
+		let Setting_TwoByte = BigInt(Number(document.getElementById("Setting_TwoByte").checked))
+		let Setting_DisplayGraphicalBar = BigInt(Number(document.getElementById("Setting_DisplayGraphicalBar").checked))
+		let Setting_BarAnimation = BigInt(Number(document.getElementById("Setting_BarAnimation").checked))
+		let Setting_BarChangeDelay = BigInt(Number(document.getElementById("Setting_BarChangeDelay").checked))
+		let Setting_TotalHPMode = BigInt(Number(document.getElementById("Setting_TotalHPMode").checked))
 		
 		let SpriteTableSize = 12n
 		if (SA1 != 0) {
 			SpriteTableSize = 22n
 		}
-		
 		let HealthSizeInBytes = 1n + Setting_TwoByte
 		
 		let OutputString1 = ""
 		let OutputString2 = ""
 		AddressTracker_HPData = ""
 		
-		OutputString2 += "    $" + CurrentAddress.toString(16).toUpperCase() + " (1 byte): !Freeram_SpriteHP_MeterState\n"
-		AddressTracker_HPData += CurrentAddress.toString(16).toUpperCase() + " 1 Sprite\'s HP meter state (!Freeram_SpriteHP_MeterState)\n"
-		CurrentAddress++
-		
-		OutputString2 += "    $" + CurrentAddress.toString(16).toUpperCase() + "-$" + (CurrentAddress+SpriteTableSize-1n).toString(16).toUpperCase() + " (" + SpriteTableSize.toString() + " bytes): !Freeram_SpriteHP_CurrentHPLow\n"
-		AddressTracker_HPData += CurrentAddress.toString(16).toUpperCase() + " " + SpriteTableSize.toString() + " Sprite\'s current HP (low byte, !Freeram_SpriteHP_CurrentHPLow)\n"
-		CurrentAddress = CurrentAddress + SpriteTableSize
-		
-		OutputString2 += "    $" + CurrentAddress.toString(16).toUpperCase() + "-$" + (CurrentAddress+SpriteTableSize-1n).toString(16).toUpperCase() + " (" + SpriteTableSize.toString() + " bytes): !Freeram_SpriteHP_MaxHPLow\n"
-		AddressTracker_HPData += CurrentAddress.toString(16).toUpperCase() + " " + SpriteTableSize.toString() + " Sprite\'s max HP (low byte, !Freeram_SpriteHP_MaxHPLow)\n"
-		CurrentAddress = CurrentAddress + SpriteTableSize
-		
-		if (Setting_TwoByte != 0n) {
-			OutputString2 += "    $" + CurrentAddress.toString(16).toUpperCase() + "-$" + (CurrentAddress+SpriteTableSize-1n).toString(16).toUpperCase() + " (" + SpriteTableSize.toString() + " bytes): !Freeram_SpriteHP_CurrentHPHi\n"
-			AddressTracker_HPData += CurrentAddress.toString(16).toUpperCase() + " " + SpriteTableSize.toString() + " Sprite\'s current HP (high  byte, !Freeram_SpriteHP_CurrentHPHi)\n"
-			CurrentAddress = CurrentAddress + SpriteTableSize
+		function AssignRAMToUseOneAfterAnother(Size, Define, AddressTrackerDescription) {
+			OutputString2 += "    $" + CurrentAddress.toString(16).toUpperCase()
+			if (Size <= 1n) {
+				Size = 1n
+			} else {
+				OutputString2 += "-$" + (CurrentAddress + Size - 1n).toString(16).toUpperCase()
+			}
+			OutputString2 += " (" + Size.toString() + " byte"
+			if (Size > 1n) {
+				OutputString2 += "s"
+			}
+			OutputString2 += ") !" + Define + "\n"
+			AddressTracker_HPData += "$" + CurrentAddress.toString(16).toUpperCase() + " " + Size.toString() + " " + AddressTrackerDescription + " (!" + Define + ")\n"
 			
-			OutputString2 += "    $" + CurrentAddress.toString(16).toUpperCase() + "-$" + (CurrentAddress+SpriteTableSize-1n).toString(16).toUpperCase() + " (" + SpriteTableSize.toString() + " bytes): !Freeram_SpriteHP_MaxHPHi\n"
-			AddressTracker_HPData += CurrentAddress.toString(16).toUpperCase() + " " + SpriteTableSize.toString() + " Sprite\'s max HP (high byte, !Freeram_SpriteHP_MaxHPHi)\n"
-			CurrentAddress = CurrentAddress + SpriteTableSize
+			CurrentAddress = CurrentAddress + Size
+		}
+		
+		AssignRAMToUseOneAfterAnother(1n, "Freeram_SpriteHP_MeterState", "Sprite HP meter state")
+		AssignRAMToUseOneAfterAnother(SpriteTableSize, "Freeram_SpriteHP_CurrentHPLow", "Sprite current HP, low byte.")
+		AssignRAMToUseOneAfterAnother(SpriteTableSize, "Freeram_SpriteHP_MaxHPLow", "Sprite max HP, low byte.")
+		if (Setting_TwoByte != 0n) {
+			AssignRAMToUseOneAfterAnother(SpriteTableSize, "Freeram_SpriteHP_CurrentHPHi", "Sprite current HP, high byte.")
+			AssignRAMToUseOneAfterAnother(SpriteTableSize, "Freeram_SpriteHP_MaxHPHi", "Sprite max HP, high byte.")
 		}
 		if (Setting_DisplayGraphicalBar && Setting_BarAnimation) {
-			OutputString2 += "    $" + CurrentAddress.toString(16).toUpperCase() + " (1 byte): !Freeram_SpriteHP_BarAnimationFill\n"
-			AddressTracker_HPData += CurrentAddress.toString(16).toUpperCase() + " 1 Sprite\'s HP meter, fill amount for animation (!Freeram_SpriteHP_BarAnimationFill)\n"
-			CurrentAddress++
+			AssignRAMToUseOneAfterAnother(1n, "Freeram_SpriteHP_BarAnimationFill", "Sprite's HP meter, graphical bar fill amount for animation.")
 			if (Setting_BarChangeDelay) {
-				OutputString2 += "    $" + CurrentAddress.toString(16).toUpperCase() + " (1 byte): !Freeram_SpriteHP_BarAnimationTimer\n"
-				AddressTracker_HPData += CurrentAddress.toString(16).toUpperCase() + " 1 Sprite\'s HP meter, fill amount delay timer for animation (!Freeram_SpriteHP_BarAnimationTimer)\n"
-				CurrentAddress++
+				AssignRAMToUseOneAfterAnother(1n, "Freeram_SpriteHP_BarAnimationTimer", "Sprite's HP meter, graphical bar fill animation delay timer.")
 			}
 		}
 		if (Setting_TotalHPMode) {
-			OutputString2 += "    $" + CurrentAddress.toString(16).toUpperCase()
-			if (Setting_TwoByte) {
-				OutputString2 += "-$" + (CurrentAddress+Setting_TwoByte).toString(16).toUpperCase()
-			}
-			OutputString2 += " (" + HealthSizeInBytes.toString() + " byte"
-			if (Setting_TwoByte) {
-				OutputString2 += "s"
-			}
-			OutputString2 += "): !Freeram_SpriteHP_TotalHPOfUnloadedSprites\n"
-			AddressTracker_HPData += CurrentAddress.toString(16).toUpperCase() + " " + HealthSizeInBytes + " Total HP of sprites that are yet to be loaded (!Freeram_SpriteHP_TotalHPOfUnloadedSprites).\n"
-			CurrentAddress = CurrentAddress + HealthSizeInBytes
-			
-			OutputString2 += "    $" + CurrentAddress.toString(16).toUpperCase()
-			if (Setting_TwoByte) {
-				OutputString2 += "-$" + (CurrentAddress+Setting_TwoByte).toString(16).toUpperCase()
-			}
-			OutputString2 += " (" + HealthSizeInBytes.toString() + " byte"
-			if (Setting_TwoByte) {
-				OutputString2 += "s"
-			}
-			OutputString2 += "): !Freeram_SpriteHP_TotalMaxHP\n"
-			AddressTracker_HPData += CurrentAddress.toString(16).toUpperCase() + " " + HealthSizeInBytes + " Total max HP of sprites when meter is in \"total mode\" (!Freeram_SpriteHP_TotalMaxHP)."
-			CurrentAddress = CurrentAddress + HealthSizeInBytes
+			AssignRAMToUseOneAfterAnother(HealthSizeInBytes, "Freeram_SpriteHP_TotalHPOfUnloadedSprites", "Total HP of sprites that are yet to be loaded.")
+			AssignRAMToUseOneAfterAnother(HealthSizeInBytes, "Freeram_SpriteHP_TotalMaxHP", "Total max HP of sprites when meter is in \"total mode\".")
 		}
 		
 		let TotalBytes = (CurrentAddress-HPDataStartingAddr)
