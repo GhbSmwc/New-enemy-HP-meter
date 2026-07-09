@@ -378,19 +378,23 @@ autoclean JML SpritesTotalHPIntroEffect</pre>
 							</li>
 							<li>
 								From <abbr title="LoROM: $0C-$17 (12-23)&#013;SA-1: $16-$2B (22-43)"><kbd>!sprite_slots</kbd> to <kbd>(!sprite_slots*2)-1</kbd></abbr> is the same as above (subtract by <kbd>!sprite_slots</kbd> to obtain the sprite slot number) but for the <kbd>intro-fill</kbd> animation (bar appears empty, and fills up, useful for boss fights). This only applies
-								if <kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd> and <kbd>!Setting_SpriteHP_BarAnimation</kbd> set to <kbd>1</kbd>.
+								if <kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd> and <kbd>!Setting_SpriteHP_BarAnimation</kbd> set to <kbd>1</kbd>.<sup style="color: yellow;">Disable-able</sup>
 							</li>
 							<li>
-								<abbr title="LoROM: $18 (24)&#013; SA-1: $2C (44)"><kbd>!sprite_slots*2</kbd></abbr> Is &ldquo;Total HP&rdquo; mode, which results in the game displaying the total HP of all active applicable sprites. If <kbd>!Setting_SpriteHP_TotalHPMode == 2</kbd>, then its all sprites plus whatever value is in <kbd>!Freeram_SpriteHP_TotalHPOfUnloadedSprites</kbd>. Only usable if <kbd>!Setting_SpriteHP_TotalHPMode</kbd> is set to 1 or 2.
+								<abbr title="LoROM: $18 (24)&#013; SA-1: $2C (44)"><kbd>!sprite_slots*2</kbd></abbr> Is &ldquo;Total HP&rdquo; mode, which results in the game displaying the total HP of all active applicable sprites. If <kbd>!Setting_SpriteHP_TotalHPMode == 2</kbd>, then its all sprites plus whatever value is in <kbd>!Freeram_SpriteHP_TotalHPOfUnloadedSprites</kbd>. Only usable if <kbd>!Setting_SpriteHP_TotalHPMode</kbd> is set to 1 or 2.<sup style="color: yellow;">Disable-able</sup>
 							</li>
 							<li>
-								<abbr title="LoROM: $19 (25)&#013; SA-1: $2D (45)"><kbd>(!sprite_slots*2)+1</kbd></abbr> Same as above but for intro fill mode.
+								<abbr title="LoROM: $19 (25)&#013; SA-1: $2D (45)"><kbd>(!sprite_slots*2)+1</kbd></abbr> Same as above but for intro fill mode.<sup style="color: yellow;">Disable-able</sup>
 							</li>
 							<li><kbd>$FF</kbd> Means don't display the meter, which occurs when the enemy despawns or dies the meter is displaying for. Note that this will write blank tiles every frame.</li>
 							<li><kbd>$FE</kbd> is &ldquo;disabled&rdquo;, will only write blank tiles to clear the HP meter display once, then set itself to <kbd>$FD</kbd>. Make sure you do not set this to <kbd>$FE</kbd> every frame though.</li>
 							<li><kbd>$FD</kbd> is also &ldquo;disabled&rdquo;, but will not write anything on the spot the meter occupies (stops writing tiles here every frame, including blank tiles).</li>
 						</ul>
-						Note that when disabled (<kbd>$FD</kbd>), you can use that spot where the meter occupies without it being overwritten. It also prevents displaying the meter if the intro-fill animation plays, as well as displaying the meter when damaging enemies.
+						Notes:
+						<ul>
+							<li>Note that when disabled (<kbd>$FD</kbd>), you can use that spot where the meter occupies without it being overwritten. It also prevents displaying the meter if the intro-fill animation plays, as well as displaying the meter when damaging enemies.</li>
+							<li>Any item marked with a &ldquo;<sup style="color: yellow;">Disable-able</sup>&rdquo; means that they will be unused when a feature is disabled. When this happens, the values the modes are assigned to will <b>not</b> be contigious and will have gaps.</li>
+						</ul>
 					</td>
 					<td>Always</td>
 				</tr>

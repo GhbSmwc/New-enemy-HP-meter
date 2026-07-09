@@ -445,7 +445,9 @@ main:
 								......Terminate
 									LDA !Freeram_SpriteHP_MeterState
 									if !Setting_SpriteHP_TotalHPMode
-										CMP.b #(!sprite_slots*2)+1
+										CMP.b #!sprite_slots*2  ;>Total HP, main mode.
+										BEQ ......NoTerminate
+										CMP.b #(!sprite_slots*2)+1   ;>Total HP, introfill
 										BEQ .......TotalHPTerminate
 									endif
 									SEC
@@ -464,7 +466,7 @@ main:
 								BCS .....IntroFill
 								LDA $13
 								AND.b #%00000001
-								BNE .....FillSoundEffect
+								BNE .....FillSoundEffect ;On odd frames, show current HP fill
 								.....IntroFill
 							endif
 							LDA !Freeram_SpriteHP_BarAnimationFill		;\Show animation fill.
