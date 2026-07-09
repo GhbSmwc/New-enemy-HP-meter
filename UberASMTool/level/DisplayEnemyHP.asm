@@ -249,8 +249,12 @@ main:
 					LDX.b #!sprite_slots-1
 					....Loop
 						LDA !14C8,x
-						CMP #$08
-						BNE .....Next
+						CMP #$07
+						BCC .....Next
+						CMP #$0C
+						BCC .....ValidSpriteState
+						BRA .....Next
+						.....ValidSpriteState
 						JSR .CheckForBlacklistedSpritesTotalHP
 						BCS .....Next
 						LDA !Freeram_SpriteHP_CurrentHPLow,x
