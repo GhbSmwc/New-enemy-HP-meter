@@ -17,8 +17,8 @@
 	; + ((1 + !Setting_SpriteHP_TwoByte) * (!Setting_SpriteHP_TotalHPMode == 2))                                          ;>1-2 bytes used for how much HP of sprites yet to spawn (HP of unloaded sprites)
 	; + ((1 + !Setting_SpriteHP_TwoByte) * (!Setting_SpriteHP_TotalHPMode != 0))                                          ;>1-2 bytes used to track the max HP of total sprites.
 	;
-	;A series of HP data stored in memory, in this order (placed contiguously, if any of these disabled, following RAM
-	;occupies after the last used data without gaps in between):
+	;A series of HP data stored in memory, in this order (placed contiguously, if any of these disabled (0 bytes),
+	;following data occupies after the last used address without gaps in between):
 	;
 	; - Define: !Freeram_SpriteHP_MeterState
 	; -- BytesUsed: 1
@@ -26,6 +26,8 @@
 	; --- When ranging from 0 to (!sprite_slots-1), will display HP. Each value here corresponds to a sprite slot index.
 	; --- When ranging from !sprite_slots to (!sprite_slots*2)-1, is the same as above, but for "IntroFill" mode (when
 	;     bosses appears, meter appears initially empty and fills up). Only used if !Setting_SpriteHP_BarAnimation == 1.
+	; --- (!sprite_slots*2) is total HP mode.
+	; --- (!sprite_slots*2)+1 is same as above but for introfill.
 	; --- When equal to $FF, will not display the meter, which occurs when the enemy despawns or dies. Note that this
 	;     will write blank tiles every frame.
 	; --- When equal to $FE, will be "disabled", it will clear the tiles only this current frame, then sets itself to
@@ -68,7 +70,7 @@
 	; -- BytesUsed: [BytesUsed = (1 + !Setting_SpriteHP_TwoByte) * (!Setting_SpriteHP_TotalHPMode == 2)]
 	; -- Description: The amount of HP of sprites not currently loaded (can be used as an ambush system where total HP includes enemies that aren't
 	;    loaded until later after a certain number of them are defeated). This ASM will add the HPs of the currently loaded sprite slots, then add by
-	;    this value, and the final result is the total HP.
+	;    this value, and the final result is the total current HP.
 	;
 	; - Define: !Freeram_SpriteHP_TotalMaxHP
 	; -- BytesUsed: [BytesUsed = (1 + !Setting_SpriteHP_TwoByte) * (!Setting_SpriteHP_TotalHPMode != 0)]
