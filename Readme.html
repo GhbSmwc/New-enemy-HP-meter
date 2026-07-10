@@ -479,18 +479,18 @@ autoclean JML SpritesTotalHPIntroEffect</pre>
 					<tr><td><kbd>!Setting_SpriteHP_BarChangeDelay</kbd></td><td><label><input type="checkbox" checked id="Setting_BarChangeDelay"> (unchecked is 0 or 1, any nonzero value is checked)</label></td></tr>
 					<tr>
 						<td>
-							<kbd>!Setting_SpriteHP_TotalHPMode</kbd></td><td>
+							<kbd>!Setting_SpriteHP_TotalHPMode =</kbd></td><td>
 							<select style="font-family: monospace;" id="Setting_TotalHPMode" onchange="UpdateHPDataDisplay()">
-								<option id="TotalHPSetting_0">0 = Disabled</option>
-								<option id="TotalHPSetting_1">1 = Enabled</option>
-								<option id="TotalHPSetting_2" selected>2 = Enabled and counting unloaded sprites</option>
+								<option id="TotalHPSetting_0">0 (Disabled)</option>
+								<option id="TotalHPSetting_1">1 (Enabled)</option>
+								<option id="TotalHPSetting_2" selected>2 (Enabled and counting unloaded sprites)</option>
 							</select>
 						</td>
 					</tr>
 				</table>
 				<div class="CodeBlock" style="height: 162px; width: 629px;">
 					<pre id="HPDataOutput"></pre>
-				</div><button onclick="setClipboard(AddressTracker_HPData);" style="width: 200px">Get Address Tracker format</button>
+				</div><button onclick="setClipboard(AddressTracker_HPData);" style="width: 200px">Copy Address Tracker format</button><button style="width: 200px" onclick="setClipboard(AddressTrackerAutoAssigner_HPData)">Copy Auto-Assigner format</button>
 				<datalist id="HPDataAddrSuggestions"></datalist>
 			</div>
 		</p>
@@ -997,6 +997,7 @@ function getClosest(el, tagName) {
 	
 	LoadDocumentBehavior();
 	let AddressTracker_HPData = "";
+	let AddressTrackerAutoAssigner_HPData = "";
 	UpdateHPDataDisplay();
 	function LoadDocumentBehavior() {
 		let HexInputs = [...document.querySelectorAll(".HexInput")]
@@ -1159,6 +1160,7 @@ function getClosest(el, tagName) {
 		}
 		
 		let TotalBytes = (CurrentAddress-HPDataStartingAddr)
+		AddressTrackerAutoAssigner_HPData = "SpriteHPMeter\t!Freeram_SpriteHP_SpriteHPData\t" + TotalBytes.toString()
 		
 		OutputString1 += "Sprite HP data: " + "$" + HPDataStartingAddr.toString(16).toUpperCase() + "-$" + (CurrentAddress-1n).toString(16).toUpperCase() + " (" + TotalBytes.toString() + " bytes) used.\n"
 		
