@@ -945,10 +945,6 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				STZ.w !160E,x
 				STZ.w !1594,x
 			.SetDefault1HP
-				LDA !14C8,x
-				BNE +
-				RTL
-				+
 				LDA #$01
 				STA !Freeram_SpriteHP_CurrentHPLow,x
 				STA !Freeram_SpriteHP_MaxHPLow,x
@@ -972,10 +968,11 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				if !Setting_SpriteHP_VanillaSprite_Rex == 2
 					%SetSpriteDefaultHP($AB, !Setting_SpriteHP_VanillaSprite_Rex_HPAmount)		;>Set Rex's HP amount if set to use HP tables directly
 				endif
-				if !Setting_SpriteHP_Modify5FireballsSystem
+				;These are chucks. Although if you have !Setting_SpriteHP_Modify5FireballsSystem set to 0 which will write their HP values anyway, it
+				;still a good idea to set their HP on spawn just in case for a single frame they have 0 HP, which can cause the HP meter in
+				;"total HP" mode to decrease for a single frame due to only decreasing !Freeram_SpriteHP_TotalHPOfUnloadedSprites on that frame.
 					%SetSpriteDefaultHP($46, !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount)
 					%SetSpriteRangeDefaultHP($91, $98, !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount)
-				endif
 				%SetSpriteRangeDefaultHP($08, $0C, 2)		;>Winged Koopas
 				%SetSpriteDefaultHP($10, 2)		;>Winged Goomba
 			.Done

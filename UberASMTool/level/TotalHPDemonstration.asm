@@ -54,18 +54,6 @@ macro Spawn(SpriteNumber, IsCustom, XPos, YPos, SpawnHealth)
 		STA !sprite_y_low,x
 		LDA.b #<YPos>>>8
 		STA !sprite_y_high,x
-	?SpawningHP:
-		;Note: Not sure if the spawn sprite subroutine does utilize
-		;SMW's $07F722-$07F78A. Just to be safe, I'll have the HP
-		;initilization here anyways.
-		LDA.b #<SpawnHealth>
-		STA !Freeram_SpriteHP_CurrentHPLow,x
-		STA !Freeram_SpriteHP_MaxHPLow,x
-		if !Setting_SpriteHP_TwoByte
-			LDA.b #<SpawnHealth>>>8
-			STA !Freeram_SpriteHP_CurrentHPHi,x
-			STA !Freeram_SpriteHP_MaxHPHi,x
-		endif
 	?DeductHPOfUnloaded:
 		;Here, every time you spawn a sprite, you need to, within that
 		;frame of spawning the sprite, deduct the value in
