@@ -732,6 +732,7 @@ if !Setting_SpriteHP_TotalHPMode
 				%SpriteHPMeterBlacklist($9C, ..Blacklisted) ;>Hammer Bro platform
 				%SpriteHPMeterBlacklist($A3, ..Blacklisted) ;>Rotating grey platform
 				%SpriteHPMeterBlacklist($B1, ..Blacklisted)
+				%SpriteHPMeterBlacklist($B9, ..Blacklisted) ;>Message block
 				%SpriteHPMeterBlacklist($BB, ..Blacklisted)
 				%SpriteHPMeterBlacklist_Range($C0, $C1, ..Blacklisted)
 				%SpriteHPMeterBlacklist($C4, ..Blacklisted)

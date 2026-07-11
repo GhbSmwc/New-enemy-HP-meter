@@ -90,13 +90,13 @@ macro Spawn(SpriteNumber, IsCustom, XPos, YPos, SpawnHealth)
 endmacro
 macro IgnoreSprite(SpriteNumber)
 	CMP.b #<SpriteNumber>
-	BEQ ..NotACountedEnemy
+	BEQ .NotACountedEnemy
 endmacro
 
 macro IgnoreSprite_Unlimited(SpriteNumber)
 	CMP.b #<SpriteNumber>
 	BNE ?+
-	JMP ..NotACountedEnemy
+	JMP .NotACountedEnemy
 	?+
 endmacro
 
@@ -108,7 +108,7 @@ macro IgnoreSpriteRange(MinSpriteNumber, MaxSpriteNumber)
 		CMP.b #<MaxSpriteNumber>+1
 		BCS ?OutOfRange
 	endif
-	BRA ..NotACountedEnemy
+	BRA .NotACountedEnemy
 	?OutOfRange:
 endmacro
 
@@ -190,26 +190,27 @@ CheckIfEnemyExists:
 		; %IgnoreSprite_Unlimited(SpriteNumber) ;>Use this if you have branch-out-of-bounds error.
 		; %IgnoreSpriteRange(MinSpriteNumber, MaxSpriteNumber)
 		;
+		; The sprite number entered here is the ID of a sprite not counted as an enemy.
 		if !Setting_SpriteHP_UsingCustomSprites
 			LDA !7FAB10,x
 			AND.b #%00001000
-			BEQ ..VanillaSMWSpr
-			..CustomSpr
+			BEQ .VanillaSMWSpr
+			.CustomSpr
 				LDA !7FAB9E,x
 				;Put your list here for custom sprites
 				
 				;Don't touch this tough
-					JMP ..CountedEnemy
+					JMP .CountedEnemy
 		endif
-		..VanillaSMWSpr
+		.VanillaSMWSpr
 			LDA !9E,x
-			;Put your list here for custom sprites
-			
+			;Put your list here for vanilla sprites
+			%IgnoreSprite($B9) ;>Message block
 			;Don't touch this tough
-				JMP ..CountedEnemy
-		..NotACountedEnemy
+				JMP .CountedEnemy
+		.NotACountedEnemy
 			CLC
 			RTS
-		..CountedEnemy
+		.CountedEnemy
 			SEC
 			RTS
