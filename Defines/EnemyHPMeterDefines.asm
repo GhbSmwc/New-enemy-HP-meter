@@ -344,8 +344,8 @@
 			;
 			; - For enemies that are switching states or changing sprite number from a thing that should have an HP meter
 			;   and currently displayed for, into another thing that should make its HP meter disappear, see
-			;   "UberASMTool/level/DisplayEnemyHP.asm" under label ".CheckForBlacklistedSprites". Note that this runs EVERY
-			;   FRAME while the meter is active.
+			;   "UberASMTool/level/DisplayEnemyHP.asm" under label ".CheckForBlacklistedSprites" (without the JSR in front
+			;   of it). Note that this runs EVERY FRAME while the meter is active.
 			;
 			;   Alternatively, for custom sprites, you can simply make it hide the meter like so in its sprite code:
 			;    ;[...]

@@ -147,10 +147,13 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		?OtherSprite:
 	endmacro
 	macro SetSpriteRangeDefaultHP(MinSpriteNumb, MaxSpriteNumb, StartingHP)
+		assert <MinSpriteNumb> <= <MaxSpriteNumb>, "Default sprite HP range's minimum is greater than max."
 		CMP.b #<MinSpriteNumb>
 		BCC ?OtherSprite
-		CMP.b #<MaxSpriteNumb>+1
-		BCS ?OtherSprite
+		if (<MaxSpriteNumb>+1) < $FF
+			CMP.b #<MaxSpriteNumb>+1
+			BCS ?OtherSprite
+		endif
 		?Override:
 			LDA.b #<StartingHP>
 			STA !Freeram_SpriteHP_CurrentHPLow,x
