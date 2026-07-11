@@ -57,7 +57,12 @@ macro Spawn(SpriteNumber, IsCustom, XPos, YPos, SpawnHealth)
 		SEC
 	endif
 	LDA.b #<SpriteNumber>
-	LDX #!sprite_slots-1
+	LDX #!sprite_slots-3
+		;^Let me explain why !sprite_slots-3 instead of !sprite_slots-1. The fireballs thrown by the
+		; player does not interact with sprites on the last 2 slots. Meaning LoROM, only $00-09 of
+		; the $00-$0B slots are consitered. In SA-1 however, only $00-$13 of the $00-$15 slots are
+		; checked. The last 2 sprite slots are consitered "important" sprites that are spawned
+		; uniquely such as when dropped from the item box, or from blocks.
 	%UberRoutine(SpawnSprite)
 	BCS ?No
 	

@@ -722,6 +722,7 @@ if !Setting_SpriteHP_TotalHPMode
 				LDA !9E,x
 				;Here is the blacklist for vanilla sprite numbers.
 				%SpriteHPMeterBlacklist($0D, ..Blacklisted) ;>Bobomb (blacklisted if its an explosion)
+				%SpriteHPMeterBlacklist($21, ..Blacklisted) ;>Moving coin (when a fireball hits enemy not immune to)
 				%SpriteHPMeterBlacklist($53, ..Blacklisted) ;>Throwblock
 				%SpriteHPMeterBlacklist_Range($55, $5F, ..Blacklisted) ;\Various platforms
 				%SpriteHPMeterBlacklist_Range($62, $63, ..Blacklisted) ;/
