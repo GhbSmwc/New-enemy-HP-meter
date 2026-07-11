@@ -12,6 +12,8 @@ Thing(s) to fix:
  --Added HP display for Pokey (each segment, and including the head, is 1 HP).
  --Dino Rhino, Super Koopa that spawns a feather and Winged enemies count as 2 HP. Note that Parachute enemies
    will still have 1 HP due to the automatically reverting to their equivilants when touching the ground.
+--Added "total HP" mode, useful for enemy ambush system that the meter shows the total HP of all enemies to
+   defeat.
  -Added an optional feature to completely change how "take 5 fireballs to kill" works. It now decreases this
   ASM resource's HP RAM value directly.
  -Added a feature for HP meter display for one-shot sprites.

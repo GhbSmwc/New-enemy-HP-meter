@@ -758,8 +758,7 @@ Change that to this:
 	<kbd>DamageAmountToTriggerNextPhase - DamageAccruedBeforeExceedingTrigger</kbd> (2 damage to trigger - 1 damage accrued = maximum of 1 damage point allowed) which should be written to <kbd>$00</kbd> (2 bytes, <kbd>$00~$01</kbd>, if <kbd>!Setting_SpriteHP_TwoByte == 1</kbd>) before calling <kbd>JSL !SharedSub_SpriteHPDamage</kbd>.</p>
 	<h3><a href="#ToC_MakeSpritesDisplayHP_TotalHPMode" id="JMPTo_MakeSpritesDisplayHP_TotalHPMode">^</a>Total HP mode</h3>
 	<p>
-		This section covers a feature that displays the total HP across multiple enemies. As seen in several Kirby games (Lololo & Lalala and fighting against 2 Mid-bosses at once). The exception is the Meta Knights fight in <i>Kirby's Adventure</i> and its remake, <i>Knightmare in Dreamland</i>. Which counts how many enemies remaining rather than totaling HP (damaging them without killing them does not drain the
-		meter).<br><br>
+		This section covers a feature that displays the total HP across multiple enemies at once. An example usage for SMW is the Reznor boss battle, which the meter shows 4 HP, each Reznor having 1 HP.<br><br>
 		
 		This ASM resource does not include a fully functional and fully-featured ambush system, as that would make this ASM resource excessive, and should be a seperate ASM resource. Thus, I only included a simple ASM file, made just for testing, in <kbd>UberASMTool/level/TotalHPDemonstration.asm</kbd>.
 		
@@ -767,16 +766,15 @@ Change that to this:
 		<ul>
 			<li>It requires having <kbd>!Setting_SpriteHP_VanillaSprite_OneShotSprites == 1</kbd>, if you want the total HP to count those.</li>
 			<li>
-				It also requires having <kbd>!Setting_SpriteHP_TotalHPMode</kbd> set to 2, since the main feature is when more sprites are
-				spawned, which the meter shows their HP prior to it happening.
+				It also requires having <kbd>!Setting_SpriteHP_TotalHPMode == 2</kbd>, since the main feature is the meter showing total HP of all (applicible)
+				sprites, including ones yet to spawn.
 			</li>
 			<li>Total HP cannot exceed the maximum integer limit, 255 (if <kbd>!Setting_SpriteHP_TwoByte == 0</kbd>), or 65535 otherwise.</li>
 			<li>Subroutine <kbd>SpriteHPDamage</kbd> automatically handles total HP mode.</li>
 		</ul>
 		
-		The display is handled internally, in <kbd>UberASMTool/level/DisplayEnemyHP.asm</kbd>, it loops across all sprite slots, adds HP of any applicible sprites (See under label &ldquo;<kbd>.CheckForBlacklistedSprites</kbd>&rdquo; without an opcode before it), and optionally adds by a value stored in
+		The display is handled internally, in <kbd>UberASMTool/level/DisplayEnemyHP.asm</kbd>, it loops across all sprite slots, adds HP of any applicible (See under label &ldquo;<kbd>.CheckForBlacklistedSprites</kbd>&rdquo; without an opcode before it) sprites, and optionally adds by a value stored in
 		<kbd>!Freeram_SpriteHP_TotalHPOfUnloadedSprites</kbd> (if <kbd>!Setting_SpriteHP_TotalHPMode == 2</kbd>), and the total is the value used to display the HP amount.<br><br>
-		
 		
 		To make the HP meter show this, simply set the meter state (RAM defined as <kbd>!Freeram_SpriteHP_MeterState</kbd>) to <kbd>!sprite_slots*2</kbd> or if you want an introfill, <kbd>(!sprite_slots*2)+1</kbd>.<br><br>
 		
