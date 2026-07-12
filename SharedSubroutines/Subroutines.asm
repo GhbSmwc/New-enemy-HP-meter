@@ -1386,8 +1386,8 @@ SpriteHPDamage:
 	BEQ .Disabled					;/
 	CMP.b #!sprite_slots*2
 	BCC .Normal
-	CMP.b #(!sprite_slots*2)+1
-	BCC .TotalHPIntroFill
+	CMP.b #(!sprite_slots*2)+2
+	BCC .TotalHPMode
 	.Normal
 	if !Setting_SpriteHP_BarAnimation == 0
 		TXA
@@ -1415,7 +1415,7 @@ SpriteHPDamage:
 		STA $00
 	endif
 	.Disabled
-	.TotalHPIntroFill
+	.TotalHPMode
 	if and(notequal(!Setting_SpriteHP_BarAnimation, 0), notequal(!Setting_SpriteHP_BarChangeDelay, 0))
 		LDA.b #!Setting_SpriteHP_BarChangeDelay		;\Freeze damage indicator (this makes the bar animation hangs before decreasing towards current HP fill amount)
 		STA !Freeram_SpriteHP_BarAnimationTimer		;/
