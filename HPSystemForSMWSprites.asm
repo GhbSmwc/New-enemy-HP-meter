@@ -1113,9 +1113,6 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					;All other sprites beyond listed here are treated as having 1 HP. Because following
 					;have multiple HPs we not to treat them as 1-shot.
 						%SpriteHPMeterBlacklist($20)		;>Magikoopa's magic (without this, its HP meter shows if killed with star)
-						%SpriteHPMeterBlacklist($46)		;>Diggin' chuck
-						%SpriteHPMeterBlacklist($AB)		;>Rex
-						%SpriteHPMeterBlacklist_Range($91, $98)	;>Sprite numbers $91-$98 are chucks, which already been handled.
 						%SpriteHPMeterBlacklist($9D)	;>Bubble (Galoomba, Bob-omb, Fish)
 							;^These are bubbles with sprite inside, which are quite glitchy with
 							; kicked/carryable sprites (registers a hit every frame rather than once)
