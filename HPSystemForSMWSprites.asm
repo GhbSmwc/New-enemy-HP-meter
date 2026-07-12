@@ -1099,7 +1099,12 @@ incsrc "Defines/GraphicalBarDefines.asm"
 						;If you want a range (inclusive) of sprite numbers blacklisted, then do this:
 						;  %SpriteHPMeterBlacklist_Range(<Enter_Sprite_Number_Min_Here>, <Enter_Sprite_Number_Max_Here>)
 						;This is immune to branch-out-of-bounds error.
-						
+						;
+						;Warning: If you are using the total HP system, and in that ambush are sprites
+						;blacklisted here and have their HP counted, the bar animation for damage
+						;slightly bugs out, showing a slightly incorrect previous HP amount (e.g.
+						;when an enemy that's listed here is defeated via capespin, the animation fill
+						;amount may decrease without delay for 1 frame)
 						
 						;Do not remove this code here, as it is needed so if a non-blacklisted sprite
 						;runs this code, it passes though all the items in the list and proceeds to
