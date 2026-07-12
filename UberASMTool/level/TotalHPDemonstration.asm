@@ -1,6 +1,6 @@
-;This simple ASM code tests the total HP system utilizing "!Freeram_SpriteHP_TotalHPOfUnloadedSprites".
-;This will make the meter show the total HP for sprites currently loaded, and the enemies yet to spawn
-;in the level.
+;This simple ASM code tests the total HP system utilizing "!Freeram_SpriteHP_TotalHPOfUnloadedSprites",
+;by simulating an ambush system. This will make the meter show the total HP for sprites currently loaded,
+;and the enemies yet to spawn in the level.
 ;
 ;A test level file is provided, for level 106 (Yoshi's Island 2), as seen in
 ;"LM stuff/Levels/Level_106_TotalHPTest.mwl". You just need to have this file
@@ -11,17 +11,18 @@
 ;cannot spawn an enemy that have health.
 ;
 ;In this example, the level should play out like this:
-; - Initally the player spawns in the level, and have these enemies:
+; - Initally the player spawns in the level, and have these enemies (placed in LM):
 ; -- 2 Rexes, and 1 Chargin chuck. Assuming you make no changes on how much HP they have,
 ;    the total HP of these existing enemies should be 19HP.
 ; - After the player defeats all enemies, 2 Chargin Chucks should spawn in. Again,
 ;   assuming you didn't change their HP values, the total HP should be 30HP.
-; Adding up all their HP values, that should be 49HP.
+; - After that, it only spawns a goomba and a shell-less blue koopa, having 2 HP
+; Adding up all their HP values, that should be 51HP.
 ;
 ;This means:
-; - The value stored in RAM defined as !Freeram_SpriteHP_TotalMaxHP should be 49, counting all enemies.
-; - The value stored in RAM defined as !Freeram_SpriteHP_TotalHPOfUnloadedSprites should be 30, counting
-;   all enemies that are yet to spawn in to the end.
+; - The value stored in RAM defined as !Freeram_SpriteHP_TotalMaxHP should be 51, counting all enemies.
+; - The value stored in RAM defined as !Freeram_SpriteHP_TotalHPOfUnloadedSprites should be 32, before
+;   the first wave was defeated, counting all enemies that are yet to spawn in to the end.
 ;
 ; - If there were another set of enemies to spawn after 2 chucks, say 2 shell-less koopas 1HP each, then
 ;   !Freeram_SpriteHP_TotalHPOfUnloadedSprites should have those additional enemuies accounted for,
@@ -42,13 +43,15 @@
 	incsrc "../NumberDisplayRoutinesDefines.asm"
 
 	assert !Setting_SpriteHP_TotalHPMode == 2, "This test ASM code requires the total HP system."
+	assert !Setting_SpriteHP_VanillaSprite_OneShotSprites != 0, "This test ASM code requires HP for 1-shot sprites."
 ;Some settings
-	!StartingTotalHP #= (!Setting_SpriteHP_VanillaSprite_Rex_HPAmount*2)+(!Setting_SpriteHP_VanillaSprite_Chucks_HPAmount*3)
+	!StartingTotalHP #= (!Setting_SpriteHP_VanillaSprite_Rex_HPAmount*2)+(!Setting_SpriteHP_VanillaSprite_Chucks_HPAmount*3)+2
 		;^Total HP. This includes sprite loaded, and sprite yet to load. With default settings, that should be 19.
-	!StartingHP_SpritesYetToLoad = (!Setting_SpriteHP_VanillaSprite_Chucks_HPAmount*2)
+	!StartingHP_SpritesYetToLoad = (!Setting_SpriteHP_VanillaSprite_Chucks_HPAmount*2)+2
 		;^Total HP of sprites that have yet to spawn into the level.
 	
-	!RAM_HaveSpawnFlag = $1421|!addr ;>Reusing the 1-up checkpoint system, for demonstration purposes
+	!RAM_HaveSpawnFlag = $1421|!addr ;>Reusing the 1-up checkpoint system.
+	!RAM_HaveSpawnFlag2 = $1436|!addr ;>Reusing the RAM that, when used in a normal level, only by keyholes.
 
 macro Spawn(SpriteNumber, IsCustom, XPos, YPos, SpawnHealth)
 	if <IsCustom> == 0
@@ -75,6 +78,9 @@ macro Spawn(SpriteNumber, IsCustom, XPos, YPos, SpawnHealth)
 		STA !sprite_y_low,x
 		LDA.b #<YPos>>>8
 		STA !sprite_y_high,x
+	?PreventSpawningAndDamagingThePlayer
+		LDA.b #120
+		STA $1497|!addr
 	?DeductHPOfUnloaded:
 		;Here, every time you spawn a sprite, you need to, within that
 		;frame of spawning the sprite, deduct the value in
@@ -153,10 +159,65 @@ main:
 	PHB
 	PHK
 	PLB
+		
+	JSR SearchSprites
+	CPX #$FF
+	BNE .No ;>If there are enemies remaining, don't advance
 	
+	INC !RAM_HaveSpawnFlag ;>Advance a wave
+	
+	.No
+	
+	;This checks if the next ambush have been triggered. This is to ensure that
+	;spawning sprites should not happen consecutive frames.
+		LDA !RAM_HaveSpawnFlag
+		CMP !RAM_HaveSpawnFlag2
+		BEQ .Done
+		STA !RAM_HaveSpawnFlag2
+		
+	;Play out the current wave
+		JSR HandleSpawning
+
+	.Done
+		PLB
+		RTL
+HandleSpawning:
+	LDA #$10
+	STA $1DF9|!addr             ;>Advance a "wave" of enemies so we don't repeat this wave.
 	LDA !RAM_HaveSpawnFlag
-	BNE .Done ;>Prevent spawning enemies every frame when there are no enemies.
+	CMP.b #((.Spawns_ListEnd-.Spawns)/2)+1
+	BCC .NotTheEnd
+	LDA #$FF
+	STA !Freeram_SpriteHP_MeterState
+	STA $1493|!addr
+	STA $13C6|!addr
+	RTS
 	
+	.NotTheEnd
+	ASL
+	TAX
+	JMP (.Spawns-2,x)
+	
+		.Spawns:
+			dw ..Wave1
+			dw ..Wave2
+			..ListEnd
+			..Wave1
+				%Spawn($91, 0, $00E0, $0170, 15)
+				%Spawn($91, 0, $0010, $0170, 15)
+				RTS
+			..Wave2
+				%Spawn($0F, 0, $00E0, $0170, 1)
+				%Spawn($02, 0, $0010, $0170, 1)
+				RTS
+SearchSprites:
+	;This checks if there is an enemy in the sprite slots. Used to determine if the player killed all
+	;of them.
+	;
+	;Output:
+	; - X: $FF indicates there are no enemies. If any positive value, then there are and is the
+	;   index of an existing enemy sprite at the highest index.
+	;
 	LDX #!sprite_slots-1
 	.Loop
 		;Loop every sprite slot, checking if all sprite slots are empty.
@@ -172,19 +233,8 @@ main:
 		..Next
 			DEX
 			BPL .Loop
-	.NoEnemiesExisted ;>After all 12 or 22 sprite slot searched, and no applicable sprite were occupied, then "advance" a "wave" of enemies...
-		JSR HandleSpawning ;>By spawning them
 	.EnemyExists
-	.Done
-		PLB
-		RTL
-HandleSpawning:
-	%Spawn($91, 0, $00E0, $0170, !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount)
-	%Spawn($91, 0, $0010, $0170, !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount)
-	LDA #$10
-	STA $1DF9|!addr             ;>Advance a "wave" of enemies so we don't repeat this wave.
-	INC !RAM_HaveSpawnFlag
-	RTS
+		RTS
 	
 CheckIfEnemyExists:
 		;Add a check here to filter out not-applicable enemies here, similarly to how
@@ -196,6 +246,9 @@ CheckIfEnemyExists:
 		; %IgnoreSpriteRange(MinSpriteNumber, MaxSpriteNumber)
 		;
 		; The sprite number entered here is the ID of a sprite not counted as an enemy.
+		;
+		;Output:
+		; - Carry: Clear if not an enemy (to ignore), otherwise set.
 		if !Setting_SpriteHP_UsingCustomSprites
 			LDA !7FAB10,x
 			AND.b #%00001000
@@ -211,6 +264,7 @@ CheckIfEnemyExists:
 			LDA !9E,x
 			;Put your list here for vanilla sprites
 			%IgnoreSprite($B9) ;>Message block
+			%IgnoreSprite($21) ;>Moving coin
 			;Don't touch this tough
 				JMP .CountedEnemy
 		.NotACountedEnemy
