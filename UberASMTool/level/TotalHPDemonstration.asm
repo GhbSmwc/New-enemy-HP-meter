@@ -169,7 +169,7 @@ main:
 	.No
 	
 	;This checks if the next ambush have been triggered. This is to ensure that
-	;spawning sprites should not happen consecutive frames.
+	;spawning sprites should not happen consecutive/every frames.
 		LDA !RAM_HaveSpawnFlag
 		CMP !RAM_HaveSpawnFlag2
 		BEQ .Done
@@ -182,22 +182,27 @@ main:
 		PLB
 		RTL
 HandleSpawning:
-	LDA #$10
-	STA $1DF9|!addr             ;>Advance a "wave" of enemies so we don't repeat this wave.
+	LDA $1493|!addr
+	BNE .AlreadyFinished
 	LDA !RAM_HaveSpawnFlag
-	CMP.b #((.Spawns_ListEnd-.Spawns)/2)+1
-	BCC .NotTheEnd
+	CMP.b #((.Spawns_ListEnd-.Spawns)/2)+1	;\Prevent jumping to data that isn't a pointer that crashes the game.
+	BCC .NotTheEnd							;/
 	LDA #$FF
-	STA !Freeram_SpriteHP_MeterState
 	STA $1493|!addr
 	STA $13C6|!addr
+	STA !Freeram_SpriteHP_MeterState
+	
+	.AlreadyFinished
 	RTS
 	
 	.NotTheEnd
-	ASL
-	TAX
-	JMP (.Spawns-2,x)
-	
+		LDA #$10			;\Sound effect when spawning enemies
+		STA $1DF9|!addr		;/
+		LDA !RAM_HaveSpawnFlag
+		ASL
+		TAX
+		JMP (.Spawns-2,x)
+		
 		.Spawns:
 			dw ..Wave1
 			dw ..Wave2

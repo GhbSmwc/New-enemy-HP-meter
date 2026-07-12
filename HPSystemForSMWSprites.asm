@@ -286,6 +286,19 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			org $02A103
 			db 5
 		endif
+	;Fireball turns enemy into coin. In normal cases, the meter should disappear since it is no longer an enemy.
+	;However, for total HP mode, we need to make sure that the damage animation plays out properly.
+		!Setting_FreezeTotalHPBarAnimationDelayFromFireballs = and(and(and(notequal(!Setting_ModifySprAndDisplayHPOfSMWSpr, 0), notequal(!Setting_SpriteHP_BarAnimation, 0)), notequal(!Setting_SpriteHP_BarChangeDelay, 0)), notequal(!Setting_SpriteHP_TotalHPMode, 0))
+		if !Setting_FreezeTotalHPBarAnimationDelayFromFireballs
+			org $02A12D
+			autoclean JSL TotalHPFireballTurnEnemyIntoCoin
+			NOP
+		else
+			%RemoveFreespaceCodeFromJMLJSL($02A12D)
+			org $02A12D
+			LDA #$08
+			STA !14C8,x
+		endif
 	;Rex to display HP
 		;This code runs every frame, for this reason: when rex gets insta-killed by, fireballs, quake, etc.
 			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Rex)
@@ -810,6 +823,23 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					JML $02A106|!bank
 			endif
 			
+	endif
+	if !Setting_FreezeTotalHPBarAnimationDelayFromFireballs
+		TotalHPFireballTurnEnemyIntoCoin: ;>JSL from $02A12D
+			LDA !Freeram_SpriteHP_MeterState
+			CMP.b #!sprite_slots*2
+			BEQ .BarAnimationForTotalHP
+			CMP.b #(!sprite_slots*2)+1
+			BEQ .BarAnimationForTotalHP
+			BRA .Restore
+			
+			.BarAnimationForTotalHP
+				LDA.b #!Setting_SpriteHP_BarChangeDelay
+				STA !Freeram_SpriteHP_BarAnimationTimer
+			.Restore
+				LDA #$08
+				STA !14C8,x
+			RTL
 	endif
 	if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Rex)
 		RexStateToHP: ;>JSL from $03951A
