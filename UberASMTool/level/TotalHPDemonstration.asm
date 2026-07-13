@@ -2,6 +2,11 @@
 ;by simulating an ambush system. This will make the meter show the total HP for sprites currently loaded,
 ;and the enemies yet to spawn in the level.
 ;
+;Note:
+; - The patch, "HPSystemForSMWSprites.asm" is required.
+; - For custom sprites, they need to be adopted to use this ASM resource's HP system to properly track
+;   the total health remaining.
+;
 ;A test level file is provided, for level 106 (Yoshi's Island 2), as seen in
 ;"LM stuff/Levels/Level_106_TotalHPTest.mwl". You just need to have this file
 ;be placed in uberasm tool's level folder (and make sure the defines are placed
@@ -53,7 +58,7 @@
 	!RAM_HaveSpawnFlag = $1421|!addr ;>Reusing the 1-up checkpoint system.
 	!RAM_HaveSpawnFlag2 = $1436|!addr ;>Reusing the RAM that, when used in a normal level, only by keyholes.
 
-macro Spawn(SpriteNumber, IsCustom, XPos, YPos, SpawnHealth)
+macro Spawn(SpriteNumber, IsCustom, XPos, YPos)
 	if <IsCustom> == 0
 		CLC
 	else
@@ -67,6 +72,9 @@ macro Spawn(SpriteNumber, IsCustom, XPos, YPos, SpawnHealth)
 		; checked. The last 2 sprite slots are consitered "important" sprites that are spawned
 		; uniquely such as when dropped from the item box, or from blocks.
 	%UberRoutine(SpawnSprite)
+		;^In addition to spawning sprites ($14C8 set to nonzero), it also calls $07F7D2, which
+		; clears out the sprite table of the currently processed sprite, as well as defaulting
+		; the HP value.
 	BCS ?No
 	
 	?XYPos:
@@ -85,13 +93,17 @@ macro Spawn(SpriteNumber, IsCustom, XPos, YPos, SpawnHealth)
 		;that spawned sprite has, else the meter fills upward because
 		;a sprite went from not being loaded, to now being loaded
 		;without "taking its health with it".
+		;
+		;Note that this assumes that the sprites spawned via the ambush
+		;system have its HP initialized properly (see
+		;"HPSystemForSMWSprites.asm" under "DefaultHPOnSpawn:")
 		LDA !Freeram_SpriteHP_TotalHPOfUnloadedSprites
 		SEC
-		SBC.b #<SpawnHealth>
+		SBC !Freeram_SpriteHP_CurrentHPLow,x
 		STA !Freeram_SpriteHP_TotalHPOfUnloadedSprites
 		if !Setting_SpriteHP_TwoByte
 			LDA !Freeram_SpriteHP_TotalHPOfUnloadedSprites+1
-			SBC.b #<SpawnHealth>>>8
+			SBC !Freeram_SpriteHP_CurrentHPHi,x
 			STA !Freeram_SpriteHP_TotalHPOfUnloadedSprites+1
 		endif
 	?No:
@@ -207,12 +219,12 @@ HandleSpawning:
 			dw ..Wave2
 			..ListEnd
 			..Wave1
-				%Spawn($91, 0, $00E0, $0170, 15)
-				%Spawn($91, 0, $0010, $0170, 15)
+				%Spawn($91, 0, $00E0, $0170)
+				%Spawn($91, 0, $0010, $0170)
 				RTS
 			..Wave2
-				%Spawn($0F, 0, $00E0, $0170, 1)
-				%Spawn($02, 0, $0010, $0170, 1)
+				%Spawn($0F, 0, $00E0, $0170)
+				%Spawn($02, 0, $0010, $0170)
 				RTS
 SearchSprites:
 	;This checks if there is an enemy in the sprite slots. Used to determine if the player killed all

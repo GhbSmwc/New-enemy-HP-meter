@@ -964,8 +964,9 @@ incsrc "Defines/GraphicalBarDefines.asm"
 	endif
 	if !Setting_SpriteHP_RemoveOrApplyPatch
 		DefaultHPOnSpawn:	;>JSL from $07F779
-			;I recommend having custom sprites run an init routine to set its starting current and max HP rather
-			;than having them here.
+			;This code makes the routine that clears the sprite table during a spawn to default their HP values.
+			;Any sprite not listed here are set to have 1/1 HP, otherwise you can add
+			;
 			;
 			;The good news is that when a sprite is spawned, its sprite number ($9E/$7FAB9E) are set before
 			;calling $07F722
@@ -987,23 +988,26 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					STA !Freeram_SpriteHP_MaxHPHi,x
 				endif
 				if !Setting_SpriteHP_UsingCustomSprites
-					LDA !7FAB10,x
-					AND.b #%00001000
-					;BNE .Done
-					BEQ +
-					RTL ;>Leave custom sprite as is and let them run their init code to adjust starting HP.
-					+
+					..SetCustomSpriteDefaultHP
+						LDA !7FAB10,x
+						AND.b #%00001000
+						;BNE .Done
+						BEQ +
+						RTL ;>Leave custom sprite as is and let them run their init code to adjust starting HP.
+						+
 				endif
-				LDA !9E,x
-				%SetSpriteDefaultHP($6E, 2)		;>Dino Rhino
-				%SetSpriteDefaultHP($6F, 1)		;>Dino Torch
-					;^Dino Torch (note that Dino torch have a max of 2 HP if transformed from Dino Rhino, otherwise a max of 1 HP if spawned directly)
-				if !Setting_SpriteHP_VanillaSprite_Rex == 2
-					%SetSpriteDefaultHP($AB, !Setting_SpriteHP_VanillaSprite_Rex_HPAmount)		;>Set Rex's HP amount if set to use HP tables directly
-				endif
+				..SetVanillaSpriteDefaultHP
+					LDA !9E,x
+					%SetSpriteDefaultHP($6E, 2)		;>Dino Rhino
+					%SetSpriteDefaultHP($6F, 1)		;>Dino Torch
+						;^Dino Torch (note that Dino torch have a max of 2 HP if transformed from Dino Rhino, otherwise a max of 1 HP if spawned directly)
+					if !Setting_SpriteHP_VanillaSprite_Rex == 2
+						%SetSpriteDefaultHP($AB, !Setting_SpriteHP_VanillaSprite_Rex_HPAmount)		;>Set Rex's HP amount if set to use HP tables directly
+					endif
 				;These are chucks. Although if you have !Setting_SpriteHP_Modify5FireballsSystem set to 0 which will write their HP values anyway, it
 				;still a good idea to set their HP on spawn just in case for a single frame they have 0 HP, which can cause the HP meter in
 				;"total HP" mode to decrease for a single frame due to only decreasing !Freeram_SpriteHP_TotalHPOfUnloadedSprites on that frame.
+				;Another reason is if you're using the total HP enemy ambush system.
 					%SetSpriteDefaultHP($46, !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount)
 					%SetSpriteRangeDefaultHP($91, $98, !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount)
 				%SetSpriteRangeDefaultHP($08, $0C, 2)		;>Winged Koopas
