@@ -78,9 +78,6 @@ macro Spawn(SpriteNumber, IsCustom, XPos, YPos, SpawnHealth)
 		STA !sprite_y_low,x
 		LDA.b #<YPos>>>8
 		STA !sprite_y_high,x
-	?PreventSpawningAndDamagingThePlayer
-		LDA.b #120
-		STA $1497|!addr
 	?DeductHPOfUnloaded:
 		;Here, every time you spawn a sprite, you need to, within that
 		;frame of spawning the sprite, deduct the value in
@@ -198,6 +195,8 @@ HandleSpawning:
 	.NotTheEnd
 		LDA #$10			;\Sound effect when spawning enemies
 		STA $1DF9|!addr		;/
+		LDA.b #120			;\Make player invulnerable due to potential risks of spawning enemies on the player.
+		STA $1497|!addr		;/
 		LDA !RAM_HaveSpawnFlag
 		ASL
 		TAX
