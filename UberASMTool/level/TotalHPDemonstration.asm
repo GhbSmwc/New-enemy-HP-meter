@@ -50,64 +50,19 @@
 	assert !Setting_SpriteHP_TotalHPMode == 2, "This test ASM code requires the total HP system."
 	assert !Setting_SpriteHP_VanillaSprite_OneShotSprites != 0, "This test ASM code requires HP for 1-shot sprites."
 ;Some settings
-	!StartingTotalHP #= (!Setting_SpriteHP_VanillaSprite_Rex_HPAmount*2)+(!Setting_SpriteHP_VanillaSprite_Chucks_HPAmount*3)+2
+	!Setting_StartingTotalHP #= (!Setting_SpriteHP_VanillaSprite_Rex_HPAmount*2)+(!Setting_SpriteHP_VanillaSprite_Chucks_HPAmount*3)+2
 		;^Total HP. This includes sprite loaded, and sprite yet to load. With default settings, that should be 19.
-	!StartingHP_SpritesYetToLoad = (!Setting_SpriteHP_VanillaSprite_Chucks_HPAmount*2)+2
+	!Setting_StartingHP_SpritesYetToLoad = (!Setting_SpriteHP_VanillaSprite_Chucks_HPAmount*2)+2
 		;^Total HP of sprites that have yet to spawn into the level.
-	
-	!RAM_HaveSpawnFlag = $1421|!addr ;>Reusing the 1-up checkpoint system.
-	!RAM_HaveSpawnFlag2 = $1436|!addr ;>Reusing the RAM that, when used in a normal level, only by keyholes.
+	!Setting_WaveDelay = 60
+;RAM to use
+	!RAM_SpawnCounter = $1487|!addr
+		;^[2 bytes] A tracker that holds the "position" of what wave and enemies to spawn. Note that
+		; the spawn table and this code must be on the same bank.
+	!RAM_SpawnDelay = $1436|!addr ;>Reusing the RAM that, when used in a normal level, only by keyholes.
+		;^[1 byte] A frame counter that ticks down once per frame. This is the amount of delay between waves
 
-macro Spawn(SpriteNumber, IsCustom, XPos, YPos)
-	if <IsCustom> == 0
-		CLC
-	else
-		SEC
-	endif
-	LDA.b #<SpriteNumber>
-	LDX #!sprite_slots-3
-		;^Let me explain why !sprite_slots-3 instead of !sprite_slots-1. The fireballs thrown by the
-		; player does not interact with sprites on the last 2 slots. Meaning LoROM, only $00-09 of
-		; the $00-$0B slots are consitered. In SA-1 however, only $00-$13 of the $00-$15 slots are
-		; checked. The last 2 sprite slots are consitered "important" sprites that are spawned
-		; uniquely such as when dropped from the item box, or from blocks.
-	%UberRoutine(SpawnSprite)
-		;^In addition to spawning sprites ($14C8 set to nonzero), it also calls $07F7D2, which
-		; clears out the sprite table of the currently processed sprite, as well as defaulting
-		; the HP value.
-	BCS ?No
-	
-	?XYPos:
-		LDA.b #<XPos>
-		STA !sprite_x_low,x
-		LDA.b #<XPos>>>8
-		STZ !sprite_x_high,x
-		LDA.b #<YPos>
-		STA !sprite_y_low,x
-		LDA.b #<YPos>>>8
-		STA !sprite_y_high,x
-	?DeductHPOfUnloaded:
-		;Here, every time you spawn a sprite, you need to, within that
-		;frame of spawning the sprite, deduct the value in
-		;!Freeram_SpriteHP_TotalHPOfUnloadedSprites by how much HP
-		;that spawned sprite has, else the meter fills upward because
-		;a sprite went from not being loaded, to now being loaded
-		;without "taking its health with it".
-		;
-		;Note that this assumes that the sprites spawned via the ambush
-		;system have its HP initialized properly (see
-		;"HPSystemForSMWSprites.asm" under "DefaultHPOnSpawn:")
-		LDA !Freeram_SpriteHP_TotalHPOfUnloadedSprites
-		SEC
-		SBC !Freeram_SpriteHP_CurrentHPLow,x
-		STA !Freeram_SpriteHP_TotalHPOfUnloadedSprites
-		if !Setting_SpriteHP_TwoByte
-			LDA !Freeram_SpriteHP_TotalHPOfUnloadedSprites+1
-			SBC !Freeram_SpriteHP_CurrentHPHi,x
-			STA !Freeram_SpriteHP_TotalHPOfUnloadedSprites+1
-		endif
-	?No:
-endmacro
+
 macro IgnoreSprite(SpriteNumber)
 	CMP.b #<SpriteNumber>
 	BEQ .NotACountedEnemy
@@ -133,18 +88,23 @@ macro IgnoreSpriteRange(MinSpriteNumber, MaxSpriteNumber)
 endmacro
 
 init:
+	;Initalize some values
+		;LDA #$00
+		STA !RAM_SpawnCounter
+		LDA.b #!Setting_WaveDelay
+		STA !RAM_SpawnDelay
 	;This gets the HP of all enemies yet to spawn
-		LDA.b #!StartingHP_SpritesYetToLoad
+		LDA.b #!Setting_StartingHP_SpritesYetToLoad
 		STA !Freeram_SpriteHP_TotalHPOfUnloadedSprites
 		if !Setting_SpriteHP_TwoByte
-			LDA.b #!StartingHP_SpritesYetToLoad>>8
+			LDA.b #!Setting_StartingHP_SpritesYetToLoad>>8
 			STA !Freeram_SpriteHP_TotalHPOfUnloadedSprites+1
 		endif
 	;This gets the total HP of all enemies, current enemies placed in LM, and all enemies yet to spawn
-		LDA.b #!StartingTotalHP
+		LDA.b #!Setting_StartingTotalHP
 		STA !Freeram_SpriteHP_TotalMaxHP
 		if !Setting_SpriteHP_TwoByte
-			LDA.b #!StartingTotalHP>>8
+			LDA.b #!Setting_StartingTotalHP>>8
 			STA !Freeram_SpriteHP_TotalMaxHP+1
 		endif
 	;Make meter to be "total mode" and intro-fill mode
@@ -168,64 +128,35 @@ main:
 	PHB
 	PHK
 	PLB
+	LDA $9D
+	BNE .Done
+	.DecreaseDelayTimer
+		LDA !RAM_SpawnDelay
+		BEQ ..Zero
+		DEC A
+		STA !RAM_SpawnDelay
+		..Zero
 		
 	JSR SearchSprites
 	CPX #$FF
-	BNE .No ;>If there are enemies remaining, don't advance
-	
-	INC !RAM_HaveSpawnFlag ;>Advance a wave
-	
-	.No
-	
-	;This checks if the next ambush have been triggered. This is to ensure that
-	;spawning sprites should not happen consecutive/every frames.
-		LDA !RAM_HaveSpawnFlag
-		CMP !RAM_HaveSpawnFlag2
-		BEQ .Done
-		STA !RAM_HaveSpawnFlag2
+	BNE .Done ;>If there are enemies remaining, don't advance
+	LDA !RAM_SpawnDelay		;\After all enemies gone, wait
+	BNE .Done				;/
 		
-	;Play out the current wave
-		JSR HandleSpawning
-
+		
+	.SpawnEnemiesOfWave
+		..Loop
+			
+			;<Insert code here that pulls from the table>
+			
+			JSR AmbushSpawn
+			BCC ..Loop ;>Loop to spawn the next sprite if there is an available slot.
+			...ExitLoop ;>Otherwise if there isn't, don't proceed and skip for this frame.
+		LDA.b #!Setting_WaveDelay
+		STA !RAM_SpawnDelay
 	.Done
 		PLB
 		RTL
-HandleSpawning:
-	LDA $1493|!addr
-	BNE .AlreadyFinished
-	LDA !RAM_HaveSpawnFlag
-	CMP.b #((.Spawns_ListEnd-.Spawns)/2)+1	;\Prevent jumping to data that isn't a pointer that crashes the game.
-	BCC .NotTheEnd							;/
-	LDA #$FF
-	STA $1493|!addr
-	STA $13C6|!addr
-	STA !Freeram_SpriteHP_MeterState
-	
-	.AlreadyFinished
-	RTS
-	
-	.NotTheEnd
-		LDA #$10			;\Sound effect when spawning enemies
-		STA $1DF9|!addr		;/
-		LDA.b #120			;\Make player invulnerable due to potential risks of spawning enemies on the player.
-		STA $1497|!addr		;/
-		LDA !RAM_HaveSpawnFlag
-		ASL
-		TAX
-		JMP (.Spawns-2,x)
-		
-		.Spawns:
-			dw ..Wave1
-			dw ..Wave2
-			..ListEnd
-			..Wave1
-				%Spawn($91, 0, $00E0, $0170)
-				%Spawn($91, 0, $0010, $0170)
-				RTS
-			..Wave2
-				%Spawn($0F, 0, $00E0, $0170)
-				%Spawn($02, 0, $0010, $0170)
-				RTS
 SearchSprites:
 	;This checks if there is an enemy in the sprite slots. Used to determine if the player killed all
 	;of them.
@@ -289,3 +220,98 @@ CheckIfEnemyExists:
 		.CountedEnemy
 			SEC
 			RTS
+AmbushSpawn:
+	;This subroutine:
+	; - Atempts to spawn a sprite
+	; - If fails, will not advance
+	; - If success:
+	; -- Sets up the sprite to spawn (XY Pos)
+	; -- Decreases the amount of HP of unloaded sprite (every time a sprite is spawned, it "takes its HP with it")
+	;Input:
+	; - A = Sprite number
+	; - Carry: 0 = Vanilla sprite, 1 = custom
+	; - $00-$01: X position
+	; - $02-$03: Y position
+	;Output:
+	; - Carry: 0 = successfully spawned sprite, 1 = failed
+	LDX #!sprite_slots-3
+		;^Let me explain why !sprite_slots-3 instead of !sprite_slots-1. The fireballs thrown by the
+		; player does not interact with sprites on the last 2 slots. Meaning LoROM, only $00-09 of
+		; the $00-$0B slots are consitered. In SA-1 however, only $00-$13 of the $00-$15 slots are
+		; checked. The last 2 sprite slots are consitered "important" sprites that are spawned
+		; uniquely such as when dropped from the item box, or from blocks.
+	%UberRoutine(SpawnSprite)
+	BCS .SpawnFailed	;>If all slots (from $00 to !sprite_slots-3) filled, don't advance
+	.SFX
+		LDA #$10
+		STA $1DF9|!addr
+	.AdvanceSpawnCounter
+		REP #$20
+		LDA !RAM_SpawnCounter
+		CLC
+		ADC #$0006
+		STA !RAM_SpawnCounter
+		SEP #$20
+	.SetXYPos
+		LDA $00
+		STA !sprite_x_low,x
+		LDA $01
+		STA !sprite_x_high,x
+		LDA $02
+		STA !sprite_y_low,x
+		LDA $03
+		STA !sprite_y_high,x
+	.DeductHPOfUnloaded
+		;Here, every time you spawn a sprite, you need to, within that
+		;frame of spawning the sprite, deduct the value in
+		;!Freeram_SpriteHP_TotalHPOfUnloadedSprites by how much HP
+		;that spawned sprite has, else the meter fills upward because
+		;a sprite went from not being loaded, to now being loaded
+		;without "taking its health with it".
+		;
+		;Note that this assumes that the sprites spawned via the ambush
+		;system have its HP initialized properly (see
+		;"HPSystemForSMWSprites.asm" under "DefaultHPOnSpawn:")
+		LDA !Freeram_SpriteHP_TotalHPOfUnloadedSprites
+		SEC
+		SBC !Freeram_SpriteHP_CurrentHPLow,x
+		STA !Freeram_SpriteHP_TotalHPOfUnloadedSprites
+		if !Setting_SpriteHP_TwoByte
+			LDA !Freeram_SpriteHP_TotalHPOfUnloadedSprites+1
+			SBC !Freeram_SpriteHP_CurrentHPHi,x
+			STA !Freeram_SpriteHP_TotalHPOfUnloadedSprites+1
+		endif
+	.Done
+		CLC
+		RTS
+	.SpawnFailed
+		SEC
+		RTS
+		
+	;Ambush wave/spawn table
+	;Format:
+	; db <SpriteNumberToSpawn>, <CustomSpriteFlag> : dw <XPosition>, <YPosition>
+	;
+	; - SpriteNumberToSpawn: Sprite number to spawn.
+	; - CustomSpriteFlag: 0 = Vanilla SMW sprites, 1 = Custom sprite
+	; - XPosition = X Position to spawn
+	; - XPosition = Y Position to spawn
+	;
+	;To indicate a boundary between waves:
+	; db $FF
+	;
+	;To mark end of battle:
+	; db $FE
+	
+	;
+
+AmbushTable:
+	db $AB, $00 : dw $0060, $0170
+	db $AB, $00 : dw $0080, $0170
+	db $91, $00 : dw $00A0, $0170
+	db $FF
+	db $91, $00 : dw $0010, $0170
+	db $91, $00 : dw $00E0, $0170
+	db $FF
+	db $02, $00 : dw $0010, $0170
+	db $0F, $00 : dw $00E0, $0170
