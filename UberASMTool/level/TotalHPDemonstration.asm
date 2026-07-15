@@ -1,3 +1,5 @@
+;>bytes 1
+
 ;This simple ASM code tests the total HP system utilizing "!Freeram_SpriteHP_TotalHPOfUnloadedSprites",
 ;by simulating an ambush system. This will make the meter show the total HP for sprites currently loaded,
 ;and the enemies yet to spawn in the level.
@@ -6,6 +8,7 @@
 ; - The patch, "HPSystemForSMWSprites.asm" is required.
 ; - For custom sprites, they need to be adopted to use this ASM resource's HP system to properly track
 ;   the total health remaining.
+; - Make sure you do not place any sprite via Lunar Magic of the area of the ambush.
 ;
 ;A test level file is provided, for level 106 (Yoshi's Island 2), as seen in
 ;"LM stuff/Levels/Level_106_TotalHPTest.mwl". You just need to have this file
@@ -15,31 +18,29 @@
 ;This only supports levels being 1-screen long, enemies cannot disappear off-screen, and enemies that
 ;cannot spawn an enemy that have health.
 ;
-;In this example, the level should play out like this:
-; - Initally the player spawns in the level, and have these enemies (placed in LM):
-; -- 2 Rexes, and 1 Chargin chuck. Assuming you make no changes on how much HP they have,
-;    the total HP of these existing enemies should be 19HP.
-; - After the player defeats all enemies, 2 Chargin Chucks should spawn in. Again,
-;   assuming you didn't change their HP values, the total HP should be 30HP.
-; - After that, it only spawns a goomba and a shell-less blue koopa, having 2 HP
-; Adding up all their HP values, that should be 51HP.
-;
-;This means:
-; - The value stored in RAM defined as !Freeram_SpriteHP_TotalMaxHP should be 51, counting all enemies.
-; - The value stored in RAM defined as !Freeram_SpriteHP_TotalHPOfUnloadedSprites should be 32, before
-;   the first wave was defeated, counting all enemies that are yet to spawn in to the end.
-;
-; - If there were another set of enemies to spawn after 2 chucks, say 2 shell-less koopas 1HP each, then
-;   !Freeram_SpriteHP_TotalHPOfUnloadedSprites should have those additional enemuies accounted for,
-;   in this case, 32 (Chuck's 30 HP, plus 2 HP of the koopas after), and !Freeram_SpriteHP_TotalMaxHP
-;   to be set to 51 (4 HP of the 2 rexes, plus 45 HP of the 3 Chargin chucks, plus 2 HP of the 2 koopas).
-;   Note that you need to add another phase by editing this ASM file yourself.
+;In this example, and using default HP values, the level should play out like this:
+; - First wave: 2 Rexes, 1 Chuck
+; - Second wave: 2 Chucks
+; - Third wave: 1 goomba and 1 blue shell-less koopa
+; Result:
+; 3 chucks (15 HP each): 45 HP
+; 2 Rexes (2 HP each): 4 HP
+; A Goomba and shell-less blue koopa (1 HP each): 2 HP
+; Total HP: 51. This is the amount to be written at a table labeled "AmbushTotalHPList".
 ;
 ;
 ;This is a test ASM, not meant to be used in an actual game (not well optimized, espically if you're
 ;spawning lot of sprites, which adds code overhead), rather as a tutorial on how to get your custom
 ;ambush system to work with this total HP system.
-
+;Setting
+	!Setting_Ambush_WaveDelay = 60
+		;^How many frames after a wave is finished, or to end the level after the final wave.
+;RAM to use
+	!Freeram_Ambush_SpawnPointer = $1487|!addr
+		;^[2 bytes] A tracker that holds the "position" of what wave and enemies to spawn. Note that
+		; the spawn table and this code must be on the same bank.
+	!Freeram_Ambush_DelayTimer = $1436|!addr ;>Reusing the RAM that, when used in a normal level, only by keyholes.
+		;^[1 byte] A frame counter that ticks down once per frame. This is the amount of delay between waves
 ;Don't touch
 	incsrc "../SharedSubroutineDefs.asm"
 	incsrc "../StatusBarDefines.asm"
@@ -49,19 +50,11 @@
 
 	assert !Setting_SpriteHP_TotalHPMode == 2, "This test ASM code requires the total HP system."
 	assert !Setting_SpriteHP_VanillaSprite_OneShotSprites != 0, "This test ASM code requires HP for 1-shot sprites."
-;Some settings
-	!Setting_StartingTotalHP #= (!Setting_SpriteHP_VanillaSprite_Rex_HPAmount*2)+(!Setting_SpriteHP_VanillaSprite_Chucks_HPAmount*3)+2
-		;^Total HP. This includes sprite loaded, and sprite yet to load. With default settings, that should be 19.
-	!Setting_StartingHP_SpritesYetToLoad = (!Setting_SpriteHP_VanillaSprite_Chucks_HPAmount*2)+2
-		;^Total HP of sprites that have yet to spawn into the level.
-	!Setting_WaveDelay = 60
-;RAM to use
-	!RAM_SpawnCounter = $1487|!addr
-		;^[2 bytes] A tracker that holds the "position" of what wave and enemies to spawn. Note that
-		; the spawn table and this code must be on the same bank.
-	!RAM_SpawnDelay = $1436|!addr ;>Reusing the RAM that, when used in a normal level, only by keyholes.
-		;^[1 byte] A frame counter that ticks down once per frame. This is the amount of delay between waves
-
+	
+	!TableSizeForHP = "db"
+	if !Setting_SpriteHP_TwoByte
+		!TableSizeForHP = "dw"
+	endif
 
 macro IgnoreSprite(SpriteNumber)
 	CMP.b #<SpriteNumber>
@@ -88,25 +81,42 @@ macro IgnoreSpriteRange(MinSpriteNumber, MaxSpriteNumber)
 endmacro
 
 init:
-	;Initalize some values
-		;LDA #$00
-		STA !RAM_SpawnCounter
-		LDA.b #!Setting_WaveDelay
-		STA !RAM_SpawnDelay
-	;This gets the HP of all enemies yet to spawn
-		LDA.b #!Setting_StartingHP_SpritesYetToLoad
-		STA !Freeram_SpriteHP_TotalHPOfUnloadedSprites
-		if !Setting_SpriteHP_TwoByte
-			LDA.b #!Setting_StartingHP_SpritesYetToLoad>>8
-			STA !Freeram_SpriteHP_TotalHPOfUnloadedSprites+1
+	if !sa1
+		%invoke_sa1(.RunSA1)
+		RTL
+		.RunSA1
+	endif
+	PHB
+	PHK
+	PLB
+	;Set pointer of a set of enemies to spawn
+		LDA #$00
+		STA $40FFFF
+		REP #$20
+		LDA ($00)
+		AND #$00FF
+		ASL
+		TAX
+		LDA AmbushList,x
+		STA !Freeram_Ambush_SpawnPointer
+	;Set total HP
+		if !Setting_SpriteHP_TwoByte == 0
+			SEP #$20
+			TXA
+			LSR
+			TAX
+			LDA AmbushTotalHPList,x
+			STA !Freeram_SpriteHP_TotalHPOfUnloadedSprites
+			STA !Freeram_SpriteHP_TotalMaxHP
+		else
+			LDA AmbushTotalHPList,x
+			STA !Freeram_SpriteHP_TotalHPOfUnloadedSprites
+			STA !Freeram_SpriteHP_TotalMaxHP
+			SEP #$20
 		endif
-	;This gets the total HP of all enemies, current enemies placed in LM, and all enemies yet to spawn
-		LDA.b #!Setting_StartingTotalHP
-		STA !Freeram_SpriteHP_TotalMaxHP
-		if !Setting_SpriteHP_TwoByte
-			LDA.b #!Setting_StartingTotalHP>>8
-			STA !Freeram_SpriteHP_TotalMaxHP+1
-		endif
+	;Delay timer just in case
+		LDA.b #!Setting_Ambush_WaveDelay
+		STA !Freeram_Ambush_DelayTimer
 	;Make meter to be "total mode" and intro-fill mode
 		LDA.b #(!sprite_slots*2)+1
 		STA !Freeram_SpriteHP_MeterState
@@ -118,6 +128,7 @@ init:
 				STA !Freeram_SpriteHP_BarAnimationTimer
 			endif
 		endif
+	PLB
 	RTL
 main:
 	if !sa1
@@ -131,32 +142,83 @@ main:
 	LDA $9D
 	BNE .Done
 	.DecreaseDelayTimer
-		LDA !RAM_SpawnDelay
+		LDA !Freeram_Ambush_DelayTimer
 		BEQ ..Zero
 		DEC A
-		STA !RAM_SpawnDelay
+		STA !Freeram_Ambush_DelayTimer
 		..Zero
 		
 	JSR SearchSprites
 	CPX #$FF
-	BNE .Done ;>If there are enemies remaining, don't advance
-	LDA !RAM_SpawnDelay		;\After all enemies gone, wait
+	BNE .EnemiesRemaining ;>If there are enemies remaining, don't advance
+	LDA !Freeram_Ambush_DelayTimer		;\After all enemies gone, wait
 	BNE .Done				;/
 		
 		
 	.SpawnEnemiesOfWave
 		..Loop
+			REP #$20
+			LDA !Freeram_Ambush_SpawnPointer
+			STA $06
+			SEP #$20
+			LDA ($06)
+			CMP #$FF
+			BEQ .InBetweenWaves
+			CMP #$FE
+			BEQ .EndLevel
+			CMP #$FD
+			BEQ .TeleportScreenExit
 			
-			;<Insert code here that pulls from the table>
-			
-			JSR AmbushSpawn
-			BCC ..Loop ;>Loop to spawn the next sprite if there is an available slot.
+			...SpawnSpriteOfWave
+				LDY #$01
+				LDA ($06),y
+				BEQ ....SpawnVanilla
+				
+				....SpawnCustom
+					SEC
+					BRA ....SetXYPos
+				....SpawnVanilla
+					CLC
+				....SetXYPos
+					LDY #$02
+					REP #$20
+					LDA ($06),y
+					STA $02
+					INY #2
+					LDA ($06),y
+					STA $04
+					SEP #$20
+				LDA ($06)
+				JSR AmbushSpawn
+				BCC ..Loop ;>Loop to spawn the next sprite if there is an available slot.
 			...ExitLoop ;>Otherwise if there isn't, don't proceed and skip for this frame.
-		LDA.b #!Setting_WaveDelay
-		STA !RAM_SpawnDelay
+		BRA .Done
+	.InBetweenWaves
+		REP #$20
+		LDA !Freeram_Ambush_SpawnPointer
+		INC A
+		STA !Freeram_Ambush_SpawnPointer
+		SEP #$20
 	.Done
 		PLB
 		RTL
+	.EnemiesRemaining
+		LDA.b #!Setting_Ambush_WaveDelay
+		STA !Freeram_Ambush_DelayTimer
+		BRA .Done
+	.EndLevel
+		LDA !Freeram_Ambush_DelayTimer	;\Avoid triggering immidiately after last enemy killed.
+		BNE .Done			;/
+		LDA #$FF
+		STA $1493|!addr
+		STA $13C6|!addr
+		BRA .Done
+	.TeleportScreenExit
+		LDA #$06				;\Teleport player.
+		STA $71					;|
+		STZ $89					;|
+		STZ $88					;/
+		BRA .Done
 SearchSprites:
 	;This checks if there is an enemy in the sprite slots. Used to determine if the player killed all
 	;of them.
@@ -230,8 +292,8 @@ AmbushSpawn:
 	;Input:
 	; - A = Sprite number
 	; - Carry: 0 = Vanilla sprite, 1 = custom
-	; - $00-$01: X position
-	; - $02-$03: Y position
+	; - $02-$03: X position
+	; - $04-$05: Y position
 	;Output:
 	; - Carry: 0 = successfully spawned sprite, 1 = failed
 	LDX #!sprite_slots-3
@@ -245,21 +307,14 @@ AmbushSpawn:
 	.SFX
 		LDA #$10
 		STA $1DF9|!addr
-	.AdvanceSpawnCounter
-		REP #$20
-		LDA !RAM_SpawnCounter
-		CLC
-		ADC #$0006
-		STA !RAM_SpawnCounter
-		SEP #$20
 	.SetXYPos
-		LDA $00
-		STA !sprite_x_low,x
-		LDA $01
-		STA !sprite_x_high,x
 		LDA $02
-		STA !sprite_y_low,x
+		STA !sprite_x_low,x
 		LDA $03
+		STA !sprite_x_high,x
+		LDA $04
+		STA !sprite_y_low,x
+		LDA $05
 		STA !sprite_y_high,x
 	.DeductHPOfUnloaded
 		;Here, every time you spawn a sprite, you need to, within that
@@ -281,37 +336,59 @@ AmbushSpawn:
 			SBC !Freeram_SpriteHP_CurrentHPHi,x
 			STA !Freeram_SpriteHP_TotalHPOfUnloadedSprites+1
 		endif
+	.AdvanceSpawnCounter
+		REP #$20
+		LDA !Freeram_Ambush_SpawnPointer
+		CLC
+		ADC #$0006
+		STA !Freeram_Ambush_SpawnPointer
+		SEP #$20
 	.Done
 		CLC
 		RTS
 	.SpawnFailed
 		SEC
 		RTS
-		
-	;Ambush wave/spawn table
-	;Format:
-	; db <SpriteNumberToSpawn>, <CustomSpriteFlag> : dw <XPosition>, <YPosition>
-	;
-	; - SpriteNumberToSpawn: Sprite number to spawn.
-	; - CustomSpriteFlag: 0 = Vanilla SMW sprites, 1 = Custom sprite
-	; - XPosition = X Position to spawn
-	; - XPosition = Y Position to spawn
-	;
-	;To indicate a boundary between waves:
-	; db $FF
-	;
-	;To mark end of battle:
-	; db $FE
-	
-	;
+;List of ambushes. This determine which ambushes to use should your hack have multiple.
+;Which one here to use depends on this level ASM's extra byte setting, where each value
+;is an index to each item in the following table. WARNING: Using an extra byte value
+;that corresponds to anything beyond the last item in the table results in garbage data.
+	AmbushList:
+		dw AmbushTable0
+		;dw AmbushTable1
 
-AmbushTable:
-	db $AB, $00 : dw $0060, $0170
-	db $AB, $00 : dw $0080, $0170
-	db $91, $00 : dw $00A0, $0170
-	db $FF
-	db $91, $00 : dw $0010, $0170
-	db $91, $00 : dw $00E0, $0170
-	db $FF
-	db $02, $00 : dw $0010, $0170
-	db $0F, $00 : dw $00E0, $0170
+;This is the same as above, but determines how much HP in total, it is used to determine
+;how much HP of enemies yet to encounter (!Freeram_SpriteHP_TotalHPOfUnloadedSprites).
+	AmbushTotalHPList:
+		!TableSizeForHP (!Setting_SpriteHP_VanillaSprite_Rex_HPAmount*2)+(!Setting_SpriteHP_VanillaSprite_Chucks_HPAmount*3)+2
+		;!TableSizeForHP 1234
+;Ambush wave/spawn table
+;Sprite spawn data format:
+; db <SpriteNumberToSpawn>, <CustomSpriteFlag> : dw <XPosition>, <YPosition>
+;
+; - SpriteNumberToSpawn: Sprite number to spawn.
+; - CustomSpriteFlag: 0 = Vanilla SMW sprites, 1 = Custom sprite
+; - XPosition = X Position to spawn
+; - XPosition = Y Position to spawn
+;
+;Special behaviors (these are 1-byte large entries, not to be in the middle of the sprite spawn data):
+; - To indicate a wave boundary:
+;    db $FF
+; - These are end-of-battle triggers. Note that a wave boundary must be placed before this byte
+;   to prevent pre-mature ending trigger
+; -- To mark end of battle (end level):
+;     db $FE
+; -- To mark end of battle (teleport via screen exit):
+;     db $FD
+	AmbushTable0:
+		db $AB, $00 : dw $0060, $0170
+		db $AB, $00 : dw $0080, $0170
+		db $91, $00 : dw $00A0, $0170
+		db $FF
+		db $91, $00 : dw $0010, $0170
+		db $91, $00 : dw $00E0, $0170
+		db $FF
+		db $02, $00 : dw $0010, $0170
+		db $0F, $00 : dw $00E0, $0170
+		db $FF
+		db $FE
