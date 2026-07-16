@@ -143,6 +143,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				STA !Freeram_SpriteHP_CurrentHPHi,x
 				STA !Freeram_SpriteHP_MaxHPHi,x
 			endif
+			PLP
 			RTL
 		?OtherSprite:
 	endmacro
@@ -163,6 +164,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				STA !Freeram_SpriteHP_CurrentHPHi,x
 				STA !Freeram_SpriteHP_MaxHPHi,x
 			endif
+			PLP
 			RTL
 		?OtherSprite:
 	endmacro
@@ -979,6 +981,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				STZ.w !160E,x
 				STZ.w !1594,x
 			.SetDefault1HP
+				PHP ;>Here, we need to preserve the carry flag, as pixi hijacks the sprite table clearing and loading sprite routine.
 				LDA #$01
 				STA !Freeram_SpriteHP_CurrentHPLow,x
 				STA !Freeram_SpriteHP_MaxHPLow,x
@@ -1013,6 +1016,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				%SetSpriteRangeDefaultHP($08, $0C, 2)		;>Winged Koopas
 				%SetSpriteDefaultHP($10, 2)		;>Winged Goomba
 			.Done
+				PLP
 				RTL
 	endif
 	if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
