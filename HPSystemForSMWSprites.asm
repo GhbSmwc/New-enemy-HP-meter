@@ -986,7 +986,10 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				STZ.w !160E,x
 				STZ.w !1594,x
 			.SetDefault1HP
-				PHP ;>Here, we need to preserve the carry flag, as pixi hijacks the sprite table clearing and loading sprite routine.
+				PHP
+				;^Here, we need to preserve the carry flag, as pixi hijacks the sprite table clearing and
+				;loading sprite routine, and then later checks the carry flag. After this routine ends,
+				;we need to PLP before any RTLs here.
 				LDA #$01
 				STA !Freeram_SpriteHP_CurrentHPLow,x
 				STA !Freeram_SpriteHP_MaxHPLow,x
@@ -1000,27 +1003,33 @@ incsrc "Defines/GraphicalBarDefines.asm"
 						LDA !7FAB10,x
 						AND.b #%00001000
 						;BNE .Done
-						BEQ +
-						RTL ;>Leave custom sprite as is and let them run their init code to adjust starting HP.
-						+
+						BEQ ..SetVanillaSpriteDefaultHP
+						LDA !7FAB9E,x
+						;Insert list of custom sprites's HP value at spawn here
+							;%SetSpriteDefaultHP(Spr_Numb, HP)
+						;Leave this here. Don't remove it unless you know what you're doing.
+							PLP
+							RTL
 				endif
 				..SetVanillaSpriteDefaultHP
 					LDA !9E,x
-					%SetSpriteDefaultHP($6E, 2)		;>Dino Rhino
-					%SetSpriteDefaultHP($6F, 1)		;>Dino Torch
-					%SetSpriteDefaultHP($AB, 2)		;>Rex
-						;^Dino Torch (note that Dino torch have a max of 2 HP if transformed from Dino Rhino, otherwise a max of 1 HP if spawned directly)
-					if !Setting_SpriteHP_VanillaSprite_Rex == 2
-						%SetSpriteDefaultHP($AB, !Setting_SpriteHP_VanillaSprite_Rex_HPAmount)		;>Set Rex's HP amount if set to use HP tables directly
-					endif
-				;These are chucks. Although if you have !Setting_SpriteHP_Modify5FireballsSystem set to 0 which will write their HP values anyway, it
-				;still a good idea to set their HP on spawn just in case for a single frame they have 0 HP, which can cause the HP meter in
-				;"total HP" mode to decrease for a single frame due to only decreasing !Freeram_SpriteHP_TotalHPOfUnloadedSprites on that frame.
-				;Another reason is if you're using the total HP enemy ambush system.
-					%SetSpriteDefaultHP($46, !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount)
-					%SetSpriteRangeDefaultHP($91, $98, !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount)
-				%SetSpriteRangeDefaultHP($08, $0C, 2)		;>Winged Koopas
-				%SetSpriteDefaultHP($10, 2)		;>Winged Goomba
+						;Insert list of custom sprites's HP value at spawn here
+							;%SetSpriteDefaultHP(Spr_Numb, HP)
+							%SetSpriteDefaultHP($6E, 2)		;>Dino Rhino
+							%SetSpriteDefaultHP($6F, 1)		;>Dino Torch
+							%SetSpriteDefaultHP($AB, 2)		;>Rex
+								;^Dino Torch (note that Dino torch have a max of 2 HP if transformed from Dino Rhino, otherwise a max of 1 HP if spawned directly)
+							if !Setting_SpriteHP_VanillaSprite_Rex == 2
+								%SetSpriteDefaultHP($AB, !Setting_SpriteHP_VanillaSprite_Rex_HPAmount)		;>Set Rex's HP amount if set to use HP tables directly
+							endif
+							;These are chucks. Although if you have !Setting_SpriteHP_Modify5FireballsSystem set to 0 which will write their HP values anyway, it
+							;still a good idea to set their HP on spawn just in case for a single frame they have 0 HP, which can cause the HP meter in
+							;"total HP" mode to decrease for a single frame due to only decreasing !Freeram_SpriteHP_TotalHPOfUnloadedSprites on that frame.
+							;Another reason is if you're using the total HP enemy ambush system.
+								%SetSpriteDefaultHP($46, !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount)
+								%SetSpriteRangeDefaultHP($91, $98, !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount)
+							%SetSpriteRangeDefaultHP($08, $0C, 2)		;>Winged Koopas
+							%SetSpriteDefaultHP($10, 2)		;>Winged Goomba
 			.Done
 				PLP
 				RTL
