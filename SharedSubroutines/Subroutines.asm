@@ -1551,26 +1551,34 @@ SpriteHPRemoveRecordEffect:
 ; - X: Current sprite slot index.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 SpriteHPIntroEffect:
-	LDA !Freeram_SpriteHP_MeterState                                                   ;\First check if the meter is locked from displaying
-	CMP #$FE                                                                           ;|if so, then don't set the meter state
-	BEQ .Disabled                                                                      ;|
-	CMP #$FD                                                                           ;|
-	BEQ .Disabled                                                                      ;/
-	if and(!Setting_SpriteHP_DisplayGraphicalBar, !Setting_SpriteHP_BarAnimation)
-		TXA                                                                         ;\Set HP bar to intro-fill state of its corresponding sprite slot
-		CLC                                                                         ;|
-		ADC.b #!sprite_slots                                                        ;|
-		STA !Freeram_SpriteHP_MeterState                                            ;/
-		LDA #$00                                                                    ;\Start the meter at 0%
-		STA !Freeram_SpriteHP_BarAnimationFill                                      ;/
-		if !Setting_SpriteHP_BarChangeDelay                                         ;
-			STA !Freeram_SpriteHP_BarAnimationTimer                                 ;>Set timer to 0 to make sure the animation plays correctly (allow SFX)
-		endif                                                                       ;
-	else
-		TXA
-		STA !Freeram_SpriteHP_MeterState
-	endif
+	LDA !Freeram_SpriteHP_MeterState
+	CMP.b #!sprite_slots
+	BCC .IntroFill                                ;>If between $00 and !sprite_slots-1, allow intro-fill mode
+	CMP.b #!sprite_slots*2
+	BCC .AlreadyIntroFill                         ;>If between !sprite_slots and (!sprite_slots*2)-1, it's already intro-fill
+	CMP #$FE                                      ;\First check if the meter is locked from displaying
+	BEQ .Disabled                                 ;|if so, then don't set the meter state
+	CMP #$FD                                      ;|
+	BEQ .Disabled                                 ;/
+	
+	.IntroFill
+		if and(!Setting_SpriteHP_DisplayGraphicalBar, !Setting_SpriteHP_BarAnimation)
+			TXA                                                                         ;\Set HP bar to intro-fill state of its corresponding sprite slot
+			CLC                                                                         ;|
+			ADC.b #!sprite_slots                                                        ;|
+			STA !Freeram_SpriteHP_MeterState                                            ;/
+			LDA #$00                                                                    ;\Start the meter at 0%
+			STA !Freeram_SpriteHP_BarAnimationFill                                      ;/
+			if !Setting_SpriteHP_BarChangeDelay                                         ;
+				STA !Freeram_SpriteHP_BarAnimationTimer                                 ;>Set timer to 0 to make sure the animation plays correctly (allow SFX)
+			endif                                                                       ;
+		else
+			TXA
+			STA !Freeram_SpriteHP_MeterState
+		endif
+	.TotalMode
 	.Disabled
+	.AlreadyIntroFill
 	RTL
 if !Setting_SpriteHP_TotalHPMode
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

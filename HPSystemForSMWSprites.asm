@@ -967,8 +967,13 @@ incsrc "Defines/GraphicalBarDefines.asm"
 	if !Setting_SpriteHP_RemoveOrApplyPatch
 		DefaultHPOnSpawn:	;>JSL from $07F779
 			;This code makes the routine that clears the sprite table during a spawn to default their HP values.
-			;Any sprite not listed here are set to have 1/1 HP, otherwise you can add
+			;Any sprite not listed here are set to have 1/1 HP, otherwise you can add your own items on what HP
+			;value a spawned sprite should have.
 			;
+			;Note that this is also used during an enemy spawn ambush system, each newly spawned enemy
+			;must deduct the amount of HP in a RAM defined "!Freeram_SpriteHP_TotalHPOfUnloadedSprites" so it
+			;can track how ;much total HP left properly. Should the meter increases or decreases when they spawn,
+			;that means their spawn HP isn't set up correctly.
 			;
 			;The good news is that when a sprite is spawned, its sprite number ($9E/$7FAB9E) are set before
 			;calling $07F722
@@ -1003,6 +1008,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					LDA !9E,x
 					%SetSpriteDefaultHP($6E, 2)		;>Dino Rhino
 					%SetSpriteDefaultHP($6F, 1)		;>Dino Torch
+					%SetSpriteDefaultHP($AB, 2)		;>Rex
 						;^Dino Torch (note that Dino torch have a max of 2 HP if transformed from Dino Rhino, otherwise a max of 1 HP if spawned directly)
 					if !Setting_SpriteHP_VanillaSprite_Rex == 2
 						%SetSpriteDefaultHP($AB, !Setting_SpriteHP_VanillaSprite_Rex_HPAmount)		;>Set Rex's HP amount if set to use HP tables directly

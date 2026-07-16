@@ -9,6 +9,10 @@
 ; - For custom sprites, they need to be adopted to use this ASM resource's HP system to properly track
 ;   the total health remaining.
 ; - Make sure you do not place any sprite via Lunar Magic of the area of the ambush.
+; - If the meter increases or decreases when enemies spawn, that indicates that the enemy was spawn with
+;   an improper health amount, causing the value stored in RAM defined !Freeram_SpriteHP_TotalHPOfUnloadedSprites
+;   to be subtracted by an incorrect amount. It relies on the sprite table clearing routine that now
+;   have a default HP amount at spawn (see HPSystemForSMWSprites.asm under "DefaultHPOnSpawn").
 ;
 ;A test level file is provided, for level 106 (Yoshi's Island 2), as seen in
 ;"LM stuff/Levels/Level_106_TotalHPTest.mwl". You just need to have this file
@@ -207,6 +211,8 @@ main:
 		STA !Freeram_Ambush_DelayTimer
 		BRA .Done
 	.EndLevel
+		LDA #$FF
+		STA !Freeram_SpriteHP_MeterState
 		LDA !Freeram_Ambush_DelayTimer	;\Avoid triggering immidiately after last enemy killed.
 		BNE .Done			;/
 		LDA #$FF
@@ -214,6 +220,8 @@ main:
 		STA $13C6|!addr
 		BRA .Done
 	.TeleportScreenExit
+		LDA #$FF
+		STA !Freeram_SpriteHP_MeterState
 		LDA #$06				;\Teleport player.
 		STA $71					;|
 		STZ $89					;|
