@@ -106,7 +106,7 @@
 			else
 				!Ram_WendyLemmyIntroFlag		= $40FFFF
 			endif
-		;[BytesUsed = !sprite_slots * (!Setting_SpriteHP_DisplayHPOfSMWSprites && !Setting_SpriteHP_VanillaSprite_Chuck)].
+		;[BytesUsed = !sprite_slots * (!Setting_SpriteHP_DisplayHPOfSMWSprites && !Setting_SpriteHP_VanillaSprite_Chuck && (!Ram_SpriteTable_CharginChuck_InstaKillHaveDisplayedHP == 0))].
 		;This RAM is used on a code that runs every frame for Chucks to switch the HP meter to them when they instantly die (cape spins,
 		;kicked shells, bounce blocks, etc.). It is used to check if the meter have already been switch to them to make it only perform once.
 		;I wouldn't want to add a hijack to every instance of $14C8 getting set to any of their death values. This should only be any unused

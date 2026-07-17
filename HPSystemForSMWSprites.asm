@@ -218,7 +218,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 ;Hijacks
 	;Chucks
 		;Code that runs every frame. Ensures the HP values in the new sprite RAM is in sync (for display).
-			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Chuck)
+			if and(and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Chuck), equal(!Ram_SpriteTable_CharginChuck_InstaKillHaveDisplayedHP, 0))
 				org $02C1F8
 				autoclean JML CharginChuckHitCountToHP		;>Had to be JML instead JSL because you cannot PHA : RTL [...] PLA.
 			else
@@ -728,7 +728,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				endif
 ;Freespace code
 	freecode
-	if and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_VanillaSprite_Chuck)
+	if and(and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_VanillaSprite_Chuck), equal(!Setting_SpriteHP_VanillaSprite_OneShotSprites, 0))
 		CharginChuckHitCountToHP:	;>JML from $02C1F8 (runs every frame)
 			.InstantKillToDisplayHP
 				if !Setting_SpriteHP_DisplayHPOfSMWSprites
@@ -770,6 +770,8 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				LDA !187B,x
 				PHA
 				JML $02C1FC|!bank		;>Again, PHA : RTL : PLA crashes the game because RTL pulls stack.
+	endif
+	if and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_VanillaSprite_Chuck)
 		StompCharginChuck:	;>JSL/JML from $02C7E8
 			if !Setting_SpriteHP_Modify5FireballsSystem == 0
 				%IncreaseDamageCounter(!1528, !Setting_SpriteHP_VanillaSprite_Chucks_StompDamage, !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount)
