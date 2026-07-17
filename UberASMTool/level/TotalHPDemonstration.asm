@@ -39,6 +39,13 @@
 ;Setting
 	!Setting_Ambush_WaveDelay = 60
 		;^How many frames after a wave is finished, or to end the level after the final wave.
+	!Setting_Ambush_SpawnTaxicabDistanceDetect = $0040
+		;^The taxicab distance between a spawned sprite, and the player that if less than, will
+		; offset the spawn position to prevent spawning on or near the player's current position,
+		; to prevent sudden damage to the player. I don't recommend $0080-$FFFF though.
+	!Setting_Ambush_SpawnOffset = $0060
+		;^When the spawned sprite is too close to the player, offset by this amount (+/- this value).
+		; Must be $0000-$7FFF.
 ;RAM to use
 	!Freeram_Ambush_SpawnPointer = $1487|!addr
 		;^[2 bytes] A tracker that holds the "position" of what wave and enemies to spawn. Note that
@@ -316,14 +323,63 @@ AmbushSpawn:
 		LDA #$10
 		STA $1DF9|!addr
 	.SetXYPos
-		LDA $02
-		STA !sprite_x_low,x
-		LDA $03
-		STA !sprite_x_high,x
-		LDA $04
-		STA !sprite_y_low,x
-		LDA $05
-		STA !sprite_y_high,x
+		..AvoidSpawningOnOrNearPlayer
+			;This checks if the spawning sprite is too close to the player. If so, offset that
+			;that spawn X position. The direction to offset the sprite spawning position will
+			;be towards the middle of the level (to avoid potentially spawning the sprite
+			;outside the level boundaries). Note that this does not check if the spawn point
+			;is inside a wall.
+			;
+			;The proximity check uses the taxicab distance if the player is too close.
+			REP #$20
+			...XDelta
+				LDA $94
+				SEC
+				SBC $02
+				BPL ....Pos
+				EOR #$FFFF
+				INC
+				....Pos
+				PHA			;>Save X position distance to stack
+			...YDelta
+				LDA $96
+				SEC
+				SBC $04
+				BPL ....Pos
+				EOR #$FFFF
+				INC
+				....Pos
+				CLC
+				ADC $01,s	;>Add Y position distance with X (in the stack), forming a taxicab distance
+				CMP.w #!Setting_Ambush_SpawnTaxicabDistanceDetect
+				BCS ...CheckDone   ;>If too far away, then the current spot is safe to spawn the sprite in.
+			...IsOnOrNearPlayer
+				LDY #$00
+				LDA $5D						;\Load level width in pixels (Loads $5D in A's low byte, $5E (level width) in A's high byte),
+				AND.w #$FF00				;/then zeroes out the low byte, leaving the high byte pixel position in A's high byte
+				LSR							;>Divide by 2 to obtain the x position halfway point
+				CMP $02						;>Halfway point compares with X position of sprite
+				BCS ....OffsetSpawnRight	;>If halfway point is to the right of spawn point, or spawn point to the left, move spawn point to the right
+				....OffsetSpawnLeft
+					INY #2					;>Otherwise spawn to the left.
+				....OffsetSpawnRight
+				LDA .SpawnOffsets,y
+				CLC
+				ADC $02
+				STA $02
+			...CheckDone
+				PLA
+				SEP #$20
+		..SetXYPos
+			LDA $02
+			STA !sprite_x_low,x
+			LDA $03
+			STA !sprite_x_high,x
+			LDA $04
+			STA !sprite_y_low,x
+			LDA $05
+			STA !sprite_y_high,x
+			
 	.DeductHPOfUnloaded
 		;Here, every time you spawn a sprite, you need to, within that
 		;frame of spawning the sprite, deduct the value in
@@ -363,6 +419,9 @@ AmbushSpawn:
 	.SpawnFailed
 		SEC
 		RTS
+	.SpawnOffsets
+		dw !Setting_Ambush_SpawnOffset
+		dw -!Setting_Ambush_SpawnOffset
 ;List of ambushes. This determine which ambushes to use should your hack have multiple.
 ;Which one here to use depends on this level ASM's extra byte setting, where each value
 ;is an index to each item in the following table. WARNING: Using an extra byte value
