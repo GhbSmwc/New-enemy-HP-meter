@@ -249,6 +249,8 @@ main:
 					LDX.b #!sprite_slots-1
 					....Loop
 						LDA !14C8,x
+						CMP #$01					;\This is a failsafe so when a spawning indicator turns into an enemy sprite, its $14C8,x == $01
+						BEQ .....ValidSpriteState	;/and on that very same frame, !Freeram_SpriteHP_TotalHPOfUnloadedSprites gets deducted. Without this, this frame would've have a net loss of every enemy with $14C8,x == $01.
 						CMP #$07
 						BCC .....Next
 						CMP #$0C

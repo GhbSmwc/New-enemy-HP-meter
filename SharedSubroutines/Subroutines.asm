@@ -1580,6 +1580,36 @@ SpriteHPIntroEffect:
 	.Disabled
 	.AlreadyIntroFill
 	RTL
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Hide meter if sprite despawns.
+;
+;This subroutine to be used immidiately after its
+;$14C8,x is potentially set to $00 in a custom sprite
+;code. It's to prevent a bug where if a sprite is
+;despawned and a new sprite is spawned at the same
+;frame, the meter could transfer to that newly spaned
+;sprite, (and playing the filling/healing animation if
+;bar animation is enabled), since it happens before
+;"DisplayEnemyHP.asm" detects an empty sprite slot.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+HideHPMeterIfSpriteDespawns:
+	LDA !Freeram_SpriteHP_MeterState
+	CMP.b #!sprite_slots*2
+	BCS .No
+	LDA !14C8,x
+	BNE .AllowMeterDisplay
+	
+	.HideHPMeter
+		JSL SpriteHPGetSlotIndex
+		TXA
+		CMP !Scratchram_SpriteHP_SpriteSlotToDisplay
+		BNE .AllowMeterDisplay
+		LDA #$FF
+		STA !Freeram_SpriteHP_MeterState
+	
+	.AllowMeterDisplay
+	.No
+		RTL
 if !Setting_SpriteHP_TotalHPMode
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;Sprite total HP Intro fill effect

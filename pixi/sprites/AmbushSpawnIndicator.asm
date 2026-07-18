@@ -16,7 +16,7 @@
 ;being repositioned in the sprite table slot.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;Conffigurations
+;Configurations
 	!Setting_AmbushIndicator_TileNumb = $1D			;>Valid: $00-$FF
 	!Setting_AmbushIndicator_TileProp_Page = 0		;>Valid: 0-1
 	!Setting_AmbushIndicator_TileProp_Palette = 4	;>Valid: 0-7, hint: It's LM's row number = ValueHere + 8
@@ -30,6 +30,10 @@
 		;(valid: 0-255, 60 = 1 second, up to 4.25 seconds)
 
 ;Don't touch unless you know what you're doing
+	incsrc "../SharedSubroutineDefs.asm"
+	incsrc "../EnemyHPMeterDefines.asm"
+	incsrc "../GraphicalBarDefines.asm"
+
 	!Setting_AmbushIndicator_YXPPCCCT #= ((!Setting_AmbushIndicator_TileProp_YFlip<<7)|(!Setting_AmbushIndicator_TileProp_YFlip<<6)|(!Setting_AmbushIndicator_TileProp_Priority<<4)|(!Setting_AmbushIndicator_TileProp_Palette<<1)|(!Setting_AmbushIndicator_TileProp_Page))
 	!RAM_WarningTimer = !1540 ;>Must be RAM that decrements itself each frame and freezes if $9D is set.
 	!RAM_CurrentProcessSpriteSlot = $15E9|!addr
@@ -50,14 +54,14 @@ MainCode:
 	LDA !RAM_WarningTimer,x
 	BNE .Done
 	
-	LDA #$00
-	STA $40FFFF
 	LDA #$01
 	STA !14C8,x
 	
 	LDA !extra_byte_1,x
 	STA !9E,x
-	JSL $07F7D2|!BankB
+	LDA !extra_byte_2,x
+	STA !7FAB10,x			
+	JSL $07F7D2|!BankB		;>Sprite number and custom flags must be adjusted before clearing sprite tables to properly set tweaker and HP values.
 	LDA !extra_byte_2,x
 	AND.b #%00001000
 	BEQ .TurnIntoVanillaSprite
@@ -78,14 +82,40 @@ MainCode:
 		PLA : STA $00
 		SEP #$20
 		
-		LDA #$08
-		STA !7FAB10,x
-		BRA .Done
+		BRA .DeductHP
 	.TurnIntoVanillaSprite
-	
-	STA !new_sprite_num,x
-	LDA !extra_byte_2,x
-	STA !extra_bits,x
+		STA !new_sprite_num,x
+		LDA !extra_byte_2,x
+		STA !extra_bits,x
+	.DeductHP
+		;Here, every time you spawn a sprite, you need to, within that
+		;frame of spawning the sprite, deduct the value in
+		;!Freeram_SpriteHP_TotalHPOfUnloadedSprites by how much HP
+		;that spawned sprite has, else the meter fills upward because
+		;a sprite went from not being loaded, to now being loaded
+		;without "taking its health with it".
+		;
+		;Notes:
+		; - This assumes that the sprites spawned via the ambush
+		;   system have its HP initialized properly (see
+		;   "HPSystemForSMWSprites.asm" under "DefaultHPOnSpawn:")
+		; - If you have enemies with HP amounts based on how it spawns,
+		;   such as the "Better Pokey" (https://www.smwcentral.net/?p=section&a=details&id=36812 )
+		;   by Isikoro (Each segment and head counts as 1 HP), then
+		;   you may need to make some changes here to accomodate its
+		;   spawn configuration-dependent HP.
+			LDA !Freeram_SpriteHP_TotalHPOfUnloadedSprites
+			SEC
+			SBC !Freeram_SpriteHP_CurrentHPLow,x
+			STA !Freeram_SpriteHP_TotalHPOfUnloadedSprites
+			if !Setting_SpriteHP_TwoByte
+				LDA !Freeram_SpriteHP_TotalHPOfUnloadedSprites+1
+				SBC !Freeram_SpriteHP_CurrentHPHi,x
+				STA !Freeram_SpriteHP_TotalHPOfUnloadedSprites+1
+			endif
+	.SFX
+		LDA #$10
+		STA $1DF9|!addr
 	.Done
 		PLB
 		RTL

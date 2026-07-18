@@ -36,7 +36,7 @@
 ;This is a test ASM, not meant to be used in an actual game (not well optimized, espically if you're
 ;spawning lot of sprites, which adds code overhead), rather as a tutorial on how to get your custom
 ;ambush system to work with this total HP system.
-;Setting
+;Settings
 	!Setting_Ambush_WaveDelay = 60
 		;^How many frames after a wave is finished, or to end the level after the final wave.
 	!Setting_Ambush_SpawnTaxicabDistanceDetect = $0040
@@ -46,6 +46,10 @@
 	!Setting_Ambush_SpawnOffset = $0060
 		;^When the spawned sprite is too close to the player, offset by this amount (+/- this value).
 		; Must be $0000-$7FFF.
+	!Setting_Ambush_SpawnIndicator = 1
+		;^Spawn with warning indicator: 0 = no, 1 = yes (requires "AmbushSpawnIndicator.asm")
+	!Setting_Ambush_SpawnIndicator_SpawnIndicatorNumb = $0E
+		;^Used only when !Setting_Ambush_SpawnIndicator == 1. This is the sprite number of the ambush spawning indicator.
 ;RAM to use
 	!Freeram_Ambush_SpawnPointer = $1487|!addr
 		;^[2 bytes] A tracker that holds the "position" of what wave and enemies to spawn. Note that
@@ -199,7 +203,12 @@ main:
 					LDA ($06),y
 					STA $04
 					SEP #$20
-				LDA ($06)
+					if !Setting_Ambush_SpawnIndicator == 0
+						LDA ($06)
+					else
+						SEC
+						LDA.b #!Setting_Ambush_SpawnIndicator_SpawnIndicatorNumb
+					endif
 				JSR AmbushSpawn
 				BCC ..Loop ;>Loop to spawn the next sprite if there is an available slot.
 			...ExitLoop ;>Otherwise if there isn't, don't proceed and skip for this frame.
@@ -279,8 +288,7 @@ CheckIfEnemyExists:
 			BEQ .VanillaSMWSpr
 			.CustomSpr
 				LDA !7FAB9E,x
-				;Put your list here for custom sprites
-				
+				;Put your list here for custom sprites, if using the spawning indicator sprite, it must count as "enemy exists" (don't have it on here).
 				;Don't touch this tough
 					JMP .CountedEnemy
 		endif
@@ -319,57 +327,76 @@ AmbushSpawn:
 		; uniquely such as when dropped from the item box, or from blocks.
 	%UberRoutine(SpawnSprite)
 	BCS .SpawnFailed	;>If all slots (from $00 to !sprite_slots-3) filled, don't advance
+	.SpawningIndicatorSprite
+		if !Setting_Ambush_SpawnIndicator
+			LDA ($06)
+			STA !extra_byte_1,x
+			LDY #$01
+			LDA ($06),y
+			BEQ ..Vanilla
+			..Custom
+				LDA #$08
+				BRA ..SetCustomFlag
+			..Vanilla
+				LDA #$00
+			..SetCustomFlag
+				STA !extra_byte_2,x
+		endif
 	.SFX
-		LDA #$10
-		STA $1DF9|!addr
+		if !Setting_Ambush_SpawnIndicator == 0
+			LDA #$10
+			STA $1DF9|!addr
+		endif
 	.SetXYPos
 		..AvoidSpawningOnOrNearPlayer
-			;This checks if the spawning sprite is too close to the player. If so, offset that
-			;that spawn X position. The direction to offset the sprite spawning position will
-			;be towards the middle of the level (to avoid potentially spawning the sprite
-			;outside the level boundaries). Note that this does not check if the spawn point
-			;is inside a wall.
-			;
-			;The proximity check uses the taxicab distance if the player is too close.
-			REP #$20
-			...XDelta
-				LDA $94
-				SEC
-				SBC $02
-				BPL ....Pos
-				EOR #$FFFF
-				INC
-				....Pos
-				PHA			;>Save X position distance to stack
-			...YDelta
-				LDA $96
-				SEC
-				SBC $04
-				BPL ....Pos
-				EOR #$FFFF
-				INC
-				....Pos
-				CLC
-				ADC $01,s	;>Add Y position distance with X (in the stack), forming a taxicab distance
-				CMP.w #!Setting_Ambush_SpawnTaxicabDistanceDetect
-				BCS ...CheckDone   ;>If too far away, then the current spot is safe to spawn the sprite in.
-			...IsOnOrNearPlayer
-				LDY #$00
-				LDA $5D						;\Load level width in pixels (Loads $5D in A's low byte, $5E (level width) in A's high byte),
-				AND.w #$FF00				;/then zeroes out the low byte, leaving the high byte pixel position in A's high byte
-				LSR							;>Divide by 2 to obtain the x position halfway point
-				CMP $02						;>Halfway point compares with X position of sprite
-				BCS ....OffsetSpawnRight	;>If halfway point is to the right of spawn point, or spawn point to the left, move spawn point to the right
-				....OffsetSpawnLeft
-					INY #2					;>Otherwise spawn to the left.
-				....OffsetSpawnRight
-				LDA .SpawnOffsets,y
-				CLC
-				ADC $02
-				STA $02
-			...CheckDone
-				PLA
-				SEP #$20
+			if !Setting_Ambush_SpawnIndicator == 0
+				;This checks if the spawning sprite is too close to the player. If so, offset that
+				;that spawn X position. The direction to offset the sprite spawning position will
+				;be towards the middle of the level (to avoid potentially spawning the sprite
+				;outside the level boundaries). Note that this does not check if the spawn point
+				;is inside a wall.
+				;
+				;The proximity check uses the taxicab distance if the player is too close.
+				REP #$20
+				...XDelta
+					LDA $94
+					SEC
+					SBC $02
+					BPL ....Pos
+					EOR #$FFFF
+					INC
+					....Pos
+					PHA			;>Save X position distance to stack
+				...YDelta
+					LDA $96
+					SEC
+					SBC $04
+					BPL ....Pos
+					EOR #$FFFF
+					INC
+					....Pos
+					CLC
+					ADC $01,s	;>Add Y position distance with X (in the stack), forming a taxicab distance
+					CMP.w #!Setting_Ambush_SpawnTaxicabDistanceDetect
+					BCS ...CheckDone   ;>If too far away, then the current spot is safe to spawn the sprite in.
+				...IsOnOrNearPlayer
+					LDY #$00
+					LDA $5D						;\Load level width in pixels (Loads $5D in A's low byte, $5E (level width) in A's high byte),
+					AND.w #$FF00				;/then zeroes out the low byte, leaving the high byte pixel position in A's high byte
+					LSR							;>Divide by 2 to obtain the x position halfway point
+					CMP $02						;>Halfway point compares with X position of sprite
+					BCS ....OffsetSpawnRight	;>If halfway point is to the right of spawn point, or spawn point to the left, move spawn point to the right
+					....OffsetSpawnLeft
+						INY #2					;>Otherwise spawn to the left.
+					....OffsetSpawnRight
+					LDA .SpawnOffsets,y
+					CLC
+					ADC $02
+					STA $02
+				...CheckDone
+					PLA
+					SEP #$20
+			endif
 		..SetXYPos
 			LDA $02
 			STA !sprite_x_low,x
@@ -379,33 +406,43 @@ AmbushSpawn:
 			STA !sprite_y_low,x
 			LDA $05
 			STA !sprite_y_high,x
-			
 	.DeductHPOfUnloaded
-		;Here, every time you spawn a sprite, you need to, within that
-		;frame of spawning the sprite, deduct the value in
-		;!Freeram_SpriteHP_TotalHPOfUnloadedSprites by how much HP
-		;that spawned sprite has, else the meter fills upward because
-		;a sprite went from not being loaded, to now being loaded
-		;without "taking its health with it".
-		;
-		;Notes:
-		; - This assumes that the sprites spawned via the ambush
-		;   system have its HP initialized properly (see
-		;   "HPSystemForSMWSprites.asm" under "DefaultHPOnSpawn:")
-		; - If you have enemies with HP amounts based on how it spawns,
-		;   such as the "Better Pokey" (https://www.smwcentral.net/?p=section&a=details&id=36812 )
-		;   by Isikoro (Each segment and head counts as 1 HP), then
-		;   you may need to make some changes here to accomodate its
-		;   spawn configuration-dependent HP.
-			LDA !Freeram_SpriteHP_TotalHPOfUnloadedSprites
-			SEC
-			SBC !Freeram_SpriteHP_CurrentHPLow,x
-			STA !Freeram_SpriteHP_TotalHPOfUnloadedSprites
+		if !Setting_Ambush_SpawnIndicator == 0
+			;Here, every time you spawn a sprite, you need to, within that
+			;frame of spawning the sprite, deduct the value in
+			;!Freeram_SpriteHP_TotalHPOfUnloadedSprites by how much HP
+			;that spawned sprite has, else the meter fills upward because
+			;a sprite went from not being loaded, to now being loaded
+			;without "taking its health with it".
+			;
+			;Notes:
+			; - This assumes that the sprites spawned via the ambush
+			;   system have its HP initialized properly (see
+			;   "HPSystemForSMWSprites.asm" under "DefaultHPOnSpawn:")
+			; - If you have enemies with HP amounts based on how it spawns,
+			;   such as the "Better Pokey" (https://www.smwcentral.net/?p=section&a=details&id=36812 )
+			;   by Isikoro (Each segment and head counts as 1 HP), then
+			;   you may need to make some changes here to accomodate its
+			;   spawn configuration-dependent HP.
+				LDA !Freeram_SpriteHP_TotalHPOfUnloadedSprites
+				SEC
+				SBC !Freeram_SpriteHP_CurrentHPLow,x
+				STA !Freeram_SpriteHP_TotalHPOfUnloadedSprites
+				if !Setting_SpriteHP_TwoByte
+					LDA !Freeram_SpriteHP_TotalHPOfUnloadedSprites+1
+					SBC !Freeram_SpriteHP_CurrentHPHi,x
+					STA !Freeram_SpriteHP_TotalHPOfUnloadedSprites+1
+				endif
+		else
+			;Indicator sprites shouldn't have HP
+			LDA #$00
+			STA !Freeram_SpriteHP_CurrentHPLow,x
+			STA !Freeram_SpriteHP_MaxHPLow,x
 			if !Setting_SpriteHP_TwoByte
-				LDA !Freeram_SpriteHP_TotalHPOfUnloadedSprites+1
-				SBC !Freeram_SpriteHP_CurrentHPHi,x
-				STA !Freeram_SpriteHP_TotalHPOfUnloadedSprites+1
+				STA !Freeram_SpriteHP_CurrentHPHi,x
+				STA !Freeram_SpriteHP_MaxHPHi
 			endif
+		endif
 	.AdvanceSpawnCounter
 		REP #$20
 		LDA !Freeram_Ambush_SpawnPointer
