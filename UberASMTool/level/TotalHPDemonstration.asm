@@ -408,6 +408,8 @@ AmbushSpawn:
 			STA !sprite_y_high,x
 	.DeductHPOfUnloaded
 		if !Setting_Ambush_SpawnIndicator == 0
+			LDA #$01		;\When sprite is in inital phase, it's HP is counted. Thus this increases total HP of loaded sprite, which immidiately
+			STA !14C8,x		;/after this, deducts total HP of unloaded sprites, thus canceling out and preventing meter from increasing or decreasing.
 			;Here, every time you spawn a sprite, you need to, within that
 			;frame of spawning the sprite, deduct the value in
 			;!Freeram_SpriteHP_TotalHPOfUnloadedSprites by how much HP
