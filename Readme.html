@@ -240,6 +240,7 @@
 								Other:
 								<ul>
 									<li><kbd>SpriteHPIntroEffect</kbd> (delete this if you don't want to have a boss intro-fill effect)</li>
+									<li><kbd>SpritesTotalHPIntroEffect</kbd> (remove this from the JML and macro define list if you're not using the total HP system)</li>
 								</ul>
 							</li>
 						</ul>
@@ -949,6 +950,13 @@ Change that to this:
 			It's important to note that despite <kbd>$14C8</kbd> being nonzero, there are other states that results in the sprite not running their main code at all. For example, being killed by a spinjump (<kbd>$14C8</kbd> set to
 			<kbd>$04</kbd>). Because a code at <kbd>$018127</kbd> (named <kbd>HandleSprite</kbd> in disassembly), it skips the main sprite code entirely, and because a code that would set the HP meter to show HP of that sprite slot
 			resides there, it too will also be skipped.
+		</li>
+		<li>
+			Q: I have a bunch of sprites in a level, and after scrolling one of the enemies offscreen, the meter started playing the filling animation, what's happening?<br><br>
+		
+			A: What's happening is that a sprite is getting despawned, and the newly spawned sprite happens to occupy the same sprite slot as the one that despawned at the same frame, right before <kbd>DisplayEnemyHP.asm</kbd> detects that
+			a sprite on this slot have been deleted and is supposed to hide the meter for non-existent sprites. Solution for custom sprites: if anything would make this sprite become a free slot (<kbd>$14C8,x == 0</kbd>), you must immidiately
+			set RAM defined <kbd>!Freeram_SpriteHP_MeterState</kbd> to <kbd>$FF</kbd> to prevent the HP meter from potentially transferring to another sprite.
 		</li>
 	</ul>
 </div>
