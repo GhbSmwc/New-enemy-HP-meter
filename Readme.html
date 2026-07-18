@@ -274,6 +274,7 @@ autoclean JML SpriteHPDamage
 autoclean JML SpriteHPRemoveRecordEffect
 autoclean JML SpriteHPGetSlotIndex
 autoclean JML SpriteHPIntroEffect
+autoclean JML HideHPMeterIfSpriteDespawns
 autoclean JML SpritesTotalHPIntroEffect</pre>
 </div>
 					</li>
@@ -305,6 +306,7 @@ autoclean JML SpritesTotalHPIntroEffect</pre>
 		%SetSharedSubDefine(SharedSub_SpriteHPRemoveRecordEffect)
 		%SetSharedSubDefine(SharedSub_SpriteHPGetSlotIndex)
 		%SetSharedSubDefine(SharedSub_SpriteHPIntroEffect)
+		%SetSharedSubDefine(SharedSub_HideHPMeterIfSpriteDespawns)
 		%SetSharedSubDefine(SharedSub_SpritesTotalHPIntroEffect)</pre>
 </div>
 					Now make sure their order and positions in the list of the entire JML and define list matches (if you paste the JML list starting at the 51st item, then the define list must also be placed starting at the 51st item),
@@ -952,11 +954,17 @@ Change that to this:
 			resides there, it too will also be skipped.
 		</li>
 		<li>
-			Q: I have a bunch of sprites in a level, and after scrolling one of the enemies offscreen, the meter started playing the filling animation, what's happening?<br><br>
+			Q: I have a bunch of sprites in a level, and after scrolling one of the enemies offscreen, the meter suddenly fills up, (with the numbers being changed, if displaying numerical enabled)
+			(started playing the filling animation, if bar animation enabled), what's happening?<br><br>
 		
 			A: What's happening is that a sprite is getting despawned, and the newly spawned sprite happens to occupy the same sprite slot as the one that despawned at the same frame, right before <kbd>DisplayEnemyHP.asm</kbd> detects that
-			a sprite on this slot have been deleted and is supposed to hide the meter for non-existent sprites. Solution for custom sprites: if anything would make this sprite become a free slot (<kbd>$14C8,x == 0</kbd>), you must immidiately
-			set RAM defined <kbd>!Freeram_SpriteHP_MeterState</kbd> to <kbd>$FF</kbd> to prevent the HP meter from potentially transferring to another sprite.
+			a sprite on this slot have been deleted and is supposed to hide the meter for non-existent sprites. Solution for custom sprites: if anything would make this sprite become a free slot (<kbd>$14C8,x == 0</kbd>) such as from a suboffscreen,
+			you must immidiately call <kbd>!HideHPMeterIfSpriteDespawns</kbd> to prevent potentially transferring to another sprite, like this:
+<div class="CodeBlock" style="height: 55px; width: 484px;"><pre>
+	LDA #$00
+	%SubOffScreen()
+	JSL !HideHPMeterIfSpriteDespawns
+</pre></div>
 		</li>
 	</ul>
 </div>
