@@ -105,8 +105,6 @@ init:
 	PHK
 	PLB
 	;Set pointer of a set of enemies to spawn
-		LDA #$00
-		STA $40FFFF
 		REP #$20
 		LDA ($00)
 		AND #$00FF
