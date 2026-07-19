@@ -8,7 +8,8 @@
 ; - The patch, "HPSystemForSMWSprites.asm" is required.
 ; - For custom sprites, they need to be adopted to use this ASM resource's HP system to properly track
 ;   the total health remaining.
-; - Make sure you do not place any sprite via Lunar Magic of the area of the ambush.
+; - Because "DisplayEnemyHP.asm" total HP mode display counts all HP of loaded sprites, this also includes
+;   sprites that are placed in Lunar Magic.
 ; - If the meter increases or decreases when enemies spawn, that indicates that the enemy was spawn with
 ;   an improper health amount, causing the value stored in RAM defined !Freeram_SpriteHP_TotalHPOfUnloadedSprites
 ;   to be subtracted by an incorrect amount. It relies on the sprite table clearing routine that now
@@ -20,7 +21,7 @@
 ;in where the .exe program is at).
 ;
 ;This only supports levels being 1-screen long, enemies cannot disappear off-screen, and enemies that
-;cannot spawn an enemy that have health.
+;cannot spawn an enemy that have health (thus a "Splittin Chuck" (Sprite $92) isn't allowed).
 ;
 ;In this example, and using default HP values, the level should play out like this:
 ; - First wave: 2 Rexes, 1 Chuck
@@ -32,24 +33,23 @@
 ; A Goomba and shell-less blue koopa (1 HP each): 2 HP
 ; Total HP: 51. This is the amount to be written at a table labeled "AmbushTotalHPList".
 ;
-;
-;This is a test ASM, not meant to be used in an actual game (not well optimized, espically if you're
-;spawning lot of sprites, which adds code overhead), rather as a tutorial on how to get your custom
-;ambush system to work with this total HP system.
 ;Settings
 	!Setting_Ambush_WaveDelay = 60
 		;^How many frames after a wave is finished, or to end the level after the final wave.
-	!Setting_Ambush_SpawnTaxicabDistanceDetect = $0040
-		;^The taxicab distance between a spawned sprite, and the player that if less than, will
-		; offset the spawn position to prevent spawning on or near the player's current position,
-		; to prevent sudden damage to the player. I don't recommend $0080-$FFFF though.
-	!Setting_Ambush_SpawnOffset = $0060
-		;^When the spawned sprite is too close to the player, offset by this amount (+/- this value).
-		; Must be $0000-$7FFF.
 	!Setting_Ambush_SpawnIndicator = 1
 		;^Spawn with warning indicator: 0 = no, 1 = yes (requires "AmbushSpawnIndicator.asm")
-	!Setting_Ambush_SpawnIndicator_SpawnIndicatorNumb = $0E
-		;^Used only when !Setting_Ambush_SpawnIndicator == 1. This is the sprite number of the ambush spawning indicator.
+	;These are failsafe to prevent sprites from spawning on or near the player (causes sudden damage
+	;to the player without warning). This is only needed if you don't have spawn indicator enabled.
+		!Setting_Ambush_SpawnTaxicabDistanceDetect = $0040
+			;^The taxicab distance between a spawned sprite, and the player that if less than, will
+			; offset the spawn position to prevent spawning on or near the player's current position,
+			; to prevent sudden damage to the player. I don't recommend $0080-$FFFF though.
+		!Setting_Ambush_SpawnOffset = $0060
+			;^When the spawned sprite is too close to the player, offset by this amount (+/- this value).
+			; Must be $0000-$7FFF.
+	;These are used when using the spawning indicator.
+		!Setting_Ambush_SpawnIndicator_SpawnIndicatorNumb = $0E
+			;^Used only when !Setting_Ambush_SpawnIndicator == 1. This is the sprite number of the ambush spawning indicator.
 ;RAM to use
 	!Freeram_Ambush_SpawnPointer = $1487|!addr
 		;^[2 bytes] A tracker that holds the "position" of what wave and enemies to spawn. Note that
@@ -326,7 +326,9 @@ AmbushSpawn:
 		; checked. The last 2 sprite slots are consitered "important" sprites that are spawned
 		; uniquely such as when dropped from the item box, or from blocks.
 	%UberRoutine(SpawnSprite)
-	BCS .SpawnFailed	;>If all slots (from $00 to !sprite_slots-3) filled, don't advance
+	BCC .SpawnSuccess
+	JMP .SpawnFailed	;>If all slots (from $00 to !sprite_slots-3) filled, don't advance
+	.SpawnSuccess
 	.SpawningIndicatorSprite
 		if !Setting_Ambush_SpawnIndicator
 			LDA ($06)
@@ -426,6 +428,13 @@ AmbushSpawn:
 			;   by Isikoro (Each segment and head counts as 1 HP), then
 			;   you may need to make some changes here to accomodate its
 			;   spawn configuration-dependent HP.
+			; - If you're using spawning indicators
+			;   (!Setting_Ambush_SpawnIndicator == 1), then the "HP transfer
+			;   from an unloaded enemy to a loaded enemy" happens when
+			;   the spawning indicator "spawns" (indicator sprite actually
+			;   turns into an enemy with its sprite tables and HP values
+			;   initialized) the sprite, not when this ambush code spawns
+			;   the indicator sprites.
 				LDA !Freeram_SpriteHP_TotalHPOfUnloadedSprites
 				SEC
 				SBC !Freeram_SpriteHP_CurrentHPLow,x

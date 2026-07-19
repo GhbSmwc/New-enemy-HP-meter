@@ -1,0 +1,2 @@
+ExGFX80.bin -> Level Layer 3 LG1 - Graphical bar + Slash graphic
+ExGFX90.bin -> Level Sprite SP2 - Spawning indicator warning graphic (replaces the coin from coin game cloud).
