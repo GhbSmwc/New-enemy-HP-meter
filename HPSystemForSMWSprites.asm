@@ -1148,6 +1148,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 							; kicked/carryable sprites (registers a hit every frame rather than once)
 							; and it also seemingly runs $07F722 when popped, resulting in the HP meter
 							; system to think a sprite have been healed.
+						%SpriteHPMeterBlacklist($53)	;>Throw block
 
 			.DisplayHPMeterOfOneShotSprites
 				LDA.b #!SpriteHP_MaxHPAndDamageValue		;\Treat as the killing blow deals max damage to the sprite
