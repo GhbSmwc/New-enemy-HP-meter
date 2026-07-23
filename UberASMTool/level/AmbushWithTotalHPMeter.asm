@@ -14,14 +14,15 @@
 ;   an improper health amount, causing the value stored in RAM defined !Freeram_SpriteHP_TotalHPOfUnloadedSprites
 ;   to be subtracted by an incorrect amount. It relies on the sprite table clearing routine that now
 ;   have a default HP amount at spawn (see HPSystemForSMWSprites.asm under "DefaultHPOnSpawn").
+; - Make sure that enemies cannot spawn another enemy that has health, such as "Splittin Chuck" (Sprite $92).
+; - Enemies spawn by this ambush system will always have "process off-screen" tweaker bit set ($167A bit 2 set)
+;   this allows ambush rooms to span more than a single screen wide and long without allowing the player to
+;   despawn them by moving the screen.
 ;
 ;A test level file is provided, for level 106 (Yoshi's Island 2), as seen in
 ;"LM stuff/Levels/Level_106_TotalHPTest.mwl". You just need to have this file
 ;be placed in uberasm tool's level folder (and make sure the defines are placed
 ;in where the .exe program is at).
-;
-;This only supports levels being 1-screen long, enemies cannot disappear off-screen, and enemies that
-;cannot spawn an enemy that have health (thus a "Splittin Chuck" (Sprite $92) isn't allowed).
 ;
 ;In this example, and using default HP values, the level should play out like this:
 ; - First wave: 2 Rexes, 1 Chuck
@@ -406,6 +407,10 @@ AmbushSpawn:
 			STA !sprite_y_low,x
 			LDA $05
 			STA !sprite_y_high,x
+		..SetProcessOffScreen
+			LDA !167A,x
+			ORA.b #%00000100
+			STA !167A,x
 	.DeductHPOfUnloaded
 		if !Setting_Ambush_SpawnIndicator == 0
 			LDA #$01		;\When sprite is in inital phase, it's HP is counted. Thus this increases total HP of loaded sprite, which immidiately

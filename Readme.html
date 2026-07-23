@@ -626,11 +626,13 @@ autoclean JML SpritesTotalHPIntroEffect</pre>
 		<li>
 			If you have animation enabled (<kbd>!Setting_SpriteHP_BarAnimation</kbd> set to <kbd>1</kbd>), you need to set some values for that.
 			Without it, dealing damage would skip the animation (such as the bar that shows previous fill amount prior to the damage immediately
-			decreasing without the freeze delay).
+			decreasing without the freeze delay). If you have <kbd>!Freeram_SpriteHP_BarAnimationTimer !=0</kbd>, it should also set the delay
+			timer to the value of <kbd>!Freeram_SpriteHP_BarAnimationTimer</kbd>.
 		</li>
 		<li>
 			Ensure that the health meter switches to that damaged enemy when hit. Without it, if there were multiple enemies utilizing the HP
-			system and the player damages them, then damage the former enemy, the meter wouldn't switch back.
+			system and the player damages them, then damage the former enemy, the meter wouldn't switch back. The exception to that is when
+			utilizing total HP mode, where the meter should only show the total HP instead.
 		</li>
 	</ul>
 	Thankfully, all that logic is handled automatically in a subroutine defined as <kbd>!SharedSub_SpriteHPDamage</kbd>, with the inputs stored in <kbd>$00</kbd> (2 bytes, <kbd>$00~$01</kbd>, if <kbd>!Setting_SpriteHP_TwoByte == 1</kbd>). Feel free to check out the subroutines as you wish.</p>
@@ -766,7 +768,7 @@ Change that to this:
 	<p>
 		This section covers a feature that displays the total HP across multiple enemies at once. An example usage for SMW is the Reznor boss battle, which the meter shows 4 HP, each Reznor having 1 HP.<br><br>
 		
-		This ASM resource does not include a fully functional and fully-featured ambush system, as that would make this ASM resource excessive, and should be a seperate ASM resource. Thus, I only included a simple ASM file, made just for testing, in <kbd>UberASMTool/level/TotalHPDemonstration.asm</kbd>.
+		Included is an ambush mechanic that enemies spawns in waves that the player must defeat them to advance, see <kbd>UberASMTool/level/AmbushWithTotalHPMeter.asm</kbd>.
 		
 		Notes when using this test ASM file:
 		<ul>
@@ -779,12 +781,10 @@ Change that to this:
 			<li>Subroutine <kbd>SpriteHPDamage</kbd> automatically handles total HP mode.</li>
 		</ul>
 		
-		The display is handled internally, in <kbd>UberASMTool/level/DisplayEnemyHP.asm</kbd>, it loops across all sprite slots, adds HP of any applicible (See under label &ldquo;<kbd>.CheckForBlacklistedSprites</kbd>&rdquo; without an opcode before it) sprites, and optionally adds by a value stored in
+		The display is handled internally, in <kbd>UberASMTool/level/DisplayEnemyHP.asm</kbd>, under sublabel <kbd>..TotalHPMode</kbd> it loops across all sprite slots, adds HP of any applicible (See under label &ldquo;<kbd>.CheckForBlacklistedSprites</kbd>&rdquo; without an opcode before it) sprites, and optionally adds by a value stored in
 		<kbd>!Freeram_SpriteHP_TotalHPOfUnloadedSprites</kbd> (if <kbd>!Setting_SpriteHP_TotalHPMode == 2</kbd>), and the total is the value used to display the HP amount.<br><br>
 		
-		To make the HP meter show this, simply set the meter state (RAM defined as <kbd>!Freeram_SpriteHP_MeterState</kbd>) to <kbd>!sprite_slots*2</kbd> or if you want an introfill, <kbd>(!sprite_slots*2)+1</kbd>.<br><br>
-		
-		For further information on how to make sure the meter works correctly, see the comments in <kbd>TotalHPDemonstration.asm</kbd> with a text editor.
+		For further information on how to make sure the meter works correctly, see the comments in <kbd>AmbushWithTotalHPMeter.asm</kbd> with a text editor.
 	</p>
 	<hr>
 	<h2><a href="#ToC_Notes" id="JMPTo_Notes">^</a>Notes</h2>

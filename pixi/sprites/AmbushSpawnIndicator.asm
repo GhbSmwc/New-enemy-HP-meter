@@ -135,7 +135,7 @@ MainCode:
 		;This sprite however turns into whatever sprite it was "spawning"
 		;but should still be treated the same way, except that it happens
 		;during the "transformation" of the sprite rather than
-		;"TotalHPDemonstration.asm" spawning this sprite.
+		;"AmbushWithTotalHPMeter.asm" spawning this sprite.
 		;
 		;Notes:
 		; - This assumes that the sprites spawned via the ambush
@@ -155,6 +155,10 @@ MainCode:
 				SBC !Freeram_SpriteHP_CurrentHPHi,x
 				STA !Freeram_SpriteHP_TotalHPOfUnloadedSprites+1
 			endif
+	.SetProcessOffScreen
+		LDA !167A,x
+		ORA.b #%00000100
+		STA !167A,x
 	.SFX
 		LDA #$10
 		STA $1DF9|!addr

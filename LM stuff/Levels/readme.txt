@@ -3,4 +3,4 @@ showing the total HP of all enemies of the ambush, including sprites yet to spaw
 
 To get this working, in uberasm tool's list.txt, have this under "level":
 
-	106	TotalHPDemonstration.asm
+	106	AmbushWithTotalHPMeter.asm
