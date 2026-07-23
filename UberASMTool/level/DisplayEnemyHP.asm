@@ -687,6 +687,7 @@ main:
 			;except for total HP mode (see ".CheckForBlacklistedSpritesTotalHP").
 			%SpriteHPMeterBlacklist($0D, ...BobOmb) ;>Bobomb (blacklisted if its an explosion)
 			%SpriteHPMeterBlacklist($21, ..Blacklisted) ;>Moving coin
+			%SpriteHPMeterBlacklist($45, ..Blacklisted) ;>Directional coin
 			...Allowed
 				CLC
 				RTS
