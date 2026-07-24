@@ -959,11 +959,11 @@ Change that to this:
 		
 			A: What's happening is that a sprite is getting despawned, and the newly spawned sprite happens to occupy the same sprite slot as the one that despawned at the same frame, right before <kbd>DisplayEnemyHP.asm</kbd> detects that
 			a sprite on this slot have been deleted and is supposed to hide the meter for non-existent sprites. Solution for custom sprites: if anything would make this sprite become a free slot (<kbd>$14C8,x == 0</kbd>) such as from a suboffscreen,
-			you must immidiately call <kbd>!HideHPMeterIfSpriteDespawns</kbd> to prevent potentially transferring to another sprite, like this:
-<div class="CodeBlock" style="height: 55px; width: 484px;"><pre>
+			you must call <kbd>!HideHPMeterIfSpriteDespawns</kbd> prior the end of the sprite code to prevent potentially transferring the meter display to another sprite, like this (suboffscreen example):
+<div class="CodeBlock" style="height: 69px; width: 487px;"><pre>
 	LDA #$00
-	%SubOffScreen()
-	JSL !HideHPMeterIfSpriteDespawns
+	%SubOffScreen() ;&gt;Here, $14C8,x may be zero after this.
+	JSL !HideHPMeterIfSpriteDespawns ;&gt;Call a subroutine that turns the meter display off if $14C8,x is zero.
 </pre></div>
 		</li>
 	</ul>

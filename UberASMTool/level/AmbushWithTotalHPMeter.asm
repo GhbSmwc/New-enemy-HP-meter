@@ -34,11 +34,18 @@
 ; A Goomba and shell-less blue koopa (1 HP each): 2 HP
 ; Total HP: 51. This is the amount to be written at a table labeled "AmbushTotalHPList".
 ;
-;Settings
+;Extra bytes info:
+; EXB1: What set of ambush to use (adding new ambushes requires updating the table under "AmbushList" as well as
+; the tables below that). Valid values are $00-$7F (0-127).
+;
+;Settings:
 	!Setting_Ambush_WaveDelay = 60
-		;^How many frames after a wave is finished, or to end the level after the final wave.
+		;^How many frames after a wave is finished, or to end the level after the final wave. Note that if
+		; spawn indicators were enabled, the indicator sprites have their own delay (thus the total delay is this
+		; plus indicator sprite's "!Setting_AmbushIndicator_Duration").
 	!Setting_Ambush_SpawnIndicator = 1
-		;^Spawn with warning indicator: 0 = no, 1 = yes (requires "AmbushSpawnIndicator.asm")
+		;^Spawn with warning indicator: 0 = no, 1 = yes (requires pixi sprite "AmbushSpawnIndicator.asm",
+		; included in this ASM resource).
 	;These are failsafe to prevent sprites from spawning on or near the player (causes sudden damage
 	;to the player without warning). This is only needed if you don't have spawn indicator enabled.
 		!Setting_Ambush_SpawnTaxicabDistanceDetect = $0040
@@ -46,15 +53,15 @@
 			; offset the spawn position to prevent spawning on or near the player's current position,
 			; to prevent sudden damage to the player. I don't recommend $0080-$FFFF though.
 		!Setting_Ambush_SpawnOffset = $0060
-			;^When the spawned sprite is too close to the player, offset by this amount (+/- this value).
-			; Must be $0000-$7FFF.
+			;^When the spawned sprite is too close to the player, offset the X position by this amount
+			; (+/- this value). Must be $0000-$7FFF.
 	;These are used when using the spawning indicator.
 		!Setting_Ambush_SpawnIndicator_SpawnIndicatorNumb = $0E
 			;^Used only when !Setting_Ambush_SpawnIndicator == 1. This is the sprite number of the ambush spawning indicator.
 ;RAM to use
 	!Freeram_Ambush_SpawnPointer = $1487|!addr
-		;^[2 bytes] A tracker that holds the "position" of what wave and enemies to spawn. Note that
-		; the spawn table and this code must be on the same bank.
+		;^[2 bytes] A tracker that holds the "position" (a 16-bit address pointing to the enemy spawn table) of what wave
+		; and enemies to spawn. Note that the spawn table and this code must be on the same bank.
 	!Freeram_Ambush_DelayTimer = $1436|!addr ;>Reusing the RAM that, when used in a normal level, only by keyholes.
 		;^[1 byte] A frame counter that ticks down once per frame. This is the amount of delay between waves
 ;Don't touch
@@ -310,7 +317,8 @@ AmbushSpawn:
 	; - If fails, will not advance
 	; - If success:
 	; -- Sets up the sprite to spawn (XY Pos)
-	; -- Decreases the amount of HP of unloaded sprite (every time a sprite is spawned, it "takes its HP with it")
+	; -- Decreases the amount of HP of unloaded sprite (every time a sprite is spawned, it
+	;    "takes its HP with it"), only applies if you have indicators turned off.
 	;Input:
 	; - A = Sprite number
 	; - Carry: 0 = Vanilla sprite, 1 = custom
@@ -473,21 +481,41 @@ AmbushSpawn:
 	.SpawnOffsets
 		dw !Setting_Ambush_SpawnOffset
 		dw -!Setting_Ambush_SpawnOffset
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;List of ambushes. This determine which ambushes to use should your hack have multiple.
+;An ambush, refers to a set of enemies to kill, including all "waves" of enemies till
+;the end.
+;
 ;Which one here to use depends on this level ASM's extra byte setting, where each value
 ;is an index to each item in the following table. WARNING: Using an extra byte value
-;that corresponds to anything beyond the last item in the table results in garbage data.
+;that corresponds to anything beyond the last item in the table results in garbage data
+;which may crash the game during level fade-in or when spawning sprites. You can have
+;up to 128 ambushes.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	AmbushList:
 		dw AmbushTable0
 		;dw AmbushTable1
-
-;This is the same as above, but determines how much HP in total, it is used to determine
-;how much HP of enemies yet to encounter (!Freeram_SpriteHP_TotalHPOfUnloadedSprites).
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;This is the same as above, but determines how much HP in total, per ambush. It is used to determine
+;how much HP of enemies yet to encounter (!Freeram_SpriteHP_TotalHPOfUnloadedSprites). Setting this
+;to an incorrect value causes the meter to fill up or drain incorrectly, and/or ending with the
+;meter not being empty. Do the math, add all applicable enemies' HP, and the total should be stored
+;here.
+;
+;Format:
+;  !TableSizeForHP <TotalHP>
+;
+; - Define !TableSizeForHP is simply "db" or "dw" depending on !Setting_SpriteHP_TwoByte (which makes the values
+;   either 8 or 16-bit)
+; - <TotalHP> Is a value representing the total HP. You can enter a literal number here (any base), or a math
+;   statement (like below) and it will work.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	AmbushTotalHPList:
 		!TableSizeForHP (!Setting_SpriteHP_VanillaSprite_Rex_HPAmount*2)+(!Setting_SpriteHP_VanillaSprite_Chucks_HPAmount*3)+2
 		;!TableSizeForHP 1234
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;Ambush wave/spawn table
-;Sprite spawn data format:
+;Sprite spawn data format (spans 6 bytes):
 ; db <SpriteNumberToSpawn>, <CustomSpriteFlag> : dw <XPosition>, <YPosition>
 ;
 ; - SpriteNumberToSpawn: Sprite number to spawn.
@@ -504,6 +532,7 @@ AmbushSpawn:
 ;     db $FE
 ; -- To mark end of battle (teleport via screen exit):
 ;     db $FD
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	AmbushTable0:
 		db $AB, $00 : dw $0060, $0170
 		db $AB, $00 : dw $0080, $0170
