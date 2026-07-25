@@ -400,6 +400,31 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			org $0196C5
 			BNE $1A
 		endif
+	;Shell and shell-less koopa HP meter switcher. A koopa and an empty shell are the same sprite (but with a different state).
+	;A shell-less koopa being seperated from their shell is a seperate sprite spawned in the level. When entering an empty shell,
+	;they simply just get deleted.
+		;When koopas exit their shells, switch the HP meter to them and not the shell itself
+			if and(and(!Setting_ModifySprAndDisplayHPOfSMWSpr, equal(!Setting_SpriteHP_Koopas_ClassicBehavior, 0)), notequal(!Setting_SpriteHP_VanillaSprite_OneShotSprites, 0))
+				org $0196E7
+				autoclean JSL TransferHPFromKoopaToShelllessKoopa
+				NOP
+			else
+				%RemoveFreespaceCodeFromJMLJSL($0196E7)
+				org $0196E7
+				LDA #$08
+				STA !14C8,y
+			endif
+		;When shell-less koopas enter their shells, switch the HP meter to them.
+			if and(and(!Setting_ModifySprAndDisplayHPOfSMWSpr, equal(!Setting_SpriteHP_Koopas_ClassicBehavior, 0)), notequal(!Setting_SpriteHP_VanillaSprite_OneShotSprites, 0))
+				org $018ACC
+				autoclean JSL TransferHPFromShelllessKoopaToKoopa
+				NOP
+			else
+				%RemoveFreespaceCodeFromJMLJSL($018ACC)
+				org $018ACC
+				LDY !1594,x
+				LDA.b #$10
+			endif
 	;When sprites are falling down screen
 	; - kicked/carried sprites hit a 1-shottable enemy
 	; - Stomped (e.g. Monty Mole) and falling down the screen
@@ -1179,6 +1204,39 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					LDY !sprite_num_cache
 				endif
 				RTL
+		if !Setting_SpriteHP_Koopas_ClassicBehavior == 0
+			TransferHPFromKoopaToShelllessKoopa: ;>JSL from $0196E7
+				;X = The index of the in-shell koopa/empty shell.
+				;Y = The index of newly spawned sprite - shell-less koopa
+				.Restore
+					LDA #$08
+					STA !14C8,y
+				.SwitchMeter
+					JSL !SharedSub_SpriteHPGetSlotIndex
+					TXA
+					CMP !Scratchram_SpriteHP_SpriteSlotToDisplay
+					BNE .Done									;>If HP meter isn't on the enemy that the player just jumped on or is stunned in their shells and unstun themselves, skip
+					TYA											;\Switch meter to the shell-less koopa (note that since these enemies have 1HP, we don't need bar animation)
+					STA !Freeram_SpriteHP_MeterState			;/
+				.Done
+					RTL
+			TransferHPFromShelllessKoopaToKoopa: ;>JSL from $018ACC
+				;X = Index of the shell-less koopa entering an empty shell
+				;Y = Index of the shell the koopa is entering
+				.SwitchMeter
+					JSL !SharedSub_SpriteHPGetSlotIndex
+					LDY !1594,x
+					TXA
+					CMP !Scratchram_SpriteHP_SpriteSlotToDisplay
+					BNE .Restore								;>If the HP meter isn't on the shell-less koopa, skip
+					TYA											;\Switch meter to the shell (which will turn into a regular koopa)
+					STA !Freeram_SpriteHP_MeterState			;/
+				.Restore
+					LDY !1594,x
+					LDA.b #$10
+					RTL
+		endif
+		
 	endif
 	if !Setting_ModifySprAndDisplayHPOfSMWSpr
 		PokeyInitHP_YoshiHPTable:

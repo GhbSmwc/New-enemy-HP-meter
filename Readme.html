@@ -823,6 +823,11 @@ Change that to this:
 				<li>Vanilla Bowser battle is rarely used in SMW hacks, due to it being not customizable.</li>
 			</ul>
 		</li>
+		<li>
+			When Koopa Troopas get seperated from their shells, the Koopa Troopa itself turns into a shell of the same sprite number (just with a changed state), and spawns a shell-less Koopa. And when a shell-less Koopa enters a shell (except the blue one), the shell becomes a Koopa Troopa and the shell-less koopa despawns (via suboffscreen
+			function, see <kbd>$018AC9</kbd>). Because of this, to properly have the HP meter on the enemy itself (and not the shell), it needs to switch when these occur. If yoshi grabs the koopa (either in a normal state or hiding inside shell), or the player kicks a shell after the koopa enters it but before it gets up, the shell
+			becomes an empty shell with the koopa inside of it deleted.
+		</li>
 	</ul>
 	<hr>
 	<h2><a href="#ToC_Troubleshooting" id="JMPTo_Troubleshooting">^</a>Troubleshooting</h2>

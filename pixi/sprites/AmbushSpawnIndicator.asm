@@ -70,8 +70,6 @@ MainCode:
 		JSL $03B664|!bank	;>Get Mario clipping
 		JSL $03B72B|!bank	;>Check contact
 		BCC ..NoContact
-		LDA #$00
-		STA $40FFFF
 		INC !RAM_MarioIsTouchingThisSprite,x
 		LDA !sprite_y_high,x
 		XBA
