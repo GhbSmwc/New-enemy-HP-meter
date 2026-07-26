@@ -644,6 +644,13 @@ main:
 ;HP system based on its state or it changing to another sprite. This runs every
 ;frame while the meter is active, and espically so during total HP mode.
 ;
+;Notes:
+;
+; - This code runs at the beginning of each frame, not during sprite code
+;   processing. For example, reading $14C8,x here, on the frame the player kills
+;   the sprite with a spinjump will obtain a value of $04 (killed with spinjump)
+;   rather than the value it was before the player kills it.
+;
 ;To add a sprite number here you wish not to show/use the HP system, the syntax
 ;is:
 ; - %SpriteHPMeterBlacklist(SpriteNumber, Label)
@@ -686,7 +693,7 @@ main:
 			;such subroutines, thus they don't need to be listed here,
 			;except for total HP mode (see ".CheckForBlacklistedSpritesTotalHP").
 			%SpriteHPMeterBlacklist($0D, ...BobOmb) ;>Bobomb (blacklisted if its an explosion)
-			%SpriteHPMeterBlacklist($21, ..Blacklisted) ;>Moving coin
+			%SpriteHPMeterBlacklist($21, ..Blacklisted) ;>Moving coin (both the fireball, and from the silver p-switch)
 			%SpriteHPMeterBlacklist($45, ..Blacklisted) ;>Directional coin
 			...Allowed
 				CLC
@@ -696,7 +703,7 @@ main:
 			...BobOmb
 				LDA !1534,x
 				BNE ..Blacklisted	;>If its an explosion, it's blacklisted
-				BRA ...Allowed
+				BRA ...Allowed		;>You may need to change this BRA to a JMP if you get a branch-out-of-bounds here.
 		if !Setting_SpriteHP_UsingCustomSprites
 			..CustomSprite
 				;Here is the blacklist for custom sprite numbers

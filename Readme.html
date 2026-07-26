@@ -824,9 +824,9 @@ Change that to this:
 			</ul>
 		</li>
 		<li>
-			When Koopa Troopas get seperated from their shells, the Koopa Troopa itself turns into a shell of the same sprite number (just with a changed state), and spawns a shell-less Koopa. And when a shell-less Koopa enters a shell (except the blue one), the shell becomes a Koopa Troopa and the shell-less koopa despawns (via suboffscreen
-			function, see <kbd>$018AC9</kbd>). Because of this, to properly have the HP meter on the enemy itself (and not the shell), it needs to switch when these occur. If yoshi grabs the koopa (either in a normal state or hiding inside shell), or the player kicks a shell after the koopa enters it but before it gets up, the shell
-			becomes an empty shell with the koopa inside of it deleted.
+			When Koopa Troopas get seperated from their shells (either by jumping on them, or stunning them in their shells via capespin, bounce block, cape dive on the ground) and waiting till they exit, the Koopa Troopa itself turns into a shell of the same sprite number (just with a changed state), and spawns a shell-less Koopa.
+			And when a shell-less Koopa enters a shell (except the blue one), the shell becomes a Koopa Troopa and the shell-less koopa despawns (via suboffscreen function, see <kbd>$018AC9</kbd>). Thus, the HP meter needs to switch between a koopa/shell and shell-less koopa sprite. Note that the HP meter will still show for empty
+			shells when spinjumped and cape-spined.
 		</li>
 	</ul>
 	<hr>
