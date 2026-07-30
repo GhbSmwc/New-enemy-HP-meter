@@ -195,7 +195,7 @@ SPRITE_CODE_START:
 			LDA.w #!Setting_Heal_HPAmount			;|
 			STA $00						;|
 			SEP #$20					;|
-			JSR Heal					;/
+			%EnemyHPHeal()				;/
 			if and(!Setting_SpriteHP_BarAnimation, notequal(!Setting_SpriteHP_BarChangeDelay, 0))
 				LDA.b #!Setting_SpriteHP_BarChangeDelay
 				STA !Freeram_SpriteHP_BarAnimationTimer
@@ -568,64 +568,6 @@ SpinjumpKillSprite:
 	LDA #$08		;|
 	STA $1DF9|!Base2	;/
 	RTS
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;Capped healing routine.
-;
-;Input:
-;-$00-$01 is the amount of HP recovered. Only $00
-; would be used should two-byte HP was set to 1
-; byte.
-;Output:
-;-Sprite's current HP recovered, capped at max.
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-Heal:
-	.StoreHealedValue
-	if !Setting_SpriteHP_TwoByte != 0 ;>maths are different depending if you wanted 2-byte HP or not.
-		LDA !Freeram_SpriteHP_CurrentHPLow,x	;\low byte
-		CLC					;|
-		ADC $00					;|>ADC sets carry if unsigned overflow happens
-		STA $00					;/
-		LDA !Freeram_SpriteHP_CurrentHPHi,x	;\high byte
-		ADC $01					;|>ADC adds an additional 1 when overflowed
-		STA $01					;/
-		BCS .Maxed				;>if exceeds 65535
-
-		.CompareWithMaxHP
-			LDA $00					;\CMP is like SBC, should underflow happens, carry is clear
-			CMP !Freeram_SpriteHP_MaxHPLow,x		;/HealedHPLow - MaxHPLow: carry is cleared if MaxHPLow is bigger
-			LDA $01					;\should the above carry is clear, subtract by an additional 1 (4-5 becomes 4-6; borrow)
-			SBC !Freeram_SpriteHP_MaxHPHi,x		;/HealedHPHi - MaxHPHi: carry is cleared if MaxHPHi is bigger
-			BCC .ValidHP				;>if carry clear (below/equal to max HP), set current HP to healed HP amount.
-
-		.Maxed
-			LDA !Freeram_SpriteHP_MaxHPLow,x		;\Set HP to max when carry is set (CurrentHP - MaxHP = positive value)
-			STA !Freeram_SpriteHP_CurrentHPLow,x		;|
-			LDA !Freeram_SpriteHP_MaxHPHi,x		;|
-			STA !Freeram_SpriteHP_CurrentHPHi,x		;/
-			RTS
-
-		.ValidHP
-			LDA $00					;\Set HP to the amount of HP after healed.
-			STA !Freeram_SpriteHP_CurrentHPLow,x		;|
-			LDA $01					;|
-			STA !Freeram_SpriteHP_CurrentHPHi,x		;/
-	else ;>when using single-byte HP
-		LDA !Freeram_SpriteHP_CurrentHPLow,x		;\get HP after being healed
-		CLC					;|
-		ADC $00					;/
-		BCS .Maxed				;>in case HP goes past 255 when max HP is 255.
-		CMP !Freeram_SpriteHP_MaxHPLow,x		;\if over the max, cap it also.
-		BCS .Maxed				;/
-		BRA .ValidHP
-		
-		.Maxed
-			LDA !Freeram_SpriteHP_MaxHPLow,x
-		
-		.ValidHP
-			STA !Freeram_SpriteHP_CurrentHPLow,x
-	endif
-	RTS
-	
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;Callback function when calling
 ;%MasterHandleCollisionWithSprites(). See
