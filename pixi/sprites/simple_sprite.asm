@@ -196,10 +196,6 @@ SPRITE_CODE_START:
 			STA $00						;|
 			SEP #$20					;|
 			%EnemyHPHeal()				;/
-			if and(!Setting_SpriteHP_BarAnimation, notequal(!Setting_SpriteHP_BarChangeDelay, 0))
-				LDA.b #!Setting_SpriteHP_BarChangeDelay
-				STA !Freeram_SpriteHP_BarAnimationTimer
-			endif
 			if !Setting_Heal_SfxNumber != 0
 				LDA #!Setting_Heal_SfxNumber
 				STA !Setting_Heal_SfxPort

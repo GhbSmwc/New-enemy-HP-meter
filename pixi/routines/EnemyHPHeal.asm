@@ -34,7 +34,11 @@
 		SBC !Freeram_SpriteHP_MaxHPHi,x
 	endif
 	BCS ?.Overflow ;>If HP is greater than max, cap HP (SBC would clear carry if A unsigned underflows (when A - B results in negatives))
-	RTL
+	if !Setting_SpriteHP_BarAnimation == 0
+		RTL
+	else
+		BRA ?.BarAnimation
+	endif
 	
 	?.Overflow
 		LDA !Freeram_SpriteHP_MaxHPLow,x
@@ -43,4 +47,23 @@
 			LDA !Freeram_SpriteHP_MaxHPHi,x
 			STA !Freeram_SpriteHP_CurrentHPHi,x
 		endif
+	?.BarAnimation
+		if !Setting_SpriteHP_BarAnimation
+			LDA !Freeram_SpriteHP_MeterState	;\If HP meter is showing total HP...
+			CMP.b #!sprite_slots*2				;|
+			BEQ ?..AllowAnimation				;|
+			CMP.b #(!sprite_slots*2)+1			;|
+			BEQ ?.Done							;/
+			JSL !SharedSub_SpriteHPGetSlotIndex				;\...Or that the meter is on this sprite...
+			TXA												;|
+			CMP !Scratchram_SpriteHP_SpriteSlotToDisplay	;|
+			BNE ?.Done										;/
+			
+			?..AllowAnimation ;>...Then apply the animation (delay fill)
+				if and(notequal(!Setting_SpriteHP_BarAnimation, 0), notequal(!Setting_SpriteHP_BarChangeDelay, 0))
+					LDA.b #!Setting_SpriteHP_BarChangeDelay		;\Show amount healed (transperent part shows how much recovered)
+					STA !Freeram_SpriteHP_BarAnimationTimer		;/
+				endif
+		endif
+	?.Done
 		RTL
