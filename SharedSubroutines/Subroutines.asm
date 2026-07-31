@@ -1375,7 +1375,7 @@ GraphicalBarNumberOfTiles:
 ; - HP is already subtracted, if damage > currentHP, HP is
 ;   set to 0.
 ;
-;Note that this DOES NOT handle death sequence, only
+;Note that this DOES NOT handle stun/death sequence, only
 ;subtracts HP.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 SpriteHPDamage:
@@ -1387,7 +1387,7 @@ SpriteHPDamage:
 		CMP #$FD							;|
 		BEQ ..Disabled						;/
 		CMP.b #!sprite_slots*2				;\If in intro-fill mode, that's normal.
-		BCC ..Normal							;/
+		BCC ..Normal						;/
 		CMP.b #(!sprite_slots*2)+2			;\If in total HP mode, skip switching the HP meter, and allow showing accumulating fill loss.
 		BCC ..TotalHPMode					;/
 		
