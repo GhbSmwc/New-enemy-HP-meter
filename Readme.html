@@ -66,6 +66,9 @@
 			input {
 				font-family: monospace;
 			}
+			sup.Highlight {
+				color: yellow;
+			}
 		</style>
 	</head>
 <body style="max-width: 1000px; margin: auto; padding: 15px">
@@ -133,7 +136,7 @@
 			Other status bar patches that should work (may need some changes in their defines and this ASM resource's defines to prevent HUD element conflicts and potential tile number remapping):
 			<ul>
 				<li><a href="https://www.smwcentral.net/?p=section&a=details&id=35718">Minimalist</a></li>
-				<li><a href="https://www.smwcentral.net/?p=section&a=details&id=21573">SMB3</a></li>
+				<li><a href="https://www.smwcentral.net/?p=section&a=details&id=21573">SMB3</a> (note that you'll need to edit the provided graphics in that resource to include bar tiles)</li>
 			</ul>
 		</li>
 		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=39887">Address Tracker</a>, if you have trouble knowing if there are RAM conflicts (two unrelated resources uses the same addresses at the same time).</li>
@@ -156,15 +159,15 @@
 		<ol>
 			<li>Make any changes necessary on the defines, especially freeram data. It is likely that you would have them take up a large amount of bytes due to
 			them being sprite tables. There are multiple files due to some resources are general-purpose, such as the graphical bar can be used for player's HP
-			or other meters besides HP. The defines specific to sprite HP are in <kbd>EnemyHPMeterDefines.asm</kbd>. For editing what tiles used by general-purpose
-			subroutines, they're in <kbd>NumberDisplayRoutinesDefines.asm</kbd>.<br><br>
+			or other meters besides HP. The defines specific to sprite HP are in <kbd>EnemyHPMeterDefines.asm</kbd>. The file names for what general-purpose features
+			should be obvious.<br><br>
 			
 			Once you are done, you'll need to have copies of these ASM text files (not the folders itself containing them) in same directory as the tools'
 			<kbd>.exe</kbd> programs are at (pixi and uberasm tool). This also includes Shared Subroutines' <kbd>SharedSubroutineDefs.asm</kbd> since UAT and pixi need defines that
-			points to shared subroutine's addresses. Do not have them in any subfolders beyond that area. Make sure you do not move the define files
-			as the patch will include those define files (better to copy than to cut/move them).<br><br>
+			points to shared subroutine's addresses. Do not have them in any subfolders beyond that area. Make sure you do not move (copy instead) the define files
+			in here as the patch will include those define files.<br><br>
 			
-			If you later make changes in any of the defines and reinsert by one tool, make sure you update all copies of it and reinsert by other tools.<br><br>
+			If you later make changes in any of the defines and reinsert by one tool, make sure you update all copies of it and reinsert by other tools with matching settings.<br><br>
 			
 			The freeram defines are in <kbd>EnemyHPMeterDefines.asm</kbd> for the main part of the resource, in <kbd>GraphicalBarDefines.asm</kbd> for handling
 			graphical bar codes, and <kbd>NumberDisplayRoutinesDefines.asm</kbd> for handling left/right aligned number display (suppresses leading zeros). Other defines
@@ -322,13 +325,31 @@ autoclean JML SpritesTotalHPIntroEffect</pre>
 			<li>Patch a status bar/HUD enhancement patch into your game. Note that this ASM resource by default, assumes you are using the Super Status Bar patch. If this is not the case, you need to open <kbd>StatusBarDefines.asm</kbd>
 			of this package and change the base address to match with whatever status bar patch you're using that are the tile data, then reinsert UAT and pixi if you have inserted prior.</li>
 			
-			<li>Patch <kbd>HPSystemForSMWSprites.asm</kbd> to your game. This adds a proper health system for most sprites, one-shot enemies and bosses and fixes <a href="#HitCountJank">an anomaly for SMW</a>.
-			This alone does not display meter, but will write to various RAM for the uberasm tool code to display it.</li>
+			<li>
+				Patch <kbd>HPSystemForSMWSprites.asm</kbd> to your game. This adds a proper health system for most sprites, one-shot enemies and bosses and fixes <a href="#HitCountJank">an anomaly for SMW</a>.
+				This alone does not display meter, but will write to various RAM for the uberasm tool code to display it.<br><br>
+				
+				Note that as you develop your hack, you may need to edit and reinsert this patch, espically if you're planning to use the enemy ambush system provided in this ASM resource pack. The stuff you most likely
+				need to edit are under labels (including the colon)<sup class="Highlight">[reinsert as hack being developed]</sup>:
+				<ul>
+					<li>&ldquo;<kbd>ZeroOutHPOfOneShotSprites:</kbd>&rdquo;: For sprites you wish not to show the HP meter.</li>
+					<li>
+						&ldquo;<kbd>DefaultHPOnSpawn:</kbd>&rdquo;: For sprites having more than 1 HP (this is a list of enemies, by their sprite numbers, whose HP is set to when spawned). This is also used in the ambush system
+						to know how much HP of enemies yet to spawn to subtract (to properly track the total HP remaining).
+					</li>
+				</ul>
+			</li>
 			<li>
 				Uberasm tool:
 				<ol>
 					<li>Include the defines, from this ASM pack, and shared subroutine's <kbd>SharedSubroutineDefs.asm</kbd>, be placed where the <kbd>.exe</kbd> is at.</li>
-					<li>Insert the ASM files to Uberasm tool. The provided folders should be obvious.</li>
+					<li>
+						Insert the ASM files to Uberasm tool. The provided folders should be obvious.<br><br>
+						
+						Note that if you have special custom sprites where the meter should not show depending on its state, you'll need to open <kbd>UberASMTool/level/DisplayEnemyHP.asm</kbd>
+						and under label <kbd>.CheckForBlacklistedSprites</kbd> (at the bottom), add an entry for your custom sprite. Same goes with <kbd>.CheckForBlacklistedSpritesTotalHP</kbd>,
+						if you're planning to have an HP meter showing the total HP of the ambush<sup class="Highlight">[reinsert as hack being developed]</sup>.
+					</li>
 				</ol>
 			</li>
 			<li>Insert the ASM files for pixi. Same way as uberasm tool. if you want custom sprites. I provided a test sprite in the folder for demonstration.</li>
@@ -340,8 +361,7 @@ autoclean JML SpritesTotalHPIntroEffect</pre>
 			be pasted in the ExGraphics of your game file. To insert into your game, &ldquo;Quick Insert ExGFX to ROM&rdquo; (golden mushroom). Finally, &ldquo;Open "Layer 3 GFX/Tilemap Bypass" Dialog&rdquo; (green
 			poison mushroom), and set LG1 to use your inserted graphics file (by default, should be $80 if you didn't change the slot number)<br><br>
 			
-			This graphic is for layer 3 status bar, since some symbols and other tiles are needed for the display are missing. The tiles used are the slash (&ldquo;/&rdquo;, if you have <kbd>!Setting_SpriteHP_DisplayNumerical</kbd> set to <kbd>2</kbd>) and graphical bar tiles (if you have
-			<kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd> set to <kbd>1</kbd>).
+			This graphic is for layer 3 status bar, since some symbols and other tiles are needed for the display are missing. The tiles used are the slash and graphical bar tiles.
 			
 			</li>
 		</ol>
@@ -354,14 +374,15 @@ autoclean JML SpritesTotalHPIntroEffect</pre>
 		<p>
 			Notes:
 			<ul>
-				<li>Define <kbd>!sprite_slots</kbd> is the number of sprite slots that exists. For LoROM, its 12, if SA-1, its 22. Note that at the time of writing this, Pixi have <kbd>!SprSize</kbd> and not <kbd>!sprite_Slots</kbd>.</li>
+				<li>Define <kbd>!sprite_slots</kbd> holds the number of sprite slots that exists. For LoROM, its 12, if SA-1, its 22. Note that at the time of writing this, Pixi have <kbd>!SprSize</kbd> and not <kbd>!sprite_Slots</kbd>.</li>
 				<li>The RAM stuff here are merely for <b>displaying</b> the amount of HP. Meaning depending on how the sprite's code is formatted, most often it's actual HP value is stored in a vanilla sprite table, which may be transferred to here. If it's
 				a damage counter, it is converted to &ldquo;remaining hits/damage left to kill&rdquo; before written to these new RAM stuff here. Of course, for custom sprites, you can make changes to it to directly use these table instead.</li>
 			</ul>
 		</p>
 		<p>
 			Other than the RAM data for graphical bar and HexDec routines (defines are in <kbd>GraphicalBarDefines.asm</kbd> and <kbd>NumberDisplayRoutinesDefines.asm</kbd>), the sprite HP data and display handler are in <kbd>EnemyHPMeterDefines.asm</kbd>,
-			defined as <kbd>!Freeram_SpriteHP_SpriteHPData</kbd>. It's layout are (in this order, starting at an address defined as <kbd>!Freeram_SpriteHP_SpriteHPData</kbd>, and advancing to higher-addresses, <abbr title="Any data disabled from using RAM results in following data to be placed after the last occupied data without gaps in between.">placed contiguously</abbr>):
+			defined as <kbd>!Freeram_SpriteHP_SpriteHPData</kbd>. It's layout are, in this order, starting at an address defined as <kbd>!Freeram_SpriteHP_SpriteHPData</kbd>, and advancing to higher-addresses based on its size/length,
+			<abbr title="Any data disabled from using RAM results in following data to be placed after the last occupied data without gaps in between.">placed contiguously</abbr>:
 			<table>
 				<tr>
 					<th>Define</th>
@@ -507,6 +528,9 @@ autoclean JML SpritesTotalHPIntroEffect</pre>
 	document on codes for the tool (<kbd>docs/manuel/index.html</kbd>).</p>
 	
 	<p>This section covers on how to <b>display</b> the sprite's HP.</p>
+	
+	<p>For 1-shot custom sprites, to display their HP, that can easily be done by having define <kbd>!Setting_SpriteHP_VanillaSprite_OneShotSprites</kbd> (in <kbd>EnemyHPMeterDefines.asm</kbd>) set to <kbd>1</kbd> and <kbd>HPSystemForSMWSprites.asm</kbd> patched.
+	This only works if they're using the vanilla death routine, however.</p>
 	
 	<p>To program a health system for existing custom sprites, they should store a value in sprite table RAM representing how much damage (can be any value it increases), hits (counts up by one regardless of an attack), or
 	remaining health (starts at any nonzero value and decreases each damage) else the sprite will never die or dies in one hit. Because each sprite is different, documenting every one of them would make
