@@ -22,6 +22,12 @@ incsrc "Defines/GraphicalBarDefines.asm"
 	!sprite_num_cache = $87
 	!sprite_num_pointer = $B4
 
+;Don't touch unless you know what you're doing
+	!DefaultHPTableSize = "db"
+	if !Setting_SpriteHP_TwoByte
+		!DefaultHPTableSize = "dw"
+	endif
+
 ;Macros
 	macro RemoveFreespaceCodeFromJMLJSL(Addr)
 		;Addr is the address of the instruction byte itself.
@@ -131,43 +137,6 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				endif
 			endif
 	endmacro
-	macro SetSpriteDefaultHP(SpriteNumb, StartingHP)
-		CMP.b #<SpriteNumb>
-		BNE ?OtherSprite
-		?Override:
-			LDA.b #<StartingHP>
-			STA !Freeram_SpriteHP_CurrentHPLow,x
-			STA !Freeram_SpriteHP_MaxHPLow,x
-			if !Setting_SpriteHP_TwoByte
-				LDA.b #<StartingHP>>>8
-				STA !Freeram_SpriteHP_CurrentHPHi,x
-				STA !Freeram_SpriteHP_MaxHPHi,x
-			endif
-			PLP
-			RTL
-		?OtherSprite:
-	endmacro
-	macro SetSpriteRangeDefaultHP(MinSpriteNumb, MaxSpriteNumb, StartingHP)
-		assert <MinSpriteNumb> <= <MaxSpriteNumb>, "Default sprite HP range's minimum is greater than max."
-		CMP.b #<MinSpriteNumb>
-		BCC ?OtherSprite
-		if (<MaxSpriteNumb>+1) < $FF
-			CMP.b #<MaxSpriteNumb>+1
-			BCS ?OtherSprite
-		endif
-		?Override:
-			LDA.b #<StartingHP>
-			STA !Freeram_SpriteHP_CurrentHPLow,x
-			STA !Freeram_SpriteHP_MaxHPLow,x
-			if !Setting_SpriteHP_TwoByte
-				LDA.b #<StartingHP>>>8
-				STA !Freeram_SpriteHP_CurrentHPHi,x
-				STA !Freeram_SpriteHP_MaxHPHi,x
-			endif
-			PLP
-			RTL
-		?OtherSprite:
-	endmacro
 	macro HijacksForFallingOffScrn(Addr_Hijack, Label_ToFreespace, String_IndexToUse)
 		if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
 			org <Addr_Hijack>
@@ -179,29 +148,6 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			LDA.b #$02
 			STA !14C8,<String_IndexToUse>
 		endif
-	endmacro
-	macro SpriteHPMeterBlacklist(SpriteNumb)
-		CMP.b #<SpriteNumb>
-		BEQ .Done
-	endmacro
-	macro SpriteHPMeterBlacklist_UnlimitedDistance(SpriteNumb)
-		CMP.b #<SpriteNumb>
-		BNE ?+
-		RTS
-		?+
-	endmacro
-	macro SpriteHPMeterBlacklist_Range(SpriteNumbMin, SpriteNumbMax)
-		assert <SpriteNumbMin> <= <SpriteNumbMax>, "blacklisted sprite range's minimum is greater than max."
-		CMP.b #clamp(<SpriteNumbMin>, $00, $FF)
-		BCC ?OutOfBlacklistedRange
-		if (<SpriteNumbMax>+1) < $FF ;>Optimization technique, there are no values beyond $FF, thus checking with a max of $FF is redundant.
-			CMP.b #<SpriteNumbMax>+1
-			BCS ?OutOfBlacklistedRange
-		endif
-		?InBlacklistedRange:
-		RTS
-		
-		?OutOfBlacklistedRange:
 	endmacro
 	macro JSLRTS(JumpTo, RTLOfSameBank)
 		;This allows calling subroutines ending with an RTS from a different bank
@@ -405,14 +351,15 @@ incsrc "Defines/GraphicalBarDefines.asm"
 	;they simply just get deleted.
 		;When koopas exit their shells, switch the HP meter to them and not the shell itself
 			if and(and(!Setting_ModifySprAndDisplayHPOfSMWSpr, equal(!Setting_SpriteHP_Koopas_ClassicBehavior, 0)), notequal(!Setting_SpriteHP_VanillaSprite_OneShotSprites, 0))
-				org $0196E7
+				org $0196F6
 				autoclean JSL TransferHPFromKoopaToShelllessKoopa
 				NOP
 			else
-				%RemoveFreespaceCodeFromJMLJSL($0196E7)
-				org $0196E7
-				LDA #$08
-				STA !14C8,y
+				if notequal(read3($0196F6+1), $07F7D2)
+					%RemoveFreespaceCodeFromJMLJSL($0196F6)
+				endif
+				org $0196F6
+				JSL $07F7D2|!bank
 			endif
 		;When shell-less koopas enter their shells, switch the HP meter to them.
 			if and(and(!Setting_ModifySprAndDisplayHPOfSMWSpr, equal(!Setting_SpriteHP_Koopas_ClassicBehavior, 0)), notequal(!Setting_SpriteHP_VanillaSprite_OneShotSprites, 0))
@@ -993,22 +940,17 @@ incsrc "Defines/GraphicalBarDefines.asm"
 	endif
 	if !Setting_SpriteHP_RemoveOrApplyPatch
 		DefaultHPOnSpawn:	;>JSL from $07F779
-			;This code makes the routine that clears the sprite table during a spawn to default their HP values.
-			;Any sprite not listed here are set to have 1/1 HP, otherwise you can add your own items on what HP
-			;value a spawned sprite should have.
+			;This code makes the routine that clears the sprite table during a spawn to set their HP values by
+			;default.
 			;
 			;Note that this is also used during an enemy spawn ambush system, each newly spawned enemy
 			;must deduct the amount of HP in a RAM defined "!Freeram_SpriteHP_TotalHPOfUnloadedSprites" so it
-			;can track how ;much total HP left properly. Should the meter increases or decreases when they spawn,
-			;that means their spawn HP isn't set up correctly.
+			;can track how much total HP left properly. Should the meter increases or decreases when they spawn,
+			;that means their spawn HP isn't set up correctly. Note that it will break for enemies that spawn
+			;with configurable amount of HP (thus editing the ambush system or the spawning indicator is needed).
 			;
 			;The good news is that when a sprite is spawned, its sprite number ($9E/$7FAB9E) are set before
 			;calling $07F722
-			;
-			;Syntax:
-			; %SetSpriteDefaultHP(Spr_Numb, HP)
-			; %SetSpriteRangeDefaultHP(Min_Spr_Numb, Max_Spr_Numb, HP)
-			;
 			.Restore
 				STZ.w !160E,x
 				STZ.w !1594,x
@@ -1017,49 +959,271 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				;^Here, we need to preserve the carry flag, as pixi hijacks the sprite table clearing and
 				;loading sprite routine, and then later checks the carry flag. After this routine ends,
 				;we need to PLP before any RTLs here.
-				LDA #$01
-				STA !Freeram_SpriteHP_CurrentHPLow,x
-				STA !Freeram_SpriteHP_MaxHPLow,x
-				if !Setting_SpriteHP_TwoByte
-					LDA #$00
-					STA !Freeram_SpriteHP_CurrentHPHi,x
-					STA !Freeram_SpriteHP_MaxHPHi,x
-				endif
+				PHB
+				PHK
+				PLB
+				PHY
 				if !Setting_SpriteHP_UsingCustomSprites
-					..SetCustomSpriteDefaultHP
+					..CheckIfSpriteIsCustom
 						LDA !7FAB10,x
 						AND.b #%00001000
-						;BNE .Done
 						BEQ ..SetVanillaSpriteDefaultHP
+						
+					..SetCustomSpriteDefaultHP
 						LDA !7FAB9E,x
-						;Insert list of custom sprites's HP value at spawn here
-							;%SetSpriteDefaultHP(Spr_Numb, HP)
-						;Leave this here. Don't remove it unless you know what you're doing.
-							PLP
-							RTL
+						BRA ..SetHP
 				endif
 				..SetVanillaSpriteDefaultHP
 					LDA !9E,x
-						;Insert list of custom sprites's HP value at spawn here
-							;%SetSpriteDefaultHP(Spr_Numb, HP)
-							%SetSpriteDefaultHP($6E, 2)		;>Dino Rhino
-							%SetSpriteDefaultHP($6F, 1)		;>Dino Torch
-							%SetSpriteDefaultHP($AB, 2)		;>Rex
-								;^Dino Torch (note that Dino torch have a max of 2 HP if transformed from Dino Rhino, otherwise a max of 1 HP if spawned directly)
-							if !Setting_SpriteHP_VanillaSprite_Rex == 2
-								%SetSpriteDefaultHP($AB, !Setting_SpriteHP_VanillaSprite_Rex_HPAmount)		;>Set Rex's HP amount if set to use HP tables directly
-							endif
-							;These are chucks. Although if you have !Setting_SpriteHP_Modify5FireballsSystem set to 0 which will write their HP values anyway, it
-							;still a good idea to set their HP on spawn just in case for a single frame they have 0 HP, which can cause the HP meter in
-							;"total HP" mode to decrease for a single frame due to only decreasing !Freeram_SpriteHP_TotalHPOfUnloadedSprites on that frame.
-							;Another reason is if you're using the total HP enemy ambush system.
-								%SetSpriteDefaultHP($46, !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount)
-								%SetSpriteRangeDefaultHP($91, $98, !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount)
-							%SetSpriteRangeDefaultHP($08, $0C, 2)		;>Winged Koopas
-							%SetSpriteDefaultHP($10, 2)		;>Winged Goomba
+				..SetHP
+					if !Setting_SpriteHP_TwoByte
+						REP #$20 ;>We need 16-bit indexing because when doubling, values $80+ will exceed $FF, and sprite numbers goes all the way to $C8 or $BF.
+						AND #$00FF
+						ASL
+					endif
+					TAY
+					LDA .DefaultSMWSprHP,y
+					if !Setting_SpriteHP_TwoByte
+						SEP #$20
+					endif
+					STA !Freeram_SpriteHP_CurrentHPLow,x
+					STA !Freeram_SpriteHP_MaxHPLow,x
+					if !Setting_SpriteHP_TwoByte
+						XBA
+						STA !Freeram_SpriteHP_CurrentHPHi,x
+						STA !Freeram_SpriteHP_MaxHPHi,x
+					endif
 			.Done
+				PLY
+				PLB
 				PLP
 				RTL
+			;These are default HP table values for vanilla SMW sprites, for sprite numbers $00-$C8.
+			;Any sprite with a max HP of 0 are consitered "blacklisted" and the meter will not display HP for that (when instantly killed).
+			;If !Setting_SpriteHP_TwoByte == 0, then only enter values 0-255, else 0-65535 is allowed. Values
+			;at and above 256 or 65536 will be modulo'ed by those values.
+				.DefaultSMWSprHP
+					!DefaultHPTableSize 00001 ; <- $00 - Green shell-less Koopa
+					!DefaultHPTableSize 00001 ; <- $01 - Red shell-less Koopa
+					!DefaultHPTableSize 00001 ; <- $02 - Blue shell-less Koopa
+					!DefaultHPTableSize 00001 ; <- $03 - Yellow shell-less Koopa
+					!DefaultHPTableSize 00001 ; <- $04 - Green Koopa
+					!DefaultHPTableSize 00001 ; <- $05 - Red Koopa
+					!DefaultHPTableSize 00001 ; <- $06 - Blue Koopa
+					!DefaultHPTableSize 00001 ; <- $07 - Yellow Koopa
+					!DefaultHPTableSize 00002 ; <- $08 - Green winged Koopa, flying
+					!DefaultHPTableSize 00002 ; <- $09 - Green winged Koopa, bouncing
+					!DefaultHPTableSize 00002 ; <- $0A - Red winged Koopa, vertical
+					!DefaultHPTableSize 00002 ; <- $0B - Red winged Koopa, horizontal
+					!DefaultHPTableSize 00002 ; <- $0C - Yellow winged Koopa
+					!DefaultHPTableSize 00001 ; <- $0D - Bob-Omb
+					!DefaultHPTableSize 00001 ; <- $0E - Keyhole
+					!DefaultHPTableSize 00001 ; <- $0F - Goomba
+					!DefaultHPTableSize 00002 ; <- $10 - Winged Goomba
+					!DefaultHPTableSize 00001 ; <- $11 - Buzzy Beetle
+					!DefaultHPTableSize 00001 ; <- $12 - Unused
+					!DefaultHPTableSize 00001 ; <- $13 - Spiny
+					!DefaultHPTableSize 00001 ; <- $14 - Falling Spiny
+					!DefaultHPTableSize 00001 ; <- $15 - Fish, horizontal
+					!DefaultHPTableSize 00001 ; <- $16 - Fish, vertical
+					!DefaultHPTableSize 00001 ; <- $17 - Fish, flying (spawned by sprite D1)
+					!DefaultHPTableSize 00001 ; <- $18 - Fish, jumping
+					!DefaultHPTableSize 00001 ; <- $19 - Display text from level message 1
+					!DefaultHPTableSize 00001 ; <- $1A - Classic Piranha Plant
+					!DefaultHPTableSize 00001 ; <- $1B - Bouncing Football
+					!DefaultHPTableSize 00001 ; <- $1C - Bullet Bill
+					!DefaultHPTableSize 00001 ; <- $1D - Hopping flame
+					!DefaultHPTableSize 00001 ; <- $1E - Lakitu
+					!DefaultHPTableSize 00001 ; <- $1F - Magikoopa
+					!DefaultHPTableSize 00000 ; <- $20 - Magikoopa's magic
+					!DefaultHPTableSize 00000 ; <- $21 - Moving coin
+					!DefaultHPTableSize 00001 ; <- $22 - Green vertical net Koopa
+					!DefaultHPTableSize 00001 ; <- $23 - Red vertical net Koopa
+					!DefaultHPTableSize 00001 ; <- $24 - Green horizontal net Koopa
+					!DefaultHPTableSize 00001 ; <- $25 - Red horizontal net Koopa
+					!DefaultHPTableSize 00001 ; <- $26 - Thwomp
+					!DefaultHPTableSize 00001 ; <- $27 - Thwimp
+					!DefaultHPTableSize 00001 ; <- $28 - Big Boo
+					!DefaultHPTableSize 00001 ; <- $29 - Koopa Kid
+					!DefaultHPTableSize 00001 ; <- $2A - Upside-down Piranha Plant
+					!DefaultHPTableSize 00001 ; <- $2B - Sumo Brother's lightning
+					!DefaultHPTableSize 00000 ; <- $2C - Yoshi egg
+					!DefaultHPTableSize 00000 ; <- $2D - Baby Yoshi
+					!DefaultHPTableSize 00001 ; <- $2E - Spike Top
+					!DefaultHPTableSize 00000 ; <- $2F - Portable springboard
+					!DefaultHPTableSize 00001 ; <- $30 - Dry Bones that throws bones
+					!DefaultHPTableSize 00001 ; <- $31 - Bony Beetle
+					!DefaultHPTableSize 00001 ; <- $32 - Dry Bones that stays on ledges
+					!DefaultHPTableSize 00001 ; <- $33 - Podoboo/vertical fireball
+					!DefaultHPTableSize 00000 ; <- $34 - Boss fireball
+					!DefaultHPTableSize 00000 ; <- $35 - Yoshi
+					!DefaultHPTableSize 00000 ; <- $36 - Unused
+					!DefaultHPTableSize 00001 ; <- $37 - Boo
+					!DefaultHPTableSize 00001 ; <- $38 - Eerie (straight)
+					!DefaultHPTableSize 00001 ; <- $39 - Eerie (wave)
+					!DefaultHPTableSize 00001 ; <- $3A - Urchin (fixed distance)
+					!DefaultHPTableSize 00001 ; <- $3B - Urchin (wall detect)
+					!DefaultHPTableSize 00001 ; <- $3C - Urchin (wall follow)
+					!DefaultHPTableSize 00001 ; <- $3D - Rip Van Fish
+					!DefaultHPTableSize 00000 ; <- $3E - P-switch
+					!DefaultHPTableSize 00001 ; <- $3F - Para-Goomba
+					!DefaultHPTableSize 00001 ; <- $40 - Para-Bomb
+					!DefaultHPTableSize 00000 ; <- $41 - Dolphin (long jump)
+					!DefaultHPTableSize 00000 ; <- $42 - Dolphin (short jump)
+					!DefaultHPTableSize 00000 ; <- $43 - Dolphin (vertical)
+					!DefaultHPTableSize 00001 ; <- $44 - Torpedo Ted
+					!DefaultHPTableSize 00000 ; <- $45 - Directional coins
+					!DefaultHPTableSize !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount ; <- $46 - Diggin' Chuck
+					!DefaultHPTableSize 00001 ; <- $47 - Swimming/jumping fish
+					!DefaultHPTableSize 00001 ; <- $48 - Diggin' Chuck's rock
+					!DefaultHPTableSize 00001 ; <- $49 - Growing/shrinking pipe
+					!DefaultHPTableSize 00000 ; <- $4A - Goal Sphere
+					!DefaultHPTableSize 00001 ; <- $4B - Pipe-dwelling Lakitu
+					!DefaultHPTableSize 00001 ; <- $4C - Exploding block
+					!DefaultHPTableSize 00001 ; <- $4D - Monty Mole (ground-dwelling)
+					!DefaultHPTableSize 00001 ; <- $4E - Monty Mole (ledge-dwelling)
+					!DefaultHPTableSize 00001 ; <- $4F - Jumping Piranha Plant
+					!DefaultHPTableSize 00001 ; <- $50 - Jumping Piranha Plant (fireballs)
+					!DefaultHPTableSize 00001 ; <- $51 - Ninji
+					!DefaultHPTableSize 00000 ; <- $52 - Moving Ghost House hole (note: changed to $0185B7 in LM v2.53+)
+					!DefaultHPTableSize 00000 ; <- $53 - Throwblock
+					!DefaultHPTableSize 00000 ; <- $54 - Revolving door for climbing net
+					!DefaultHPTableSize 00000 ; <- $55 - Checkerboard platform (horizontal)
+					!DefaultHPTableSize 00000 ; <- $56 - Flying rock platform (horizontal)
+					!DefaultHPTableSize 00000 ; <- $57 - Checkerboard platform (vertical)
+					!DefaultHPTableSize 00000 ; <- $58 - Flying rock platform (vertical)
+					!DefaultHPTableSize 00000 ; <- $59 - Turnblock bridge (horz/vert)
+					!DefaultHPTableSize 00000 ; <- $5A - Turnblock bridge (horz only)
+					!DefaultHPTableSize 00000 ; <- $5B - Floating brown platform
+					!DefaultHPTableSize 00000 ; <- $5C - Floating checkerboard platform
+					!DefaultHPTableSize 00000 ; <- $5D - Small orange floating platform
+					!DefaultHPTableSize 00000 ; <- $5E - Large orange floating platform
+					!DefaultHPTableSize 00000 ; <- $5F - Swinging brown platform
+					!DefaultHPTableSize 00000 ; <- $60 - Flat switch palace switch
+					!DefaultHPTableSize 00000 ; <- $61 - Skull raft
+					!DefaultHPTableSize 00000 ; <- $62 - Brown line-guided platform
+					!DefaultHPTableSize 00000 ; <- $63 - Brown/checkered line-guided platform
+					!DefaultHPTableSize 00000 ; <- $64 - Line-guided rope mechanism
+					!DefaultHPTableSize 00001 ; <- $65 - Chainsaw (line-guided)
+					!DefaultHPTableSize 00001 ; <- $66 - Upside-down chainsaw (line-guided)
+					!DefaultHPTableSize 00001 ; <- $67 - Grinder (line-guided)
+					!DefaultHPTableSize 00001 ; <- $68 - Fuzzy (line-guided)
+					!DefaultHPTableSize 00001 ; <- $69 - Unused
+					!DefaultHPTableSize 00000 ; <- $6A - Coin game cloud
+					!DefaultHPTableSize 00000 ; <- $6B - Wall springboard (left wall)
+					!DefaultHPTableSize 00000 ; <- $6C - Wall springboard (right wall)
+					!DefaultHPTableSize 00000 ; <- $6D - Invisible solid block
+					!DefaultHPTableSize 00002 ; <- $6E - Dino-Rhino
+					!DefaultHPTableSize 00001 ; <- $6F - Dino-Torch
+					!DefaultHPTableSize 00001 ; <- $70 - Pokey
+					!DefaultHPTableSize 00001 ; <- $71 - Super Koopa (red cape)
+					!DefaultHPTableSize 00001 ; <- $72 - Super Koopa (yellow cape)
+					!DefaultHPTableSize 00001 ; <- $73 - Super Koopa (ground/feather)
+					!DefaultHPTableSize 00000 ; <- $74 - Mushroom
+					!DefaultHPTableSize 00000 ; <- $75 - Flower
+					!DefaultHPTableSize 00000 ; <- $76 - Star
+					!DefaultHPTableSize 00000 ; <- $77 - Feather
+					!DefaultHPTableSize 00000 ; <- $78 - 1up mushroom
+					!DefaultHPTableSize 00000 ; <- $79 - Growing vine
+					!DefaultHPTableSize 00000 ; <- $7A - Firework
+					!DefaultHPTableSize 00000 ; <- $7B - Goal tape
+					!DefaultHPTableSize 00000 ; <- $7C - Peach
+					!DefaultHPTableSize 00000 ; <- $7D - P-Balloon
+					!DefaultHPTableSize 00000 ; <- $7E - Flying red coin
+					!DefaultHPTableSize 00000 ; <- $7F - Flying golden mushroom
+					!DefaultHPTableSize 00000 ; <- $80 - Key
+					!DefaultHPTableSize 00000 ; <- $81 - Changing item
+					!DefaultHPTableSize 00000 ; <- $82 - Bonus game sprite
+					!DefaultHPTableSize 00000 ; <- $83 - Flying question block (left)
+					!DefaultHPTableSize 00000 ; <- $84 - Flying question block (back and forth)
+					!DefaultHPTableSize 00001 ; <- $85 - Unused
+					!DefaultHPTableSize 00001 ; <- $86 - Wiggler
+					!DefaultHPTableSize 00000 ; <- $87 - Lakitu's cloud
+					!DefaultHPTableSize 00000 ; <- $88 - Winged cage
+					!DefaultHPTableSize 00000 ; <- $89 - Layer 3 Smash
+					!DefaultHPTableSize 00000 ; <- $8A - Yoshi's House bird
+					!DefaultHPTableSize 00000 ; <- $8B - Puff of smoke from Yoshi's House
+					!DefaultHPTableSize 00000 ; <- $8C - Side exit enable
+					!DefaultHPTableSize 00000 ; <- $8D - Ghost house exit sign and door
+					!DefaultHPTableSize 00000 ; <- $8E - Invisible "Warp Hole"
+					!DefaultHPTableSize 00000 ; <- $8F - Scale platforms
+					!DefaultHPTableSize 00001 ; <- $90 - Large green gas bubble
+					!DefaultHPTableSize !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount ; <- $91 - Chargin' Chuck
+					!DefaultHPTableSize !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount ; <- $92 - Splittin' Chuck
+					!DefaultHPTableSize !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount ; <- $93 - Bouncin' Chuck
+					!DefaultHPTableSize !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount ; <- $94 - Whistlin' Chuck
+					!DefaultHPTableSize !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount ; <- $95 - Clappin' Chuck
+					!DefaultHPTableSize !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount ; <- $96 - Chargin' Chuck (unused)
+					!DefaultHPTableSize !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount ; <- $97 - Puntin' Chuck
+					!DefaultHPTableSize !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount ; <- $98 - Pitchin' Chuck
+					!DefaultHPTableSize 00001 ; <- $99 - Volcano Lotus
+					!DefaultHPTableSize 00001 ; <- $9A - Sumo Brother
+					!DefaultHPTableSize 00001 ; <- $9B - Hammer Bro.
+					!DefaultHPTableSize 00000 ; <- $9C - Hammer Bro. platform
+					!DefaultHPTableSize 00000 ; <- $9D - Bubble
+					!DefaultHPTableSize 00000 ; <- $9E - Ball 'n' Chain
+					!DefaultHPTableSize 00001 ; <- $9F - Banzai Bill
+					!DefaultHPTableSize 00001 ; <- $A0 - Bowser
+					!DefaultHPTableSize 00001 ; <- $A1 - Bowser's bowling ball
+					!DefaultHPTableSize 00001 ; <- $A2 - MechaKoopa
+					!DefaultHPTableSize 00000 ; <- $A3 - Rotating gray platform
+					!DefaultHPTableSize 00001 ; <- $A4 - Floating spike ball
+					!DefaultHPTableSize 00001 ; <- $A5 - Sparky/Fuzzy (wall follow)
+					!DefaultHPTableSize 00001 ; <- $A6 - Hothead
+					!DefaultHPTableSize 00001 ; <- $A7 - Iggy's ball
+					!DefaultHPTableSize 00001 ; <- $A8 - Blargg
+					!DefaultHPTableSize 00001 ; <- $A9 - Reznor
+					!DefaultHPTableSize 00001 ; <- $AA - Fishbone
+					!DefaultHPTableSize !Setting_SpriteHP_VanillaSprite_Rex_HPAmount ; <- $AB - Rex
+					!DefaultHPTableSize 00000 ; <- $AC - Wooden spike (down)
+					!DefaultHPTableSize 00000 ; <- $AD - Wooden spike (up)
+					!DefaultHPTableSize 00001 ; <- $AE - Fishin' Boo
+					!DefaultHPTableSize 00001 ; <- $AF - Boo Block
+					!DefaultHPTableSize 00001 ; <- $B0 - Reflecting stream of Boo Buddies
+					!DefaultHPTableSize 00000 ; <- $B1 - Creating/eating block
+					!DefaultHPTableSize 00001 ; <- $B2 - Falling spike
+					!DefaultHPTableSize 00000 ; <- $B3 - Bowser statue fireball
+					!DefaultHPTableSize 00001 ; <- $B4 - Grinder (ground)
+					!DefaultHPTableSize 00001 ; <- $B5 - Falling Podoboo (unused)
+					!DefaultHPTableSize 00001 ; <- $B6 - Reflecting Podoboo
+					!DefaultHPTableSize 00000 ; <- $B7 - Carrot Top Lift (up-right)
+					!DefaultHPTableSize 00000 ; <- $B8 - Carrot Top Lift (up-left)
+					!DefaultHPTableSize 00000 ; <- $B9 - Info Box
+					!DefaultHPTableSize 00000 ; <- $BA - Timed Lift
+					!DefaultHPTableSize 00000 ; <- $BB - Moving castle block
+					!DefaultHPTableSize 00001 ; <- $BC - Bowser statue
+					!DefaultHPTableSize 00001 ; <- $BD - Sliding Blue Koopa
+					!DefaultHPTableSize 00001 ; <- $BE - Swooper
+					!DefaultHPTableSize 00001 ; <- $BF - Mega Mole
+					!DefaultHPTableSize 00000 ; <- $C0 - Sinking gray platform on lava
+					!DefaultHPTableSize 00000 ; <- $C1 - Flying gray turnblocks
+					!DefaultHPTableSize 00001 ; <- $C2 - Blurp
+					!DefaultHPTableSize 00001 ; <- $C3 - Porcu-Puffer
+					!DefaultHPTableSize 00000 ; <- $C4 - Falling gray platform
+					!DefaultHPTableSize 00003 ; <- $C5 - Big Boo BossBig Boo Boss
+					!DefaultHPTableSize 00000 ; <- $C6 - Spotlight/disco ball
+					!DefaultHPTableSize 00000 ; <- $C7 - Invisible mushroom
+					!DefaultHPTableSize 00000 ; <- $C8 - Light switch
+
+
+			
+			;These are default HP table values for custom sprites. Here, valid custom sprite numbers are $00-$BF. Other rules are the same as the vanilla sprites table.
+				if !Setting_SpriteHP_UsingCustomSprites
+					.DefaultCustSprHP
+					;                    +$00   +$01   +$02   +$03   +$04   +$05   +$06   +$07   +$08   +$09   +$0A   +$0B   +$0C   +$0E   +$0E   +$0F
+					!DefaultHPTableSize 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001 ; <- $00-$0F
+					!DefaultHPTableSize 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001 ; <- $10-$1F
+					!DefaultHPTableSize 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001 ; <- $20-$2F
+					!DefaultHPTableSize 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001 ; <- $30-$3F
+					!DefaultHPTableSize 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001 ; <- $40-$4F
+					!DefaultHPTableSize 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001 ; <- $50-$5F
+					!DefaultHPTableSize 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001 ; <- $60-$6F
+					!DefaultHPTableSize 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001 ; <- $70-$7F
+					!DefaultHPTableSize 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001 ; <- $80-$8F
+					!DefaultHPTableSize 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001 ; <- $90-$9F
+					!DefaultHPTableSize 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001 ; <- $A0-$AF
+					!DefaultHPTableSize 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001 ; <- $B0-$BF
+				endif
 	endif
 	if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
 		StompKill:	;>JSL from $01A9D3
@@ -1131,50 +1295,13 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			%DealFixedDamage(0)
 				RTL
 		ZeroOutHPOfOneShotSprites:
-			.CheckSprite
-				if !Setting_SpriteHP_UsingCustomSprites
-					LDA !7FAB10,x
-					AND.b #%00001000
-					BEQ ..VanillaSMWSpr
-					..CustomSpr
-						LDA !7FAB9E,x
-						;Add your list of custom sprites here to not display HP
-						;(It only has to be enemies that run a vanilla kill routine).
-						;The syntax is:
-						;  %SpriteHPMeterBlacklist(<Enter_Sprite_Number_Here>)
-						;
-						;If you get branch-out-of-bounds error, use this instead:
-						;  %SpriteHPMeterBlacklist_UnlimitedDistance(<Enter_Sprite_Number_Here>)
-						;
-						;If you want a range (inclusive) of sprite numbers blacklisted, then do this:
-						;  %SpriteHPMeterBlacklist_Range(<Enter_Sprite_Number_Min_Here>, <Enter_Sprite_Number_Max_Here>)
-						;This is immune to branch-out-of-bounds error.
-						;
-						;Warning: If you are using the total HP system, and in that ambush are sprites
-						;blacklisted here and have their HP counted, the bar fill animation
-						;(!Freeram_SpriteHP_BarAnimationFill) for damage display slightly bugs out -
-						;when an enemy that's listed here is defeated via capespin, the animation fill
-						;amount may decrease without delay for 1 frame
-						
-						;Do not remove this code here, as it is needed so if a non-blacklisted sprite
-						;runs this code, it passes though all the items in the list and proceeds to
-						;display the HP meter.
-							JMP .DisplayHPMeterOfOneShotSprites ;>Used JMP instead of BRA as a failsafe if you added a long enough list for vanilla sprites.
-				endif
-				..VanillaSMWSpr
-					LDA !9E,x
-					;This is the same as above, but for vanilla sprite numbers.
-					;
-					;All other sprites beyond listed here are treated as having 1 HP. Because following
-					;have multiple HPs we not to treat them as 1-shot.
-						%SpriteHPMeterBlacklist($20)		;>Magikoopa's magic (without this, its HP meter shows if killed with star)
-						%SpriteHPMeterBlacklist($9D)	;>Bubble (Galoomba, Bob-omb, Fish)
-							;^These are bubbles with sprite inside, which are quite glitchy with
-							; kicked/carryable sprites (registers a hit every frame rather than once)
-							; and it also seemingly runs $07F722 when popped, resulting in the HP meter
-							; system to think a sprite have been healed.
-						%SpriteHPMeterBlacklist($53)	;>Throw block
-
+			;For sprites that should not have HP (blacklisted), simply check if max HP == 0.
+			;This code runs when sprites are instantly-killed via vanilla routines.
+			LDA !Freeram_SpriteHP_MaxHPLow,x
+			if !Setting_SpriteHP_TwoByte
+				ORA !Freeram_SpriteHP_MaxHPHi,x
+			endif
+			BEQ .Done
 			.DisplayHPMeterOfOneShotSprites
 				LDA.b #!SpriteHP_MaxHPAndDamageValue		;\Treat as the killing blow deals max damage to the sprite
 				STA $00						;|The subroutine does the damage and HP meter switching.
@@ -1205,23 +1332,28 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				endif
 				RTL
 		if !Setting_SpriteHP_Koopas_ClassicBehavior == 0
-			TransferHPFromKoopaToShelllessKoopa: ;>JSL from $0196E7
-				;X = The index of the in-shell koopa/empty shell.
-				;Y = The index of newly spawned sprite - shell-less koopa
+			TransferHPFromKoopaToShelllessKoopa: ;>JSL from $0196F6
+				;$15E9 = The index of the in-shell koopa/empty shell. $15E9 is also at this value.
+				;X and Y = The index of newly spawned sprite - shell-less koopa
 				.Restore
-					LDA #$08
-					STA !14C8,y
+					JSL $07F7D2|!bank
 				.SwitchMeter
+					LDX $15E9|!addr
 					JSL !SharedSub_SpriteHPGetSlotIndex
 					TXA
 					CMP !Scratchram_SpriteHP_SpriteSlotToDisplay
 					BNE .Done									;>If HP meter isn't on the enemy that the player just jumped on or is stunned in their shells and unstun themselves, skip
 					TYA											;\Switch meter to the shell-less koopa (note that since these enemies have 1HP, we don't need bar animation)
 					STA !Freeram_SpriteHP_MeterState			;/
+					..TransferHPValues
+						;This prevents an issue where if the player jumps on a winged koopa, then jumped on the now-transformed koopa, it wouldn't have its max HP reduced, causing the bar
+						;to go from 50% to 100% because it went from 1/2HP to 1/1HP. This is done by transfering HP from the shell to the spawned shell-less koopa and making the shell to have 1/1HP
+						JSR TransferHPBetweenKoopaAndShell
+					
 				.Done
 					RTL
 			TransferHPFromShelllessKoopaToKoopa: ;>JSL from $018ACC
-				;X = Index of the shell-less koopa entering an empty shell
+				;X = Index of the shell-less koopa entering an empty shell. $15E9 is also at this value.
 				;Y = Index of the shell the koopa is entering
 				.SwitchMeter
 					JSL !SharedSub_SpriteHPGetSlotIndex
@@ -1231,10 +1363,43 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					BNE .Restore								;>If the HP meter isn't on the shell-less koopa, skip
 					TYA											;\Switch meter to the shell (which will turn into a regular koopa)
 					STA !Freeram_SpriteHP_MeterState			;/
+					..TransferHPValues
+						JSR TransferHPBetweenKoopaAndShell
 				.Restore
 					LDY !1594,x
 					LDA.b #$10
 					RTL
+			TransferHPBetweenKoopaAndShell:
+				;Input:
+				; - Y: Sprite that the current sprite is interacting with or a newly spawned sprite to transfer HP to.
+				LDX $15E9|!addr
+				LDA !Freeram_SpriteHP_CurrentHPLow,x
+				TYX
+				STA !Freeram_SpriteHP_CurrentHPLow,x
+				LDX $15E9|!addr
+				LDA !Freeram_SpriteHP_MaxHPLow,x
+				TYX
+				STA !Freeram_SpriteHP_MaxHPLow,x
+				if !Setting_SpriteHP_TwoByte
+					LDX $15E9|!addr
+					LDA !Freeram_SpriteHP_CurrentHPHi,x
+					TYX
+					STA !Freeram_SpriteHP_CurrentHPHi,x
+					LDX $15E9|!addr
+					LDA !Freeram_SpriteHP_MaxHPHi,x
+					TYX
+					STA !Freeram_SpriteHP_MaxHPHi,x
+				endif
+				LDX $15E9|!addr
+				LDA #$01
+				STA !Freeram_SpriteHP_CurrentHPLow,x
+				STA !Freeram_SpriteHP_MaxHPLow,x
+				if !Setting_SpriteHP_TwoByte
+					LDA #$00
+					STA !Freeram_SpriteHP_CurrentHPHi,x
+					STA !Freeram_SpriteHP_MaxHPHi,x
+				endif
+				RTS
 		endif
 		
 	endif

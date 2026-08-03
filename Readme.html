@@ -329,15 +329,9 @@ autoclean JML SpritesTotalHPIntroEffect</pre>
 				Patch <kbd>HPSystemForSMWSprites.asm</kbd> to your game. This adds a proper health system for most sprites, one-shot enemies and bosses and fixes <a href="#HitCountJank">an anomaly for SMW</a>.
 				This alone does not display meter, but will write to various RAM for the uberasm tool code to display it.<br><br>
 				
-				Note that as you develop your hack, you may need to edit and reinsert this patch, espically if you're planning to use the enemy ambush system provided in this ASM resource pack. The stuff you most likely
-				need to edit are under labels (including the colon)<sup class="Highlight">[reinsert as hack being developed]</sup>:
-				<ul>
-					<li>&ldquo;<kbd>ZeroOutHPOfOneShotSprites:</kbd>&rdquo;: For sprites you wish not to show the HP meter.</li>
-					<li>
-						&ldquo;<kbd>DefaultHPOnSpawn:</kbd>&rdquo;: For sprites having more than 1 HP (this is a list of enemies, by their sprite numbers, whose HP is set to when spawned). This is also used in the ambush system
-						to know how much HP of enemies yet to spawn to subtract (to properly track the total HP remaining).
-					</li>
-				</ul>
+				Note that as you develop your hack, you may need to open (with a text editor), edit, and reinsert this patch, espically if you're planning to use the enemy ambush system provided in this ASM
+				resource pack. The stuff you most likely need to edit are a table under label &ldquo;<kbd>.DefaultSMWSprHP</kbd>&rdquo; and &ldquo;<kbd>.DefaultCustSprHP</kbd>&rdquo;<sup class="Highlight">[reinsert as hack being developed]</sup>.
+				See comments ajoining the tables for more information.
 			</li>
 			<li>
 				Uberasm tool:
@@ -475,8 +469,7 @@ autoclean JML SpritesTotalHPIntroEffect</pre>
 					<td class="Center">TotalHP</td>
 					<td class="NoLineBreak Center"><kbd>1 + !sprite_slots</kbd></td>
 					<td>
-						The total amount HP of sprites that aren't loaded. This system adds HP of all loaded sprite slots, then add by a value in this RAM address, then uses that value for display. Useful for something like an ambush
-						systems where enemies are spawned after killing a certain number of them.
+						When in total HP mode, this holds the total amount of HP of enemies yet to spawn. This can be used to track the total HP in an ambush system.
 					</td>
 					<td>If <kbd>!Setting_SpriteHP_TotalHPMode</kbd> is set to <kbd>2</kbd>.</td>
 				</tr>
