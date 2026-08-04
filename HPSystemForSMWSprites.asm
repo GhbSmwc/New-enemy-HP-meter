@@ -977,14 +977,14 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					LDA !9E,x
 				..SetHP
 					if !Setting_SpriteHP_TwoByte
-						REP #$20 ;>We need 16-bit indexing because when doubling, values $80+ will exceed $FF, and sprite numbers goes all the way to $C8 or $BF.
+						REP #$30 ;>We need 16-bit indexing because when doubling, values $80+ will exceed $FF, and sprite numbers goes all the way to $C8 or $BF.
 						AND #$00FF
 						ASL
 					endif
 					TAY
 					LDA .DefaultSMWSprHP,y
 					if !Setting_SpriteHP_TwoByte
-						SEP #$20
+						SEP #$30
 					endif
 					STA !Freeram_SpriteHP_CurrentHPLow,x
 					STA !Freeram_SpriteHP_MaxHPLow,x
@@ -1360,7 +1360,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					LDY !1594,x
 					TXA
 					CMP !Scratchram_SpriteHP_SpriteSlotToDisplay
-					BNE .Restore								;>If the HP meter isn't on the shell-less koopa, skip
+					BNE ..TransferHPValues						;>If the HP meter isn't on the shell-less koopa, skip (just transfer HP values)
 					TYA											;\Switch meter to the shell (which will turn into a regular koopa)
 					STA !Freeram_SpriteHP_MeterState			;/
 					..TransferHPValues
