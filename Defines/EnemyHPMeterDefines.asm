@@ -91,8 +91,8 @@
 	;Scratch RAM settings (very likely you don't need to change these)
 		!Scratchram_SpriteHP_SpriteSlotToDisplay = $188D|!addr
 			;[1 byte]: This holds the current sprite slot used by various codes to determine what sprite slot the HP meter is showing.
-			;This RAM address size must not be 3 bytes long (so $xx and $xxxx are okay, but $xxxxxx are not). It's basically
-			;Value = !Freeram_SpriteHP_MeterState % !sprite_slots.
+			;This RAM address size must not be 3 bytes long (so $xx and $xxxx are okay, but $xxxxxx are not, it's being used in LDX
+			;which lacks an absolute-long address for). It is set when calling "SpriteHPGetSlotIndex" in shared subroutine code, 
 	;Qusai-freeram for miscellaneous things (flags to prevent re-triggers)
 		;[BytesUsed = !Setting_SpriteHP_BarAnimation && UsingWendyOrLemmy]. This RAM is only used when vanilla smw boss Wendy or Lemmy koopa
 		;are running. For some reason, SMW either deletes those sprites temporarily ($14C8,x == $00), or just clear all the dummy sprites
