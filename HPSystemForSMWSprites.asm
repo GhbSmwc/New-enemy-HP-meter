@@ -873,6 +873,8 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				LDA #$08
 				STA $1DF9|!addr
 			.CheckSprite
+				JSR IsKoopaShellEmpty
+				BCS ..Done
 				if !Setting_SpriteHP_UsingCustomSprites
 					LDA !7FAB10,x
 					AND.b #%00001000
@@ -890,6 +892,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				if !Setting_SpriteHP_UsingCustomSprites
 					..CustomSprite
 				endif
+				..Done
 					RTL
 				if !Setting_SpriteHP_VanillaSprite_Rex
 					..Rex
@@ -921,7 +924,11 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				BNE ..NonCarryable
 				..Carryable ;Sprite is carryable, when hit by quake/cape spin/net punch, the sprite (such as a shell) doesn't get killed
 				
+				JSR IsKoopaShellEmpty
+				BCS ..Done
 				%DealFixedDamage(0)	;>Display HP (no damage) of flipped but not killed sprites
+				
+				..Done
 					RTL
 				
 				..NonCarryable
@@ -937,6 +944,46 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				JSR ZeroOutHPOfOneShotSprites
 				PLX
 			RTL
+		IsKoopaShellEmpty:
+			LDA #$00
+			STA $40FFFF
+			.CheckIfSpriteCustom
+				;Is a custom sprite?
+				if !Setting_SpriteHP_UsingCustomSprites
+					LDA !7FAB10,x
+					AND.b #%00001000
+					BNE .No
+				endif
+			.CheckVanillaSpriteNumber
+				;Is vanilla sprite number $04-$07?
+				LDA !9E,x
+				CMP #$04
+				BCC .No
+				CMP.b #$07+1
+				BCS .No
+			.CheckStatus
+				;Is a carryable/kicked/carried/falling off screen (briefly) sprite?
+				LDA !14C8,x
+				CMP #$02
+				BEQ ..Maybe ;>When cape-spinned the very frame $14C8 is set to #$02
+				CMP #$09
+				BCC .No
+				CMP.b #$0B+1
+				BCS .No
+				..Maybe
+			.CheckIfKoopaInside
+				;Is in a status that have no koopa inside the stunned shell?
+				;Note that I did not check RAM $C2 (result of $1540|$1558) because
+				;it hasn't been updated yet.
+				LDA !1540,x
+				ORA !1558,x
+				BNE .No
+			.Yes
+				SEC
+				RTS
+			.No
+				CLC
+				RTS
 	endif
 	if !Setting_SpriteHP_RemoveOrApplyPatch
 		DefaultHPOnSpawn:	;>JSL from $07F779
@@ -998,19 +1045,23 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				PLB
 				PLP
 				RTL
-			;These are default HP table values for vanilla SMW sprites, for sprite numbers $00-$C8.
+			;Default HP values for sprites and custom sprites. These are values that their current and max HP are set when they first spawn initalized
+			;(before their init code executes)
+			;
 			;Any sprite with a max HP of 0 are consitered "blacklisted" and the meter will not display HP for that (when instantly killed).
 			;If !Setting_SpriteHP_TwoByte == 0, then only enter values 0-255, else 0-65535 is allowed. Values
-			;at and above 256 or 65536 will be modulo'ed by those values.
+			;at and above 256 or 65536 will be modulo'ed by those values. A value without a prefix ("%" = binary, "$" = hex) means decimal.
+			
+			;These are default HP table values for vanilla SMW sprites, for sprite numbers $00-$C8.
 				.DefaultSMWSprHP
 					!DefaultHPTableSize 00001 ; <- $00 - Green shell-less Koopa
 					!DefaultHPTableSize 00001 ; <- $01 - Red shell-less Koopa
 					!DefaultHPTableSize 00001 ; <- $02 - Blue shell-less Koopa
 					!DefaultHPTableSize 00001 ; <- $03 - Yellow shell-less Koopa
-					!DefaultHPTableSize 00001 ; <- $04 - Green Koopa
-					!DefaultHPTableSize 00001 ; <- $05 - Red Koopa
-					!DefaultHPTableSize 00001 ; <- $06 - Blue Koopa
-					!DefaultHPTableSize 00001 ; <- $07 - Yellow Koopa
+					!DefaultHPTableSize 00001 ; <- $04 - Green Koopa (including the shell)
+					!DefaultHPTableSize 00001 ; <- $05 - Red Koopa (including the shell)
+					!DefaultHPTableSize 00001 ; <- $06 - Blue Koopa (including the shell)
+					!DefaultHPTableSize 00001 ; <- $07 - Yellow Koopa (including the shell)
 					!DefaultHPTableSize 00002 ; <- $08 - Green winged Koopa, flying
 					!DefaultHPTableSize 00002 ; <- $09 - Green winged Koopa, bouncing
 					!DefaultHPTableSize 00002 ; <- $0A - Red winged Koopa, vertical
@@ -1207,7 +1258,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 
 
 			
-			;These are default HP table values for custom sprites. Here, valid custom sprite numbers are $00-$BF. Other rules are the same as the vanilla sprites table.
+			;These are default HP table values for custom sprites. Here, valid custom sprite numbers are $00-$BF. Same rules as above.
 				if !Setting_SpriteHP_UsingCustomSprites
 					.DefaultCustSprHP
 					;                    +$00   +$01   +$02   +$03   +$04   +$05   +$06   +$07   +$08   +$09   +$0A   +$0B   +$0C   +$0E   +$0E   +$0F
@@ -1401,7 +1452,6 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				endif
 				RTS
 		endif
-		
 	endif
 	if !Setting_ModifySprAndDisplayHPOfSMWSpr
 		PokeyInitHP_YoshiHPTable:
