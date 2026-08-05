@@ -89,7 +89,7 @@
 			!Freeram_SpriteHP_SpriteHPData = $418AFF
 		endif
 	;Scratch RAM settings (very likely you don't need to change these)
-		!Scratchram_SpriteHP_SpriteSlotToDisplay = $8A
+		!Scratchram_SpriteHP_SpriteSlotToDisplay = $188D|!addr
 			;[1 byte]: This holds the current sprite slot used by various codes to determine what sprite slot the HP meter is showing.
 			;This RAM address size must not be 3 bytes long (so $xx and $xxxx are okay, but $xxxxxx are not). It's basically
 			;Value = !Freeram_SpriteHP_MeterState % !sprite_slots.
