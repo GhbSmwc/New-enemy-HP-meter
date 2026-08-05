@@ -340,7 +340,7 @@ autoclean JML SpritesTotalHPIntroEffect</pre>
 					<li>
 						Insert the ASM files to Uberasm tool. The provided folders should be obvious.<br><br>
 						
-						Note that if you have special custom sprites where the meter should not show depending on its state, you'll need to open <kbd>UberASMTool/level/DisplayEnemyHP.asm</kbd>
+						Notes that if you have special custom sprites where the meter should not show depending on its state, you'll need to open <kbd>UberASMTool/level/DisplayEnemyHP.asm</kbd>
 						and under label <kbd>.CheckForBlacklistedSprites</kbd> (at the bottom), add an entry for your custom sprite. Same goes with <kbd>.CheckForBlacklistedSpritesTotalHP</kbd>,
 						if you're planning to have an HP meter showing the total HP of the ambush<sup class="Highlight">[reinsert as hack being developed]</sup>.
 					</li>
@@ -350,13 +350,13 @@ autoclean JML SpritesTotalHPIntroEffect</pre>
 		</ol>
 		<li>Lunar Magic stuff</li>
 		<ol>
-			<li>In all levels accessible by the player, insert the layer 3 status bar ExGFX by &ldquo;Quick Extract ExGFX from ROM&rdquo; (blue mushroom icon) to spawn a <kbd>ExGraphics</kbd> folder (unless you did so already), then,
-			inside this ASM resource, navigate to <kbd>LM stuff/ExGraphics</kbd>. Here you'll find a graphic file (uses ExGFX slot $80 by default, rename to have it at a different slot number). This file should
-			be pasted in the ExGraphics of your game file. To insert into your game, &ldquo;Quick Insert ExGFX to ROM&rdquo; (golden mushroom). Finally, &ldquo;Open "Layer 3 GFX/Tilemap Bypass" Dialog&rdquo; (green
-			poison mushroom), and set LG1 to use your inserted graphics file (by default, should be $80 if you didn't change the slot number)<br><br>
-			
-			This graphic is for layer 3 status bar, since some symbols and other tiles are needed for the display are missing. The tiles used are the slash and graphical bar tiles.
-			
+			<li>
+				Insert the layer 3 status bar ExGFX by &ldquo;Quick Extract ExGFX from ROM&rdquo; (blue mushroom icon) to spawn a <kbd>ExGraphics</kbd> folder (unless you did so already), then,
+				inside this ASM resource, navigate to <kbd>LM stuff/ExGraphics</kbd>. Here you'll find a graphic file (uses ExGFX slot <kbd>$80</kbd> by default, rename to have it at a different slot number). This file should
+				be pasted in the ExGraphics of your game file. To insert into your game, click &ldquo;Quick Insert ExGFX to ROM&rdquo; (golden mushroom). Finally, in ANY level asscessible by the player that the meter can appear in,
+				click &ldquo;Open "Layer 3 GFX/Tilemap Bypass" Dialog&rdquo; (green poison mushroom), and set LG1 to use your inserted graphics file (by default, should be <kbd>$80</kbd> if you didn't change the slot number).<br><br>
+				
+				This graphic is for layer 3 status bar, since some symbols and other tiles are needed for the display are missing. The tiles used are the slash and graphical bar tiles.<br><br>
 			</li>
 		</ol>
 		<li>And now you are done.</li>
@@ -851,6 +851,10 @@ Change that to this:
 	<hr>
 	<h2><a href="#ToC_Troubleshooting" id="JMPTo_Troubleshooting">^</a>Troubleshooting</h2>
 	<ul>
+		<li>
+			Q: When the meter shows up, the meter appears with glitchy graphics! What happened?<br><br>
+			A: You most likely either forgot to insert the exgraphics for the layer 3 status bar, or you have inserted it into your game, but haven't properly set the level to use the correct graphics. See &ldquo;Lunar Magic stuff&rdquo; on inserting the correct graphics
+		</li>
 		<li>
 			Q: &ldquo;When the HP meter appears, and despite the setting <kbd>!Setting_SpriteHP_DisplayNumerical</kbd> set to <kbd>1</kbd> or <kbd>2</kbd>, the numbers won't appear anyway.&rdquo;<br><br>
 			A: The sprite have too much HP digits, either have lower HP values or set <kbd>!Setting_SpriteHP_MaxDigits</kbd> to a higher value. Not showing the text is a failsafe if the string gets too long. That failsafe is intended to avoid writing too many symbols
