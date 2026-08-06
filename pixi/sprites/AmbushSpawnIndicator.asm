@@ -123,36 +123,38 @@ MainCode:
 		LDA !extra_byte_2,x
 		STA !extra_bits,x
 	.DeductHP
-		;Here, every time you spawn a sprite, you need to, within that
-		;frame of spawning the sprite, deduct the value in
-		;!Freeram_SpriteHP_TotalHPOfUnloadedSprites by how much HP
-		;that spawned sprite has, else the meter fills upward because
-		;a sprite went from not being loaded, to now being loaded
-		;without "taking its health with it".
-		;
-		;This sprite however turns into whatever sprite it was "spawning"
-		;but should still be treated the same way, except that it happens
-		;during the "transformation" of the sprite rather than
-		;"AmbushWithTotalHPMeter.asm" spawning this sprite.
-		;
-		;Notes:
-		; - This assumes that the sprites spawned via the ambush
-		;   system have its HP initialized properly (see
-		;   "HPSystemForSMWSprites.asm" under "DefaultHPOnSpawn:")
-		; - If you have enemies with HP amounts based on how it spawns,
-		;   such as the "Better Pokey" (https://www.smwcentral.net/?p=section&a=details&id=36812 )
-		;   by Isikoro (Each segment and head counts as 1 HP), then
-		;   you may need to make some changes here to accomodate its
-		;   spawn configuration-dependent HP.
-			LDA !Freeram_SpriteHP_TotalHPOfUnloadedSprites
-			SEC
-			SBC !Freeram_SpriteHP_CurrentHPLow,x
-			STA !Freeram_SpriteHP_TotalHPOfUnloadedSprites
-			if !Setting_SpriteHP_TwoByte
-				LDA !Freeram_SpriteHP_TotalHPOfUnloadedSprites+1
-				SBC !Freeram_SpriteHP_CurrentHPHi,x
-				STA !Freeram_SpriteHP_TotalHPOfUnloadedSprites+1
-			endif
+		if !Setting_ShowTotalHPOfAmbushIfTotalHPEnabled
+			;Here, every time you spawn a sprite, you need to, within that
+			;frame of spawning the sprite, deduct the value in
+			;!Freeram_SpriteHP_TotalHPOfUnloadedSprites by how much HP
+			;that spawned sprite has, else the meter fills upward because
+			;a sprite went from not being loaded, to now being loaded
+			;without "taking its health with it".
+			;
+			;This sprite however turns into whatever sprite it was "spawning"
+			;but should still be treated the same way, except that it happens
+			;during the "transformation" of the sprite rather than
+			;"AmbushWithTotalHPMeter.asm" spawning this sprite.
+			;
+			;Notes:
+			; - This assumes that the sprites spawned via the ambush
+			;   system have its HP initialized properly (see
+			;   "HPSystemForSMWSprites.asm" under "DefaultHPOnSpawn:")
+			; - If you have enemies with HP amounts based on how it spawns,
+			;   such as the "Better Pokey" (https://www.smwcentral.net/?p=section&a=details&id=36812 )
+			;   by Isikoro (Each segment and head counts as 1 HP), then
+			;   you may need to make some changes here to accomodate its
+			;   spawn configuration-dependent HP.
+				LDA !Freeram_SpriteHP_TotalHPOfUnloadedSprites
+				SEC
+				SBC !Freeram_SpriteHP_CurrentHPLow,x
+				STA !Freeram_SpriteHP_TotalHPOfUnloadedSprites
+				if !Setting_SpriteHP_TwoByte
+					LDA !Freeram_SpriteHP_TotalHPOfUnloadedSprites+1
+					SBC !Freeram_SpriteHP_CurrentHPHi,x
+					STA !Freeram_SpriteHP_TotalHPOfUnloadedSprites+1
+				endif
+		endif
 	.SetProcessOffScreen
 		LDA !167A,x
 		ORA.b #%00000100

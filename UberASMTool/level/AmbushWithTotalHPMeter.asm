@@ -7,7 +7,7 @@
 ;Note:
 ; - The patch, "HPSystemForSMWSprites.asm" is required.
 ; - For custom sprites, they need to be adopted to use this ASM resource's HP system to properly track
-;   the total health remaining.
+;   the total health remaining (unless you wish not to show the total HP).
 ; - Because "DisplayEnemyHP.asm" total HP mode display counts all HP of loaded sprites, this also includes
 ;   sprites that are placed in Lunar Magic.
 ; - If the meter increases or decreases when enemies spawn, that indicates that the enemy was spawn with
@@ -18,6 +18,9 @@
 ; - Enemies spawn by this ambush system will always have "process off-screen" tweaker bit set ($167A bit 2 set)
 ;   this allows ambush rooms to span more than a single screen wide and long without allowing the player to
 ;   despawn them by moving the screen.
+; - If you wish not to show the total HP, but want this ambush system, have !Setting_SpriteHP_TotalHPMode set to
+;   1 or 0, or set !Setting_SpriteHP_VanillaSprite_OneShotSprites to 0. Note that the overall "progress" is not
+;   shown to the player in this configuration.
 ;
 ;A test level file is provided, for level 106 (Yoshi's Island 2), as seen in
 ;"LM stuff/Levels/Level_106_TotalHPTest.mwl". You just need to have this file
@@ -37,8 +40,10 @@
 ;Extra bytes info:
 ; EXB1: What set of ambush to use (adding new ambushes requires updating the table under "AmbushList" as well as
 ; the tables below that). Valid values are $00-$7F (0-127).
-;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;Settings:
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	!Setting_Ambush_WaveDelay = 60
 		;^How many frames after a wave is finished, or to end the level after the final wave. Note that if
 		; spawn indicators were enabled, the indicator sprites have their own delay (thus the total delay is this
@@ -58,21 +63,22 @@
 	;These are used when using the spawning indicator.
 		!Setting_Ambush_SpawnIndicator_SpawnIndicatorNumb = $0E
 			;^Used only when !Setting_Ambush_SpawnIndicator == 1. This is the sprite number of the ambush spawning indicator.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;RAM to use
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	!Freeram_Ambush_SpawnPointer = $1487|!addr
 		;^[2 bytes] A tracker that holds the "position" (a 16-bit address pointing to the enemy spawn table) of what wave
 		; and enemies to spawn. Note that the spawn table and this code must be on the same bank.
 	!Freeram_Ambush_DelayTimer = $1436|!addr ;>Reusing the RAM that, when used in a normal level, only by keyholes.
 		;^[1 byte] A frame counter that ticks down once per frame. This is the amount of delay between waves
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;Don't touch
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	incsrc "../SharedSubroutineDefs.asm"
 	incsrc "../StatusBarDefines.asm"
 	incsrc "../EnemyHPMeterDefines.asm"
 	incsrc "../GraphicalBarDefines.asm"
 	incsrc "../NumberDisplayRoutinesDefines.asm"
-
-	assert !Setting_SpriteHP_TotalHPMode == 2, "This test ASM code requires the total HP system."
-	assert !Setting_SpriteHP_VanillaSprite_OneShotSprites != 0, "This test ASM code requires HP for 1-shot sprites."
 	
 	!TableSizeForHP = "db"
 	if !Setting_SpriteHP_TwoByte
@@ -121,32 +127,36 @@ init:
 		LDA AmbushList,x
 		STA !Freeram_Ambush_SpawnPointer
 	;Set total HP
-		if !Setting_SpriteHP_TwoByte == 0
-			SEP #$20
-			TXA
-			LSR
-			TAX
-			LDA AmbushTotalHPList,x
-			STA !Freeram_SpriteHP_TotalHPOfUnloadedSprites
-			STA !Freeram_SpriteHP_TotalMaxHP
-		else
-			LDA AmbushTotalHPList,x
-			STA !Freeram_SpriteHP_TotalHPOfUnloadedSprites
-			STA !Freeram_SpriteHP_TotalMaxHP
-			SEP #$20
+		if !Setting_ShowTotalHPOfAmbushIfTotalHPEnabled
+			if !Setting_SpriteHP_TwoByte == 0
+				SEP #$20
+				TXA
+				LSR
+				TAX
+				LDA AmbushTotalHPList,x
+				STA !Freeram_SpriteHP_TotalHPOfUnloadedSprites
+				STA !Freeram_SpriteHP_TotalMaxHP
+			else
+				LDA AmbushTotalHPList,x
+				STA !Freeram_SpriteHP_TotalHPOfUnloadedSprites
+				STA !Freeram_SpriteHP_TotalMaxHP
+				SEP #$20
+			endif
 		endif
 	;Delay timer just in case
 		LDA.b #!Setting_Ambush_WaveDelay
 		STA !Freeram_Ambush_DelayTimer
 	;Make meter to be "total mode" and intro-fill mode
-		LDA.b #(!sprite_slots*2)+1
-		STA !Freeram_SpriteHP_MeterState
-		if !Setting_SpriteHP_BarAnimation
-			;Introfill mode.
-			LDA #$00
-			STA !Freeram_SpriteHP_BarAnimationFill
-			if !Setting_SpriteHP_BarChangeDelay
-				STA !Freeram_SpriteHP_BarAnimationTimer
+		if !Setting_ShowTotalHPOfAmbushIfTotalHPEnabled
+			LDA.b #(!sprite_slots*2)+1
+			STA !Freeram_SpriteHP_MeterState
+			if !Setting_SpriteHP_BarAnimation
+				;Introfill mode.
+				LDA #$00
+				STA !Freeram_SpriteHP_BarAnimationFill
+				if !Setting_SpriteHP_BarChangeDelay
+					STA !Freeram_SpriteHP_BarAnimationTimer
+				endif
 			endif
 		endif
 	PLB
@@ -250,13 +260,14 @@ main:
 		STZ $88					;/
 		BRA .Done
 SearchSprites:
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;This checks if there is an enemy in the sprite slots. Used to determine if the player killed all
 	;of them.
 	;
 	;Output:
 	; - X: $FF indicates there are no enemies. If any positive value, then there are and is the
 	;   index of an existing enemy sprite at the highest index.
-	;
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	LDX #!sprite_slots-1
 	.Loop
 		;Loop every sprite slot, checking if all sprite slots are empty.
@@ -423,38 +434,40 @@ AmbushSpawn:
 		if !Setting_Ambush_SpawnIndicator == 0
 			LDA #$01		;\When sprite is in inital phase, it's HP is counted. Thus this increases total HP of loaded sprite, which immidiately
 			STA !14C8,x		;/after this, deducts total HP of unloaded sprites, thus canceling out and preventing meter from increasing or decreasing.
-			;Here, every time you spawn a sprite, you need to, within that
-			;frame of spawning the sprite, deduct the value in
-			;!Freeram_SpriteHP_TotalHPOfUnloadedSprites by how much HP
-			;that spawned sprite has, else the meter fills upward because
-			;a sprite went from not being loaded, to now being loaded
-			;without "taking its health with it".
-			;
-			;Notes:
-			; - This assumes that the sprites spawned via the ambush
-			;   system have its HP initialized properly (see
-			;   "HPSystemForSMWSprites.asm" under "DefaultHPOnSpawn:")
-			; - If you have enemies with HP amounts based on how it spawns,
-			;   such as the "Better Pokey" (https://www.smwcentral.net/?p=section&a=details&id=36812 )
-			;   by Isikoro (Each segment and head counts as 1 HP), then
-			;   you may need to make some changes here to accomodate its
-			;   spawn configuration-dependent HP.
-			; - If you're using spawning indicators
-			;   (!Setting_Ambush_SpawnIndicator == 1), then the "HP transfer
-			;   from an unloaded enemy to a loaded enemy" happens when
-			;   the spawning indicator "spawns" (indicator sprite actually
-			;   turns into an enemy with its sprite tables and HP values
-			;   initialized) the sprite, not when this ambush code spawns
-			;   the indicator sprites.
-				LDA !Freeram_SpriteHP_TotalHPOfUnloadedSprites
-				SEC
-				SBC !Freeram_SpriteHP_CurrentHPLow,x
-				STA !Freeram_SpriteHP_TotalHPOfUnloadedSprites
-				if !Setting_SpriteHP_TwoByte
-					LDA !Freeram_SpriteHP_TotalHPOfUnloadedSprites+1
-					SBC !Freeram_SpriteHP_CurrentHPHi,x
-					STA !Freeram_SpriteHP_TotalHPOfUnloadedSprites+1
-				endif
+			if !Setting_ShowTotalHPOfAmbushIfTotalHPEnabled
+				;Here, every time you spawn a sprite, you need to, within that
+				;frame of spawning the sprite, deduct the value in
+				;!Freeram_SpriteHP_TotalHPOfUnloadedSprites by how much HP
+				;that spawned sprite has, else the meter fills upward because
+				;a sprite went from not being loaded, to now being loaded
+				;without "taking its health with it".
+				;
+				;Notes:
+				; - This assumes that the sprites spawned via the ambush
+				;   system have its HP initialized properly (see
+				;   "HPSystemForSMWSprites.asm" under "DefaultHPOnSpawn:")
+				; - If you have enemies with HP amounts based on how it spawns,
+				;   such as the "Better Pokey" (https://www.smwcentral.net/?p=section&a=details&id=36812 )
+				;   by Isikoro (Each segment and head counts as 1 HP), then
+				;   you may need to make some changes here to accomodate its
+				;   spawn configuration-dependent HP.
+				; - If you're using spawning indicators
+				;   (!Setting_Ambush_SpawnIndicator == 1), then the "HP transfer
+				;   from an unloaded enemy to a loaded enemy" happens when
+				;   the spawning indicator "spawns" (indicator sprite actually
+				;   turns into an enemy with its sprite tables and HP values
+				;   initialized) the sprite, not when this ambush code spawns
+				;   the indicator sprites.
+					LDA !Freeram_SpriteHP_TotalHPOfUnloadedSprites
+					SEC
+					SBC !Freeram_SpriteHP_CurrentHPLow,x
+					STA !Freeram_SpriteHP_TotalHPOfUnloadedSprites
+					if !Setting_SpriteHP_TwoByte
+						LDA !Freeram_SpriteHP_TotalHPOfUnloadedSprites+1
+						SBC !Freeram_SpriteHP_CurrentHPHi,x
+						STA !Freeram_SpriteHP_TotalHPOfUnloadedSprites+1
+					endif
+			endif
 		else
 			;Indicator sprites shouldn't have HP
 			LDA #$00
@@ -510,9 +523,11 @@ AmbushSpawn:
 ; - <TotalHP> Is a value representing the total HP. You can enter a literal number here (any base), or a math
 ;   statement (like below) and it will work.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	AmbushTotalHPList:
-		!TableSizeForHP (!Setting_SpriteHP_VanillaSprite_Rex_HPAmount*2)+(!Setting_SpriteHP_VanillaSprite_Chucks_HPAmount*3)+2
-		;!TableSizeForHP 1234
+	if !Setting_ShowTotalHPOfAmbushIfTotalHPEnabled
+		AmbushTotalHPList:
+			!TableSizeForHP (!Setting_SpriteHP_VanillaSprite_Rex_HPAmount*2)+(!Setting_SpriteHP_VanillaSprite_Chucks_HPAmount*3)+2
+			;!TableSizeForHP 1234
+	endif
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;Ambush wave/spawn table
 ;Sprite spawn data format (spans 6 bytes):

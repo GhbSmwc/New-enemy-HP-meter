@@ -287,10 +287,10 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			endif
 	;Modify spinjump kills to display HP when spinjump/yoshi stomp killed (Rex, for example, can be non-fatally damaged, or insta-killed)
 		;Most sprites (within general mario-interact-sprites routine - JSR $01A83B)
-			if !Setting_ModifySprAndDisplayHPOfSMWSpr
+			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
 				org $01A935
 				autoclean JSL SpinjumpKillDisplayHP
-				NOP #2
+				NOP #3
 			else
 				%RemoveFreespaceCodeFromJMLJSL($01A935)
 				org $01A935
@@ -300,7 +300,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		;Rex
 			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Rex)
 				org $0395EC
-				autoclean JSL SpinjumpKillDisplayHP
+				autoclean JSL SpinjumpKillDisplayHPRex
 				NOP
 			else
 				%RemoveFreespaceCodeFromJMLJSL($0395EC)
@@ -868,37 +868,25 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			endif
 	endif
 	if !Setting_ModifySprAndDisplayHPOfSMWSpr
-		SpinjumpKillDisplayHP:	;>JSL from $01A93F
-			.CheckSprite
-				JSR IsKoopaShellEmpty
-				BCS .Done
-				if !Setting_SpriteHP_UsingCustomSprites
-					LDA !7FAB10,x
-					AND.b #%00001000
-					BNE ..CustomSprite
-				endif
-				..Vanilla
-					LDA !9E,x
-					if !Setting_SpriteHP_VanillaSprite_Rex
-						CMP #$AB
-						BEQ ..Rex
-					endif
-					if !Setting_SpriteHP_VanillaSprite_OneShotSprites
-						JSR ZeroOutHPOfOneShotSprites
-					endif
-				if !Setting_SpriteHP_UsingCustomSprites
-					..CustomSprite
-				endif
-				if !Setting_SpriteHP_VanillaSprite_Rex
-					BRA .Done
-					..Rex
-						%IncreaseDamageCounter(!C2, !Setting_SpriteHP_VanillaSprite_Rex_HPAmount, !Setting_SpriteHP_VanillaSprite_Rex_HPAmount)
-						RTL
-				endif
-			.Done
-			.Restore
-				%JSLRTS($019ACB|!bank, $01A7E3|!bank)
-			RTL
+		if !Setting_SpriteHP_VanillaSprite_OneShotSprites
+			SpinjumpKillDisplayHP:	;>JSL from $01A935
+				.CheckSprite
+					JSR IsKoopaShellEmpty
+					BCS .Restore
+					JSR ZeroOutHPOfOneShotSprites
+				.Restore
+					%JSLRTS($019ACB|!bank, $01A7E3|!bank)
+					JSL $07FC3B|!bank
+					RTL
+		endif
+		if !Setting_SpriteHP_VanillaSprite_Rex
+			SpinjumpKillDisplayHPRex: ;>JSL from $0395EC
+				%IncreaseDamageCounter(!C2, !Setting_SpriteHP_VanillaSprite_Rex_HPAmount, !Setting_SpriteHP_VanillaSprite_Rex_HPAmount)
+				.Restore
+					LDA #$08
+					STA $1DF9|!addr
+					RTL
+		endif
 	endif
 	if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
 		ShowHPForFallingOffScrn:		;>JSL from various

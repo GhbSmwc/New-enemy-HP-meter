@@ -6,7 +6,9 @@
 	;    12 * (1 && 1) would be ( "&&" is an AND boolean operator):
 	;    12 * 1
 	;    = 12
-	;    
+	
+	
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;    !sprite_slots = Number of sprite slots: 12 for LoROM, 22 for SA-1
 	;
 	;[BytesUsed = 1                                                                                                       ;>1 Byte for HP meter state
@@ -83,17 +85,22 @@
 	;If you want to know display the RAM usage of this, have !Setting_SpriteHP_DisplaySpriteHPDataOnConsole set to 1 and
 	;insert via uberasm tool. The console window will show the list of itemized used RAM, in "Address Tracker" format:
 	;https://www.smwcentral.net/?p=section&a=details&id=39887.
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		if !sa1 == 0
 			!Freeram_SpriteHP_SpriteHPData = $7FACC4
 		else
 			!Freeram_SpriteHP_SpriteHPData = $418AFF
 		endif
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;Scratch RAM settings (very likely you don't need to change these)
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		!Scratchram_SpriteHP_SpriteSlotToDisplay = $188D|!addr
 			;[1 byte]: This holds the current sprite slot used by various codes to determine what sprite slot the HP meter is showing.
 			;This RAM address size must not be 3 bytes long (so $xx and $xxxx are okay, but $xxxxxx are not, it's being used in LDX
 			;which lacks an absolute-long address for). It is set when calling "SpriteHPGetSlotIndex" in shared subroutine code, 
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;Qusai-freeram for miscellaneous things (flags to prevent re-triggers)
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		;[BytesUsed = !Setting_SpriteHP_BarAnimation && UsingWendyOrLemmy]. This RAM is only used when vanilla smw boss Wendy or Lemmy koopa
 		;are running. For some reason, SMW either deletes those sprites temporarily ($14C8,x == $00), or just clear all the dummy sprites
 		;including an unused one $1FD6. Therefore using sprite tables to determine if the introfill animation have already been played,
@@ -133,7 +140,10 @@
 		; - For SMB3 status bar, Y is 0-3.
 		;
 		;XY positions are calculated to an address in StatusBarDefines.asm
+		
+		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		;Number display settings
+		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 				!Setting_SpriteHP_DisplayNumerical = 2
 					;^Display numerical HP?
 					; - 0 = Don't display numbers
@@ -147,28 +157,40 @@
 				!Setting_SpriteHP_ExcessDigitProt = 1
 					;^Maximum character write failsafe. If there are longer strings than expected, the number display routine will simply
 					; not display the number.
+			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			;Position of the numerical HP display, will occupy this position and tiles to the right
 			;when set to. Only used when !Setting_SpriteHP_NumericalTextAlignment < 2.
+			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 				!Setting_SpriteHP_NumericalPos_x = 21
 				!Setting_SpriteHP_NumericalPos_y = 0
+			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			;Position for right-aligned, when !Setting_SpriteHP_NumericalTextAlignment == 2. This occupies
 			;tiles at this position, and to the left.
+			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 				!Setting_SpriteHP_NumericalPosRightAligned_x = 31
 				!Setting_SpriteHP_NumericalPosRightAligned_y = 0
+			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			;Tile properties for numbers
+			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 				!Setting_SpriteHP_Numerical_PropPage	= 0	;>Valid values: 0-3
 				!Setting_SpriteHP_Numerical_PropPalette	= 6	;>Valid values: 0-7
+		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		;Graphical bar settings
+		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			!Setting_SpriteHP_DisplayGraphicalBar = 1
 				;^Display a bar representing percentage as fill?
 				; - 0 = don't show the bar
 				; - 1 = display the bar
+			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			;XY position of the bar (uses this position and tiles to the right, even when leftwards)
+			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 				!Setting_SpriteHP_GraphicalBarPos_x = 23
 				!Setting_SpriteHP_GraphicalBarPos_y = 1
+			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			;These below affect how much fill capacity the bar has. This value is equal to LeftPieces + (MiddlePieces * MiddleLength) + RightPieces.
 			;For more information, see info about graphical bar linked from "Documentations of other ASM resources" in the readme. Setting them to 0
 			;will exclude the type of tile on the bar. 1-255 are valid and will include that tile on the HUD. 256+, don't use those values.
+			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 				;Number of pieces on each tile
 					!Setting_SpriteHP_GraphicalBar_LeftPieces                  = 3             ;\These are the amount of fill capacity of each part of the bar.
 					!Setting_SpriteHP_GraphicalBar_MiddlePieces                = 8             ;|
@@ -192,8 +214,9 @@
 			;Tile properties (X-flip for leftwards bar is already handled.)
 				!Setting_SpriteHP_BarProps_Page                      = 0  ;>Use only values 0-3
 				!Setting_SpriteHP_BarProps_Palette                   = 6  ;>Use only values 0-7
-				
+			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			;Bar animation stuff
+			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 				!Setting_SpriteHP_BarAnimation			= 1
 					;^Show animation of the bar:
 					; - 0 = HP bar instantly updates when the enemy heals or take damage
@@ -244,7 +267,9 @@
 				;See https://www.smwcentral.net/?p=viewthread&t=6665
 					!Setting_SpriteHP_FillingSFXNumb		= $23		;>Sound number (set to 0 to disable SFX)
 					!Setting_SpriteHP_FillingSFXPort		= $1DFC|!addr	;>Use $1DF9, $1DFA, or $1DFC, followed by "|!addr" if you're using SA-1
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;Patching settings
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		!Setting_SpriteHP_RemoveOrApplyPatch		= 1
 			;^Option to install or remove the patch.
 			; 0 = Remove patch, 1 = Install.
@@ -278,11 +303,12 @@
 			; in $7FAB10 being garbage values on certain emulators, which can cause glitches on
 			; those emulators related to the HP meter system to incorrectly think sprites are
 			; custom or not.
-			
+		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		;Apply (proper) HP system on various vanilla SMW sprites that are not strictly one-shot: 0 = no, 1 = yes.
 		;Use only mentioned values, unless stated otherwise. Having these turned off will COMPLETELY revert back
 		;to original format including the fireball and stomp damage jank (see readme under "...from a damage counter").
 		;This also reverts the amount of HP a sprite has.
+		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			!Setting_SpriteHP_VanillaSprite_Chuck		= 1
 				;^Apply HP system for all chucks. Will at least fix the jank of stomp and fireball damage.
 				
@@ -316,7 +342,7 @@
 		!Setting_SpriteHP_VanillaSprite_OneShotSprites			= 1
 			;^Display HP for all one-shot enemies. Modifies various vanilla kill routines used by the vast majority
 			; of enemies. 0 = No, 1 = Yes. Note that this also modifies the sprite table clearing routine (when sprite
-			; spawns) due to not all sprites have an init to set its default HP.
+			; spawns) to allow initalizing HP values by default.
 			;
 			; Notes:
 			; - This includes enemies that turn into another sprite number when jumped on:
@@ -326,15 +352,15 @@
 			;    after jumping on a Dino Rhino have a meter.
 			; -- Winged enemies like Koopas and Galoomba.
 			; -- It does not include parachute enemies (Galoomba and Bob-omb), because when they land, it would've shown
-			;    that they taken damage themselves.
+			;    that they taken damage by themselves.
 			; - Other enemies listed below will show the health meter in unique ways:
 			; -- Enemies that don't get killed at all by stomps but instead simply change states will show no damage
 			;    but will still display the meter: Wiggler, Dry Bones, Bony Beetle.
-			; -- When regular Koopas Troopas are stomped, the HP meter will switch to the sprite slot of the shell, not
-			;    the shell-less koopa it spawned (with the exception that you do not wish koopas get forced out of shells,
-			;    see !Setting_SpriteHP_Koopas_ClassicBehavior). This is because the regular Koopa Troopas, the shell
-			;    (wheather it's empty or stunned inside their shell with eyes showing) are the same sprite, just with a
-			;    different state. When a shell-less koopa is launched out of the shell, that is a new sprite being spawned,
+			; -- When regular Koopas Troopas seperated from their shells, the HP meter will switch to the sprite slot of the
+			;    shell-kess koopa (with the exception that you do not wish koopas get forced out of shells, see
+			;    !Setting_SpriteHP_Koopas_ClassicBehavior). This is because the regular Koopa Troopas, the shell (wheather
+			;    it's empty or stunned inside their shell with eyes showing) are the same sprite, just with a different
+			;    state. When a shell-less koopa is launched out of the shell, that is a new sprite being spawned,
 			;    and when they enter a shell, the shell-less koopa despawns and the shell becomes a koopa troopa.
 			; --- That, along with the glitch of immidiately kicking the shell that the shell-less koopa just entered makes
 			;     the shell an empty shell is a reason I can't have the meter not be on an empty shell.
@@ -369,16 +395,16 @@
 			;    JSL !SharedSub_SpriteHPDamage
 			;    PLX
 			; - This does not include Reznor, however it is catagorized as "bosses" instead.
-			
+		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		;Amount of HP SMW sprites has. NOTE: SMW only have hit counts being an 8-bit unsigned integer stored
 		;within various sprite tables (Chucks and any sprites using the 5 fireballs to kill: $1528,
 		;Ludwig/Morton/Roy: $1626, Big Boo Boss, Wendy and Lemmy: $1534). This means up to 255 health and
 		;damage are allowed, and those do not support 16-bit HP system (even if you set
 		;!Setting_SpriteHP_TwoByte == 1). This does not include 1-shot enemies (they'll strictly be 1 HP
 		;and dies instantly from any attack). That is, unless stated otherwise.
-		
 		;
 		;This only applies if !Setting_SpriteHP_RemoveOrApplyPatch == 1 and their respective settings being 1.
+		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		
 			;Chucks. Values can be up to 65535 if these conditions are met:
 			; - !Setting_SpriteHP_TwoByte == 1
@@ -421,28 +447,41 @@
 				; this cannot be over 255. However if
 				; !Setting_SpriteHP_Modify5FireballsSystem == 1 and
 				; !Setting_SpriteHP_TwoByte == 1, then 65535 is the limit instead.
-			
+		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		;Fixes and additions
+		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			;Sound effects. Setting Sound numbers to $00 will not play any sound nor suppress any existing sound effect
 			;on the channel.
+			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 				;When the fireball damages enemies with the "take 5 fireballs to kill" bit being set.
 				;See: https://www.smwcentral.net/?p=viewthread&t=6665
+				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 					!Setting_SpriteHP_VanillaSprite_5FireballsToKill_SoundNumber	= $28		;>Set to 0 to disable.
 					!Setting_SpriteHP_VanillaSprite_5FireballsToKill_SoundPort	= $1DFC|!addr
+				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 				;Same but when shooting fireballs to Ludwig, Morton, and Roy.
+				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 					!Setting_SpriteHP_VanillaSprite_LudwigMortonRoy_Damage_SoundNumber	= $28
 					!Setting_SpriteHP_VanillaSprite_LudwigMortonRoy_Damage_SoundPort	= $1DFC|!addr
+				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 				;Sound effect when a thrown sprite hits Pokey (note that it does not count towards the consecutive
 				;enemies hit by shell).
+				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 					!Setting_SpriteHP_VanillaSprite_Pokey_Damage_SoundNumber = $03 ;>Setting this to 0 will revert a hijack at $02B7DB
 					!Setting_SpriteHP_VanillaSprite_Pokey_Damage_SoundPort = $1DF9|!addr
+			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			;Other
+			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 				!Setting_SpriteHP_TotalHPMode = 2
 					;^Apply a mode where the meter shows total HP across multiple sprites:
 					; - 0 = No
 					; - 1 = Yes (takes the total HP of all applicable loaded sprites)
 					; - 2 = Yes (same as above but also including the value in !Freeram_SpriteHP_TotalHPOfUnloadedSprites)
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;Size of the HP:
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		;Size of the HP data:
 		; - 0 = 8-bit HP (HP up to 255)
 		; - 1 = 16-bit (HP up to 65535).
@@ -450,7 +489,9 @@
 		;The maximum number of digits to be displayed. Obviously you
 		;wouldn't set this above 3 for 8-bit HP and above 5 for 16-bit.
 			!Setting_SpriteHP_MaxDigits	= 3
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;Misc settings
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		!Setting_SpriteHP_DisplaySpriteHPDataOnConsole = 0
 			;^Display RAM usage on Asar console window:
 			; - 0 = No
@@ -460,8 +501,9 @@
 			; - 0 = Come out of shells (vanilla).
 			; - 1 = Stay in their shells (applies hex edits at $0196C6 and $01AA15).
 
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;Don't touch these unless you know what you're doing
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	if !Setting_SpriteHP_DisplayGraphicalBar == 0	;>Override to disable unused animation for the bar if the bar doesn't exist.
 		!Setting_SpriteHP_BarAnimation = 0
 	endif
@@ -494,8 +536,9 @@
 		assert !Setting_SpriteHP_VanillaSprite_LudwigMortonRoy_StompDamage <= 255, "Ludwig/Morton/Roy stomp damage is over the limit."
 		assert !Setting_SpriteHP_VanillaSprite_LudwigMortonRoy_FireballDamage <= 255, "Ludwig/Morton/Roy Fireball damage is over the limit."
 		
-	
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;Obtain addresses representing HP data
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			!CurrentAddressToAssignDefine_SpriteHPData #= !Freeram_SpriteHP_SpriteHPData
 			if not(defined("MacroGuard_SpriteHPData"))
 				;This tells asar that setting these defines are done, since includeonce fails if two ASMs calls this same define file from different incsrc paths.
@@ -520,9 +563,10 @@
 						!sprite_slots = 22
 					endif
 				endif
-			
+			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			;The following also needs to have each of them be calling macros once, else they end up being set again to another,
 			;different RAM address.
+			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 				%MacroAssignDefineOneAfterAnother(Freeram_SpriteHP_MeterState, 1, CurrentAddressToAssignDefine_SpriteHPData)
 				%MacroAssignDefineOneAfterAnother(Freeram_SpriteHP_CurrentHPLow, !sprite_slots, CurrentAddressToAssignDefine_SpriteHPData)
 				%MacroAssignDefineOneAfterAnother(Freeram_SpriteHP_MaxHPLow, !sprite_slots, CurrentAddressToAssignDefine_SpriteHPData)
@@ -542,7 +586,9 @@
 					endif
 					%MacroAssignDefineOneAfterAnother(Freeram_SpriteHP_TotalMaxHP, 1+!Setting_SpriteHP_TwoByte, CurrentAddressToAssignDefine_SpriteHPData)
 				endif
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;Get status bar addresses
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		!Setting_SpriteHP_NumericalPos_XYPos = VanillaStatusBarXYToAddress(!Setting_SpriteHP_NumericalPos_x, !Setting_SpriteHP_NumericalPos_y, !RAM_0EF9)
 		!Setting_SpriteHP_NumericalPosRightAligned_XYPos = VanillaStatusBarXYToAddress(!Setting_SpriteHP_NumericalPosRightAligned_x, !Setting_SpriteHP_NumericalPosRightAligned_y, !RAM_0EF9)
 		!Setting_SpriteHP_GraphicalBarPos_XYPos = VanillaStatusBarXYToAddress(!Setting_SpriteHP_GraphicalBarPos_x, !Setting_SpriteHP_GraphicalBarPos_y, !RAM_0EF9)
@@ -556,29 +602,44 @@
 			!Setting_SpriteHP_GraphicalBarPos_XYPos = PatchedStatusBarXYToAddress(!Setting_SpriteHP_GraphicalBarPos_x, !Setting_SpriteHP_GraphicalBarPos_y, !StatusBarPatchAddr_Tile, !StatusbarFormat)
 			!Setting_SpriteHP_GraphicalBarPos_XYPosProp = PatchedStatusBarXYToAddress(!Setting_SpriteHP_GraphicalBarPos_x, !Setting_SpriteHP_GraphicalBarPos_y, !StatusBarPatchAddr_Prop, !StatusbarFormat)
 		endif
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;Get YXPCCCTT data
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		!Setting_SpriteHP_NumericalProp = GetLayer3YXPCCCTT(0, 0, 1, !Setting_SpriteHP_Numerical_PropPalette, !Setting_SpriteHP_Numerical_PropPage)
 		!Setting_SpriteHP_GraphicalBarProp = GetLayer3YXPCCCTT(0, 0, 1, !Setting_SpriteHP_BarProps_Palette, !Setting_SpriteHP_BarProps_Page)
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;Graphical bar values
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		!Setting_SpriteHP_GraphicalBar_LeftEndExists #= notequal(!Setting_SpriteHP_GraphicalBar_LeftPieces, 0)
 		!Setting_SpriteHP_GraphicalBar_MiddleExists #= !Setting_SpriteHP_GraphicalBarMiddleLength*(notequal(!Setting_SpriteHP_GraphicalBar_MiddlePieces, 0))
 		!Setting_SpriteHP_GraphicalBar_RightEndExists #= notequal(!Setting_SpriteHP_GraphicalBar_RightPieces, 0)
 		!Setting_SpriteHP_GraphicalBar_TotalTiles #= !Setting_SpriteHP_GraphicalBar_LeftEndExists+!Setting_SpriteHP_GraphicalBar_MiddleExists+!Setting_SpriteHP_GraphicalBar_RightEndExists
 		!Setting_SpriteHP_GraphicalBar_TotalPieces #= !Setting_SpriteHP_GraphicalBar_LeftPieces+(!Setting_SpriteHP_GraphicalBarMiddleLength*!Setting_SpriteHP_GraphicalBar_MiddlePieces)+!Setting_SpriteHP_GraphicalBar_RightPieces
-	
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;Maximum string length failsafe
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		!Setting_SpriteHP_MaxStringLength = !Setting_SpriteHP_MaxDigits
 		if !Setting_SpriteHP_DisplayNumerical == 2
 			!Setting_SpriteHP_MaxStringLength = (!Setting_SpriteHP_MaxDigits*2)+1
 		endif
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;Other
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		;To display HP of sprites, a modification is required:
 		; - It requires fireball + stomp jank fix.
 		; - It needs to take a hit/damage counter and "invert" (via HP = DamageToKill-DamageSoFar) to get HP value.
 		; - It requires making sure the moment the player deals stomp damage to bosses, to have the damage apply on that
 		;   frame rather than a "delay" that is until the boss switches to the next state after "damage" state.
-		!Setting_ModifySprAndDisplayHPOfSMWSpr = and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_DisplayHPOfSMWSprites)
+		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+			!Setting_ModifySprAndDisplayHPOfSMWSpr = and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_DisplayHPOfSMWSprites)
+		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+		;Ambush display mode. In case you do not want to display total HP but wanted the ambush system.
+		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+			!Setting_ShowTotalHPOfAmbushIfTotalHPEnabled = and(equal(!Setting_SpriteHP_TotalHPMode, 2), notequal(!Setting_SpriteHP_VanillaSprite_OneShotSprites, 0))
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;Debug display
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		if !Setting_SpriteHP_DisplaySpriteHPDataOnConsole
 			print "---------------------------------------------------------------------------------"
 			print "\!Freeram_SpriteHP_SpriteHPData's Total bytes used: ", dec(!CurrentAddressToAssignDefine_SpriteHPData-!Freeram_SpriteHP_SpriteHPData)
