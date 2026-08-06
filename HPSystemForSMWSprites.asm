@@ -973,7 +973,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				;Is a carryable/kicked/carried/falling off screen (briefly) sprite?
 				LDA !14C8,x
 				CMP #$02
-				BEQ ..Maybe ;>When cape-spinned the very frame $14C8 is set to #$02
+				BEQ ..Maybe
 				CMP #$09
 				BCC .No
 				CMP.b #$0B+1
