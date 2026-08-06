@@ -963,12 +963,15 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					BNE .No
 				endif
 			.CheckVanillaSpriteNumber
-				;Is vanilla sprite number $04-$07?
+				;Is vanilla sprite number $04-$07 and $09?
 				LDA !9E,x
+				CMP #$09
+				BEQ ..BouncingParakoopa
 				CMP #$04
 				BCC .No
 				CMP.b #$07+1
 				BCS .No
+				..BouncingParakoopa
 			.CheckStatus
 				;Is a carryable/kicked/carried/falling-off-screen sprite?
 				LDA !14C8,x
@@ -1286,11 +1289,11 @@ incsrc "Defines/GraphicalBarDefines.asm"
 	endif
 	if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
 		StompKill:	;>JSL from $01A9D3
+			.DisplayOneHP
+				JSR ZeroOutHPOfOneShotSprites
 			.Restore
 				LDA #$03
 				STA !14C8,x
-			.DisplayOneHP
-				JSR ZeroOutHPOfOneShotSprites
 			RTL
 		TransformWhenStomped: 	;>JSL from $01A99B
 			;For Winged Koopas at $08-$0C and a winged Galoomba $10
