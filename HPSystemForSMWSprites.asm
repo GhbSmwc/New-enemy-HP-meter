@@ -925,15 +925,13 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				..Carryable ;Sprite is carryable, when hit by quake/cape spin/net punch, the sprite (such as a shell) doesn't get killed
 				
 				JSR IsKoopaShellEmpty
-				BCS ..Done
+				BCS .Done
 				%DealFixedDamage(0)	;>Display HP (no damage) of flipped but not killed sprites
-				
-				..Done
-					RTL
-				
+				BRA .Done
 				..NonCarryable
 					JSR ZeroOutHPOfOneShotSprites
-					RTL
+			.Done
+				RTL
 		ShowHPForFallingOffScrnYregister:
 			.Restore
 				LDA #$02
@@ -945,8 +943,6 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				PLX
 			RTL
 		IsKoopaShellEmpty:
-			LDA #$00
-			STA $40FFFF
 			.CheckIfSpriteCustom
 				;Is a custom sprite?
 				if !Setting_SpriteHP_UsingCustomSprites
@@ -1353,6 +1349,8 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				ORA !Freeram_SpriteHP_MaxHPHi,x
 			endif
 			BEQ .Done
+			JSR IsKoopaShellEmpty
+			BCS .Done
 			.DisplayHPMeterOfOneShotSprites
 				LDA.b #!SpriteHP_MaxHPAndDamageValue		;\Treat as the killing blow deals max damage to the sprite
 				STA $00						;|The subroutine does the damage and HP meter switching.
