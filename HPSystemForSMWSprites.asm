@@ -288,14 +288,14 @@ incsrc "Defines/GraphicalBarDefines.asm"
 	;Modify spinjump kills to display HP when spinjump/yoshi stomp killed (Rex, for example, can be non-fatally damaged, or insta-killed)
 		;Most sprites (within general mario-interact-sprites routine - JSR $01A83B)
 			if !Setting_ModifySprAndDisplayHPOfSMWSpr
-				org $01A93F
+				org $01A935
 				autoclean JSL SpinjumpKillDisplayHP
-				NOP
+				NOP #2
 			else
-				%RemoveFreespaceCodeFromJMLJSL($01A93F)
-				org $01A93F
-				LDA #$08
-				STA $1DF9|!addr
+				%RemoveFreespaceCodeFromJMLJSL($01A935)
+				org $01A935
+				JSR.w $019ACB
+				JSL $07FC3B|!bank
 			endif
 		;Rex
 			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Rex)
@@ -869,12 +869,9 @@ incsrc "Defines/GraphicalBarDefines.asm"
 	endif
 	if !Setting_ModifySprAndDisplayHPOfSMWSpr
 		SpinjumpKillDisplayHP:	;>JSL from $01A93F
-			.Restore
-				LDA #$08
-				STA $1DF9|!addr
 			.CheckSprite
 				JSR IsKoopaShellEmpty
-				BCS ..Done
+				BCS .Done
 				if !Setting_SpriteHP_UsingCustomSprites
 					LDA !7FAB10,x
 					AND.b #%00001000
@@ -892,26 +889,34 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				if !Setting_SpriteHP_UsingCustomSprites
 					..CustomSprite
 				endif
-				..Done
-					RTL
 				if !Setting_SpriteHP_VanillaSprite_Rex
+					BRA .Done
 					..Rex
 						%IncreaseDamageCounter(!C2, !Setting_SpriteHP_VanillaSprite_Rex_HPAmount, !Setting_SpriteHP_VanillaSprite_Rex_HPAmount)
 						RTL
 				endif
+			.Done
+			.Restore
+				!Eval_Addr_019ACB #= $019ACB|!bank
+				!Eval_Addr_01A7E3 #= $01A7E3|!bank
+				%JSLRTS(!Eval_Addr_019ACB, !Eval_Addr_01A7E3)
+				;^Asar gets confused if you enter these values directly into the macro because
+				; if entered without order of operations (without parenthesis), you get depreciation
+				; warnings, with parenthesis, it thinks the opcode using the arguments are using
+				; indirect mode (which results in invalid opcodes).
+			RTL
 	endif
 	if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
 		ShowHPForFallingOffScrn:		;>JSL from various
-			.Restore
-				LDA #$02
-				STA !14C8,x
 			.DisplayOneHP
 				JSR ZeroOutHPOfOneShotSprites
-			RTL
-		ShowHPForFallingOffScrnCapeSpinQuakeNetPunch: ;>JSL from $02945B
 			.Restore
 				LDA #$02
 				STA !14C8,x
+			RTL
+		ShowHPForFallingOffScrnCapeSpinQuakeNetPunch: ;>JSL from $02945B
+			JSR IsKoopaShellEmpty
+			BCS .Done
 			.DisplayOneHPIfNotACarryableSpr
 				LDA !1662,x
 				AND.b #%10000000
@@ -924,25 +929,32 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				BNE ..NonCarryable
 				..Carryable ;Sprite is carryable, when hit by quake/cape spin/net punch, the sprite (such as a shell) doesn't get killed
 				
-				JSR IsKoopaShellEmpty
-				BCS .Done
 				%DealFixedDamage(0)	;>Display HP (no damage) of flipped but not killed sprites
 				BRA .Done
 				..NonCarryable
 					JSR ZeroOutHPOfOneShotSprites
 			.Done
-				RTL
-		ShowHPForFallingOffScrnYregister:
 			.Restore
 				LDA #$02
-				STA !14C8,y
+				STA !14C8,x
+				RTL
+		ShowHPForFallingOffScrnYregister:
 			.DisplayOneHP
 				PHX
 				TYX
 				JSR ZeroOutHPOfOneShotSprites
 				PLX
+			.Restore
+				LDA #$02
+				STA !14C8,y
 			RTL
 		IsKoopaShellEmpty:
+			;Checks if the sprite is an empty shell.
+			;Output:
+			; - Carry: 0 = no, 1 = yes
+			;NOTE: This subroutine should be called before setting $14C8.
+			LDA #$00
+			STA $40FFFF
 			.CheckIfSpriteCustom
 				;Is a custom sprite?
 				if !Setting_SpriteHP_UsingCustomSprites
@@ -1344,6 +1356,8 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		ZeroOutHPOfOneShotSprites:
 			;For sprites that should not have HP (blacklisted), simply check if max HP == 0.
 			;This code runs when sprites are instantly-killed via vanilla routines.
+			;
+			;Note: Make sure that $14C8 is not set to #$02 prior to calling this subroutine.
 			LDA !Freeram_SpriteHP_MaxHPLow,x
 			if !Setting_SpriteHP_TwoByte
 				ORA !Freeram_SpriteHP_MaxHPHi,x
