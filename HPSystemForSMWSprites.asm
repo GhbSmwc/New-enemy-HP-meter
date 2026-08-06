@@ -156,7 +156,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		;RTLOfSameBank = Address of an RTL in the same bank as the call subroutine.
 		PHK				;\Set up a 24-bit return address to make an RTL jump
 		PEA.w ?ReturnAddr-1		;/to where "?ReturnAddr"
-		PEA.w <RTLOfSameBank>-1		;>Set up a 16-bit return address to make RTS jump to an RTL
+		PEA.w (<RTLOfSameBank>)-1		;>Set up a 16-bit return address to make RTS jump to an RTL
 		JML <JumpTo>
 		
 		?ReturnAddr:
@@ -897,13 +897,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				endif
 			.Done
 			.Restore
-				!Eval_Addr_019ACB #= $019ACB|!bank
-				!Eval_Addr_01A7E3 #= $01A7E3|!bank
-				%JSLRTS(!Eval_Addr_019ACB, !Eval_Addr_01A7E3)
-				;^Asar gets confused if you enter these values directly into the macro because
-				; if entered without order of operations (without parenthesis), you get depreciation
-				; warnings, with parenthesis, it thinks the opcode using the arguments are using
-				; indirect mode (which results in invalid opcodes).
+				%JSLRTS($019ACB|!bank, $01A7E3|!bank)
 			RTL
 	endif
 	if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
