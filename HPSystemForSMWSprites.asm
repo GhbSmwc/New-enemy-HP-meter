@@ -952,11 +952,11 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			;Checks if the sprite is an empty shell.
 			;Output:
 			; - Carry: 0 = no, 1 = yes
-			;NOTE: This subroutine should be called before setting $14C8.
+			;NOTE: This subroutine should be called before writing to $14C8.
 			LDA #$00
 			STA $40FFFF
 			.CheckIfSpriteCustom
-				;Is a custom sprite?
+				;Is not a custom sprite?
 				if !Setting_SpriteHP_UsingCustomSprites
 					LDA !7FAB10,x
 					AND.b #%00001000
@@ -970,15 +970,15 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				CMP.b #$07+1
 				BCS .No
 			.CheckStatus
-				;Is a carryable/kicked/carried/falling off screen (briefly) sprite?
+				;Is a carryable/kicked/carried/falling-off-screen sprite?
 				LDA !14C8,x
 				CMP #$02
-				BEQ ..Maybe
+				BEQ ..FallingOffScrn
 				CMP #$09
 				BCC .No
 				CMP.b #$0B+1
 				BCS .No
-				..Maybe
+				..FallingOffScrn
 			.CheckIfKoopaInside
 				;Is in a status that have no koopa inside the stunned shell?
 				;Note that I did not check RAM $C2 (result of $1540|$1558) because
