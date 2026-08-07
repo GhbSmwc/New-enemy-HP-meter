@@ -964,6 +964,8 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					LDA !14C8,x
 					CMP #$02
 					BEQ ..FallingOffScrn
+					CMP #$08		;\Normal state = not empty shell
+					BEQ .No			;/
 					CMP #$09
 					BCC .No
 					CMP.b #$0B+1

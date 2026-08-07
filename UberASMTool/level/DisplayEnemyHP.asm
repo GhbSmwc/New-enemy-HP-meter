@@ -730,8 +730,6 @@ main:
 						CLC
 						RTS
 					...WingedBouncingKoopa
-						LDA #$00
-						STA $40FFFF
 						LDA !14C8,x
 						CMP #$09
 						BCC ...Allowed
@@ -762,10 +760,12 @@ main:
 		endif
 	if !Setting_SpriteHP_VanillaSprite_OneShotSprites
 		.CheckIfShellEmpty
-			;Since the sprite numbers and custom flags are already checked, we only need $14C8, $1540, and $1558 to identify if it's a empty shell.
+			;Since the sprite numbers and custom flags are already checked, we only need $14C8, $1540, $1558, and $187B to identify if it's a empty shell.
 			LDA !14C8,x
 			CMP #$02
-			BEQ ..FallingOffScrn
+			BEQ ..KoopaInside
+				;^This is a "maybe" state, since it happens after its $14C8,x set to #$02 ($14C8,x could be any value prior). It is up to the code from the patch to
+				;determine should the HP meter to show HP of this sprite.
 			CMP #$07
 			BEQ ..InYoshiMouth
 				;^When a koopa inside its shell in yoshi's mouth, its stun timer still runs, and when the timer expire, they get deleted in their shells inside yoshi's mouth.
@@ -776,26 +776,27 @@ main:
 				;^When a koopa-in-shell is kicked, timer that expired are ignored. At this point $C2 is the only and reliable way to check if koopa is inside ($C2 != #$00)
 			CMP #$0B
 			BEQ ..Carried
-			BRA .No
-			..FallingOffScrn
+			BRA ..KoopaInside
 			..InYoshiMouth
 			..Carried
+			LDA !187B,x			;\Check if disco shell
+			BNE ..KoopaInside	;/
 			;Is in a status that have no koopa inside the stunned shell?
 			;Note that I did not check RAM $C2 (result of $1540|$1558) because
-			;it hasn't been updated yet.
-			LDA !1540,x
-			ORA !1558,x
-			BNE .No
-			BRA .Yes
+			;it hasn't been updated yet (just in case).
+				LDA !1540,x
+				ORA !1558,x
+				BNE ..KoopaInside
+			BRA ..IsEmptyShell
 			..Kicked
 				LDA !C2,x
-				BNE .No
-			.Yes
-				;Empty shell (don't show health meter)
+				BNE ..KoopaInside
+			..IsEmptyShell
+				;Empty shell (don't allow showing health meter)
 				SEC
 				RTS
-			.No
-				;Koopa inside (show health meter)
+			..KoopaInside
+				;Koopa inside (entitle showing health meter)
 				CLC
 				RTS
 	endif
