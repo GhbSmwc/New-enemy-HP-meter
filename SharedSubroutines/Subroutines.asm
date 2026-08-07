@@ -1587,12 +1587,12 @@ SpriteHPIntroEffect:
 ;Hide meter if sprite despawns.
 ;
 ;This subroutine to be used immidiately after its
-;$14C8,x is potentially set to $00 in a custom sprite
-;code. It's to prevent a bug where if a sprite is
-;despawned and a new sprite is spawned at the same
-;frame, the meter could transfer to that newly spawned
-;sprite, (and playing the filling/healing animation if
-;bar animation is enabled), since it happens before
+;$14C8,x is potentially set to $00 in a sprite code.
+;It's to prevent a bug where if a sprite is despawned
+;and a new sprite is spawned at the same frame, the
+;meter could transfer to that newly spawned sprite,
+;(and playing the filling/healing animation if bar
+;animation is enabled), since it happens before
 ;"DisplayEnemyHP.asm" detects an empty sprite slot.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 HideHPMeterIfSpriteDespawns:

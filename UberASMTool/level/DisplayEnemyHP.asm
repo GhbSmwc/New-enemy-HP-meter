@@ -1,7 +1,9 @@
 ;Insert this as level.
 
 ;This ASM code displays the enemy's HP on the HUD of the most recent enemy the player
-;have dealt damage to.
+;have dealt damage to. If total HP mode is active, then it instead will display the
+;HP of all active sprites, plus optionally whatever value stored in RAM defined
+;as "!Freeram_SpriteHP_TotalHPOfUnloadedSprites".
 
 incsrc "../SharedSubroutineDefs.asm"
 incsrc "../StatusBarDefines.asm"
@@ -69,7 +71,7 @@ incsrc "../NumberDisplayRoutinesDefines.asm"
 		endif
 	endmacro
 	macro ClearNumerical()
-		LDX.b #(!Setting_SpriteHP_MaxStringLength-1)*!StatusbarFormat	;>2 Setting_SpriteHP_MaxDigits due to 2 numbers displayed, plus 1 because of the "/" symbol.
+		LDX.b #(!Setting_SpriteHP_MaxStringLength-1)*!StatusbarFormat	;>2 !Setting_SpriteHP_MaxDigits due to 2 numbers displayed, plus 1 because of the "/" symbol.
 		-
 		LDA #!StatusBarBlankTile
 		if !Setting_SpriteHP_NumericalTextAlignment == 1
@@ -148,18 +150,16 @@ load:
 		LDA #$FF								;\Default to not display any HP
 		STA !Freeram_SpriteHP_MeterState					;/
 		if !Setting_SpriteHP_BarAnimation
-			LDA.b #!Setting_SpriteHP_GraphicalBar_TotalPieces
-			STA !Freeram_SpriteHP_BarAnimationFill
+			LDA.b #!Setting_SpriteHP_GraphicalBar_TotalPieces	;\Default with the animation fill amount being full.
+			STA !Freeram_SpriteHP_BarAnimationFill				;/
 			if !Setting_SpriteHP_BarChangeDelay != 0
-				LDA.b #!Setting_SpriteHP_BarChangeDelay
-				STA !Freeram_SpriteHP_BarAnimationTimer
+				LDA.b #!Setting_SpriteHP_BarChangeDelay			;\Default with the delay timer being set
+				STA !Freeram_SpriteHP_BarAnimationTimer			;/
 			endif
 		endif
 		LDX.b #!sprite_slots-1
 		..Loop
-			;This defaults HP for 12 or 22 sprite slots to having 0 HP out of 1 HP.
-			;and with a graphical bar fill value maxed out (so when the meter appears,
-			;shows that it previously have 100% HP).
+			;This defaults HP for 12 or 22 sprite slots to having 0 HP out of 1 HP (failsafe).
 			LDA #$00
 			STA !Freeram_SpriteHP_CurrentHPLow,x
 			if !Setting_SpriteHP_TwoByte
@@ -251,14 +251,14 @@ main:
 						LDA !14C8,x
 						CMP #$01					;\This is a failsafe so when a spawning indicator turns into an enemy sprite, its $14C8,x == $01
 						BEQ .....ValidSpriteState	;/and on that very same frame, !Freeram_SpriteHP_TotalHPOfUnloadedSprites gets deducted. Without this, this frame would've have a net loss of every enemy with $14C8,x == $01.
-						CMP #$07
-						BCC .....Next
-						CMP #$0C
-						BCC .....ValidSpriteState
-						BRA .....Next
+						CMP #$07					;\$00: No sprite, $02-$06: Various killed states, count that as 0 HP
+						BCC .....Next				;/
+						CMP #$0C					;\$07-$0B: Alive state
+						BCC .....ValidSpriteState	;/
+						BRA .....Next				;>Anything else, count as 0 HP.
 						.....ValidSpriteState
-						JSR .CheckForBlacklistedSpritesTotalHP
-						BCS .....Next
+						JSR .CheckForBlacklistedSpritesTotalHP	;\Blacklisted state = 0 HP
+						BCS .....Next							;/
 						LDA !Freeram_SpriteHP_CurrentHPLow,x
 						CLC
 						ADC !Scratchram_GraphicalBar_FillByteTbl
@@ -284,21 +284,23 @@ main:
 							LDA #$00
 							STA !Scratchram_GraphicalBar_FillByteTbl+3
 						endif
-						JML .DisplayNumerical
+						JML .DisplayNumerical ;>Skip executing the following code related to the meter being on a specific sprite slot.
 		endif
 	.CheckIfSpriteStateValid
 		..DisplayMeter
 			LDX !Scratchram_SpriteHP_SpriteSlotToDisplay
-			LDA !14C8,x				;>Sprite status table
-			BNE ...Exists				;>If exists, allow HP to be displayed.
-			
+			LDA !14C8,x				;\If sprite exists, allow meter to show, otherwise hide it.
+			BNE ...Exists			;/
+				;^Note: if a sprite status gets set to #$00, and at the same frame, a new sprite spawns on the same slot
+				; that have its status set to #$00, the meter could transfer to the newly spawned sprite. A way to prevent
+				; that is anytime $14C8,x gets set to 0, clear the meter by executing "JSL !HideHPMeterIfSpriteDespawns".
 			...HideHPMeter
 				LDA #$FF				;\Hide HP for non-existing sprites, sprites that have HP in certain cases
 				STA !Freeram_SpriteHP_MeterState	;/(like before it was turned into a coin from a fireball, or bob-omb exploding)
 				JMP .Done
 			...Exists
 				JSR .CheckForBlacklistedSprites
-				BCS ...HideHPMeter
+				BCS ...HideHPMeter				;>If sprite becomes a blacklisted state the meter is on, hide the meter
 			...DisplayNormally
 	.DisplayNumerical
 		;After this point:
@@ -697,23 +699,27 @@ main:
 			;such subroutines, thus they don't need to be listed here,
 			;except for total HP mode (see ".CheckForBlacklistedSpritesTotalHP").
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-				%SpriteHPMeterBlacklist($0D, ...BobOmb) ;>Bobomb (blacklisted if its an explosion)
-				%SpriteHPMeterBlacklist_Range($04, $07, ...KoopasAndEmptyShell)
-				%SpriteHPMeterBlacklist($09, ...KoopasAndEmptyShell) ;>Sprite $DF is techinically sprite $09, just in a stunned state
+				if !Setting_SpriteHP_VanillaSprite_OneShotSprites
+					%SpriteHPMeterBlacklist($0D, ...BobOmb) ;>Bobomb (blacklisted if its an explosion)
+					%SpriteHPMeterBlacklist_Range($04, $07, ...KoopasAndEmptyShell)
+					%SpriteHPMeterBlacklist($09, ...KoopasAndEmptyShell) ;>Sprite $DF is techinically sprite $09, just in a stunned state
+				endif
 				...Allowed
 					CLC
 					RTS
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			;Custom handler for conditionally blacklisted sprites here.
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-				...BobOmb
-					LDA !1534,x
-					BNE ..Blacklisted	;>If its an explosion, it's blacklisted
-					BRA ...Allowed		;>You may need to change this BRA to a JMP if you get a branch-out-of-bounds here.
-				...KoopasAndEmptyShell
-					JSR .CheckIfShellEmpty
-					BCS ..Blacklisted
-					BRA ...Allowed
+				if !Setting_SpriteHP_VanillaSprite_OneShotSprites
+					...BobOmb
+						LDA !1534,x
+						BNE ..Blacklisted	;>If its an explosion, it's blacklisted
+						BRA ...Allowed		;>You may need to change this BRA to a JMP if you get a branch-out-of-bounds here.
+					...KoopasAndEmptyShell
+						JSR .CheckIfShellEmpty
+						BCS ..Blacklisted
+						BRA ...Allowed
+				endif
 		if !Setting_SpriteHP_UsingCustomSprites
 			..CustomSprite
 				;Here is the blacklist for custom sprite numbers
@@ -726,43 +732,45 @@ main:
 		..Blacklisted
 			SEC
 			RTS
-	.CheckIfShellEmpty
-		;Since the sprite numbers and custom flags are already checked, we only need $14C8, $1540, and $1558 to identify if it's a empty shell.
-		LDA !14C8,x
-		CMP #$02
-		BEQ ..FallingOffScrn
-		CMP #$07
-		BEQ ..InYoshiMouth
-			;^When a koopa inside its shell in yoshi's mouth, its stun timer still runs, and when the timer expire, they get deleted in their shells inside yoshi's mouth.
-			; That explains why holding a koopa-in-shell (after stunning it with a quake, bounce block, or cape spin) in yoshi's mouth, that the meter could disappear
-			; some time later.
-		CMP #$0A
-		BEQ ..Kicked
-			;^When a koopa-in-shell is kicked, timer that expired are ignored. At this point $C2 is the only and reliable way to check if koopa is inside ($C2 != #$00)
-		CMP #$0B
-		BEQ ..Carried
-		BRA .No
-		..FallingOffScrn
-		..InYoshiMouth
-		..Carried
-		;Is in a status that have no koopa inside the stunned shell?
-		;Note that I did not check RAM $C2 (result of $1540|$1558) because
-		;it hasn't been updated yet.
-		LDA !1540,x
-		ORA !1558,x
-		BNE .No
-		BRA .Yes
-		..Kicked
-			LDA !C2,x
+	if !Setting_SpriteHP_VanillaSprite_OneShotSprites
+		.CheckIfShellEmpty
+			;Since the sprite numbers and custom flags are already checked, we only need $14C8, $1540, and $1558 to identify if it's a empty shell.
+			LDA !14C8,x
+			CMP #$02
+			BEQ ..FallingOffScrn
+			CMP #$07
+			BEQ ..InYoshiMouth
+				;^When a koopa inside its shell in yoshi's mouth, its stun timer still runs, and when the timer expire, they get deleted in their shells inside yoshi's mouth.
+				; That explains why holding a koopa-in-shell (after stunning it with a quake, bounce block, or cape spin) in yoshi's mouth, that the meter could disappear
+				; some time later.
+			CMP #$0A
+			BEQ ..Kicked
+				;^When a koopa-in-shell is kicked, timer that expired are ignored. At this point $C2 is the only and reliable way to check if koopa is inside ($C2 != #$00)
+			CMP #$0B
+			BEQ ..Carried
+			BRA .No
+			..FallingOffScrn
+			..InYoshiMouth
+			..Carried
+			;Is in a status that have no koopa inside the stunned shell?
+			;Note that I did not check RAM $C2 (result of $1540|$1558) because
+			;it hasn't been updated yet.
+			LDA !1540,x
+			ORA !1558,x
 			BNE .No
-		.Yes
-			;Empty shell (don't show health meter)
-			SEC
-			RTS
-		.No
-			;Koopa inside (show health meter)
-			CLC
-			RTS
+			BRA .Yes
+			..Kicked
+				LDA !C2,x
+				BNE .No
+			.Yes
+				;Empty shell (don't show health meter)
+				SEC
+				RTS
+			.No
+				;Koopa inside (show health meter)
+				CLC
+				RTS
+	endif
 if !Setting_SpriteHP_TotalHPMode
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;Check for conditionally blacklisted sprites, for total HP mode
