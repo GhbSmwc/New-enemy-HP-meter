@@ -417,7 +417,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 	; - This entire routine runs AFTER its sprite numbers ($9E/$7FAB9E) have been set, and before its
 	;   init code runs. Thus I can set HP values differently based on sprite number, as well as the
 	;   sprite's init to set HP would override this.
-		if and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
+		if !Setting_SpriteHP_RemoveOrApplyPatch
 			org $07F779
 			autoclean JSL DefaultHPOnSpawn
 			NOP #2

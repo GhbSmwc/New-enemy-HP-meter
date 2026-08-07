@@ -660,7 +660,7 @@ autoclean JML SpritesTotalHPIntroEffect</pre>
 		</ul>
 		Thankfully, all that logic is handled automatically in a subroutine defined as <kbd>!SharedSub_SpriteHPDamage</kbd>, with the inputs stored in RAM <kbd>$00</kbd> (2 bytes, <kbd>$00~$01</kbd>, if <kbd>!Setting_SpriteHP_TwoByte == 1</kbd>). Feel free to check out the subroutines as you wish.<br><br>
 		
-		The same rule applies to healing as well (to show how much the fill increases). A subroutine for pixi <kbd>pixi/routines/EnemyHPHeal.asm</kbd>, which can be called via <kbd>%EnemyHPHeal()</kbd> (similarly <kbd>$00</kbd> or <kbd>$00-$01</kbd>).
+		The same rule applies to healing as well (to show how much the fill increases). A subroutine for pixi <kbd>pixi/routines/EnemyHPHeal.asm</kbd>, which can be called via <kbd>%EnemyHPHeal()</kbd> (similarly <kbd>$00</kbd> or <kbd>$00~$01</kbd>).
 		Why in pixi? It's because none of vanilla SMW sprites heals, and at the time of writing this, not a single custom sprite can actually heal.
 	</p>
 	
@@ -715,8 +715,7 @@ autoclean JML SpritesTotalHPIntroEffect</pre>
 <div class="CodeBlock" style="height: 390px"><pre>    ;[...]
     if !Setting_SpriteHP_TwoByte
         REP #$20
-        LDA $00                 ;\Push RAM $00~$01 into stack
-        PHA                     ;/
+		PEI ($00)				;&gt;Push RAM $00~$01 into stack ("PEI ($XX)" is like "LDA $xx : PHA" in 16-bit but without affecting A and code occupying 1 less byte)
         LDA #$0001
         STA $00
         SEP #$20
@@ -1211,7 +1210,7 @@ function getClosest(el, tagName) {
 			if (Size <= 1n) {
 				Size = 1n
 			} else {
-				OutputString2 += "-$" + (CurrentAddress + Size - 1n).toString(16).toUpperCase()
+				OutputString2 += "~$" + (CurrentAddress + Size - 1n).toString(16).toUpperCase()
 			}
 			OutputString2 += " (" + Size.toString() + " byte"
 			if (Size > 1n) {
@@ -1246,7 +1245,7 @@ function getClosest(el, tagName) {
 		let TotalBytes = (CurrentAddress-HPDataStartingAddr)
 		AddressTrackerAutoAssigner_HPData = "SpriteHPMeter\t!Freeram_SpriteHP_SpriteHPData\t" + TotalBytes.toString()
 		
-		OutputString1 += "Sprite HP data: " + "$" + HPDataStartingAddr.toString(16).toUpperCase() + "-$" + (CurrentAddress-1n).toString(16).toUpperCase() + " (" + TotalBytes.toString() + " bytes) used.\n"
+		OutputString1 += "Sprite HP data: " + "$" + HPDataStartingAddr.toString(16).toUpperCase() + "~$" + (CurrentAddress-1n).toString(16).toUpperCase() + " (" + TotalBytes.toString() + " bytes) used.\n"
 		
 		document.getElementById("HPDataOutput").textContent = OutputString1+OutputString2
 	}
