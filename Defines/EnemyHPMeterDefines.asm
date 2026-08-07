@@ -97,7 +97,10 @@
 		!Scratchram_SpriteHP_SpriteSlotToDisplay = $188D|!addr
 			;[1 byte]: This holds the current sprite slot used by various codes to determine what sprite slot the HP meter is showing.
 			;This RAM address size must not be 3 bytes long (so $xx and $xxxx are okay, but $xxxxxx are not, it's being used in LDX
-			;which lacks an absolute-long address for). It is set when calling "SpriteHPGetSlotIndex" in shared subroutine code, 
+			;which lacks an absolute-long address for). It is set when calling "SpriteHPGetSlotIndex" in shared subroutine code.
+			;
+			;Note that "HPSystemForSMWSprites.asm" also uses this, which hijacks various code in SMW, avoid using currently-reserved
+			;scratch RAM such as $8A else glitches may occur.
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;Qusai-freeram for miscellaneous things (flags to prevent re-triggers)
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -107,7 +110,7 @@
 		;doesn't work and will replay the animation every time Wendy/Lemmy retreat in their pipes.
 		;By default, this will use the last block in the level map16 data (bottom-right corner). Very unlikely you would need to use the
 		;entire level dimension for a 1-screen boss room. It checks if this value != $25, then play the intro effect, then sets it to $00.
-		;This also means you should not place any other block here.
+		;This also means you should not place any other block there.
 			if !sa1 == 0
 				!Ram_WendyLemmyIntroFlag		= $7EFFFF
 			else
@@ -291,11 +294,12 @@
 			;   !Setting_SpriteHP_VanillaSprite_Chuck == 1 because otherwise their HP system would be broken
 			;   (Having !Setting_SpriteHP_VanillaSprite_Chuck == 0 would revert chuck to use $1528 when being
 			;   stomped, but the fireball damage code would not use $1528 but this patch's HP values instead,
-			;   resulting in them having 2 separate HP values that they die when either one of them reaches 0).
+			;   resulting in them having 2 separate HP values that they die when either one of them reaches a
+			;   death value).
 			;
 			; - If a sprite have its own built-in fireball damage handler, like Ludwig/Morton/Roy, and have
 			;   $190F's "takes 5 fireballs to kill" be set, then it is possible the sprite takes both damage
-			;   from the fireball's code and its own built-in.
+			;   from the fireball's code and its own built-in. Again, I don't recommend this.
 			
 		!Setting_SpriteHP_UsingCustomSprites = 1
 			;^You using custom sprites (pixi)? 0 = No, 1 = Yes. This basically ignores RAM $7FAB10
@@ -319,7 +323,8 @@
 				;   cannot be over 255 even with !Setting_SpriteHP_TwoByte == 1)
 				; - 2 = Yes (uses the new HP RAM directly, which allows more than 255 HP if
 				;   !Setting_SpriteHP_TwoByte == 1). $C2 is now a state handler to determine if
-				;   the sprite is normal, or half-squished.
+				;   the sprite is normal, or half-squished. Note that spin jumps are always
+				;   insta-kill.
 			
 			!Setting_SpriteHP_VanillaSprite_Pokey		= 1
 				;^Show HP of Pokey (HP = how many segments, including the head)
@@ -357,10 +362,10 @@
 			; -- Enemies that don't get killed at all by stomps but instead simply change states will show no damage
 			;    but will still display the meter: Wiggler, Dry Bones, Bony Beetle.
 			; -- When regular Koopas Troopas seperated from their shells, the HP meter will switch to the sprite slot of the
-			;    shell-kess koopa (with the exception that you do not wish koopas get forced out of shells, see
-			;    !Setting_SpriteHP_Koopas_ClassicBehavior). This is because the regular Koopa Troopas, the shell (wheather
-			;    it's empty or stunned inside their shell with eyes showing) are the same sprite, just with a different
-			;    state. When a shell-less koopa is launched out of the shell, that is a new sprite being spawned,
+			;    spawned shell-kess koopa (with the exception that you do not wish koopas get forced out of shells, see
+			;    !Setting_SpriteHP_Koopas_ClassicBehavior). This is because the regular Koopa Troopas and the shell
+			;    (wheather it's empty or stunned inside their shell with eyes showing) are the same sprite, just with a
+			;    different state. When a shell-less koopa is launched out of the shell, that is a new sprite being spawned,
 			;    and when they enter a shell, the shell-less koopa despawns and the shell becomes a koopa troopa.
 			; --- That, along with the glitch of immidiately kicking the shell that the shell-less koopa just entered makes
 			;     the shell an empty shell is a reason I can't have the meter not be on an empty shell.
@@ -405,15 +410,18 @@
 		;
 		;This only applies if !Setting_SpriteHP_RemoveOrApplyPatch == 1 and their respective settings being 1.
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-		
+			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			;Chucks. Values can be up to 65535 if these conditions are met:
 			; - !Setting_SpriteHP_TwoByte == 1
 			; - !Setting_SpriteHP_Modify5FireballsSystem == 1
+			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 				!Setting_SpriteHP_VanillaSprite_Chucks_HPAmount		= 15	;>This applies to all chuck variants and all sprites with "Take 5 fireballs to kill" of $190F's bit 3.
 				!Setting_SpriteHP_VanillaSprite_Chucks_StompDamage	= 5	;>Amount of HP loss when taking damage from stomp attacks
+			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			;Rex. Values can be up to 65535 if these conditions are met:
 			; - !Setting_SpriteHP_VanillaSprite_Rex == 2
 			; - !Setting_SpriteHP_TwoByte == 1
+			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 				!Setting_SpriteHP_VanillaSprite_Rex_HPAmount		= 2
 					;^Amount of HP Rex has (only stomps, other attacks are insta-kill).
 					;Note that after the first stomp attack will leave the Rex in his 1/2 height form.
@@ -425,15 +433,18 @@
 			
 			!Setting_SpriteHP_VanillaSprite_WendyLemmy_HPAmount	= 3		;\Same as before.
 			!Setting_SpriteHP_VanillaSprite_WendyLemmy_StompDamage	= 1		;/
+			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			;Following settings are HP and damage values for Ludwig, Morton and Roy.
 			;
 			;Be careful with having too much health and too little damage from stomp attacks for Roy, if its possible to stomp Roy too many times
 			;(from my testing, 7 and higher) before he dies, the pillars of the arena can glitch since Nintendo didn't program a limit on how
 			;far the pillars can move. To know if its possible, do the math: NumberOfStomps = ceiling(Health/StompDamage), where ceiling rounds
 			;the number up to an integer. A division by zero obviously means you can trigger the walls bugging out without damage.
+			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 				!Setting_SpriteHP_VanillaSprite_LudwigMortonRoy_HPAmount	= 12
 				!Setting_SpriteHP_VanillaSprite_LudwigMortonRoy_StompDamage	= 4
 				!Setting_SpriteHP_VanillaSprite_LudwigMortonRoy_FireballDamage	= 1
+		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		;For any sprite whose tweaker $190F's bit 3 (%wcdj5sDp, takes 5 fireballs to kill; bit 3) is set.
 		;And along with other tweaker settings:
 		; - $166E's bit 4 ("Disable fireball killing") to be 0 or false.
@@ -441,6 +452,7 @@
 		;
 		;If !Setting_SpriteHP_Modify5FireballsSystem == 1, this will directly subtract the new sprite's HP RAM instead of $1528.
 		;This also applies to yoshi fireball (note that this can hit multiple times)
+		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			!Setting_SpriteHP_FireballDamageAmount			= 3
 				;^Amount of damage sprites receives from fireball damage.
 				; With !Setting_SpriteHP_Modify5FireballsSystem == 0

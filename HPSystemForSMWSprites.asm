@@ -930,56 +930,60 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				LDA #$02
 				STA !14C8,y
 			RTL
-		IsKoopaShellEmpty:
-			;Checks if the sprite is an empty shell.
-			;Output:
-			; - Carry: 0 = no, 1 = yes
-			;NOTE: This subroutine should be called before writing to $14C8.
-			.CheckIfSpriteCustom
-				;Is not a custom sprite?
-				if !Setting_SpriteHP_UsingCustomSprites
-					LDA !7FAB10,x
-					AND.b #%00001000
-					BNE .No
-				endif
-			.CheckVanillaSpriteNumber
-				;Is vanilla sprite number $04-$07 and $09?
-				LDA !9E,x
-				CMP #$09 ;>Sprite $DF (in Lunar Magic) is techinically sprite $09, just in a stunned state
-				BEQ ..BouncingParakoopa
-				CMP #$04
-				BCC .No
-				CMP.b #$07+1
-				BCS .No
-				BRA .CheckStatus
-				..BouncingParakoopa
+		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+		;Checks if the sprite is an empty shell.
+		;Output:
+		; - Carry: 0 = no, 1 = yes
+		;NOTE: This subroutine should be called before writing to $14C8.
+		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+			IsKoopaShellEmpty:
+				.CheckIfSpriteCustom
+					;Is not a custom sprite?
+					if !Setting_SpriteHP_UsingCustomSprites
+						LDA !7FAB10,x
+						AND.b #%00001000
+						BNE .No
+					endif
+				.CheckVanillaSpriteNumber
+					;Is vanilla sprite number $04-$07 and $09?
+					LDA !9E,x
+					CMP #$09 ;>Sprite $DF (in Lunar Magic) is techinically sprite $09, just in a stunned state
+					BEQ ..BouncingParakoopa
+					CMP #$04
+					BCC .No
+					CMP.b #$07+1
+					BCS .No
+					BRA .CheckStatus
+					..BouncingParakoopa
+						LDA !14C8,x
+						CMP #$09
+						BCC .No
+						BRA .Yes ;>Green bouncing koopas were NEVER a kicked shell with a koopa inside, that's only sprite $04
+				.CheckStatus
+					;Is a carryable/kicked/carried/falling-off-screen sprite?
 					LDA !14C8,x
+					CMP #$02
+					BEQ ..FallingOffScrn
 					CMP #$09
 					BCC .No
-					BRA .Yes ;>Green bouncing koopas were NEVER a kicked shell with a koopa inside, that's only sprite $04
-			.CheckStatus
-				;Is a carryable/kicked/carried/falling-off-screen sprite?
-				LDA !14C8,x
-				CMP #$02
-				BEQ ..FallingOffScrn
-				CMP #$09
-				BCC .No
-				CMP.b #$0B+1
-				BCS .No
-				..FallingOffScrn
-			.CheckIfKoopaInside
-				;Is in a status that have no koopa inside the stunned shell?
-				;Note that I did not check RAM $C2 (result of $1540|$1558) because
-				;it hasn't been updated yet.
-				LDA !1540,x
-				ORA !1558,x
-				BNE .No
-			.Yes
-				SEC ;>Is an empty shell
-				RTS
-			.No
-				CLC	;>Not an empty shell
-				RTS
+					CMP.b #$0B+1
+					BCS .No
+					..FallingOffScrn
+				.CheckIfKoopaInside
+					;Is in a status that have no koopa inside the stunned shell?
+					;Note that I did not check RAM $C2 (result of $1540|$1558) because
+					;it hasn't been updated yet.
+					LDA !1540,x
+					ORA !1558,x
+					BNE .No
+					LDA !187B,x
+					BNE .No
+				.Yes
+					SEC ;>Is an empty shell
+					RTS
+				.No
+					CLC	;>Not an empty shell
+					RTS
 	endif
 	if !Setting_SpriteHP_RemoveOrApplyPatch
 		DefaultHPOnSpawn:	;>JSL from $07F779
