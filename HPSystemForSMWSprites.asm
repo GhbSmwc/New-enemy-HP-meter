@@ -394,7 +394,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 	
 		%HijacksForFallingOffScrn($01A5E3, ShowHPForFallingOffScrnYregister, y)
 		%HijacksForFallingOffScrn($01A66B, ShowHPForFallingOffScrn, x)
-		%HijacksForFallingOffScrn($01A68F, ShowHPForFallingOffScrn, x)
+		%HijacksForFallingOffScrn($01A68F, ShowHPForFallingOffScrn, x) ;>Sprite to sprite collision
 		%HijacksForFallingOffScrn($01A6AC, ShowHPForFallingOffScrnYregister, y)
 		%HijacksForFallingOffScrn($01A86B, ShowHPForFallingOffScrn, x)
 		%HijacksForFallingOffScrn($01A9E9, ShowHPForFallingOffScrn, x)
@@ -945,13 +945,18 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			.CheckVanillaSpriteNumber
 				;Is vanilla sprite number $04-$07 and $09?
 				LDA !9E,x
-				CMP #$09 ;>Sprite $DF is techinically sprite $09, just in a stunned state
+				CMP #$09 ;>Sprite $DF (in Lunar Magic) is techinically sprite $09, just in a stunned state
 				BEQ ..BouncingParakoopa
 				CMP #$04
 				BCC .No
 				CMP.b #$07+1
 				BCS .No
+				BRA .CheckStatus
 				..BouncingParakoopa
+					LDA !14C8,x
+					CMP #$09
+					BCC .No
+					BRA .Yes ;>Green bouncing koopas were NEVER a kicked shell with a koopa inside, that's only sprite $04
 			.CheckStatus
 				;Is a carryable/kicked/carried/falling-off-screen sprite?
 				LDA !14C8,x
@@ -970,10 +975,10 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				ORA !1558,x
 				BNE .No
 			.Yes
-				SEC
+				SEC ;>Is an empty shell
 				RTS
 			.No
-				CLC
+				CLC	;>Not an empty shell
 				RTS
 	endif
 	if !Setting_SpriteHP_RemoveOrApplyPatch

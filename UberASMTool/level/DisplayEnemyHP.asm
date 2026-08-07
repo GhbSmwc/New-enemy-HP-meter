@@ -707,7 +707,7 @@ main:
 				if !Setting_SpriteHP_VanillaSprite_OneShotSprites
 					%SpriteHPMeterBlacklist($0D, ...BobOmb) ;>Bobomb (blacklisted if its an explosion)
 					%SpriteHPMeterBlacklist_Range($04, $07, ...KoopasAndEmptyShell) ;>Determine if the koopa shell is empty or not.
-					%SpriteHPMeterBlacklist($09, ...KoopasAndEmptyShell) ;>Sprite $DF is techinically sprite $09, just in a stunned state
+					%SpriteHPMeterBlacklist($09, ...WingedBouncingKoopa) ;>Sprite $DF is techinically sprite $09, just in a stunned state
 				endif
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 				;Keep this here (other than listed is allowed by default)
@@ -729,6 +729,12 @@ main:
 						BCS ...Blacklisted
 						CLC
 						RTS
+					...WingedBouncingKoopa
+						LDA #$00
+						STA $40FFFF
+						LDA !14C8,x
+						CMP #$09
+						BCC ...Allowed
 				endif
 				...Blacklisted
 					SEC
