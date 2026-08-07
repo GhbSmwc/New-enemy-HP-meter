@@ -935,8 +935,6 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			;Output:
 			; - Carry: 0 = no, 1 = yes
 			;NOTE: This subroutine should be called before writing to $14C8.
-			LDA #$00
-			STA $40FFFF
 			.CheckIfSpriteCustom
 				;Is not a custom sprite?
 				if !Setting_SpriteHP_UsingCustomSprites
@@ -947,7 +945,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			.CheckVanillaSpriteNumber
 				;Is vanilla sprite number $04-$07 and $09?
 				LDA !9E,x
-				CMP #$09
+				CMP #$09 ;>Sprite $DF is techinically sprite $09, just in a stunned state
 				BEQ ..BouncingParakoopa
 				CMP #$04
 				BCC .No
@@ -1038,236 +1036,242 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				PLB
 				PLP
 				RTL
-			;Default HP values for sprites and custom sprites. These are values that their current and max HP are set when they first spawn initalized
-			;(before their init code executes)
+			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+			;Default HP values for sprites and custom sprites. These are values that their current and max HP are set when they first spawn
+			;initalized (before their init code executes)
 			;
 			;Any sprite with a max HP of 0 are consitered "blacklisted" and the meter will not display HP for that (when instantly killed).
 			;If !Setting_SpriteHP_TwoByte == 0, then only enter values 0-255, else 0-65535 is allowed. Values
 			;at and above 256 or 65536 will be modulo'ed by those values. A value without a prefix ("%" = binary, "$" = hex) means decimal.
+			;
+			;For conditionally blacklisted sprites (where a specific state should not have HP), see "UberASMTool/level/DisplayEnemyHP.asm"
+			;under ".CheckForBlacklistedSprites"
+			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			
-			;These are default HP table values for vanilla SMW sprites, for sprite numbers $00-$C8.
-				.DefaultSMWSprHP
-					!DefaultHPTableSize 00001 ; <- $00 - Green shell-less Koopa
-					!DefaultHPTableSize 00001 ; <- $01 - Red shell-less Koopa
-					!DefaultHPTableSize 00001 ; <- $02 - Blue shell-less Koopa
-					!DefaultHPTableSize 00001 ; <- $03 - Yellow shell-less Koopa
-					!DefaultHPTableSize 00001 ; <- $04 - Green Koopa (including the shell)
-					!DefaultHPTableSize 00001 ; <- $05 - Red Koopa (including the shell)
-					!DefaultHPTableSize 00001 ; <- $06 - Blue Koopa (including the shell)
-					!DefaultHPTableSize 00001 ; <- $07 - Yellow Koopa (including the shell)
-					!DefaultHPTableSize 00002 ; <- $08 - Green winged Koopa, flying
-					!DefaultHPTableSize 00002 ; <- $09 - Green winged Koopa, bouncing
-					!DefaultHPTableSize 00002 ; <- $0A - Red winged Koopa, vertical
-					!DefaultHPTableSize 00002 ; <- $0B - Red winged Koopa, horizontal
-					!DefaultHPTableSize 00002 ; <- $0C - Yellow winged Koopa
-					!DefaultHPTableSize 00001 ; <- $0D - Bob-Omb
-					!DefaultHPTableSize 00001 ; <- $0E - Keyhole
-					!DefaultHPTableSize 00001 ; <- $0F - Goomba
-					!DefaultHPTableSize 00002 ; <- $10 - Winged Goomba
-					!DefaultHPTableSize 00001 ; <- $11 - Buzzy Beetle
-					!DefaultHPTableSize 00001 ; <- $12 - Unused
-					!DefaultHPTableSize 00001 ; <- $13 - Spiny
-					!DefaultHPTableSize 00001 ; <- $14 - Falling Spiny
-					!DefaultHPTableSize 00001 ; <- $15 - Fish, horizontal
-					!DefaultHPTableSize 00001 ; <- $16 - Fish, vertical
-					!DefaultHPTableSize 00001 ; <- $17 - Fish, flying (spawned by sprite D1)
-					!DefaultHPTableSize 00001 ; <- $18 - Fish, jumping
-					!DefaultHPTableSize 00001 ; <- $19 - Display text from level message 1
-					!DefaultHPTableSize 00001 ; <- $1A - Classic Piranha Plant
-					!DefaultHPTableSize 00001 ; <- $1B - Bouncing Football
-					!DefaultHPTableSize 00001 ; <- $1C - Bullet Bill
-					!DefaultHPTableSize 00001 ; <- $1D - Hopping flame
-					!DefaultHPTableSize 00001 ; <- $1E - Lakitu
-					!DefaultHPTableSize 00001 ; <- $1F - Magikoopa
-					!DefaultHPTableSize 00000 ; <- $20 - Magikoopa's magic
-					!DefaultHPTableSize 00000 ; <- $21 - Moving coin
-					!DefaultHPTableSize 00001 ; <- $22 - Green vertical net Koopa
-					!DefaultHPTableSize 00001 ; <- $23 - Red vertical net Koopa
-					!DefaultHPTableSize 00001 ; <- $24 - Green horizontal net Koopa
-					!DefaultHPTableSize 00001 ; <- $25 - Red horizontal net Koopa
-					!DefaultHPTableSize 00001 ; <- $26 - Thwomp
-					!DefaultHPTableSize 00001 ; <- $27 - Thwimp
-					!DefaultHPTableSize 00001 ; <- $28 - Big Boo
-					!DefaultHPTableSize 00001 ; <- $29 - Koopa Kid
-					!DefaultHPTableSize 00001 ; <- $2A - Upside-down Piranha Plant
-					!DefaultHPTableSize 00001 ; <- $2B - Sumo Brother's lightning
-					!DefaultHPTableSize 00000 ; <- $2C - Yoshi egg
-					!DefaultHPTableSize 00000 ; <- $2D - Baby Yoshi
-					!DefaultHPTableSize 00001 ; <- $2E - Spike Top
-					!DefaultHPTableSize 00000 ; <- $2F - Portable springboard
-					!DefaultHPTableSize 00001 ; <- $30 - Dry Bones that throws bones
-					!DefaultHPTableSize 00001 ; <- $31 - Bony Beetle
-					!DefaultHPTableSize 00001 ; <- $32 - Dry Bones that stays on ledges
-					!DefaultHPTableSize 00001 ; <- $33 - Podoboo/vertical fireball
-					!DefaultHPTableSize 00000 ; <- $34 - Boss fireball
-					!DefaultHPTableSize 00000 ; <- $35 - Yoshi
-					!DefaultHPTableSize 00000 ; <- $36 - Unused
-					!DefaultHPTableSize 00001 ; <- $37 - Boo
-					!DefaultHPTableSize 00001 ; <- $38 - Eerie (straight)
-					!DefaultHPTableSize 00001 ; <- $39 - Eerie (wave)
-					!DefaultHPTableSize 00001 ; <- $3A - Urchin (fixed distance)
-					!DefaultHPTableSize 00001 ; <- $3B - Urchin (wall detect)
-					!DefaultHPTableSize 00001 ; <- $3C - Urchin (wall follow)
-					!DefaultHPTableSize 00001 ; <- $3D - Rip Van Fish
-					!DefaultHPTableSize 00000 ; <- $3E - P-switch
-					!DefaultHPTableSize 00001 ; <- $3F - Para-Goomba
-					!DefaultHPTableSize 00001 ; <- $40 - Para-Bomb
-					!DefaultHPTableSize 00000 ; <- $41 - Dolphin (long jump)
-					!DefaultHPTableSize 00000 ; <- $42 - Dolphin (short jump)
-					!DefaultHPTableSize 00000 ; <- $43 - Dolphin (vertical)
-					!DefaultHPTableSize 00001 ; <- $44 - Torpedo Ted
-					!DefaultHPTableSize 00000 ; <- $45 - Directional coins
-					!DefaultHPTableSize !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount ; <- $46 - Diggin' Chuck
-					!DefaultHPTableSize 00001 ; <- $47 - Swimming/jumping fish
-					!DefaultHPTableSize 00001 ; <- $48 - Diggin' Chuck's rock
-					!DefaultHPTableSize 00001 ; <- $49 - Growing/shrinking pipe
-					!DefaultHPTableSize 00000 ; <- $4A - Goal Sphere
-					!DefaultHPTableSize 00001 ; <- $4B - Pipe-dwelling Lakitu
-					!DefaultHPTableSize 00001 ; <- $4C - Exploding block
-					!DefaultHPTableSize 00001 ; <- $4D - Monty Mole (ground-dwelling)
-					!DefaultHPTableSize 00001 ; <- $4E - Monty Mole (ledge-dwelling)
-					!DefaultHPTableSize 00001 ; <- $4F - Jumping Piranha Plant
-					!DefaultHPTableSize 00001 ; <- $50 - Jumping Piranha Plant (fireballs)
-					!DefaultHPTableSize 00001 ; <- $51 - Ninji
-					!DefaultHPTableSize 00000 ; <- $52 - Moving Ghost House hole (note: changed to $0185B7 in LM v2.53+)
-					!DefaultHPTableSize 00000 ; <- $53 - Throwblock
-					!DefaultHPTableSize 00000 ; <- $54 - Revolving door for climbing net
-					!DefaultHPTableSize 00000 ; <- $55 - Checkerboard platform (horizontal)
-					!DefaultHPTableSize 00000 ; <- $56 - Flying rock platform (horizontal)
-					!DefaultHPTableSize 00000 ; <- $57 - Checkerboard platform (vertical)
-					!DefaultHPTableSize 00000 ; <- $58 - Flying rock platform (vertical)
-					!DefaultHPTableSize 00000 ; <- $59 - Turnblock bridge (horz/vert)
-					!DefaultHPTableSize 00000 ; <- $5A - Turnblock bridge (horz only)
-					!DefaultHPTableSize 00000 ; <- $5B - Floating brown platform
-					!DefaultHPTableSize 00000 ; <- $5C - Floating checkerboard platform
-					!DefaultHPTableSize 00000 ; <- $5D - Small orange floating platform
-					!DefaultHPTableSize 00000 ; <- $5E - Large orange floating platform
-					!DefaultHPTableSize 00000 ; <- $5F - Swinging brown platform
-					!DefaultHPTableSize 00000 ; <- $60 - Flat switch palace switch
-					!DefaultHPTableSize 00000 ; <- $61 - Skull raft
-					!DefaultHPTableSize 00000 ; <- $62 - Brown line-guided platform
-					!DefaultHPTableSize 00000 ; <- $63 - Brown/checkered line-guided platform
-					!DefaultHPTableSize 00000 ; <- $64 - Line-guided rope mechanism
-					!DefaultHPTableSize 00001 ; <- $65 - Chainsaw (line-guided)
-					!DefaultHPTableSize 00001 ; <- $66 - Upside-down chainsaw (line-guided)
-					!DefaultHPTableSize 00001 ; <- $67 - Grinder (line-guided)
-					!DefaultHPTableSize 00001 ; <- $68 - Fuzzy (line-guided)
-					!DefaultHPTableSize 00001 ; <- $69 - Unused
-					!DefaultHPTableSize 00000 ; <- $6A - Coin game cloud
-					!DefaultHPTableSize 00000 ; <- $6B - Wall springboard (left wall)
-					!DefaultHPTableSize 00000 ; <- $6C - Wall springboard (right wall)
-					!DefaultHPTableSize 00000 ; <- $6D - Invisible solid block
-					!DefaultHPTableSize 00002 ; <- $6E - Dino-Rhino
-					!DefaultHPTableSize 00001 ; <- $6F - Dino-Torch
-					!DefaultHPTableSize 00001 ; <- $70 - Pokey
-					!DefaultHPTableSize 00001 ; <- $71 - Super Koopa (red cape)
-					!DefaultHPTableSize 00001 ; <- $72 - Super Koopa (yellow cape)
-					!DefaultHPTableSize 00001 ; <- $73 - Super Koopa (ground/feather)
-					!DefaultHPTableSize 00000 ; <- $74 - Mushroom
-					!DefaultHPTableSize 00000 ; <- $75 - Flower
-					!DefaultHPTableSize 00000 ; <- $76 - Star
-					!DefaultHPTableSize 00000 ; <- $77 - Feather
-					!DefaultHPTableSize 00000 ; <- $78 - 1up mushroom
-					!DefaultHPTableSize 00000 ; <- $79 - Growing vine
-					!DefaultHPTableSize 00000 ; <- $7A - Firework
-					!DefaultHPTableSize 00000 ; <- $7B - Goal tape
-					!DefaultHPTableSize 00000 ; <- $7C - Peach
-					!DefaultHPTableSize 00000 ; <- $7D - P-Balloon
-					!DefaultHPTableSize 00000 ; <- $7E - Flying red coin
-					!DefaultHPTableSize 00000 ; <- $7F - Flying golden mushroom
-					!DefaultHPTableSize 00000 ; <- $80 - Key
-					!DefaultHPTableSize 00000 ; <- $81 - Changing item
-					!DefaultHPTableSize 00000 ; <- $82 - Bonus game sprite
-					!DefaultHPTableSize 00000 ; <- $83 - Flying question block (left)
-					!DefaultHPTableSize 00000 ; <- $84 - Flying question block (back and forth)
-					!DefaultHPTableSize 00001 ; <- $85 - Unused
-					!DefaultHPTableSize 00001 ; <- $86 - Wiggler
-					!DefaultHPTableSize 00000 ; <- $87 - Lakitu's cloud
-					!DefaultHPTableSize 00000 ; <- $88 - Winged cage
-					!DefaultHPTableSize 00000 ; <- $89 - Layer 3 Smash
-					!DefaultHPTableSize 00000 ; <- $8A - Yoshi's House bird
-					!DefaultHPTableSize 00000 ; <- $8B - Puff of smoke from Yoshi's House
-					!DefaultHPTableSize 00000 ; <- $8C - Side exit enable
-					!DefaultHPTableSize 00000 ; <- $8D - Ghost house exit sign and door
-					!DefaultHPTableSize 00000 ; <- $8E - Invisible "Warp Hole"
-					!DefaultHPTableSize 00000 ; <- $8F - Scale platforms
-					!DefaultHPTableSize 00001 ; <- $90 - Large green gas bubble
-					!DefaultHPTableSize !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount ; <- $91 - Chargin' Chuck
-					!DefaultHPTableSize !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount ; <- $92 - Splittin' Chuck
-					!DefaultHPTableSize !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount ; <- $93 - Bouncin' Chuck
-					!DefaultHPTableSize !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount ; <- $94 - Whistlin' Chuck
-					!DefaultHPTableSize !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount ; <- $95 - Clappin' Chuck
-					!DefaultHPTableSize !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount ; <- $96 - Chargin' Chuck (unused)
-					!DefaultHPTableSize !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount ; <- $97 - Puntin' Chuck
-					!DefaultHPTableSize !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount ; <- $98 - Pitchin' Chuck
-					!DefaultHPTableSize 00001 ; <- $99 - Volcano Lotus
-					!DefaultHPTableSize 00001 ; <- $9A - Sumo Brother
-					!DefaultHPTableSize 00001 ; <- $9B - Hammer Bro.
-					!DefaultHPTableSize 00000 ; <- $9C - Hammer Bro. platform
-					!DefaultHPTableSize 00000 ; <- $9D - Bubble
-					!DefaultHPTableSize 00000 ; <- $9E - Ball 'n' Chain
-					!DefaultHPTableSize 00001 ; <- $9F - Banzai Bill
-					!DefaultHPTableSize 00001 ; <- $A0 - Bowser
-					!DefaultHPTableSize 00001 ; <- $A1 - Bowser's bowling ball
-					!DefaultHPTableSize 00001 ; <- $A2 - MechaKoopa
-					!DefaultHPTableSize 00000 ; <- $A3 - Rotating gray platform
-					!DefaultHPTableSize 00001 ; <- $A4 - Floating spike ball
-					!DefaultHPTableSize 00001 ; <- $A5 - Sparky/Fuzzy (wall follow)
-					!DefaultHPTableSize 00001 ; <- $A6 - Hothead
-					!DefaultHPTableSize 00001 ; <- $A7 - Iggy's ball
-					!DefaultHPTableSize 00001 ; <- $A8 - Blargg
-					!DefaultHPTableSize 00001 ; <- $A9 - Reznor
-					!DefaultHPTableSize 00001 ; <- $AA - Fishbone
-					!DefaultHPTableSize !Setting_SpriteHP_VanillaSprite_Rex_HPAmount ; <- $AB - Rex
-					!DefaultHPTableSize 00000 ; <- $AC - Wooden spike (down)
-					!DefaultHPTableSize 00000 ; <- $AD - Wooden spike (up)
-					!DefaultHPTableSize 00001 ; <- $AE - Fishin' Boo
-					!DefaultHPTableSize 00001 ; <- $AF - Boo Block
-					!DefaultHPTableSize 00001 ; <- $B0 - Reflecting stream of Boo Buddies
-					!DefaultHPTableSize 00000 ; <- $B1 - Creating/eating block
-					!DefaultHPTableSize 00001 ; <- $B2 - Falling spike
-					!DefaultHPTableSize 00000 ; <- $B3 - Bowser statue fireball
-					!DefaultHPTableSize 00001 ; <- $B4 - Grinder (ground)
-					!DefaultHPTableSize 00001 ; <- $B5 - Falling Podoboo (unused)
-					!DefaultHPTableSize 00001 ; <- $B6 - Reflecting Podoboo
-					!DefaultHPTableSize 00000 ; <- $B7 - Carrot Top Lift (up-right)
-					!DefaultHPTableSize 00000 ; <- $B8 - Carrot Top Lift (up-left)
-					!DefaultHPTableSize 00000 ; <- $B9 - Info Box
-					!DefaultHPTableSize 00000 ; <- $BA - Timed Lift
-					!DefaultHPTableSize 00000 ; <- $BB - Moving castle block
-					!DefaultHPTableSize 00001 ; <- $BC - Bowser statue
-					!DefaultHPTableSize 00001 ; <- $BD - Sliding Blue Koopa
-					!DefaultHPTableSize 00001 ; <- $BE - Swooper
-					!DefaultHPTableSize 00001 ; <- $BF - Mega Mole
-					!DefaultHPTableSize 00000 ; <- $C0 - Sinking gray platform on lava
-					!DefaultHPTableSize 00000 ; <- $C1 - Flying gray turnblocks
-					!DefaultHPTableSize 00001 ; <- $C2 - Blurp
-					!DefaultHPTableSize 00001 ; <- $C3 - Porcu-Puffer
-					!DefaultHPTableSize 00000 ; <- $C4 - Falling gray platform
-					!DefaultHPTableSize 00003 ; <- $C5 - Big Boo BossBig Boo Boss
-					!DefaultHPTableSize 00000 ; <- $C6 - Spotlight/disco ball
-					!DefaultHPTableSize 00000 ; <- $C7 - Invisible mushroom
-					!DefaultHPTableSize 00000 ; <- $C8 - Light switch
-
-
-			
-			;These are default HP table values for custom sprites. Here, valid custom sprite numbers are $00-$BF. Same rules as above.
-				if !Setting_SpriteHP_UsingCustomSprites
-					.DefaultCustSprHP
-					;                    +$00   +$01   +$02   +$03   +$04   +$05   +$06   +$07   +$08   +$09   +$0A   +$0B   +$0C   +$0E   +$0E   +$0F
-					!DefaultHPTableSize 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001 ; <- $00-$0F
-					!DefaultHPTableSize 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001 ; <- $10-$1F
-					!DefaultHPTableSize 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001 ; <- $20-$2F
-					!DefaultHPTableSize 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001 ; <- $30-$3F
-					!DefaultHPTableSize 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001 ; <- $40-$4F
-					!DefaultHPTableSize 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001 ; <- $50-$5F
-					!DefaultHPTableSize 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001 ; <- $60-$6F
-					!DefaultHPTableSize 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001 ; <- $70-$7F
-					!DefaultHPTableSize 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001 ; <- $80-$8F
-					!DefaultHPTableSize 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001 ; <- $90-$9F
-					!DefaultHPTableSize 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001 ; <- $A0-$AF
-					!DefaultHPTableSize 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001 ; <- $B0-$BF
-				endif
+				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+				;These are default HP table values for vanilla SMW sprites, for sprite numbers $00-$C8.
+				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+					.DefaultSMWSprHP
+						!DefaultHPTableSize 00001 ; <- $00 - Green shell-less Koopa
+						!DefaultHPTableSize 00001 ; <- $01 - Red shell-less Koopa
+						!DefaultHPTableSize 00001 ; <- $02 - Blue shell-less Koopa
+						!DefaultHPTableSize 00001 ; <- $03 - Yellow shell-less Koopa
+						!DefaultHPTableSize 00001 ; <- $04 - Green Koopa (including the shell)
+						!DefaultHPTableSize 00001 ; <- $05 - Red Koopa (including the shell)
+						!DefaultHPTableSize 00001 ; <- $06 - Blue Koopa (including the shell)
+						!DefaultHPTableSize 00001 ; <- $07 - Yellow Koopa (including the shell)
+						!DefaultHPTableSize 00002 ; <- $08 - Green winged Koopa, flying
+						!DefaultHPTableSize 00002 ; <- $09 - Green winged Koopa, bouncing
+						!DefaultHPTableSize 00002 ; <- $0A - Red winged Koopa, vertical
+						!DefaultHPTableSize 00002 ; <- $0B - Red winged Koopa, horizontal
+						!DefaultHPTableSize 00002 ; <- $0C - Yellow winged Koopa
+						!DefaultHPTableSize 00001 ; <- $0D - Bob-Omb
+						!DefaultHPTableSize 00001 ; <- $0E - Keyhole
+						!DefaultHPTableSize 00001 ; <- $0F - Goomba
+						!DefaultHPTableSize 00002 ; <- $10 - Winged Goomba
+						!DefaultHPTableSize 00001 ; <- $11 - Buzzy Beetle
+						!DefaultHPTableSize 00001 ; <- $12 - Unused
+						!DefaultHPTableSize 00001 ; <- $13 - Spiny
+						!DefaultHPTableSize 00001 ; <- $14 - Falling Spiny
+						!DefaultHPTableSize 00001 ; <- $15 - Fish, horizontal
+						!DefaultHPTableSize 00001 ; <- $16 - Fish, vertical
+						!DefaultHPTableSize 00001 ; <- $17 - Fish, flying (spawned by sprite D1)
+						!DefaultHPTableSize 00001 ; <- $18 - Fish, jumping
+						!DefaultHPTableSize 00001 ; <- $19 - Display text from level message 1
+						!DefaultHPTableSize 00001 ; <- $1A - Classic Piranha Plant
+						!DefaultHPTableSize 00001 ; <- $1B - Bouncing Football
+						!DefaultHPTableSize 00001 ; <- $1C - Bullet Bill
+						!DefaultHPTableSize 00001 ; <- $1D - Hopping flame
+						!DefaultHPTableSize 00001 ; <- $1E - Lakitu
+						!DefaultHPTableSize 00001 ; <- $1F - Magikoopa
+						!DefaultHPTableSize 00000 ; <- $20 - Magikoopa's magic
+						!DefaultHPTableSize 00000 ; <- $21 - Moving coin
+						!DefaultHPTableSize 00001 ; <- $22 - Green vertical net Koopa
+						!DefaultHPTableSize 00001 ; <- $23 - Red vertical net Koopa
+						!DefaultHPTableSize 00001 ; <- $24 - Green horizontal net Koopa
+						!DefaultHPTableSize 00001 ; <- $25 - Red horizontal net Koopa
+						!DefaultHPTableSize 00001 ; <- $26 - Thwomp
+						!DefaultHPTableSize 00001 ; <- $27 - Thwimp
+						!DefaultHPTableSize 00001 ; <- $28 - Big Boo
+						!DefaultHPTableSize 00001 ; <- $29 - Koopa Kid
+						!DefaultHPTableSize 00001 ; <- $2A - Upside-down Piranha Plant
+						!DefaultHPTableSize 00001 ; <- $2B - Sumo Brother's lightning
+						!DefaultHPTableSize 00000 ; <- $2C - Yoshi egg
+						!DefaultHPTableSize 00000 ; <- $2D - Baby Yoshi
+						!DefaultHPTableSize 00001 ; <- $2E - Spike Top
+						!DefaultHPTableSize 00000 ; <- $2F - Portable springboard
+						!DefaultHPTableSize 00001 ; <- $30 - Dry Bones that throws bones
+						!DefaultHPTableSize 00001 ; <- $31 - Bony Beetle
+						!DefaultHPTableSize 00001 ; <- $32 - Dry Bones that stays on ledges
+						!DefaultHPTableSize 00001 ; <- $33 - Podoboo/vertical fireball
+						!DefaultHPTableSize 00000 ; <- $34 - Boss fireball
+						!DefaultHPTableSize 00000 ; <- $35 - Yoshi
+						!DefaultHPTableSize 00000 ; <- $36 - Unused
+						!DefaultHPTableSize 00001 ; <- $37 - Boo
+						!DefaultHPTableSize 00001 ; <- $38 - Eerie (straight)
+						!DefaultHPTableSize 00001 ; <- $39 - Eerie (wave)
+						!DefaultHPTableSize 00001 ; <- $3A - Urchin (fixed distance)
+						!DefaultHPTableSize 00001 ; <- $3B - Urchin (wall detect)
+						!DefaultHPTableSize 00001 ; <- $3C - Urchin (wall follow)
+						!DefaultHPTableSize 00001 ; <- $3D - Rip Van Fish
+						!DefaultHPTableSize 00000 ; <- $3E - P-switch
+						!DefaultHPTableSize 00001 ; <- $3F - Para-Goomba
+						!DefaultHPTableSize 00001 ; <- $40 - Para-Bomb
+						!DefaultHPTableSize 00000 ; <- $41 - Dolphin (long jump)
+						!DefaultHPTableSize 00000 ; <- $42 - Dolphin (short jump)
+						!DefaultHPTableSize 00000 ; <- $43 - Dolphin (vertical)
+						!DefaultHPTableSize 00001 ; <- $44 - Torpedo Ted
+						!DefaultHPTableSize 00000 ; <- $45 - Directional coins
+						!DefaultHPTableSize !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount ; <- $46 - Diggin' Chuck
+						!DefaultHPTableSize 00001 ; <- $47 - Swimming/jumping fish
+						!DefaultHPTableSize 00001 ; <- $48 - Diggin' Chuck's rock
+						!DefaultHPTableSize 00001 ; <- $49 - Growing/shrinking pipe
+						!DefaultHPTableSize 00000 ; <- $4A - Goal Sphere
+						!DefaultHPTableSize 00001 ; <- $4B - Pipe-dwelling Lakitu
+						!DefaultHPTableSize 00001 ; <- $4C - Exploding block
+						!DefaultHPTableSize 00001 ; <- $4D - Monty Mole (ground-dwelling)
+						!DefaultHPTableSize 00001 ; <- $4E - Monty Mole (ledge-dwelling)
+						!DefaultHPTableSize 00001 ; <- $4F - Jumping Piranha Plant
+						!DefaultHPTableSize 00001 ; <- $50 - Jumping Piranha Plant (fireballs)
+						!DefaultHPTableSize 00001 ; <- $51 - Ninji
+						!DefaultHPTableSize 00000 ; <- $52 - Moving Ghost House hole (note: changed to $0185B7 in LM v2.53+)
+						!DefaultHPTableSize 00000 ; <- $53 - Throwblock
+						!DefaultHPTableSize 00000 ; <- $54 - Revolving door for climbing net
+						!DefaultHPTableSize 00000 ; <- $55 - Checkerboard platform (horizontal)
+						!DefaultHPTableSize 00000 ; <- $56 - Flying rock platform (horizontal)
+						!DefaultHPTableSize 00000 ; <- $57 - Checkerboard platform (vertical)
+						!DefaultHPTableSize 00000 ; <- $58 - Flying rock platform (vertical)
+						!DefaultHPTableSize 00000 ; <- $59 - Turnblock bridge (horz/vert)
+						!DefaultHPTableSize 00000 ; <- $5A - Turnblock bridge (horz only)
+						!DefaultHPTableSize 00000 ; <- $5B - Floating brown platform
+						!DefaultHPTableSize 00000 ; <- $5C - Floating checkerboard platform
+						!DefaultHPTableSize 00000 ; <- $5D - Small orange floating platform
+						!DefaultHPTableSize 00000 ; <- $5E - Large orange floating platform
+						!DefaultHPTableSize 00000 ; <- $5F - Swinging brown platform
+						!DefaultHPTableSize 00000 ; <- $60 - Flat switch palace switch
+						!DefaultHPTableSize 00000 ; <- $61 - Skull raft
+						!DefaultHPTableSize 00000 ; <- $62 - Brown line-guided platform
+						!DefaultHPTableSize 00000 ; <- $63 - Brown/checkered line-guided platform
+						!DefaultHPTableSize 00000 ; <- $64 - Line-guided rope mechanism
+						!DefaultHPTableSize 00001 ; <- $65 - Chainsaw (line-guided)
+						!DefaultHPTableSize 00001 ; <- $66 - Upside-down chainsaw (line-guided)
+						!DefaultHPTableSize 00001 ; <- $67 - Grinder (line-guided)
+						!DefaultHPTableSize 00001 ; <- $68 - Fuzzy (line-guided)
+						!DefaultHPTableSize 00001 ; <- $69 - Unused
+						!DefaultHPTableSize 00000 ; <- $6A - Coin game cloud
+						!DefaultHPTableSize 00000 ; <- $6B - Wall springboard (left wall)
+						!DefaultHPTableSize 00000 ; <- $6C - Wall springboard (right wall)
+						!DefaultHPTableSize 00000 ; <- $6D - Invisible solid block
+						!DefaultHPTableSize 00002 ; <- $6E - Dino-Rhino
+						!DefaultHPTableSize 00001 ; <- $6F - Dino-Torch
+						!DefaultHPTableSize 00001 ; <- $70 - Pokey
+						!DefaultHPTableSize 00001 ; <- $71 - Super Koopa (red cape)
+						!DefaultHPTableSize 00001 ; <- $72 - Super Koopa (yellow cape)
+						!DefaultHPTableSize 00001 ; <- $73 - Super Koopa (ground/feather)
+						!DefaultHPTableSize 00000 ; <- $74 - Mushroom
+						!DefaultHPTableSize 00000 ; <- $75 - Flower
+						!DefaultHPTableSize 00000 ; <- $76 - Star
+						!DefaultHPTableSize 00000 ; <- $77 - Feather
+						!DefaultHPTableSize 00000 ; <- $78 - 1up mushroom
+						!DefaultHPTableSize 00000 ; <- $79 - Growing vine
+						!DefaultHPTableSize 00000 ; <- $7A - Firework
+						!DefaultHPTableSize 00000 ; <- $7B - Goal tape
+						!DefaultHPTableSize 00000 ; <- $7C - Peach
+						!DefaultHPTableSize 00000 ; <- $7D - P-Balloon
+						!DefaultHPTableSize 00000 ; <- $7E - Flying red coin
+						!DefaultHPTableSize 00000 ; <- $7F - Flying golden mushroom
+						!DefaultHPTableSize 00000 ; <- $80 - Key
+						!DefaultHPTableSize 00000 ; <- $81 - Changing item
+						!DefaultHPTableSize 00000 ; <- $82 - Bonus game sprite
+						!DefaultHPTableSize 00000 ; <- $83 - Flying question block (left)
+						!DefaultHPTableSize 00000 ; <- $84 - Flying question block (back and forth)
+						!DefaultHPTableSize 00001 ; <- $85 - Unused
+						!DefaultHPTableSize 00001 ; <- $86 - Wiggler
+						!DefaultHPTableSize 00000 ; <- $87 - Lakitu's cloud
+						!DefaultHPTableSize 00000 ; <- $88 - Winged cage
+						!DefaultHPTableSize 00000 ; <- $89 - Layer 3 Smash
+						!DefaultHPTableSize 00000 ; <- $8A - Yoshi's House bird
+						!DefaultHPTableSize 00000 ; <- $8B - Puff of smoke from Yoshi's House
+						!DefaultHPTableSize 00000 ; <- $8C - Side exit enable
+						!DefaultHPTableSize 00000 ; <- $8D - Ghost house exit sign and door
+						!DefaultHPTableSize 00000 ; <- $8E - Invisible "Warp Hole"
+						!DefaultHPTableSize 00000 ; <- $8F - Scale platforms
+						!DefaultHPTableSize 00001 ; <- $90 - Large green gas bubble
+						!DefaultHPTableSize !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount ; <- $91 - Chargin' Chuck
+						!DefaultHPTableSize !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount ; <- $92 - Splittin' Chuck
+						!DefaultHPTableSize !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount ; <- $93 - Bouncin' Chuck
+						!DefaultHPTableSize !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount ; <- $94 - Whistlin' Chuck
+						!DefaultHPTableSize !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount ; <- $95 - Clappin' Chuck
+						!DefaultHPTableSize !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount ; <- $96 - Chargin' Chuck (unused)
+						!DefaultHPTableSize !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount ; <- $97 - Puntin' Chuck
+						!DefaultHPTableSize !Setting_SpriteHP_VanillaSprite_Chucks_HPAmount ; <- $98 - Pitchin' Chuck
+						!DefaultHPTableSize 00001 ; <- $99 - Volcano Lotus
+						!DefaultHPTableSize 00001 ; <- $9A - Sumo Brother
+						!DefaultHPTableSize 00001 ; <- $9B - Hammer Bro.
+						!DefaultHPTableSize 00000 ; <- $9C - Hammer Bro. platform
+						!DefaultHPTableSize 00000 ; <- $9D - Bubble
+						!DefaultHPTableSize 00000 ; <- $9E - Ball 'n' Chain
+						!DefaultHPTableSize 00001 ; <- $9F - Banzai Bill
+						!DefaultHPTableSize 00001 ; <- $A0 - Bowser
+						!DefaultHPTableSize 00001 ; <- $A1 - Bowser's bowling ball
+						!DefaultHPTableSize 00001 ; <- $A2 - MechaKoopa
+						!DefaultHPTableSize 00000 ; <- $A3 - Rotating gray platform
+						!DefaultHPTableSize 00001 ; <- $A4 - Floating spike ball
+						!DefaultHPTableSize 00001 ; <- $A5 - Sparky/Fuzzy (wall follow)
+						!DefaultHPTableSize 00001 ; <- $A6 - Hothead
+						!DefaultHPTableSize 00001 ; <- $A7 - Iggy's ball
+						!DefaultHPTableSize 00001 ; <- $A8 - Blargg
+						!DefaultHPTableSize 00001 ; <- $A9 - Reznor
+						!DefaultHPTableSize 00001 ; <- $AA - Fishbone
+						!DefaultHPTableSize !Setting_SpriteHP_VanillaSprite_Rex_HPAmount ; <- $AB - Rex
+						!DefaultHPTableSize 00000 ; <- $AC - Wooden spike (down)
+						!DefaultHPTableSize 00000 ; <- $AD - Wooden spike (up)
+						!DefaultHPTableSize 00001 ; <- $AE - Fishin' Boo
+						!DefaultHPTableSize 00001 ; <- $AF - Boo Block
+						!DefaultHPTableSize 00001 ; <- $B0 - Reflecting stream of Boo Buddies
+						!DefaultHPTableSize 00000 ; <- $B1 - Creating/eating block
+						!DefaultHPTableSize 00001 ; <- $B2 - Falling spike
+						!DefaultHPTableSize 00000 ; <- $B3 - Bowser statue fireball
+						!DefaultHPTableSize 00001 ; <- $B4 - Grinder (ground)
+						!DefaultHPTableSize 00001 ; <- $B5 - Falling Podoboo (unused)
+						!DefaultHPTableSize 00001 ; <- $B6 - Reflecting Podoboo
+						!DefaultHPTableSize 00000 ; <- $B7 - Carrot Top Lift (up-right)
+						!DefaultHPTableSize 00000 ; <- $B8 - Carrot Top Lift (up-left)
+						!DefaultHPTableSize 00000 ; <- $B9 - Info Box
+						!DefaultHPTableSize 00000 ; <- $BA - Timed Lift
+						!DefaultHPTableSize 00000 ; <- $BB - Moving castle block
+						!DefaultHPTableSize 00001 ; <- $BC - Bowser statue
+						!DefaultHPTableSize 00001 ; <- $BD - Sliding Blue Koopa
+						!DefaultHPTableSize 00001 ; <- $BE - Swooper
+						!DefaultHPTableSize 00001 ; <- $BF - Mega Mole
+						!DefaultHPTableSize 00000 ; <- $C0 - Sinking gray platform on lava
+						!DefaultHPTableSize 00000 ; <- $C1 - Flying gray turnblocks
+						!DefaultHPTableSize 00001 ; <- $C2 - Blurp
+						!DefaultHPTableSize 00001 ; <- $C3 - Porcu-Puffer
+						!DefaultHPTableSize 00000 ; <- $C4 - Falling gray platform
+						!DefaultHPTableSize 00003 ; <- $C5 - Big Boo BossBig Boo Boss
+						!DefaultHPTableSize 00000 ; <- $C6 - Spotlight/disco ball
+						!DefaultHPTableSize 00000 ; <- $C7 - Invisible mushroom
+						!DefaultHPTableSize 00000 ; <- $C8 - Light switch
+				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+				;These are default HP table values for custom sprites. Here, valid custom sprite numbers are $00-$BF. Same rules as above.
+				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+					if !Setting_SpriteHP_UsingCustomSprites
+						.DefaultCustSprHP
+						;                    +$00   +$01   +$02   +$03   +$04   +$05   +$06   +$07   +$08   +$09   +$0A   +$0B   +$0C   +$0E   +$0E   +$0F
+						!DefaultHPTableSize 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001 ; <- Custom sprite numbers $00-$0F
+						!DefaultHPTableSize 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001 ; <- Custom sprite numbers $10-$1F
+						!DefaultHPTableSize 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001 ; <- Custom sprite numbers $20-$2F
+						!DefaultHPTableSize 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001 ; <- Custom sprite numbers $30-$3F
+						!DefaultHPTableSize 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001 ; <- Custom sprite numbers $40-$4F
+						!DefaultHPTableSize 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001 ; <- Custom sprite numbers $50-$5F
+						!DefaultHPTableSize 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001 ; <- Custom sprite numbers $60-$6F
+						!DefaultHPTableSize 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001 ; <- Custom sprite numbers $70-$7F
+						!DefaultHPTableSize 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001 ; <- Custom sprite numbers $80-$8F
+						!DefaultHPTableSize 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001 ; <- Custom sprite numbers $90-$9F
+						!DefaultHPTableSize 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001 ; <- Custom sprite numbers $A0-$AF
+						!DefaultHPTableSize 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001 ; <- Custom sprite numbers $B0-$BF
+					endif
 	endif
 	if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
 		StompKill:	;>JSL from $01A9D3
