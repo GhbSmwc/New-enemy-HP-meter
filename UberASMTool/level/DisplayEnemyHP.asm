@@ -640,7 +640,7 @@ main:
 	PLB
 	RTL
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;Check for blacklisted sprites.
+;Check for conditionally-blacklisted sprites.
 ;
 ;This subroutine is used to prevent showing HP of sprites that shouldn't use the
 ;HP system based on its state or it changing to another sprite. This runs every
@@ -656,14 +656,15 @@ main:
 ;   the sprite with a spinjump will obtain a value of $04 (killed with spinjump)
 ;   rather than the value it was before the player kills it.
 ;
-;To add a sprite number here you wish not to show/use the HP system, the syntax
-;is:
+;To add a sprite number here you wish not to show/use the HP system based on its
+;state, the syntax is:
 ; - %SpriteHPMeterBlacklist(SpriteNumber, Label)
 ; - %SpriteHPMeterBlacklist_UnlimitedDistance(SpriteNumber, Label)
 ;    ;^Use this instead of "SpriteHPMeterBlacklist" if you have
 ;    ; branch-out-of-bounds issues.
 ; - %SpriteHPMeterBlacklist_Range(SpriteNumberMin, SpriteNumberMax, Label)
 ;    ;^Use this if you have consecutive values of blacklisted sprite numbers.
+;    ; This is automatically immune to branch-out-of-bounds errors.
 ;Legend:
 ; - SpriteNumber is obvious (enter $xx where xx is the hexadecimal value of the
 ;   sprite number), including the min and max variants.
@@ -672,20 +673,24 @@ main:
 ;   blacklisted sprites, add your own label and code for checking the state of
 ;   the sprite.
 ;
-;Protip: Most optimized way of handling custom sprites without a massive list
-;(which takes up space in the ROM) is to have custom sprites that should have
-;HP in one group, sprites that conditionally have HP in another seperate group,
-;and sprites that shouldn't at all use it in another seperate group. Then you
-;use "SpriteHPMeterBlacklist_Range" on each of these groups.
-;
 ;Input:
 ; - X: Sprite slot to check
 ;Output:
 ; - Carry:
-; -- Clear (0): if it should be allowed
-; -- Set (1):if it should not be allowed.
+; -- Clear (0): if it should be allowed to show HP of it.
+; -- Set (1): if it should not be allowed to show HP.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	.CheckForBlacklistedSprites
+		LDA !Freeram_SpriteHP_MaxHPLow,x		;\This is a failsafe if some faulty code runs
+		if !Setting_SpriteHP_TwoByte			;|that would attempt to set the HP meter to
+			ORA !Freeram_SpriteHP_MaxHPHi,x		;|be on an always-blacklisted sprite with 0
+		endif									;|max HP (set by HPSystemForSMWSprites.asm),
+		BNE ..HasValidHP						;|would just hide the meter. Also prevents
+		SEC										;|a division by zero when calculating fill
+		RTS										;/amount in bar.
+		
+		..HasValidHP
+		
 		if !Setting_SpriteHP_UsingCustomSprites
 			LDA !7FAB10,x			;\If sprite is custom, allow display
 			AND.b #%00001000		;/(can be overridden within sprite code to not display)
@@ -694,44 +699,61 @@ main:
 		..VanillaSprite
 			LDA !9E,x
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-			;Here is the blacklist for vanilla sprite numbers.
+			;Here is the conditionally-blacklisted vanilla sprite numbers.
 			;Most sprites that don't get damaged doesn't even call
 			;such subroutines, thus they don't need to be listed here,
 			;except for total HP mode (see ".CheckForBlacklistedSpritesTotalHP").
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 				if !Setting_SpriteHP_VanillaSprite_OneShotSprites
 					%SpriteHPMeterBlacklist($0D, ...BobOmb) ;>Bobomb (blacklisted if its an explosion)
-					%SpriteHPMeterBlacklist_Range($04, $07, ...KoopasAndEmptyShell)
+					%SpriteHPMeterBlacklist_Range($04, $07, ...KoopasAndEmptyShell) ;>Determine if the koopa shell is empty or not.
 					%SpriteHPMeterBlacklist($09, ...KoopasAndEmptyShell) ;>Sprite $DF is techinically sprite $09, just in a stunned state
 				endif
-				...Allowed
-					CLC
-					RTS
+				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+				;Keep this here (other than listed is allowed by default)
+				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+					...Allowed
+						CLC
+						RTS
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-			;Custom handler for conditionally blacklisted sprites here.
+			;Custom handler for conditionally-blacklisted vanilla sprites here.
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 				if !Setting_SpriteHP_VanillaSprite_OneShotSprites
 					...BobOmb
 						LDA !1534,x
-						BNE ..Blacklisted	;>If its an explosion, it's blacklisted
-						BRA ...Allowed		;>You may need to change this BRA to a JMP if you get a branch-out-of-bounds here.
-					...KoopasAndEmptyShell
+						BNE ...Blacklisted	;>If its an explosion, it's blacklisted
+						CLC
+						RTS
+					...KoopasAndEmptyShell ;>Blacklist the sprite if its an empty shell.
 						JSR .CheckIfShellEmpty
-						BCS ..Blacklisted
-						BRA ...Allowed
+						BCS ...Blacklisted
+						CLC
+						RTS
 				endif
+				...Blacklisted
+					SEC
+					RTS
 		if !Setting_SpriteHP_UsingCustomSprites
 			..CustomSprite
-				;Here is the blacklist for custom sprite numbers
+				LDA !7FAB9E,x
+				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+				;Here is the conditionally-blacklisted for custom sprite numbers
+				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 				
-				...Allowed
-					CLC
-					RTS
+				
+					;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+					;Keep this here (other than listed is allowed by default)
+					;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+						...Allowed
+							CLC
+							RTS
+				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 				;Custom handler for conditionally blacklisted custom sprites here.
+				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+					...Blacklisted
+						SEC
+						RTS
 		endif
-		..Blacklisted
-			SEC
-			RTS
 	if !Setting_SpriteHP_VanillaSprite_OneShotSprites
 		.CheckIfShellEmpty
 			;Since the sprite numbers and custom flags are already checked, we only need $14C8, $1540, and $1558 to identify if it's a empty shell.
@@ -787,25 +809,39 @@ if !Setting_SpriteHP_TotalHPMode
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 				;Here is the blacklist for vanilla sprite numbers.
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-				%SpriteHPMeterBlacklist($0D, ..Blacklisted) ;>Bobomb (blacklisted if its an explosion)
-	
-				...Allowed
-					CLC
-					RTS
+					%SpriteHPMeterBlacklist($0D, ...Blacklisted) ;>Bobomb (blacklisted if its an explosion, or as a summoned sprite)
+					
+					
+					;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+					;Keep this here (other than listed is allowed by default)
+					;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+						...Allowed
+							CLC
+							RTS
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 				;Custom handler for conditionally blacklisted sprites here.
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+					...Blacklisted
+						SEC
+						RTS
 			if !Setting_SpriteHP_UsingCustomSprites
 				..CustomSprite
+					LDA !7FAB9E,x
+					;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 					;Here is the blacklist for custom sprite numbers
+					;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 					
-					...Allowed
-						CLC
-						RTS
+						;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+						;Keep this here (other than listed is allowed by default)
+						;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+							...Allowed
+								CLC
+								RTS
+					;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 					;Custom handler for conditionally blacklisted custom sprites here.
+					;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+						...Blacklisted
+							SEC
+							RTS
 			endif
-			..Blacklisted
-				SEC
-				RTS
-
 endif
