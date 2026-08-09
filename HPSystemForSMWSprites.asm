@@ -355,7 +355,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				autoclean JSL TransferHPFromKoopaToShelllessKoopa
 				NOP
 			else
-				if notequal(read3($0196F6+1), $07F7D2) ;>We're hijacking a JSL, thus just checking the opcode byte to know it's hijacked is not possible, we check the address instead.
+				if notequal(read3(($0196F6|!bank)+1), ($07F7D2|!bank)) ;>We're hijacking a JSL, thus just checking the opcode byte to know it's hijacked is not possible, we check the address instead.
 					%RemoveFreespaceCodeFromJMLJSL($0196F6)
 				endif
 				org $0196F6
@@ -705,7 +705,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				org $01CD56
 				autoclean JSL IggyLarryIntroFill
 			else
-				if notequal(read3($01CD56+1), $00FCF5) ;>We're hijacking a JSL, thus checking the address is the only way to know if it's hijacked
+				if notequal(read3(($01CD56|!bank)+1), ($00FCF5|!bank)) ;>We're hijacking a JSL, thus checking the address is the only way to know if it's hijacked
 					%RemoveFreespaceCodeFromJMLJSL($01CD56)
 				endif
 				org $01CD56
