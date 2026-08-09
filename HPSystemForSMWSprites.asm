@@ -355,7 +355,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				autoclean JSL TransferHPFromKoopaToShelllessKoopa
 				NOP
 			else
-				if notequal(read3($0196F6+1), $07F7D2)
+				if notequal(read3($0196F6+1), $07F7D2) ;>We're hijacking a JSL, thus just checking the opcode byte to know it's hijacked is not possible, we check the address instead.
 					%RemoveFreespaceCodeFromJMLJSL($0196F6)
 				endif
 				org $0196F6
@@ -535,42 +535,42 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			LDA.w !D8,y
 			SEC
 		endif
-	;Reznor. Note that when killed, it calls the "InitSpriteTables" subroutine at $xxxxxx.
-	;Thus resulting in the meter jumping to 0 back to 1. I had to hijack at $039AF2 to force it to be zero
-		ReznorHijack:
-			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Bosses)
-				org $039872
-				autoclean JML ReznorIntroFill
-			else
-				%RemoveFreespaceCodeFromJMLJSL($039872)
-				org $039872
-				CPX #$07
-				BNE .NotBaseSprite
-				
-				org $03987E
-				.NotBaseSprite
-			endif
-		if and(and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Bosses), notequal(!Setting_SpriteHP_TotalHPMode, 0))
-			org $0398E1
-			autoclean JSL ReznorDefeatedClearHPMeter
-			NOP
-		else
-			%RemoveFreespaceCodeFromJMLJSL($0398E1)
-			org $0398E1
-			LDA #$FF
-			STA $1493|!addr
-		endif
-		if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Bosses)
-			org $039ABB
-			autoclean JSL ReznorDead
-			NOP
-		else
-			%RemoveFreespaceCodeFromJMLJSL($039ABB)
-			org $039ABB
-			LDA #$03
-			STA $1DF9|!addr
-		endif
 	;Bosses below (only applies to bosses with a HP system, and not bowser)
+		;Reznor. Note that when killed, it calls the "InitSpriteTables" subroutine at $xxxxxx.
+		;Thus resulting in the meter jumping to 0 back to 1. I had to hijack at $039AF2 to force it to be zero
+			ReznorHijack:
+				if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Bosses)
+					org $039872
+					autoclean JML ReznorIntroFill
+				else
+					%RemoveFreespaceCodeFromJMLJSL($039872)
+					org $039872
+					CPX #$07
+					BNE .NotBaseSprite
+					
+					org $03987E
+					.NotBaseSprite
+				endif
+			if and(and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Bosses), notequal(!Setting_SpriteHP_TotalHPMode, 0))
+				org $0398E1
+				autoclean JSL ReznorDefeatedClearHPMeter
+				NOP
+			else
+				%RemoveFreespaceCodeFromJMLJSL($0398E1)
+				org $0398E1
+				LDA #$FF
+				STA $1493|!addr
+			endif
+			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Bosses)
+				org $039ABB
+				autoclean JSL ReznorDead
+				NOP
+			else
+				%RemoveFreespaceCodeFromJMLJSL($039ABB)
+				org $039ABB
+				LDA #$03
+				STA $1DF9|!addr
+			endif
 		;Big boo boss
 			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Bosses)
 				org $038233				;\When Big boo boss takes damage from
@@ -700,6 +700,28 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					LDA #$28
 					STA $1DFC|!addr
 				endif
+		;Iggy and Larry
+			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Bosses)
+				org $01CD56
+				autoclean JSL IggyLarryIntroFill
+			else
+				if notequal(read3($01CD56+1), $00FCF5) ;>We're hijacking a JSL, thus checking the address is the only way to know if it's hijacked
+					%RemoveFreespaceCodeFromJMLJSL($01CD56)
+				endif
+				org $01CD56
+				JSL $00FCF5|!bank
+			endif
+			
+			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Bosses)
+				org $01FB60
+				autoclean JSL IggyLarryDeath
+				NOP #1
+			else
+				%RemoveFreespaceCodeFromJMLJSL($01FB60)
+				org $01FB60
+				LDA #$20
+				STA $1DFC|!addr
+			endif
 ;Freespace code
 	freecode
 	if and(and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_VanillaSprite_Chuck), equal(!Setting_SpriteHP_VanillaSprite_OneShotSprites, 0))
@@ -1678,4 +1700,15 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					STA $1493|!addr
 					RTL
 		endif
+		IggyLarryIntroFill: ;>JSL from $01CD56
+			JSL !SharedSub_SpriteHPIntroEffect
+			.Restore
+				JSL $00FCF5|!bank
+				RTL
+		IggyLarryDeath: ;>JSL from $01FB60
+			%DealFixedDamage(!SpriteHP_MaxHPAndDamageValue)
+			.Restore
+				LDA #$20
+				STA $1DFC|!addr
+				RTL
 	endif

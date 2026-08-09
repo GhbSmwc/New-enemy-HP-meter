@@ -337,6 +337,7 @@
 				; - Wendy and Lemmy (share most of the same code)
 				; - Ludwig, Morton, and Roy (same as above). NOTE: Like the Chuck enemies, they also have fireball/stomp
 				;   jank that needs to be fixed for a proper HP system (and to display it).
+				; - Iggy and Larry (will have 1 HP and only dies by falling in the lava)
 				; - Reznor (each of them). Note that this is catagorized as bosses rather than one-shot sprites. Also
 				;   note that if !Setting_SpriteHP_TotalHPMode is nonzero, the meter will calculate the total HP of each
 				;   Reznor.
