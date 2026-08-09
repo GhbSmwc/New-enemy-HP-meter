@@ -105,6 +105,9 @@
 			<li><a href="#JMPTo_MakeSpritesDisplayHP_GetHPValue" id="ToC_MakeSpritesDisplayHP_GetHPValue">Obtaining HP value...</a></li>
 			<ul>
 				<li><a href="#JMPTo_MakeSpritesDisplayHP_GetHPValue_ConvertDamageToHP" id="ToC_MakeSpritesDisplayHP_GetHPValue_ConvertDamageToHP">...from a damage counter (&ldquo;Inverted health&rdquo;)</a></li>
+				<ul>
+					<li><a href="#JMPTo_MakeSpritesDisplayHP_DamageJank" id="ToC_MakeSpritesDisplayHP_DamageJank">Damage jank explanation</a></li>
+				</ul>
 				<li><a href="#JMPTo_MakeSpritesDisplayHP_GetHPValue_GetStraightFromHPSprTbl" id="ToC_MakeSpritesDisplayHP_GetHPValue_GetStraightFromHPSprTbl">...from its own sprite table as HP</a></li>
 			</ul>
 			<li><a href="#JMPTo_MakeSpritesDisplayHP_TakingDamage" id="ToC_MakeSpritesDisplayHP_TakingDamage">Damage handler</a></li>
@@ -333,7 +336,7 @@ autoclean JML SpritesTotalHPIntroEffect</pre>
 			of this package and change the base address to match with whatever status bar patch you're using that are the tile data, then reinsert UAT and pixi if you have inserted prior.</li>
 			
 			<li>
-				Patch <kbd>HPSystemForSMWSprites.asm</kbd> to your game. This adds a proper health system for most sprites, one-shot enemies and bosses and fixes <a href="#HitCountJank">an anomaly for SMW</a>.
+				Patch <kbd>HPSystemForSMWSprites.asm</kbd> to your game. This adds a proper health system for most sprites, one-shot enemies and bosses and fixes <a href="#JMPTo_MakeSpritesDisplayHP_DamageJank">an anomaly for SMW</a>.
 				This alone does not display meter, but will write to various RAM for the uberasm tool code to display it.<br><br>
 				
 				Note that as you develop your hack, you may need to open (with a text editor), edit, and reinsert this patch, espically if you're planning to use the enemy ambush system provided in this ASM
@@ -608,21 +611,23 @@ autoclean JML SpritesTotalHPIntroEffect</pre>
 	endmacro
 </pre></div>
 	For example, Chargin' Chucks have their damage counter stored at sprite table <a href="https://smwc.me/m/smw/ram/7E1528"><kbd>$1528</kbd></a>. This means to call the macro with the <kbd>DamageCountSpriteTableRAM</kbd> set to <kbd>!1528</kbd> (address changed to a define for SA-1 hybrid support).
-	With the patch installed, the sprite dies if the damage counter reaches 15 or more. So the <kbd>DamageAmountToDie</kbd> should be 15. With this, the macro should be called like this: <span class="NoLineBreak">%ConvertDamageAmountToHP(!1528, 15)</span>.
-	Now note, this is assuming you've patched <kbd>HPSystemForSMWSprites.asm</kbd> into your game. Reason for modifying bosses and enemies that take damage from fireballs and stomps is because of how janky it is.<br><br>
+	With the patch installed, the sprite dies if the damage counter reaches 15 or more. So the <kbd>DamageAmountToDie</kbd> should be 15. With this, the macro should be called like this: <span class="NoLineBreak">%ConvertDamageAmountToHP(!1528, 15)</span>. Similarly, Ludwig, Morton and Roy,
+	uses RAM <a href="https://smwc.me/m/smw/ram/7E1626"><kbd>$1626</kbd></a> and so it must be called via <kbd>%ConvertDamageAmountToHP(!1626, 12)</kbd>.<br>
 	
-	<span id="HitCountJank">Take for example, Chargin Chucks. Logically, it takes 5 fireballs to kill or 3 stomps to kill, you'd think the fireballs would deal less damage than a stomp attack (because more hits to kill means it deals
-	less damage on the same amount of HP). But it doesn't work like that, internally, SMW will always increases the damage counter by 1 reguardless if the attack is a fireball or a stomp
-	attack, and to tell if it reaches the amount of damage needed to kill the sprite, that amount itself depends on the last hit being a fireball (5 or more) or stomp attack (3 or more).
-	Therefore techinically Chucks will take the same amount of damage of either the fireball or stomp, and the death condition is if after the last hit, the damage counter is 5 or more from a
-	fireball, or 3 or more from the stomp attack.</span><br><br>
+	<h4><a href="#ToC_MakeSpritesDisplayHP_DamageJank" id="JMPTo_MakeSpritesDisplayHP_DamageJank">^</a>Damage jank</h4>
+	The reason why <kbd>HPSystemForSMWSprites.asm</kbd> needs to modify the health system for Chucks (15HP, Stomps: 5DMG, Fireballs: 3DMG), Ludwig, Morton, and Roy (12HP, Stomps: 4DMG, Fireballs: 1DMG ) is because of its faulty programming:<br><br>
 	
-	The same also applies to Ludwig, Morton, and Roy. 12 fireballs or 3 stomps.<br><br>
+	Both Fireballs and stomp attacks, internally deals 1 damage. To defeat them, instead of it accruing damage to at or above a single, specific value, it has multiple values to check <b>that depends on the last hit</b> being a fireball or jump attack.
+	If that was health that decreases from damages, instead of just 0 HP or less to defeat, we would have different arbitrary values (possibly negative values) it needs to be equal to or less than to defeat the enemy, depending on the last attack.<br><br>
+
+	This have created an exploit that lets player defeat Chucks and Ludwig/Morton/Roy quickly by shooting 2 fireballs, then jumping on them. This also creates another anomaly: 2 Fireballs and a stomp would seemingly deal enough damage to the enemy,
+	but if the order of attacks was re-arranged so the last hit was a fireball instead, the enemy wouldn't be defeated, which violates the <a href="https://en.wikipedia.org/wiki/Commutative_property">commutative property of addition</a>
+	(assuming no damage modifiers for later attacks).<br><br>
+
+	This oversight is mentioned as a glitch in Mariowiki: <a href="https://www.mariowiki.com/Ludwig#Super_Mario_World">Ludwig</a>, <a href="https://www.mariowiki.com/Morton#Super_Mario_World">Morton</a>, and <a href="https://www.mariowiki.com/Roy#Super_Mario_World">Roy</a>
+	but not the Chargin Chuck at the time of writing this.<br><br>
 	
-	This also creates another anomaly: 2 fireballs and then a stomp would seemingly be enough damage to kill the sprite. But if the order of attacks is different in a way that the 3rd hit is a fireball instead, it would take more hits to defeat. That shouldn't happen
-	due to <a href="https://en.wikipedia.org/wiki/Commutative_property">commutative property of addition</a> (assuming no status effects or modifiers for later damages).<br><br>
-	
-	The patch modifies this to work as an actual damage system. Damages from fireballs and stomps deal different amounts, and there is only one value (reguardless of attack type) that if the damage counter reaches or exceeds it, kills the sprite.
+	The patch modifies this to work as a proper damage system. Damages from fireballs and stomps deal different amounts, and there is only one value (reguardless of attack type) that if the damage counter reaches or exceeds it, kills the enemy.
 	By default, Chucks needed 15 or more points of damage to defeat, fireballs deal 3 damage and stomps deal 5. And for Ludwig, Morton, and Roy, they needed 12 points to defeat, with fireballs dealing 1 damage, and Stomp attacks dealing 4.
 	All of these preserves the amount of same-attack-types hits to be the same as vanilla.
 	</p>
