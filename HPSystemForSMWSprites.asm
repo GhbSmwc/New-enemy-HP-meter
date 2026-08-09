@@ -372,6 +372,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				LDY !1594,x
 				LDA.b #$10
 			endif
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;When sprites are falling down screen
 	; - kicked/carried sprites hit a 1-shottable enemy
 	; - Stomped (e.g. Monty Mole) and falling down the screen
@@ -392,15 +393,15 @@ incsrc "Defines/GraphicalBarDefines.asm"
 	; - Reznor is not included here and is handled differently because trying to hijack at $039ACC
 	;   results in a full HP meter due to a call to clear and load sprite tables at $039AEE aftwards.
 	
-		%HijacksForFallingOffScrn($01A5E3, ShowHPForFallingOffScrnYregister, y)
-		%HijacksForFallingOffScrn($01A66B, ShowHPForFallingOffScrn, x)
-		%HijacksForFallingOffScrn($01A68F, ShowHPForFallingOffScrn, x) ;>Sprite to sprite collision
-		%HijacksForFallingOffScrn($01A6AC, ShowHPForFallingOffScrnYregister, y)
-		%HijacksForFallingOffScrn($01A86B, ShowHPForFallingOffScrn, x)
-		%HijacksForFallingOffScrn($01A9E9, ShowHPForFallingOffScrn, x)
-		%HijacksForFallingOffScrn($01B140, ShowHPForFallingOffScrn, x)
-		%HijacksForFallingOffScrn($02945B, ShowHPForFallingOffScrnCapeSpinQuakeNetPunch, x)
-		%HijacksForFallingOffScrn($02F29D, ShowHPForFallingOffScrn, x)
+		%HijacksForFallingOffScrn($01A5E3, ShowHPForFallingOffScrnYregister, y) ;>Koopas catching shells
+		%HijacksForFallingOffScrn($01A66B, ShowHPForFallingOffScrn, x) ;>Sprite to sprite collision - Throwned sprites into a normal-status sprite
+		%HijacksForFallingOffScrn($01A68F, ShowHPForFallingOffScrn, x) ;>Sprite to sprite collision - Carried sprites, both throwned sprites, or sprA is a goomba
+		%HijacksForFallingOffScrn($01A6AC, ShowHPForFallingOffScrnYregister, y) ;>Misc version of $01A68F
+		%HijacksForFallingOffScrn($01A86B, ShowHPForFallingOffScrn, x) ;>Kill routine for star power/sliding
+		%HijacksForFallingOffScrn($01A9E9, ShowHPForFallingOffScrn, x) ;>Default death when killed by stomping (no sqush animation)
+		%HijacksForFallingOffScrn($01B140, ShowHPForFallingOffScrn, x) ;>Death by touching stunned shell-less koopas (not the blue one) or out-of-water fish
+		%HijacksForFallingOffScrn($02945B, ShowHPForFallingOffScrnCapeSpinQuakeNetPunch, x) ;>From quake effects (the ones that would flip koopas)
+		%HijacksForFallingOffScrn($02F29D, ShowHPForFallingOffScrn, x) ;>Wiggler killed by star
 		%HijacksForFallingOffScrn($028168, ShowHPForFallingOffScrnYregister, y) ;>Display HP for sprites blown up by bob-omb explosions
 	;Make Amazing Hammer bro platform when bonked by player to show HP
 		%HijacksForFallingOffScrn($02DBFD, ShowHPForFallingOffScrnYregister, y)
@@ -411,7 +412,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 	;
 	;Note to self:
 	; - $07F722-$07F78A (105 bytes): The entire routine that clears sprite tables:
-	; -- $07F779-$07F77E (6 bytes): Hijacked by this patch so all other sprites will have default 1 HP.
+	; -- $07F779-$07F77E (6 bytes): Hijacked by this patch so all other sprites will have default HP.
 	; -- $07F77F-$07F784 (6 bytes): Hijacked by "Takes 5 fireballs to kill" Work-around Patch.
 	; -- $07F785-$07F78A (5 bytes): Hijacked by Pixi.
 	; - This entire routine runs AFTER its sprite numbers ($9E/$7FAB9E) have been set, and before its
@@ -454,10 +455,11 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				LDA !E4,x
 				AND.b #$10
 			endif
-		;Parachute enemies. NOTE: Unlike the Dino Rhino, which is treated as a 2HP enemy based on it turning
-		;into a dino torch, Parachute enemies however is treated as 1HP and taking no damage when becomming
-		;an equivalent enemy. This is because they automatically turn into the equivalent enemy when touching
-		;the ground (if parachute counts as 1 extra HP, they'd appear to take 1 damage when landing).
+		;Parachute enemies. NOTE: Unlike the Dino Rhino and winged enemies, which is treated as a 2HP enemy
+		;based on it turning into a dino torch or equivalent varients, Parachute enemies however is treated
+		;as 1HP and taking no damage when becomming an equivalent enemy. This is because they automatically
+		;turn into the equivalent enemy when touching the ground (if parachute counts as 1 extra HP, they'd
+		;appear to take 1 damage when landing).
 			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
 				org $01A98E
 				autoclean JSL ParachuteEnemies
@@ -481,8 +483,8 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				LDA #$03
 				STA $1DF9|!addr
 			endif
-		;Dry bones and Bony Beetle. NOTE: They seemingly process offscreen when they are in their crumbled state,
-		;causing the HP meter to continue to display even far offscreen.
+		;Dry bones and Bony Beetle. NOTE: Due to an oversight, they process offscreen when they are in their
+		;crumbled state, causing the HP meter to continue to display even far offscreen.
 			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
 				org $01E5FE
 				autoclean JSL StompDryBonesBonyBeetle
@@ -911,6 +913,18 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				BNE ..NonCarryable
 				..Carryable ;Sprite is carryable, when hit by quake/cape spin/net punch, the sprite (such as a shell) doesn't get killed
 				
+				..HandleSpritesGettingStunnedAndLosingWings
+					LDA !9E,x
+					CMP #$10
+					BEQ ...Yes
+					CMP #$08
+					BCC ...No
+					CMP.b #$0C+1
+					BCS ...No
+					...Yes
+						%DealFixedDamage(1)	;>Winged enemies to lose their wings when cape-spinned counts as 1 damage
+						BRA .Done
+					...No
 				%DealFixedDamage(0)	;>Display HP (no damage) of flipped but not killed sprites
 				BRA .Done
 				..NonCarryable
@@ -1049,11 +1063,11 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				RTL
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			;Default HP values for sprites and custom sprites. These are values that their current and max HP are set when they first spawn
-			;initalized (before their init code executes)
+			;(before their init code executes).
 			;
 			;Any sprite with a max HP of 0 are consitered "blacklisted" and the meter will not display HP for that (when instantly killed).
-			;If !Setting_SpriteHP_TwoByte == 0, then only enter values 0-255, else 0-65535 is allowed. Values
-			;at and above 256 or 65536 will be modulo'ed by those values. A value without a prefix ("%" = binary, "$" = hex) means decimal.
+			;If !Setting_SpriteHP_TwoByte == 0, then only enter values 0-255, else 0-65535 is allowed. Values at and above 256 or 65536
+			;will be modulo'ed by those values. A value without a prefix ("%" = binary, "$" = hex) means decimal.
 			;
 			;For conditionally blacklisted sprites (where a specific state should not have HP), see "UberASMTool/level/DisplayEnemyHP.asm"
 			;under ".CheckForBlacklistedSprites"
@@ -1175,7 +1189,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 						!DefaultHPTableSize 00000 ; <- $6D - Invisible solid block
 						!DefaultHPTableSize 00002 ; <- $6E - Dino-Rhino
 						!DefaultHPTableSize 00001 ; <- $6F - Dino-Torch
-						!DefaultHPTableSize 00001 ; <- $70 - Pokey
+						!DefaultHPTableSize 00001 ; <- $70 - Pokey (<-Note that this sprite's HP depends on how many segments, including its head, thus this will be overridden at init)
 						!DefaultHPTableSize 00001 ; <- $71 - Super Koopa (red cape)
 						!DefaultHPTableSize 00001 ; <- $72 - Super Koopa (yellow cape)
 						!DefaultHPTableSize 00001 ; <- $73 - Super Koopa (ground/feather)
@@ -1260,12 +1274,17 @@ incsrc "Defines/GraphicalBarDefines.asm"
 						!DefaultHPTableSize 00001 ; <- $C2 - Blurp
 						!DefaultHPTableSize 00001 ; <- $C3 - Porcu-Puffer
 						!DefaultHPTableSize 00000 ; <- $C4 - Falling gray platform
-						!DefaultHPTableSize 00003 ; <- $C5 - Big Boo BossBig Boo Boss
+						!DefaultHPTableSize 00003 ; <- $C5 - Big Boo Boss
 						!DefaultHPTableSize 00000 ; <- $C6 - Spotlight/disco ball
 						!DefaultHPTableSize 00000 ; <- $C7 - Invisible mushroom
 						!DefaultHPTableSize 00000 ; <- $C8 - Light switch
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 				;These are default HP table values for custom sprites. Here, valid custom sprite numbers are $00-$BF. Same rules as above.
+				;
+				;Note that this alone does not support sprites whose starting HP differs based on its extra bits/bytes. Which means you
+				;need to edit its init code to set its HP values accordingly rather than just relying on the default values here.
+				;If total HP mode is being used, along with the aformentioned conditional HP, the uberasm tool code or the spawning indicator
+				;also needs to be modified to deduct how much HP the sprite has properly accounting for its conditional health.
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 					if !Setting_SpriteHP_UsingCustomSprites
 						.DefaultCustSprHP
