@@ -503,12 +503,12 @@ main:
 							LDA !Freeram_SpriteHP_MeterState
 							CMP.b #!sprite_slots
 							BCC .....AlreadyTerminated
-							CMP.b #!sprite_slots*2
 							if !Setting_SpriteHP_TotalHPMode
-								BCC .....ConvertIntroFillSlotsToRegularSlots
-								BEQ .....AlreadyTerminated
+								CMP.b #!sprite_slots*2
+								BCC .....ConvertIntroFillSlotsToRegularSlots		;>Is intro-fill of the sprite slots
+								BEQ .....AlreadyTerminated							;>Total HP mode (not the intro-fill version)
 								CMP.b #(!sprite_slots*2)+2
-								BCC .....ConvertTotalModeIntroFillToJustTotalMode
+								BCC .....ConvertTotalModeIntroFillToJustTotalMode	;>Total HP mode Intro-fill
 							endif
 							.....ConvertIntroFillSlotsToRegularSlots
 								SEC
@@ -519,7 +519,7 @@ main:
 							.....Write
 								STA !Freeram_SpriteHP_MeterState
 							.....AlreadyTerminated
-						if and(notequal(!Setting_SpriteHP_EmptyDelayFrames, 0), less(!Setting_SpriteHP_BarEmptyPerFrame, 2))
+						if and(notequal(!Setting_SpriteHP_EmptyDelayFrames, 0), less(!Setting_SpriteHP_BarEmptyPerFrame, 2)) ;User opted for decreasing fill by 1 or less per frame.
 							LDA $13							;\Decrement every 2^n frames
 							AND.b #!Setting_SpriteHP_EmptyDelayFrames		;|
 							if !Setting_SpriteHP_BarChangeDelay != 0

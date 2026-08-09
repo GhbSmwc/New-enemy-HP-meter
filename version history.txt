@@ -12,12 +12,13 @@ Thing(s) to fix:
  --Added HP display for Pokey (each segment, and including the head, is 1 HP).
  --Dino Rhino, Super Koopa that spawns a feather and Winged enemies count as 2 HP. Note that Parachute enemies
    will still have 1 HP due to the automatically reverting to their equivilants when touching the ground.
---Added "total HP" mode, useful for enemy ambush system that the meter shows the total HP of all enemies to
+ --Added HP meter display for one-shot sprites. Note that this also includes spites that transforms into
+   another sprite, such as winged enemes, Dino Rhino, and others, which counts as 1 extra HP.
+ --Added "total HP" mode, useful for enemy ambush system that the meter shows the total HP of all enemies to
    defeat.
- -Added an optional feature to completely change how "take 5 fireballs to kill" works. It now decreases this
-  ASM resource's HP RAM value directly.
- -Added a feature for HP meter display for one-shot sprites.
- -Added HP display for Reznor (each, or total HP mode), which are counted as bosses in SMW.
+ --Added an optional feature to completely change how "take 5 fireballs to kill" works. It now decreases this
+   ASM resource's HP RAM value directly instead of increasing $1528.
+ --Added HP display for Reznor (each, or total HP mode), which are counted as bosses in SMW.
  -Readme instruction on adding incsrc to include defines now lets user easily adjust how many subfolders deep.
 3/16/2025
  -Fixed a very minor copy-paste issue where option "!Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull" seems

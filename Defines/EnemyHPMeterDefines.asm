@@ -337,7 +337,9 @@
 				; - Wendy and Lemmy (share most of the same code)
 				; - Ludwig, Morton, and Roy (same as above). NOTE: Like the Chuck enemies, they also have fireball/stomp
 				;   jank that needs to be fixed for a proper HP system (and to display it).
-				; - Reznor (each of them). Note that this is catagorized as bosses rather than one-shot sprites.
+				; - Reznor (each of them). Note that this is catagorized as bosses rather than one-shot sprites. Also
+				;   note that if !Setting_SpriteHP_TotalHPMode is nonzero, the meter will calculate the total HP of each
+				;   Reznor.
 				
 			!Setting_SpriteHP_DisplayHPOfSMWSprites			= 1
 				;^Simply display the HP of smw sprites?
@@ -350,33 +352,34 @@
 			; spawns) to allow initalizing HP values by default.
 			;
 			; Notes:
-			; - This includes enemies that turn into another sprite number when jumped on:
-			; -- Dino Rhino are included here since jumping on them transforms it into a Dino Torch, becomming a one-shot
-			;    sprite. I find it weird that if you do not wish one-shot sprites not have an HP meter and 2+ shots to have
-			;    an HP meter, it would be weird that enemies spawned as a Dino Torch lack a meter, but a Dino Torch spawned
-			;    after jumping on a Dino Rhino have a meter.
-			; -- Winged enemies like Koopas and Galoomba.
-			; -- It does not include parachute enemies (Galoomba and Bob-omb), because when they land, it would've shown
-			;    that they taken damage by themselves.
+			; - This includes enemies that turn into another sprite number when jumped on. Most of these will treat
+			;   them as if they have 2 HP with the first jump transforming the sprite and now have 1 HP:
+			; -- Dino Rhino (sprite $6E).
+			; -- Winged enemies like Koopas and Galoomba (sprites $08-$0C, and $10).
+			; -- It does not include parachute enemies (Galoomba and Bob-omb, sprite $3F and $40), because when
+			;    they land, it would've shown that they taken damage by themselves (will be treated as having 1 HP).
+			; -- A variant of Super Koopa that start running from the ground (sprite $73) that have a flashing cape
+			;    (placed at even X position in Lunar Magic).
 			; - Other enemies listed below will show the health meter in unique ways:
 			; -- Enemies that don't get killed at all by stomps but instead simply change states will show no damage
-			;    but will still display the meter: Wiggler, Dry Bones, Bony Beetle.
-			; -- When regular Koopas Troopas seperated from their shells, the HP meter will switch to the sprite slot of the
-			;    spawned shell-kess koopa (with the exception that you do not wish koopas get forced out of shells, see
-			;    !Setting_SpriteHP_Koopas_ClassicBehavior). This is because the regular Koopa Troopas and the shell
-			;    (wheather it's empty or stunned inside their shell with eyes showing) are the same sprite, just with a
-			;    different state. When a shell-less koopa is launched out of the shell, that is a new sprite being spawned,
-			;    and when they enter a shell, the shell-less koopa despawns and the shell becomes a koopa troopa.
-			; --- That, along with the glitch of immidiately kicking the shell that the shell-less koopa just entered makes
-			;     the shell an empty shell is a reason I can't have the meter not be on an empty shell.
+			;    but will still display the meter: Wiggler ($86), Dry Bones ($30, $32), Bony Beetle ($31).
+			; -- When regular Koopas Troopas ($04-$07) seperated from their shells, the HP meter will switch to the
+			;    sprite slot of the spawned shell-kess koopa ($00-$03, with the exception that you do not wish
+			;    koopas get forced out of shells, see !Setting_SpriteHP_Koopas_ClassicBehavior). This is because the
+			;    regular Koopa Troopas and the shell (wheather it's empty or stunned inside their shell with eyes
+			;    showing) are the same sprite, just with a different state. When a shell-less koopa is launched out
+			;    of the shell, that is a new sprite being spawned, and when they enter a shell, the shell-less koopa
+			;    despawns and the shell becomes a koopa troopa.
+			; --- That, along with the glitch of immidiately kicking the shell that the shell-less koopa just entered
+			;     makes the shell an empty shell is a reason I can't have the meter not be on an empty shell.
 			; - If there are enemies/sprites that shouldn't have HP meter display for them when killed, see under the
 			;   label "ZeroOutHPOfOneShotSprites" in HPSystemForSMWSprites.asm. This runs once per sprite gets
 			;   insta-killed.
 			;
-			; - For enemies that are switching states or changing sprite number from a thing that should have an HP meter
-			;   and currently displayed for, into another thing that should make its HP meter disappear, see
-			;   "UberASMTool/level/DisplayEnemyHP.asm" under label ".CheckForBlacklistedSprites" (without the JSR in front
-			;   of it). Note that this runs EVERY FRAME while the meter is active.
+			; - For enemies that are switching states or changing sprite number from a thing that should have an HP
+			;   meter and currently displayed for, into another thing that should make its HP meter disappear, see
+			;   "UberASMTool/level/DisplayEnemyHP.asm" under label ".CheckForBlacklistedSprites" (without the JSR
+			;   in front of it). Note that this runs EVERY FRAME while the meter is active.
 			;
 			;   Alternatively, for custom sprites, you can simply make it hide the meter like so in its sprite code:
 			;    ;[...]
@@ -401,12 +404,14 @@
 			;    PLX
 			; - This does not include Reznor, however it is catagorized as "bosses" instead.
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-		;Amount of HP SMW sprites has. NOTE: SMW only have hit counts being an 8-bit unsigned integer stored
-		;within various sprite tables (Chucks and any sprites using the 5 fireballs to kill: $1528,
-		;Ludwig/Morton/Roy: $1626, Big Boo Boss, Wendy and Lemmy: $1534). This means up to 255 health and
-		;damage are allowed, and those do not support 16-bit HP system (even if you set
-		;!Setting_SpriteHP_TwoByte == 1). This does not include 1-shot enemies (they'll strictly be 1 HP
-		;and dies instantly from any attack). That is, unless stated otherwise.
+		;Amount of HP SMW sprites has (for non-one-shot sprites, including ones that optionally be insta-killed by a specific
+		;attack).
+		;
+		;NOTE: SMW only have hit counts being an 8-bit unsigned integer stored within various sprite tables (Chucks and any
+		;sprites using the 5 fireballs to kill: $1528, Ludwig/Morton/Roy: $1626, Big Boo Boss, Wendy and Lemmy: $1534). This
+		;means up to 255 health and damage are allowed, and those do not support 16-bit HP system (even if you set
+		;!Setting_SpriteHP_TwoByte == 1). This does not include 1-shot enemies (they'll strictly be 1 HP and dies instantly
+		;from any attack). That is, unless stated otherwise.
 		;
 		;This only applies if !Setting_SpriteHP_RemoveOrApplyPatch == 1 and their respective settings being 1.
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

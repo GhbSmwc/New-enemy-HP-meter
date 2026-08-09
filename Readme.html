@@ -129,23 +129,30 @@
 	</ul>
 	<h2>Recommended</h2>
 	<ul>
-		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=37432">Pixi</a></li>
-		<li>
-			Status bar/HUD enhancement patches, this ASM package by default assumes you are using the <a href="https://www.smwcentral.net/?p=section&a=details&id=19247">Super Status Bar patch</a>.
-			Vanilla status bar is way-too limited. Note that this only supports layer 3 HUDs, not sprite OAM-based patches (you however are free to edit the uberasm tool code though to support OAM).
-			Other status bar patches that should work (may need some changes in their defines and this ASM resource's defines to prevent HUD element conflicts and potential tile number remapping):
-			<ul>
-				<li><a href="https://www.smwcentral.net/?p=section&a=details&id=35718">Minimalist</a></li>
-				<li><a href="https://www.smwcentral.net/?p=section&a=details&id=21573">SMB3</a> (note that you'll need to edit the provided graphics in that resource to include bar tiles)</li>
-			</ul>
-		</li>
+		<li>ASM resources:</li>
+		<ul>
+			<li><a href="https://www.smwcentral.net/?p=section&a=details&id=37432">Pixi</a></li>
+			<li>
+				Status bar/HUD enhancement patches, this ASM package by default assumes you are using the <a href="https://www.smwcentral.net/?p=section&a=details&id=19247">Super Status Bar patch</a>.
+				Vanilla status bar is way-too limited. Note that this only supports layer 3 HUDs, not sprite OAM-based patches (you however are free to edit the uberasm tool code though to support OAM).
+				Other status bar patches that should work (may need some changes in their defines and this ASM resource's defines to prevent HUD element conflicts and potential tile number remapping):
+				<ul>
+					<li><a href="https://www.smwcentral.net/?p=section&a=details&id=35718">Minimalist</a></li>
+					<li><a href="https://www.smwcentral.net/?p=section&a=details&id=21573">SMB3</a> (note that you'll need to edit the provided graphics in that resource to include bar tiles)</li>
+				</ul>
+			</li>
+			<li>
+				<a href="https://www.smwcentral.net/?p=section&a=details&id=42569">Dry Bones and Bony Beetle SubOffScreen Fix</a>. Because of an oversight, Dry Bones and Bony Beetle will process off-screen when they're crumpled. If you
+				enabled displaying HP for 1-shot enemies (which also includes such enemies), the HP meter would continue to display when these enemies are scrolled off-screen without this bugfix patch.
+			</li>
+			<li>
+				<a href="https://www.smwcentral.net/?p=section&a=details&id=40704">Kick and Drop Override Fix</a>. Due to a bug that allows the player to have persisting Bob-omb explosion hitbox once they drop/kick the carried Bob-Omb
+				the same frame it explodes (from my testing, occurs with the provided test sprite).
+			</li>
+		</ul>
 		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=39887">Address Tracker</a>, if you have trouble knowing if there are RAM conflicts (two unrelated resources uses the same addresses at the same time).</li>
-		<li>
-			<a href="https://www.smwcentral.net/?p=section&a=details&id=40704">Kick and Drop Override Fix</a>. Due to a bug that allows the player to have persisting Bob-omb explosion hitbox once they drop/kick the carried Bob-Omb
-			the same frame it explodes (from my testing, occurs with the provided test sprite).
-		</li>
 	</ul>
-	<h2>Documentations of other ASM resources</h2>
+	<h2>Documentations of other ASM resources used here</h2>
 	<ul>
 		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=38296">Status bar tutorial (mainly on the string and number system used here)</a></li>
 		<li><a href="https://www.smwcentral.net/?p=section&a=details&id=38297">Graphical Bar</a></li>
