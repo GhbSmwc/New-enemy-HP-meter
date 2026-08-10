@@ -343,9 +343,9 @@
 				;   Reznor.
 				
 			!Setting_SpriteHP_DisplayHPOfSMWSprites			= 1
-				;^Simply display the HP of smw sprites?
+				;^Simply *display* the HP of smw sprites?
 				; - 0 = will not display HP.
-				; - 1 = Will display the HP (requires !Setting_SpriteHP_RemoveOrApplyPatch == 1 and the jankfix).
+				; - 1 = Will display the HP (requires !Setting_SpriteHP_RemoveOrApplyPatch == 1, and this also applies the jankfix).
 				
 		!Setting_SpriteHP_VanillaSprite_OneShotSprites			= 1
 			;^Display HP for all one-shot enemies. Modifies various vanilla kill routines used by the vast majority

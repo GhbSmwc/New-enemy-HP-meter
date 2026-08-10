@@ -341,7 +341,11 @@ autoclean JML SpritesTotalHPIntroEffect</pre>
 				
 				Note that as you develop your hack, you may need to open (with a text editor), edit, and reinsert this patch, espically if you're planning to use the enemy ambush system provided in this ASM
 				resource pack. The stuff you most likely need to edit are a table under label &ldquo;<kbd>.DefaultSMWSprHP</kbd>&rdquo; and &ldquo;<kbd>.DefaultCustSprHP</kbd>&rdquo;<sup class="Highlight">[reinsert as hack being developed]</sup>.
-				See comments ajoining the tables for more information.
+				See comments ajoining the tables for more information.<br><br>
+				
+				NOTE: Beware of patches that modifies things that would interact with sprites, such as my <a href="https://www.smwcentral.net/?p=section&a=details&id=41825">Bounce Block fix</a> patch that handles a custom bounce block interaction
+				system. Some hijacks may conflict (often a crash) uses a JML and skip a large enough chunk of code that may be hijacked by this patch and vice versa (nullifying the effects). Pay attention to the org hijacks when dealing with
+				hijacks.
 			</li>
 			<li>
 				Uberasm tool:

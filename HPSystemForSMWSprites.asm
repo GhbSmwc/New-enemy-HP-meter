@@ -164,7 +164,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 ;Hijacks
 	;Chucks
 		;Code that runs every frame. Ensures the HP values in the new sprite RAM is in sync (for display).
-			if and(and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Chuck), equal(!Ram_SpriteTable_CharginChuck_InstaKillHaveDisplayedHP, 0))
+			if and(and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Chuck), equal(!Setting_SpriteHP_VanillaSprite_OneShotSprites, 0))
 				org $02C1F8
 				autoclean JML CharginChuckHitCountToHP		;>Had to be JML instead JSL because you cannot PHA : RTL [...] PLA.
 			else
@@ -249,7 +249,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		endif
 	;Rex to display HP
 		;This code runs every frame, for this reason: when rex gets insta-killed by, fireballs, quake, etc.
-			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Rex)
+			if and(and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Rex), equal(!Setting_SpriteHP_VanillaSprite_OneShotSprites, 0))
 				org $03951A
 				autoclean JSL RexStateToHP
 				NOP
@@ -936,6 +936,9 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				..Carryable ;Sprite is carryable, when hit by quake/cape spin/net punch, the sprite (such as a shell) doesn't get killed
 				
 				..HandleSpritesGettingStunnedAndLosingWings
+					;Note: This does not check $7FAB10 and $7FAB9E since this is a general code for most sprites that is meant to only
+					;check the "act-as" (RAM $9E) for custom sprites. Thus if you have a custom sprite that intententionally uses the
+					;vanilla death, it should work (checking $7FAB10 and $7FAB9E could break custom sprite's vanilla behavor).
 					LDA !9E,x
 					CMP #$10
 					BEQ ...Yes
@@ -1140,7 +1143,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 						!DefaultHPTableSize 00001 ; <- $26 - Thwomp
 						!DefaultHPTableSize 00001 ; <- $27 - Thwimp
 						!DefaultHPTableSize 00001 ; <- $28 - Big Boo
-						!DefaultHPTableSize 00001 ; <- $29 - Koopa Kid
+						!DefaultHPTableSize 00001 ; <- $29 - Koopa Kid (note that Ludwig, Morton, Roy, Wendy and Lemmy overrides this.)
 						!DefaultHPTableSize 00001 ; <- $2A - Upside-down Piranha Plant
 						!DefaultHPTableSize 00001 ; <- $2B - Sumo Brother's lightning
 						!DefaultHPTableSize 00000 ; <- $2C - Yoshi egg
