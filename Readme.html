@@ -621,10 +621,11 @@ autoclean JML SpritesTotalHPIntroEffect</pre>
 	<h4><a href="#ToC_MakeSpritesDisplayHP_DamageJank" id="JMPTo_MakeSpritesDisplayHP_DamageJank">^</a>Damage jank</h4>
 	The reason why <kbd>HPSystemForSMWSprites.asm</kbd> needs to modify the health system for Chucks (15HP, Stomps: 5DMG, Fireballs: 3DMG), Ludwig, Morton, and Roy (12HP, Stomps: 4DMG, Fireballs: 1DMG ) is because of its faulty programming:<br><br>
 	
-	Both Fireballs and stomp attacks, internally deals 1 damage. To defeat them, instead of it accruing damage to at or above a single, specific value, it has multiple values to check <b>that depends on the last hit</b> being a fireball or jump attack.
-	If that was health that decreases from damages, instead of just 0 HP or less to defeat, we would have different arbitrary values (possibly negative values) it needs to be equal to or less than to defeat the enemy, depending on the last attack.<br><br>
+	Both Fireballs and stomp attacks, contributes 1 damage added to the counter. To defeat them, instead of it accruing damage to at or above a single, specific value, it has 2 values to check <b>that depends on the most recent hit</b>
+	if it is a fireball (&ge;5 for chucks, &ge;12 for Ludwig, Morton or Roy) or jump attack (&ge;3 for all aformentioned enemies). If that was health that decreases from damages, instead of just having 0 HP or less to defeat, we would have different arbitrary values
+	(possibly negative values) it needs to be less or equal to defeat the enemy, depending on the most recent attack.<br><br>
 
-	This have created an exploit that lets player defeat Chucks and Ludwig/Morton/Roy quickly by shooting 2 fireballs, then jumping on them. This also creates another anomaly: 2 Fireballs and a stomp would seemingly deal enough damage to the enemy,
+	This have created an exploit that lets the player defeat Chucks and Ludwig/Morton/Roy quickly by shooting 2 fireballs, then jumping on them. It also creates another anomaly that 2 Fireballs and then a stomp would seemingly deal enough damage to the enemy,
 	but if the order of attacks was re-arranged so the last hit was a fireball instead, the enemy wouldn't be defeated, which violates the <a href="https://en.wikipedia.org/wiki/Commutative_property">commutative property of addition</a>
 	(assuming no damage modifiers for later attacks).<br><br>
 
@@ -866,9 +867,9 @@ Change that to this:
 			</ul>
 		</li>
 		<li>
-			When Koopa Troopas get seperated from their shells (either by jumping on them, or stunning them in their shells via capespin, bounce block, cape dive on the ground) and waiting till they exit, the Koopa Troopa itself turns into a shell of the same sprite number (just with a changed state), and spawns a shell-less Koopa.
-			And when a shell-less Koopa enters a shell (except the blue one), the shell becomes a Koopa Troopa and the shell-less koopa despawns (via suboffscreen function, see <kbd>$018AC9</kbd>). Thus, the HP meter needs to switch between a koopa/shell and shell-less koopa sprite. Note that the HP meter will still show for empty
-			shells when spinjumped and cape-spined.
+			When Koopa Troopas get seperated from their shells (either by jumping on them, or stunning them in their shells via capespin, bounce block, cape diving into the ground, or net punch and waiting till they exit), the Koopa Troopa itself turns into a shell of the same sprite number (just with a changed state), and spawns a shell-less Koopa.
+			And when a shell-less Koopa (except the blue one) enters a shell, the shell becomes a Koopa Troopa and the shell-less koopa despawns (via suboffscreen function, to prevent it from permanently disappearing if the shell-less koopa was placed directly in the level, see <kbd>$018AC9</kbd>). Thus, the HP meter needs to switch between a
+			koopa/shell and shell-less koopa sprite.
 		</li>
 	</ul>
 	<hr>
@@ -904,7 +905,7 @@ Change that to this:
 			A: Possible causes:
 			<ul>
 				<li>RAM conflicts. The RAM usage on this package alone are the sprite HP data, a byte used for Wendy/Lemmy to tell if the intro-fill have been played (by default, it is the address of the last block of the level map16 data; which you are
-				unlikely to use in a 1-screen wide boss room), graphical bar input and outputs, and the character tile table for displaying aligned text for leading-zero suppression. While &ldquo;<kbd>!Scratchram_&lt;ResourceName&gt;...</kbd>&rdquo; can be reused as another scratch RAM (as
+				unlikely to use in a 1-screen wide boss room), graphical bar input and outputs, and the character tile table for displaying aligned digit/text for leading-zero suppression. While &ldquo;<kbd>!Scratchram_&lt;ResourceName&gt;...</kbd>&rdquo; can be reused as another scratch RAM (as
 				long as after the code finish using it you can re-use it for something else), the same can't be said if they are named &ldquo;<kbd>!Freeram_&lt;ResourceName&gt;...</kbd>. Make sure you pay attention on every installed ASM resource
 				on what RAMs are being used. If you have trouble knowing if a RAM conflicts, use the Address Tracker as mentioned in the recommended at the top of this readme.</li>
 				<li>Hijack conflicts. This should only be possible if you patch <kbd>HPSystemForSMWSprites.asm</kbd> along with 3rd party patches that also modifies SMW's sprites (including extended sprites - player's fireball mainly) with overlapping hijacks with those said patches (such as
@@ -1018,7 +1019,7 @@ Change that to this:
 </pre></div>
 		</li>
 		<li>
-			Q: I have a boss sprite that everything works fine, but the meter display gets stuck at 0 or 1 unit filled and/or keeps making the beeping sound. What did I do wrong?<br><br>
+			Q: I have a boss sprite that everything works fine, but the meter display gets stuck at 1 unit filled and/or keeps making the beeping sound. What did I do wrong?<br><br>
 			
 			A: Most likely you have execute the intro-fill effect every frame during a boss fight. That supposed to be done for only one frame, either via init code or a 1-frame trigger of a cutscene assuming the sprite spawns long before that.
 		</li>

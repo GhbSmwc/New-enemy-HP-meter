@@ -349,7 +349,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 	;Shell and shell-less koopa HP meter switcher. A koopa and an empty shell are the same sprite (but with a different state).
 	;A shell-less koopa being seperated from their shell is a seperate sprite spawned in the level. When entering an empty shell,
 	;they simply just get deleted.
-		;When koopas exit their shells, switch the HP meter to them and not the shell itself
+		;When koopas exit their shells, switch the HP meter to them and not the koopa/shell (now an empty shell) itself
 			if and(and(!Setting_ModifySprAndDisplayHPOfSMWSpr, equal(!Setting_SpriteHP_Koopas_ClassicBehavior, 0)), notequal(!Setting_SpriteHP_VanillaSprite_OneShotSprites, 0))
 				org $0196F6
 				autoclean JSL TransferHPFromKoopaToShelllessKoopa
@@ -361,7 +361,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				org $0196F6
 				JSL $07F7D2|!bank
 			endif
-		;When shell-less koopas enter their shells, switch the HP meter to them.
+		;When shell-less koopas enter their shells, switch the HP meter to the koopa/shell.
 			if and(and(!Setting_ModifySprAndDisplayHPOfSMWSpr, equal(!Setting_SpriteHP_Koopas_ClassicBehavior, 0)), notequal(!Setting_SpriteHP_VanillaSprite_OneShotSprites, 0))
 				org $018ACC
 				autoclean JSL TransferHPFromShelllessKoopaToKoopa
