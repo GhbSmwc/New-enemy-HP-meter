@@ -336,7 +336,7 @@ autoclean JML SpritesTotalHPIntroEffect</pre>
 			of this package and change the base address to match with whatever status bar patch you're using that are the tile data, then reinsert UAT and pixi if you have inserted prior.</li>
 			
 			<li>
-				Patch <kbd>HPSystemForSMWSprites.asm</kbd> to your game. This adds a proper health system for most sprites, one-shot enemies and bosses and fixes <a href="#JMPTo_MakeSpritesDisplayHP_DamageJank">an anomaly for SMW</a>.
+				Patch <kbd>HPSystemForSMWSprites.asm</kbd> to your game. This adds a health system for some sprites, one-shot enemies and bosses and fixes <a href="#JMPTo_MakeSpritesDisplayHP_DamageJank">an anomaly for SMW</a>.
 				This alone does not display meter, but will write to various RAM for the uberasm tool code to display it.<br><br>
 				
 				Note that as you develop your hack, you may need to open (with a text editor), edit, and reinsert this patch, espically if you're planning to use the enemy ambush system provided in this ASM
@@ -344,8 +344,9 @@ autoclean JML SpritesTotalHPIntroEffect</pre>
 				See comments ajoining the tables for more information.<br><br>
 				
 				NOTE: Beware of patches that modifies things that would interact with sprites, such as my <a href="https://www.smwcentral.net/?p=section&a=details&id=41825">Bounce Block fix</a> patch that handles a custom bounce block interaction
-				system. Some hijacks may conflict (often a crash) uses a JML and skip a large enough chunk of code that may be hijacked by this patch and vice versa (nullifying the effects). Pay attention to the org hijacks when dealing with
-				hijacks.
+				system. Some hijacks may conflict (often a crash) uses a JML and skip a large enough chunk of code that may be hijacked by this patch and vice versa (nullifying the effects). Open such patches and pay attention to the address
+				an org address is set to. If you need to have both conflicting patches, the hijack needs to be merged into one (will require ASM knowledge of patches, basically one of the two ASM files contain an <kbd>org $xxxxxx</kbd> hijack
+				jumps to a freespace code that handles BOTH patches).
 			</li>
 			<li>
 				Uberasm tool:
