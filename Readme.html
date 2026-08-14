@@ -897,9 +897,14 @@ autoclean JML SpritesTotalHPIntroEffect</pre>
 		</li>
 		<li>
 			<span id="DespawnSpawnTransferBug">
-				Whenever the sprite the HP meter is on despawned (<kbd>$14C8</kbd> set to <kbd>$00</kbd>, either by SubOffScreen routine, killed by Mario or other sprite), and a new sprite is spawned on the same slot as the one that just despawned, and at the same frame, this can cause a bug that the meter transfer to that newly spawned
-				sprite (the HP values changed and often plays the filling up animation). This is because despawning and then spawning happened before executing <kbd>DisplayEnemyHP.asm</kbd>'s <kbd>main:</kbd> code, which checks if <kbd>$14C8</kbd> is zero. To prevent this, call <kbd>JSL !SharedSub_HideHPMeterIfSpriteDespawns</kbd> <i>immidiately after</i>
-				<kbd>$14C8</kbd> gets potentially set to <kbd>#$00</kbd>, before any spawning-sprite-related action occurs. Example:
+				If this event happens:
+				<ol>
+					<li>A sprite, with its HP being shown, gets deleted (<kbd>$14C8</kbd> set to <kbd>$00</kbd>).</li>
+					<li>Within the same frame as above, a new sprite is being spawned, and occupies the same sprite slot as the deleted sprite.</li>
+				</ol>
+				May cause a glitch that the HP meter, instead of disappearing, get transfered to the newly spawned sprite (with a filling animation). This is because despawning and then spawning happened
+				before <kbd>DisplayEnemyHP.asm</kbd>'s detection if the sprite slot	the meter is on is empty. To prevent this, call <kbd>JSL !SharedSub_HideHPMeterIfSpriteDespawns</kbd>
+				<i>immidiately after</i> <kbd>$14C8</kbd> gets potentially set to <kbd>#$00</kbd>, before any spawning-sprite-related action occurs. Example:
 			</span>
 <div class="CodeBlock" style="height: 186px; width: 687px;"><pre>
 	;Off-screen despawn:
