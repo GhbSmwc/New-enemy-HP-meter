@@ -1103,6 +1103,15 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 				;These are default HP table values for vanilla SMW sprites, for sprite numbers $00-$C8.
+				;
+				;Note to self:
+				; - $C8 = 200. That means 0-200 is the valid index for sprites (including unused sprites) exists. Because 0 is included, that
+				;   makes 201 vanilla sprites that exists. Some sprites share the same number, such as the Koopa Kid, the other simply reskin
+				;   the sprite, such as a wall-following Fuzzy/Sparky (sprite $A5)
+				; -- 6 of them are unused.
+				; -- Assuming the values in the table are modified to not be 0 or zero values There are 82 sprites that should not have HP
+				;    (projectile sprites except bullet bills, platforms, sprite blocks, invincible sprites, etc.). 119 Of them should have HP
+				;    (which are generally enemies).
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 					.DefaultSMWSprHP
 						!DefaultHPTableSize 00001 ; <- $00 - Green shell-less Koopa
