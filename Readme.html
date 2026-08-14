@@ -812,7 +812,7 @@ autoclean JML SpritesTotalHPIntroEffect</pre>
 		JSL !SharedSub_SpriteHPDamage
 </pre></div><br>
 		Note that setting <kbd>$14C8</kbd> to <kbd>#$00</kbd> would not show the meter because the sprite have instantly become a free sprite slot, which this ASM pack would avoid showing HP of a non-existent sprite. If a new sprite
-		is spawned on this sprite slot on the same frame this sprite became free, this causes a glitch where the HP meter would switch to that newly spawned sprite, thus to prevent this, call <kbd>JSL !HideHPMeterIfSpriteDespawns</kbd>
+		is spawned on this sprite slot on the same frame this sprite became free, this causes a glitch where the HP meter would switch to that newly spawned sprite, thus to prevent this, call <kbd>JSL !SharedSub_HideHPMeterIfSpriteDespawns</kbd>
 		immidiately after its <kbd>$14C8</kbd> is set to <kbd>#$00</kbd>.
 	</p>
 	<h3><a href="#ToC_MakeSpritesDisplayHP_GetHPValue_TotalHPAllPhases" id="JMPTo_MakeSpritesDisplayHP_GetHPValue_TotalHPAllPhases">^</a>Getting total HP of all phases</h3>
@@ -897,14 +897,22 @@ autoclean JML SpritesTotalHPIntroEffect</pre>
 		</li>
 		<li>
 			<span id="DespawnSpawnTransferBug">
-				Whenever the sprite the HP meter is on despawned (<kbd>$14C8</kbd> set to <kbd>$00</kbd>, either by SubOffScreen routine, killed by Mario or other sprite), and a new sprite is spawned on the same slot as the one that just despawned, and at the same frame, this causes a bug that the meter could be transferred to that newly spawned
-				sprite (the HP values changed and often plays the filling up animation). This is because the despawning and spawning happened before executing <kbd>DisplayEnemyHP.asm</kbd>'s <kbd>main:</kbd> code, which checks if <kbd>$14C8</kbd> is zero. To prevent this, call <kbd>JSL !HideHPMeterIfSpriteDespawns</kbd> <i>after</i>
-				<kbd>$14C8</kbd> gets potentially set to <kbd>#$00</kbd>. Example:
+				Whenever the sprite the HP meter is on despawned (<kbd>$14C8</kbd> set to <kbd>$00</kbd>, either by SubOffScreen routine, killed by Mario or other sprite), and a new sprite is spawned on the same slot as the one that just despawned, and at the same frame, this can cause a bug that the meter transfer to that newly spawned
+				sprite (the HP values changed and often plays the filling up animation). This is because despawning and then spawning happened before executing <kbd>DisplayEnemyHP.asm</kbd>'s <kbd>main:</kbd> code, which checks if <kbd>$14C8</kbd> is zero. To prevent this, call <kbd>JSL !SharedSub_HideHPMeterIfSpriteDespawns</kbd> <i>immidiately after</i>
+				<kbd>$14C8</kbd> gets potentially set to <kbd>#$00</kbd>, before any spawning-sprite-related action occurs. Example:
 			</span>
-<div class="CodeBlock" style="height: 69px; width: 487px;"><pre>
-	LDA #$00
-	%SubOffScreen() ;&gt;Here, $14C8,x may be zero after this.
-	JSL !HideHPMeterIfSpriteDespawns ;&gt;Call a subroutine that turns the meter display off if $14C8,x is zero.
+<div class="CodeBlock" style="height: 186px; width: 687px;"><pre>
+	;Off-screen despawn:
+		;[...]
+		LDA #$00
+		%SubOffScreen() ;&gt;Here, $14C8,x may be zero after this.
+		JSL !SharedSub_HideHPMeterIfSpriteDespawns ;&gt;Call a subroutine that turns the meter display off if $14C8,x is zero.
+		;[...]
+	;Deleting the sprite instantly:
+		;[...]
+		STZ !14C8,x
+		JSL !SharedSub_HideHPMeterIfSpriteDespawns ;&gt;Hide the HP meter immidiately.
+		;[...]
 </pre></div>
 		</li>
 	</ul>

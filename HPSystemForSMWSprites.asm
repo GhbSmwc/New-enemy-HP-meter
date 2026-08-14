@@ -538,6 +538,21 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			LDA.w !D8,y
 			SEC
 		endif
+	;Failsafe measures to prevent a potential glitch where the HP meter transfers if a sprite the meter is on becomes a
+	;free slot ($14C8,x == $00), then a newly spawned sprite spawns on the same sprite slot, at the same frame.
+		SmushedHijack:
+			if !Setting_SpriteHP_RemoveOrApplyPatch
+				org $019AEB
+				autoclean JML SpriteDeadSmushed
+			else
+				%RemoveFreespaceCodeFromJMLJSL($019AEB)
+				org $019AEB
+				BNE .ShowSmushedGfx
+				STZ !14C8,x
+				
+				org $019AF1
+				.ShowSmushedGfx
+			endif
 	;Bosses below (only applies to bosses with a HP system, and not bowser)
 		;Reznor. Note that when killed, it calls the "InitSpriteTables" subroutine at $xxxxxx.
 		;Thus resulting in the meter jumping to 0 back to 1. I had to hijack at $039AF2 to force it to be zero
@@ -1339,6 +1354,14 @@ incsrc "Defines/GraphicalBarDefines.asm"
 						!DefaultHPTableSize 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001 ; <- Custom sprite numbers $A0-$AF
 						!DefaultHPTableSize 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001, 00001 ; <- Custom sprite numbers $B0-$BF
 					endif
+		SpriteDeadSmushed: ;>JML from $019AEB
+			BNE .ShowSmushedGfx
+			.Erase
+				STZ !14C8,x
+				JSL !SharedSub_HideHPMeterIfSpriteDespawns ;>Hide the HP meter immidiately.
+				JML $019AF0|!bank
+			.ShowSmushedGfx
+				JML $019AF1|!bank
 	endif
 	if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
 		StompKill:	;>JSL from $01A9D3
