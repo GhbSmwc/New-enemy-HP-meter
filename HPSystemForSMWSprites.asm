@@ -400,9 +400,12 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		%HijacksForFallingOffScrn($01A86B, ShowHPForFallingOffScrn, x) ;>Kill routine for star power/sliding
 		%HijacksForFallingOffScrn($01A9E9, ShowHPForFallingOffScrn, x) ;>Default death when killed by stomping (no sqush animation)
 		%HijacksForFallingOffScrn($01B140, ShowHPForFallingOffScrn, x) ;>Death by touching stunned shell-less koopas (not the blue one) or out-of-water fish
-		%HijacksForFallingOffScrn($02945B, ShowHPForFallingOffScrnCapeSpinQuakeNetPunch, x) ;>From quake effects (the ones that would flip koopas)
-		%HijacksForFallingOffScrn($02F29D, ShowHPForFallingOffScrn, x) ;>Wiggler killed by star
 		%HijacksForFallingOffScrn($028168, ShowHPForFallingOffScrnYregister, y) ;>Display HP for sprites blown up by bob-omb explosions
+		%HijacksForFallingOffScrn($02945B, ShowHPForFallingOffScrnCapeSpinQuakeNetPunch, x) ;>From quake effects (the ones that would flip koopas).
+		%HijacksForFallingOffScrn($02C7B3, ShowHPForFallingOffScrn, x) ;>Chargin' chuck's death by star
+		%HijacksForFallingOffScrn($02F29D, ShowHPForFallingOffScrn, x) ;>Wiggler killed by star
+		%HijacksForFallingOffScrn($0395F2, ShowHPForFallingOffScrn, x) ;>Rex's death by star
+		
 	;Make Amazing Hammer bro platform when bonked by player to show HP
 		%HijacksForFallingOffScrn($02DBFD, ShowHPForFallingOffScrnYregister, y)
 	;Hijack the clear-sprite tables routine (when sprite spawns) to default sprites with a
@@ -1398,6 +1401,8 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			%DealFixedDamage(0)
 				RTL
 		ZeroOutHPOfOneShotSprites:
+			LDA #$00
+			STA $40FFFF
 			;For sprites that should not have HP (blacklisted), simply check if max HP == 0.
 			;This code runs when sprites are instantly-killed via vanilla routines.
 			;
