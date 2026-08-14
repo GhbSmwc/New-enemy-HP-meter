@@ -539,12 +539,9 @@ autoclean JML SpritesTotalHPIntroEffect</pre>
 	
 	<p>This section covers on how to <b>display</b> the sprite's HP.</p>
 	
-	<p>For 1-shot custom sprites, to display their HP, that can easily be done by having define <kbd>!Setting_SpriteHP_VanillaSprite_OneShotSprites</kbd> (in <kbd>EnemyHPMeterDefines.asm</kbd>) set to <kbd>1</kbd> and <kbd>HPSystemForSMWSprites.asm</kbd> patched.
-	This only works if they're using the vanilla death routine, however.</p>
-	
-	<p>To program a health system for existing custom sprites, they should store a value in sprite table RAM representing how much damage (can be any value it increases), hits (counts up by one regardless of an attack), or
-	remaining health (starts at any nonzero value and decreases each damage) else the sprite will never die or dies in one hit. Because each sprite is different, documenting every one of them would make
-	this tutorial very long. So I'll explain the method that works with most sprites and with some examples.</p>
+	<p>To program a health system for existing custom sprites that can be damaged without being killed, they should store a value in sprite table RAM representing how much damage (can be any value it
+	increases), hits (counts up by one regardless of an attack), or remaining health (starts at any nonzero value and decreases each damage) else the sprite will never die or dies in one hit. Because
+	each sprite is different, documenting every one of them would make this tutorial very long. So I'll explain the method that works with most sprites and with some examples.</p>
 	
 	<p>I provided an example test sprite under <kbd>pixi/sprites/simple_sprite.asm</kbd> for testing the HP system.</p>
 	
@@ -684,15 +681,16 @@ autoclean JML SpritesTotalHPIntroEffect</pre>
 	
 	<p>If you want to know how it works, just open the provided Shared Subroutines code, pixi routine, custom sprite's asm file or view the provided patch and seeing the SMW disassembly.</p>
 	
-	<p>If you're dealing with an incremental damage counter-type HP for bosses and wanted a damage animation, you would do the same thing, just make sure the how much it increases are stored in <kbd>$00</kbd>, for example,
-	the <a href="https://www.smwcentral.net/?p=section&a=details&id=13144">Giant Masked Koopa boss</a>:
+	<p>
+		If you're dealing with an incremental damage counter-type HP for bosses and wanted a damage animation, you would do the same thing, just make sure the how much it increases are stored in <kbd>$00</kbd>, for example,
+		the <a href="https://www.smwcentral.net/?p=section&a=details&id=13144">Giant Masked Koopa boss</a>:
 <div class="CodeBlock" style="height: 70px;"><pre>
     INC !1534,x                 ; increment sprite hit counter (this counts the damage up by 1)
     LDA !1534,x                 ;\ If it has incremented to the "max", do death animation.
     CMP.b #!HitPoints           ; |
     BEQ SpriteDead              ;/
 </pre></div><br>
-	Should be changed to:<br>
+		Should be changed to:<br>
 <div class="CodeBlock" style="height: 230px;"><pre>
     INC !1534,x                 ; increment sprite hit counter (this counts the damage up by 1)
     if !Setting_SpriteHP_TwoByte
@@ -709,11 +707,11 @@ autoclean JML SpritesTotalHPIntroEffect</pre>
     CMP.b #!HitPoints                         ; |
     BEQ SpriteDead                            ;/
 </pre></div><br>
-	The same goes with if it have a health counter rather than a damage counter. For example, the Spiny Boss's damage code (yeah, some of the comments are incorrect (at the time of making this), such as &ldquo;Increase&rdquo; when it supposed to say &ldquo;Decrease&rdquo;.):<br>
+		The same goes with if it have a health counter rather than a damage counter. For example, the Spiny Boss's damage code (yeah, some of the comments are incorrect (at the time of making this), such as &ldquo;Increase&rdquo; when it supposed to say &ldquo;Decrease&rdquo;.):<br>
 <div class="CodeBlock" style="height: 60px"><pre>    DEC !sprite_health,x        ; Increase hit counter and...
     LDA !sprite_health,x        ; \ Check if the sprite has been hit 3 times
     BNE .justHit</pre></div><br>
-	To be changed to:<br>
+		To be changed to:<br>
 <div class="CodeBlock" style="height: 200px"><pre>    DEC !sprite_health,x        ; Increase hit counter and...
     if !Setting_SpriteHP_TwoByte
         REP #$20
@@ -728,8 +726,8 @@ autoclean JML SpritesTotalHPIntroEffect</pre>
     LDA !sprite_health,x        ; \ Check if the sprite has been hit 3 times
     BNE .justHit</pre></div><br>
     
-	Be careful that if scratch RAM <kbd>$00~$01</kbd> was used before and after here and needs to be retained, you need to preserve it before you write to <kbd>$00~$01</kbd> and restore it after <kbd>JSL !SharedSub_SpriteHPDamage</kbd>, or place it in an area where <kbd>$00~$01</kbd> is not used at all. For preserving values
-	it shoud look like this:
+		Be careful that if scratch RAM <kbd>$00~$01</kbd> was used before and after here and needs to be retained, you need to preserve it before you write to <kbd>$00~$01</kbd> and restore it after <kbd>JSL !SharedSub_SpriteHPDamage</kbd>, or place it in an area where <kbd>$00~$01</kbd> is not used at all. For preserving values
+		it shoud look like this:
 <div class="CodeBlock" style="height: 390px"><pre>    ;[...]
     if !Setting_SpriteHP_TwoByte
         REP #$20
@@ -754,8 +752,8 @@ autoclean JML SpritesTotalHPIntroEffect</pre>
         STA $00                 ;/
     endif
     ;[...]</pre></div><br>
-	Now, if the sprite can take <b>multiple points and different amounts of damage</b> instead of <kbd>1</kbd> point (and often have multiple ways to deal damage than just stomp), such as the <a href="https://www.smwcentral.net/?p=section&a=details&id=30909">Wreckin' Chuck</a> by Sonikku,
-	then you should also have those damages reflected into RAM <kbd>$00</kbd>. Here is the code that handles increasing the damage count:
+		Now, if the sprite can take <b>multiple points and different amounts of damage</b> instead of <kbd>1</kbd> point (and often have multiple ways to deal damage than just stomp), such as the <a href="https://www.smwcentral.net/?p=section&a=details&id=30909">Wreckin' Chuck</a> by Sonikku,
+		then you should also have those damages reflected into RAM <kbd>$00</kbd>. Here is the code that handles increasing the damage count:
 <div class="CodeBlock" style="height: 190px;"><pre>	;[...]
 .DealDamage
 ;; play sfx
@@ -769,8 +767,7 @@ autoclean JML SpritesTotalHPIntroEffect</pre>
 	BCC +
 	;[...]
 </pre></div><br>
-
-Change that to this:
+	Change that to this:
 <div class="CodeBlock" style="height: 260px;"><pre>	;[...]
 .DealDamage
 ;; play sfx
@@ -789,8 +786,34 @@ Change that to this:
 	BCC +
 	;[...]
 </pre></div><br>
-	Now this sprite did have damages handled in its own subroutine called from the stomping and thrown sprite handler. If there are multiple instances of increasing/decreasing the RAM (not using a subroutine to merge them into one), then every one of them should be changed to include setting RAM <kbd>$00</kbd>
-	and then calling <kbd>JSL !SharedSub_SpriteHPDamage</kbd> so all damage types will perform the bar animation (if you enabled it) and other effects (such as switching the health meter to the sprite you dealt damage to).
+		Now this sprite did have damages handled in its own subroutine called from the stomping and thrown sprite handler. If there are multiple instances of increasing/decreasing the RAM (not using a subroutine to merge them into
+		one), then every one of them should be changed to include setting RAM <kbd>$00</kbd> and then calling <kbd>JSL !SharedSub_SpriteHPDamage</kbd> so all damage types will perform the bar animation (if you enabled it) and other
+		effects (such as switching the health meter to the sprite you dealt damage to).
+	</p>
+	<p>
+		For 1-shot custom sprites (or any sprite that can be instantly-killed, either a 1HP enemy or any enemy with any amount of HP but there are attacks that instantly-kills them), to display their HP, that can easily be done
+		by having define <kbd>!Setting_SpriteHP_VanillaSprite_OneShotSprites</kbd> (in <kbd>EnemyHPMeterDefines.asm</kbd>) set to <kbd>1</kbd> and <kbd>HPSystemForSMWSprites.asm</kbd> patched.<br><br>
+		
+		However, this only works if they're using the vanilla death routine. If your 1-shot enemy have custom methods of of it being killed by the player, then find (could be in the custom sprite's code, or in a routine) where
+		it sets <kbd>$14C8</kbd> to any death state (commonly used death values are <kbd>$02~$05</kbd>) and add this line of code to make it show its HP meter:
+<div class="CodeBlock" style="height: 210px; width: 570px;"><pre>
+	LDA #&lt;DeathStateValue&gt;
+	STA !14C8,x
+	;Display 0HP (deals 255 or 65535 damage, cannot underflow)
+		if !Setting_SpriteHP_TwoByte == 0
+			LDA.b #!SpriteHP_MaxHPAndDamageValue
+			STA $00
+		else
+			REP #$20
+			LDA.w #!SpriteHP_MaxHPAndDamageValue
+			STA $00
+			SEP #$20
+		endif
+		JSL !SharedSub_SpriteHPDamage
+</pre></div><br>
+		Note that setting <kbd>$14C8</kbd> to <kbd>#$00</kbd> would not show the meter because the sprite have instantly become a free sprite slot, which this ASM pack would avoid showing HP of a non-existent sprite. If a new sprite
+		is spawned on this sprite slot on the same frame this sprite became free, this causes a glitch where the HP meter would switch to that newly spawned sprite, thus to prevent this, call <kbd>JSL !HideHPMeterIfSpriteDespawns</kbd>
+		immidiately after its <kbd>$14C8</kbd> is set to <kbd>#$00</kbd>.
 	</p>
 	<h3><a href="#ToC_MakeSpritesDisplayHP_GetHPValue_TotalHPAllPhases" id="JMPTo_MakeSpritesDisplayHP_GetHPValue_TotalHPAllPhases">^</a>Getting total HP of all phases</h3>
 	<p>This section covers sprites, most likely bosses, that stores HP in memory that is per-phase, and we need to get the total HP value of all phases. So far, I have not seen any sprite released in the section that does this. If they have, most likely they would have different coding and behavior structures.
@@ -871,6 +894,18 @@ Change that to this:
 			When Koopa Troopas get seperated from their shells (either by jumping on them, or stunning them in their shells via capespin, bounce block, cape diving into the ground, or net punch and waiting till they exit), the Koopa Troopa itself turns into a shell of the same sprite number (just with a changed state), and spawns a shell-less Koopa.
 			And when a shell-less Koopa (except the blue one) enters a shell, the shell becomes a Koopa Troopa and the shell-less koopa despawns (via suboffscreen function, to prevent it from permanently disappearing if the shell-less koopa was placed directly in the level, see <kbd>$018AC9</kbd>). Thus, the HP meter needs to switch between a
 			koopa/shell and shell-less koopa sprite.
+		</li>
+		<li>
+			<span id="DespawnSpawnTransferBug">
+				Whenever the sprite the HP meter is on despawned (<kbd>$14C8</kbd> set to <kbd>$00</kbd>, either by SubOffScreen routine, killed by Mario or other sprite), and a new sprite is spawned on the same slot as the one that just despawned, and at the same frame, this causes a bug that the meter could be transferred to that newly spawned
+				sprite (the HP values changed and often plays the filling up animation). This is because the despawning and spawning happened before executing <kbd>DisplayEnemyHP.asm</kbd>'s <kbd>main:</kbd> code, which checks if <kbd>$14C8</kbd> is zero. To prevent this, call <kbd>JSL !HideHPMeterIfSpriteDespawns</kbd> <i>after</i>
+				<kbd>$14C8</kbd> gets potentially set to <kbd>#$00</kbd>. Example:
+			</span>
+<div class="CodeBlock" style="height: 69px; width: 487px;"><pre>
+	LDA #$00
+	%SubOffScreen() ;&gt;Here, $14C8,x may be zero after this.
+	JSL !HideHPMeterIfSpriteDespawns ;&gt;Call a subroutine that turns the meter display off if $14C8,x is zero.
+</pre></div>
 		</li>
 	</ul>
 	<hr>
@@ -1011,13 +1046,7 @@ Change that to this:
 			(started playing the filling animation, if bar animation enabled), what's happening?<br><br>
 		
 			A: What's happening is that a sprite is getting despawned, and the newly spawned sprite happens to occupy the same sprite slot as the one that despawned at the same frame, right before <kbd>DisplayEnemyHP.asm</kbd> detects that
-			a sprite on this slot have been deleted and is supposed to hide the meter for non-existent sprites. Solution for custom sprites: if anything would make this sprite become a free slot (<kbd>$14C8,x == 0</kbd>) such as from a suboffscreen,
-			you must call <kbd>!HideHPMeterIfSpriteDespawns</kbd> prior the end of the sprite code to prevent potentially transferring the meter display to another sprite, like this (suboffscreen example):
-<div class="CodeBlock" style="height: 69px; width: 487px;"><pre>
-	LDA #$00
-	%SubOffScreen() ;&gt;Here, $14C8,x may be zero after this.
-	JSL !HideHPMeterIfSpriteDespawns ;&gt;Call a subroutine that turns the meter display off if $14C8,x is zero.
-</pre></div>
+			a sprite on this slot have been deleted and is supposed to hide the meter for non-existent sprites. See info <a href="#DespawnSpawnTransferBug">here</a>.
 		</li>
 		<li>
 			Q: I have a boss sprite that everything works fine, but the meter display gets stuck at 1 unit filled and/or keeps making the beeping sound. What did I do wrong?<br><br>
