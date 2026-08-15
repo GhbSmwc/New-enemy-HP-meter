@@ -470,7 +470,7 @@
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			;Sound effects. Setting Sound numbers to $00 will not play any sound nor suppress any existing sound effect
-			;on the channel.
+			;within a frame on the channel.
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 				;When the fireball damages enemies with the "take 5 fireballs to kill" bit being set.
@@ -489,16 +489,13 @@
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 					!Setting_SpriteHP_VanillaSprite_Pokey_Damage_SoundNumber = $03 ;>Setting this to 0 will revert a hijack at $02B7DB
 					!Setting_SpriteHP_VanillaSprite_Pokey_Damage_SoundPort = $1DF9|!addr
-			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-			;Other
-			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-				!Setting_SpriteHP_TotalHPMode = 2
-					;^Apply a mode where the meter shows total HP across multiple sprites:
-					; - 0 = No
-					; - 1 = Yes (takes the total HP of all applicable loaded sprites)
-					; - 2 = Yes (same as above but also including the value in !Freeram_SpriteHP_TotalHPOfUnloadedSprites)
+				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+				;When enemies sink in lava (only applies to sprites that gradually sinks)
+				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+					!Setting_SpriteHP_VanillaSprite_LavaSink_SoundNumber = $20
+					!Setting_SpriteHP_VanillaSprite_LavaSink_SoundPort = $1DFC|!addr
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	;Size of the HP:
+	;Size of the HP and total mode:
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		;Size of the HP data:
 		; - 0 = 8-bit HP (HP up to 255)
@@ -507,6 +504,11 @@
 		;The maximum number of digits to be displayed. Obviously you
 		;wouldn't set this above 3 for 8-bit HP and above 5 for 16-bit.
 			!Setting_SpriteHP_MaxDigits	= 3
+		;Apply a mode where the meter shows total HP across multiple sprites:
+		; - 0 = No
+		; - 1 = Yes (takes the total HP of all applicable loaded sprites)
+		; - 2 = Yes (same as above but also including the value in !Freeram_SpriteHP_TotalHPOfUnloadedSprites)
+			!Setting_SpriteHP_TotalHPMode = 2
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;Misc settings
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -518,6 +520,10 @@
 			;^Koopas do what when stomped/stunned-in-shells (this is because of a hijack at $01AA14):
 			; - 0 = Come out of shells (vanilla).
 			; - 1 = Stay in their shells (applies hex edits at $0196C6 and $01AA15).
+		!Setting_LavaSinkingFix = 1
+			;^Apply a bugfix that sprites sinking in lava moving left goes through solid blocks?
+			; - 0 = No
+			; - 1 = Yes
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;Don't touch these unless you know what you're doing

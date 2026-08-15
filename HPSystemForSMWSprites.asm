@@ -346,6 +346,22 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			org $0196C5
 			BNE $1A
 		endif
+	;Some other misc fixes and additions
+		;Fix lava-sinking sprites from phasing through walls leftward
+			LavaPassThroughWallsFix:
+				if !Setting_LavaSinkingFix
+					org $019A92
+					BRA .InteractWithObjects
+					
+					org $019A96
+					.InteractWithObjects
+				else
+					org $019A92
+					BRA .CODE_019A9D
+					
+					org $019A9D
+					.CODE_019A9D
+				endif
 	;Shell and shell-less koopa HP meter switcher. A koopa and an empty shell are the same sprite (but with a different state).
 	;A shell-less koopa being seperated from their shell is a seperate sprite spawned in the level. When entering an empty shell,
 	;they simply just get deleted.
@@ -1183,7 +1199,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 						!DefaultHPTableSize 00001 ; <- $28 - Big Boo
 						!DefaultHPTableSize 00001 ; <- $29 - Koopa Kid (note that Ludwig, Morton, Roy, Wendy and Lemmy overrides this.)
 						!DefaultHPTableSize 00001 ; <- $2A - Upside-down Piranha Plant
-						!DefaultHPTableSize 00001 ; <- $2B - Sumo Brother's lightning
+						!DefaultHPTableSize 00000 ; <- $2B - Sumo Brother's lightning
 						!DefaultHPTableSize 00000 ; <- $2C - Yoshi egg
 						!DefaultHPTableSize 00000 ; <- $2D - Baby Yoshi
 						!DefaultHPTableSize 00001 ; <- $2E - Spike Top
@@ -1388,6 +1404,10 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					SEP #$20
 				endif
 				JSL !SharedSub_SpriteHPDamageNoAutoSwitchMeter ;>Enemies are just PRONE to falling in lava, even without the player's input. If they're suiciding, no need for HP meter display unless already damaged by player.
+				if !Setting_SpriteHP_VanillaSprite_LavaSink_SoundNumber
+					LDA.b #!Setting_SpriteHP_VanillaSprite_LavaSink_SoundNumber
+					STA !Setting_SpriteHP_VanillaSprite_LavaSink_SoundPort
+				endif
 			.Restore
 				LDA #$05
 				STA !14C8,x
