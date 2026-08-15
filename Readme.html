@@ -664,18 +664,16 @@ autoclean JML SpritesTotalHPIntroEffect</pre>
 			<li>
 				If you have animation enabled (<kbd>!Setting_SpriteHP_BarAnimation</kbd> set to <kbd>1</kbd>), you need to set some values for that.
 				Without it, dealing damage would skip the animation (such as the bar that shows previous fill amount prior to the damage immediately
-				decreasing without the freeze delay). If you have <kbd>!Freeram_SpriteHP_BarAnimationTimer !=0</kbd>, it should also set the delay
+				decreasing without the freeze delay). If you have <kbd>!Freeram_SpriteHP_BarAnimationTimer != 0</kbd>, it should also set the delay
 				timer to the value of <kbd>!Freeram_SpriteHP_BarAnimationTimer</kbd>.
 			</li>
 			<li>
-				Ensure that the health meter switches to that damaged enemy when hit. Without it, if there were multiple enemies utilizing the HP
-				system and the player damages them, then damage the former enemy, the meter wouldn't switch back. The exception to that is when
-				utilizing total HP mode, where the meter should only show the total HP instead.
+				Ensure that the health meter always switches to the recently damaged enemy when hit. Otherwise it either stays hidden, stays on the enemy second-or-later-last sprite the player caused damage to or by intro-fill.
 			</li>
 		</ul>
 		Thankfully, all that logic is handled automatically in a subroutine defined as <kbd>!SharedSub_SpriteHPDamage</kbd>, with the inputs stored in RAM <kbd>$00</kbd> (2 bytes, <kbd>$00~$01</kbd>, if <kbd>!Setting_SpriteHP_TwoByte == 1</kbd>). Feel free to check out the subroutines as you wish.<br><br>
 		
-		The same rule applies to healing as well (to show how much the fill increases). A subroutine for pixi <kbd>pixi/routines/EnemyHPHeal.asm</kbd>, which can be called via <kbd>%EnemyHPHeal()</kbd> (similarly <kbd>$00</kbd> or <kbd>$00~$01</kbd>).
+		The same rule applies to healing as well (to show how much the fill increases). A subroutine for pixi <kbd>pixi/routines/EnemyHPHeal.asm</kbd>, which can be called via <kbd>%EnemyHPHeal()</kbd> (similarly <kbd>$00</kbd> or <kbd>$00~$01</kbd> for how much HP recovered).
 		Why in pixi? It's because none of vanilla SMW sprites heals, and at the time of writing this, not a single custom sprite can actually heal.
 	</p>
 	
@@ -797,7 +795,7 @@ autoclean JML SpritesTotalHPIntroEffect</pre>
 		However, this only works if they're using the vanilla death routine. If your 1-shot enemy have custom methods of of it being killed by the player, then find (could be in the custom sprite's code, or in a routine) where
 		it sets <kbd>$14C8</kbd> to any death state (commonly used death values are <kbd>$02~$05</kbd>) and add this line of code to make it show its HP meter:
 <div class="CodeBlock" style="height: 210px; width: 570px;"><pre>
-	LDA #&lt;DeathStateValue&gt;
+	LDA.b #&lt;DeathStateValue&gt;
 	STA !14C8,x
 	;Display 0HP (deals 255 or 65535 damage, cannot underflow)
 		if !Setting_SpriteHP_TwoByte == 0
@@ -897,14 +895,9 @@ autoclean JML SpritesTotalHPIntroEffect</pre>
 		</li>
 		<li>
 			<span id="DespawnSpawnTransferBug">
-				If this event happens:
-				<ol>
-					<li>A sprite, with its HP being shown, gets deleted (<kbd>$14C8</kbd> set to <kbd>$00</kbd>).</li>
-					<li>Within the same frame as above, a new sprite is being spawned, and occupies the same sprite slot as the deleted sprite.</li>
-				</ol>
-				May cause a glitch that the HP meter, instead of disappearing, get transfered to the newly spawned sprite (with a filling animation). This is because despawning and then spawning happened
-				before <kbd>DisplayEnemyHP.asm</kbd>'s detection if the sprite slot	the meter is on is empty. To prevent this, call <kbd>JSL !SharedSub_HideHPMeterIfSpriteDespawns</kbd>
-				<i>immidiately after</i> <kbd>$14C8</kbd> gets potentially set to <kbd>#$00</kbd>, before any spawning-sprite-related action occurs. Example:
+				If the HP meter is on a sprite slot that <abbr title="$14C8 set to $00.">despawned</abbr>, and a newly spawned sprite occupies that same slot at the same frame, this may cause a glitch that the meter to
+				transfer to the newly spawned sprite rather than disappearing. This is because despawning and then spawning happened before <kbd>DisplayEnemyHP.asm</kbd> checks if the sprite slot become empty. To
+				prevent this, call <kbd>JSL !SharedSub_HideHPMeterIfSpriteDespawns</kbd> after <kbd>$14C8</kbd> gets potentially set to <kbd>$00</kbd>, before any spawning-sprite-related action occurs. Example:
 			</span>
 <div class="CodeBlock" style="height: 186px; width: 687px;"><pre>
 	;Off-screen despawn:
