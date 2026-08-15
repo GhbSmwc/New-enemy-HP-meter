@@ -5,20 +5,26 @@ based (8.9, then 8.10 rather than 9.0)):
 ---------------------------------------------------------------------------------------------------------------
 
 06/14/2026
- -Optional features added:
- --Added HP system for Rex, including how much HP it has.
- --Added HP display for Pokey (each segment, and including the head, is 1 HP).
- --Dino Rhino, Super Koopa that spawns a feather and Winged enemies count as 2 HP. Note that Parachute enemies
-   will still have 1 HP due to the automatically reverting to their equivilants when touching the ground.
- --Added HP meter display for one-shot sprites (and bosses techinically a one-shot). Note that this also
-   includes spites that transforms into another sprite, such as winged enemes, Dino Rhino, and others, which
-   counts as 1 extra HP.
- --Added "total HP" mode, useful for enemy ambush system that the meter shows the total HP of all enemies to
-   defeat.
- --Added an optional feature to completely change how "take 5 fireballs to kill" works. It now decreases this
-   ASM resource's HP RAM value directly instead of increasing $1528.
- --Added HP display for Reznor (each, or total HP mode), which are counted as bosses in SMW.
- --Added optional sound effect for when sprites sink in lava.
+ -Features added:
+ --Most sprites now have default HP values during spawn (calling subroutine "ZeroSpriteTables", which is
+   $07F722), rather than init. This also optionally supports custom sprites (which you no longer need to have
+   init set its HP values in most cases).
+ --Optional features:
+ ---Added HP system for Rex.
+ ---Added HP display for Pokey (each segment, and including the head, is 1 HP).
+ ---Dino Rhino, Super Koopa that spawns a feather and Winged enemies count as 2 HP. Note that Parachute enemies
+    will still have 1 HP due to the automatically reverting to their equivilants when touching the ground.
+ ---Added HP meter display for one-shot sprites (and bosses are techinically a one-shot). Note that this also
+    includes spites that transforms into another sprite, such as winged enemes, Dino Rhino, and others, which
+    counts as 1 extra HP.
+ ---Added "total HP" mode, useful for enemy ambush system that the meter shows the total HP of all enemies to
+    defeat.
+ ---Added an optional feature to completely change how "take 5 fireballs to kill" works. It now decreases this
+    ASM resource's HP RAM value directly instead of increasing $1528.
+ ---Added HP display for Reznor (each, or total HP mode), since it is a boss enemy in SMW.
+ ---Added HP display for Iggy and Larry (have 1HP, only 0HP when fallen into lava), thus all 7 Koopalings are
+    now complete.
+ ---Added optional sound effect for when sprites sink in lava.
  -Readme instruction on adding incsrc to include defines now lets user easily adjust how many subfolders deep.
  -Fixes
  --Fixed an oversight that sprites sinking in lava does not zero out HP.
