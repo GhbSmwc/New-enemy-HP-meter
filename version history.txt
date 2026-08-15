@@ -3,8 +3,6 @@ Number of items on main folder: 9
 Version history (finally, ordered from recent to oldest, version numbers are subversion and not decimal-fraction
 based (8.9, then 8.10 rather than 9.0)):
 ---------------------------------------------------------------------------------------------------------------
-Thing(s) to fix:
--no glitches found so far.
 
 06/14/2026
  -Optional features added:
@@ -12,14 +10,19 @@ Thing(s) to fix:
  --Added HP display for Pokey (each segment, and including the head, is 1 HP).
  --Dino Rhino, Super Koopa that spawns a feather and Winged enemies count as 2 HP. Note that Parachute enemies
    will still have 1 HP due to the automatically reverting to their equivilants when touching the ground.
- --Added HP meter display for one-shot sprites. Note that this also includes spites that transforms into
-   another sprite, such as winged enemes, Dino Rhino, and others, which counts as 1 extra HP.
+ --Added HP meter display for one-shot sprites (and bosses techinically a one-shot). Note that this also
+   includes spites that transforms into another sprite, such as winged enemes, Dino Rhino, and others, which
+   counts as 1 extra HP.
  --Added "total HP" mode, useful for enemy ambush system that the meter shows the total HP of all enemies to
    defeat.
  --Added an optional feature to completely change how "take 5 fireballs to kill" works. It now decreases this
    ASM resource's HP RAM value directly instead of increasing $1528.
  --Added HP display for Reznor (each, or total HP mode), which are counted as bosses in SMW.
+ --Added optional sound effect for when sprites sink in lava.
  -Readme instruction on adding incsrc to include defines now lets user easily adjust how many subfolders deep.
+ -Fixes
+ --Fixed an oversight that sprites sinking in lava does not zero out HP.
+ 
 3/16/2025
  -Fixed a very minor copy-paste issue where option "!Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull" seems
   to incorrectly use the round-away functions on certain values.
