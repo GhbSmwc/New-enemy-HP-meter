@@ -553,6 +553,17 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				org $019AF1
 				.ShowSmushedGfx
 			endif
+	;Sprite sinking in lava
+		if and(!Setting_SpriteHP_RemoveOrApplyPatch, and(!Setting_SpriteHP_DisplayGraphicalBar, !Setting_SpriteHP_BarAnimation))
+			org $019330
+			autoclean JSL ZeroHPForLava
+			NOP
+		else
+			%RemoveFreespaceCodeFromJMLJSL($019330)
+			org $019330
+			LDA #$05
+			STA !14C8,x
+		endif
 	;Bosses below (only applies to bosses with a HP system, and not bowser)
 		;Reznor. Note that when killed, it calls the "InitSpriteTables" subroutine at $xxxxxx.
 		;Thus resulting in the meter jumping to 0 back to 1. I had to hijack at $039AF2 to force it to be zero
@@ -1362,6 +1373,28 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				JML $019AF0|!bank
 			.ShowSmushedGfx
 				JML $019AF1|!bank
+		if and (!Setting_SpriteHP_DisplayGraphicalBar, !Setting_SpriteHP_BarAnimation)
+			ZeroHPForLava: ;>JML from $019330
+				LDA !14C8,x
+				CMP #$05
+				BEQ .Done		;>Already sinking in lava? Done (it runs every frame while a sprite is sinking, and I cannot allow running this every frame).
+				.ZeroHP ;Zero out the HP only on the first frame $14C8 goes from a non-$05 to a $05.
+					if !Setting_SpriteHP_TwoByte == 0
+						LDA.b #!SpriteHP_MaxHPAndDamageValue
+						STA $00
+					else
+						REP #$20
+						LDA.w #!SpriteHP_MaxHPAndDamageValue
+						STA $00
+						SEP #$20
+					endif
+					JSL !SharedSub_SpriteHPDamageNoAutoSwitchMeter ;>Enemies are just PRONE to falling in lava, even without the player's input. If they're suiciding, no need for HP meter display unless already damaged by player.
+				.Restore
+					LDA #$05
+					STA !14C8,x
+				.Done
+					RTL
+		endif
 	endif
 	if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
 		StompKill:	;>JSL from $01A9D3

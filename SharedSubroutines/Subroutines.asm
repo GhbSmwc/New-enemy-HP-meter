@@ -34,6 +34,8 @@
 ; - GetMaxBarInAForRoundToMaxCheck
 ; - GraphicalBarNumberOfTiles
 ; - SpriteHPDamage
+; - SpriteHPDamageNoAutoSwitchMeter
+; - SubtractSpriteHP (only used by other subroutines)
 ; - SpriteHPGetSlotIndex
 ; - SpriteHPRemoveRecordEffect
 ; - SpriteHPIntroEffect
@@ -1369,8 +1371,8 @@ GraphicalBarNumberOfTiles:
 ;
 ;Input:
 ; - $00 to $00+!Setting_SpriteHP_TwoByte = Amount of damage.
-; - X register (8-bit): What sprite (slot) the meter to
-;   switch to.
+; - X register (8-bit): What sprite (slot) to damage and
+;   the meter to switch to.
 ;Output:
 ; - HP is already subtracted, if damage > currentHP, HP is
 ;   set to 0.
@@ -1392,31 +1394,31 @@ SpriteHPDamage:
 		BCC ..TotalHPMode					;/
 		
 		..Normal
-		if !Setting_SpriteHP_BarAnimation == 0
-			TXA
-			STA !Freeram_SpriteHP_MeterState
-		else
-			LDA $00
-			PHA
-			if !Setting_SpriteHP_TwoByte != 0
-				LDA $01
+			if !Setting_SpriteHP_BarAnimation == 0
+				TXA
+				STA !Freeram_SpriteHP_MeterState
+			else
+				LDA $00
 				PHA
-			endif
-			JSL SpriteHPGetSlotIndex
-			TXA
-			CMP !Scratchram_SpriteHP_SpriteSlotToDisplay
-			BEQ ..SameSpriteSlot					;>If damages happened to the same sprite (meter is already on this current sprite), don't set the previous fill amount to the second last hit (this will show accumulating difference between 2 fill amounts)
-			STA !Freeram_SpriteHP_MeterState		;>Switch HP display to the most recent damaged sprite.
-			..Different
-				JSL SpriteHPRemoveRecordEffect		;>Set fill amount to be the amount of fill before this damage (will show fill lost of this last hit only, not accumulating loss when meter switches to this sprite).
-			..SameSpriteSlot
-			if !Setting_SpriteHP_TwoByte != 0
+				if !Setting_SpriteHP_TwoByte != 0
+					LDA $01
+					PHA
+				endif
+				JSL SpriteHPGetSlotIndex
+				TXA
+				CMP !Scratchram_SpriteHP_SpriteSlotToDisplay
+				BEQ ..SameSpriteSlot					;>If damages happened to the same sprite (meter is already on this current sprite), don't set the previous fill amount to the second last hit (this will show accumulating difference between 2 fill amounts)
+				..DifferentSpriteSlot
+					STA !Freeram_SpriteHP_MeterState	;>Switch HP display to the most recent damaged sprite.
+					JSL SpriteHPRemoveRecordEffect		;>Set fill amount to be the amount of fill before this damage (will show fill lost of this last hit only, not accumulating loss when meter switches to this sprite).
+				..SameSpriteSlot
+				if !Setting_SpriteHP_TwoByte != 0
+					PLA
+					STA $01
+				endif
 				PLA
-				STA $01
+				STA $00
 			endif
-			PLA
-			STA $00
-		endif
 		..Disabled
 		..TotalHPMode
 		if and(notequal(!Setting_SpriteHP_BarAnimation, 0), notequal(!Setting_SpriteHP_BarChangeDelay, 0))
@@ -1424,37 +1426,84 @@ SpriteHPDamage:
 			STA !Freeram_SpriteHP_BarAnimationTimer		;/
 		endif
 	.SubtractHP
-		if !Setting_SpriteHP_TwoByte != 0
-			LDA !Freeram_SpriteHP_CurrentHPHi,x		;>HP high byte
-			XBA										;>Transfer to A's high byte
-			LDA !Freeram_SpriteHP_CurrentHPLow,x	;>HP low byte in A's low byte
-			REP #$20								;>Make A read also the high byte.
-			SEC										;\Subtract by damage.
-			SBC $00									;/
-			SEP #$20								;>8-bit A (low byte)
-			BCS ..NonNegHP							;>if HP value didn't underflow, set HP to subtracted value.
-			LDA #$00								;\Set HP to 0
-			STA !Freeram_SpriteHP_CurrentHPLow,x	;|
-			STA !Freeram_SpriteHP_CurrentHPHi,x		;/
-			BRA .Done
-	
-			..NonNegHP
-				STA !Freeram_SpriteHP_CurrentHPLow,x	;>Low byte subtracted HP
-				XBA										;>Switch to high byte
-				STA !Freeram_SpriteHP_CurrentHPHi,x	;>High byte subtracted HP
-		else
-			LDA !Freeram_SpriteHP_CurrentHPLow,x	;\if HP subtracted by damage didn't underflow (carry set), write HP
-			SEC										;|
-			SBC $00									;|
-			BCS ..NonNegHP							;/
-			LDA #$00								;>otherwise if underflow (carry clear; borrow needed), set HP to 0.
-			
-			..NonNegHP
-				STA !Freeram_SpriteHP_CurrentHPLow,x
-		endif
+		JSL SubtractSpriteHP
 	.Done
 	PLY
 	RTL
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Damage sprite subroutine, but without auto-switching the
+;HP meter to the damaged enemy (if meter is already on this
+;sprite, will do the damage and meter animation as normal).
+;
+;This subroutine can be used whenever an enemy takes damage
+;not caused by the player. Things like an enemy damages
+;another enemy, and still play the meter animation if you
+;already have the meter on the sprite prior.
+;
+;Input:
+; - $00 to $00+!Setting_SpriteHP_TwoByte = Amount of damage.
+; - X register (8-bit): What sprite (slot) the sprite is
+;   involved.
+;Output:
+; - HP is already subtracted, if damage > currentHP, HP is
+;   set to 0.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+SpriteHPDamageNoAutoSwitchMeter:
+	;Same as above, but does not automatically switch the HP meter to the damaged enemy.
+	;If the HP meter is already on this sprite, then it would do the damage animation as normal.
+	.HandleMeter
+		JSL SpriteHPGetSlotIndex
+		TXA
+		CMP !Scratchram_SpriteHP_SpriteSlotToDisplay
+		BEQ ..ShowHP						;>Is meter already on this sprite? Then allow damage animation
+		LDA !Freeram_SpriteHP_MeterState
+		CMP.b #!sprite_slots*2
+		BCC ..JustDamage					;>If in any of the sprite slots, just damage
+		CMP.b #(!sprite_slots*2)+1
+		BCC ..ShowHP						;>Is meter on total mode, then allow damage animation
+		BRA ..JustDamage
+		
+		..ShowHP
+			;we don't need JSL SpriteHPRemoveRecordEffect because we aren't switching the meter.
+			if and(notequal(!Setting_SpriteHP_BarAnimation, 0), notequal(!Setting_SpriteHP_BarChangeDelay, 0))
+				LDA.b #!Setting_SpriteHP_BarChangeDelay		;\Freeze damage indicator (this makes the bar animation hangs before decreasing towards current HP fill amount)
+				STA !Freeram_SpriteHP_BarAnimationTimer		;/
+			endif
+		..JustDamage
+			JSL SubtractSpriteHP
+	.Done
+		RTL
+SubtractSpriteHP:
+	if !Setting_SpriteHP_TwoByte != 0
+		LDA !Freeram_SpriteHP_CurrentHPHi,x		;>HP high byte
+		XBA										;>Transfer to A's high byte
+		LDA !Freeram_SpriteHP_CurrentHPLow,x	;>HP low byte in A's low byte
+		REP #$20								;>Make A read also the high byte.
+		SEC										;\Subtract by damage.
+		SBC $00									;/
+		SEP #$20								;>8-bit A (low byte)
+		BCS .NonNegHP							;>if HP value didn't underflow, set HP to subtracted value.
+		LDA #$00								;\Set HP to 0
+		STA !Freeram_SpriteHP_CurrentHPLow,x	;|
+		STA !Freeram_SpriteHP_CurrentHPHi,x		;/
+		BRA .Done
+	
+		.NonNegHP
+			STA !Freeram_SpriteHP_CurrentHPLow,x	;>Low byte subtracted HP
+			XBA										;>Switch to high byte
+			STA !Freeram_SpriteHP_CurrentHPHi,x	;>High byte subtracted HP
+	else
+		LDA !Freeram_SpriteHP_CurrentHPLow,x	;\if HP subtracted by damage didn't underflow (carry set), write HP
+		SEC										;|
+		SBC $00									;|
+		BCS .NonNegHP							;/
+		LDA #$00								;>otherwise if underflow (carry clear; borrow needed), set HP to 0.
+		
+		.NonNegHP
+			STA !Freeram_SpriteHP_CurrentHPLow,x
+	endif
+	.Done
+		RTL
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;This obtains the equivilant sprite slot number from !Freeram_SpriteHP_MeterState.
 ;espically when dealing with intro-mode feature.

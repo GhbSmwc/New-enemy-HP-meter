@@ -83,9 +83,16 @@
 		
 		<li>Touching enemies will not display the meter.</li>
 		
-		<li>When an enemy damages another enemy, such as a Giant Rocky pounding another enemy, the meter does not automatically switch
-		to the damaged enemy. This ASM resource however does so (e.g. when a blue shell-less koopa kicks a shell to a Chargin Chuck).
-		This is because there isn't a check on who kicked/throw the shell (or who damaged the enemy).</li>
+		<li>
+			When an enemy damages another enemy, such as a Giant Rocky pounding another enemy, the meter does not automatically switch
+			to the damaged enemy. This ASM resource however does so (e.g. when a blue shell-less koopa kicks a shell to a Chargin Chuck).
+			This is because there isn't a check on who kicked/throw the shell (or who damaged the enemy).<br><br>
+			
+			A subroutine is provided here (for shared subroutines, <kbd>SpriteHPDamageNoAutoSwitchMeter</kbd>) in certain cases where
+			if an enemy dies not by the player, would not show the meter despite damage taken. For kicked sprites, you may need
+			<a href="https://www.smwcentral.net/?p=section&a=details&id=40260">this patch</li>, modify it when not flagged as &ldquo;kicked
+			by the player&rdquo; to use this subroutine instead of <kbd>SpriteHPDamage</kbd>. This subroutine is only used in this package
+			when sprites are fallen into lava.
 	</ul>
 	<p>So few enemies in SMW can take damage without being one-shotted, they are Chucks, Wendy/Lemmy, Ludwig, Morton/Roy, Big Boo boss,
 	and Bowser (although the status bar in the last battle is disabled). However, this ASM resource optionally supports 1-shot enemies.</p>
@@ -254,6 +261,10 @@
 								<ul>
 									<li><kbd>SpriteHPIntroEffect</kbd> (delete this if you don't want to have a boss intro-fill effect)</li>
 									<li><kbd>SpritesTotalHPIntroEffect</kbd> (remove this from the JML and macro define list if you're not using the total HP system)</li>
+									<li>
+										<kbd>SpriteHPDamageNoAutoSwitchMeter</kbd> (remove this from the JML and macro define list if you're not having ways enemies can be damaged without auto-switching the HP meter, such as when enemy damages another.
+										If having <kbd class="NoLineBreak">!Setting_SpriteHP_DisplayGraphicalBar == 0</kbd> OR <kbd class="NoLineBreak">!Setting_SpriteHP_BarAnimation == 0</kbd>, also you can remove this.).
+									</li>
 								</ul>
 							</li>
 						</ul>
@@ -284,6 +295,7 @@ autoclean JML WriteBarToHUDLeftwardsFormat2
 autoclean JML WriteStringDigitsToHUD
 autoclean JML WriteStringDigitsToHUDFormat2
 autoclean JML SpriteHPDamage
+autoclean JML SpriteHPDamageNoAutoSwitchMeter
 autoclean JML SpriteHPRemoveRecordEffect
 autoclean JML SpriteHPGetSlotIndex
 autoclean JML SpriteHPIntroEffect
@@ -316,6 +328,7 @@ autoclean JML SpritesTotalHPIntroEffect</pre>
 		%SetSharedSubDefine(SharedSub_WriteStringDigitsToHUD)
 		%SetSharedSubDefine(SharedSub_WriteStringDigitsToHUDFormat2)
 		%SetSharedSubDefine(SharedSub_SpriteHPDamage)
+		%SetSharedSubDefine(SharedSub_SpriteHPDamageNoAutoSwitchMeter)
 		%SetSharedSubDefine(SharedSub_SpriteHPRemoveRecordEffect)
 		%SetSharedSubDefine(SharedSub_SpriteHPGetSlotIndex)
 		%SetSharedSubDefine(SharedSub_SpriteHPIntroEffect)

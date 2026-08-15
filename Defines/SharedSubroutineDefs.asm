@@ -74,12 +74,12 @@
 		%SetSharedSubDefine(SharedSub_WriteStringDigitsToHUD)		;
 		%SetSharedSubDefine(SharedSub_WriteStringDigitsToHUDFormat2)		;
 		%SetSharedSubDefine(SharedSub_SpriteHPDamage)		;
+		%SetSharedSubDefine(SharedSub_SpriteHPDamageNoAutoSwitchMeter)		;
 		%SetSharedSubDefine(SharedSub_SpriteHPRemoveRecordEffect)		;
 		%SetSharedSubDefine(SharedSub_SpriteHPGetSlotIndex)		;
 		%SetSharedSubDefine(SharedSub_SpriteHPIntroEffect)		;
 		%SetSharedSubDefine(SharedSub_HideHPMeterIfSpriteDespawns)		;
 		%SetSharedSubDefine(SharedSub_SpritesTotalHPIntroEffect)		;
-		%SetSharedSubDefine(SharedSub_Placeholder)		;Dummy JSL to reserve space.
 		%SetSharedSubDefine(SharedSub_Placeholder)		;Dummy JSL to reserve space.
 		%SetSharedSubDefine(SharedSub_Placeholder)		;Dummy JSL to reserve space.
 		%SetSharedSubDefine(SharedSub_Placeholder)		;Dummy JSL to reserve space.
