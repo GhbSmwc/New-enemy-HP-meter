@@ -1440,6 +1440,9 @@ SpriteHPDamage:
 ;another enemy, and still play the meter animation if you
 ;already have the meter on the sprite prior.
 ;
+;In this ASM pack, it's only used when when enemies fall
+;into lava.
+;
 ;Input:
 ; - $00 to $00+!Setting_SpriteHP_TwoByte = Amount of damage.
 ; - X register (8-bit): What sprite (slot) the sprite is
@@ -1455,15 +1458,15 @@ SpriteHPDamageNoAutoSwitchMeter:
 		JSL SpriteHPGetSlotIndex
 		TXA
 		CMP !Scratchram_SpriteHP_SpriteSlotToDisplay
-		BEQ ..ShowHP						;>Is meter already on this sprite? Then allow damage animation
+		BEQ ..HandleAnimation						;>Is meter already on this sprite, then allow damage animation
 		LDA !Freeram_SpriteHP_MeterState
 		CMP.b #!sprite_slots*2
-		BCC ..JustDamage					;>If in any of the sprite slots, just damage
+		BCC ..JustDamage						;>If in any other sprite slots, just damage
 		CMP.b #(!sprite_slots*2)+1
-		BCC ..ShowHP						;>Is meter on total mode, then allow damage animation
+		BCC ..HandleAnimation						;>Is meter on total mode, then allow damage animation
 		BRA ..JustDamage
 		
-		..ShowHP
+		..HandleAnimation
 			;we don't need JSL SpriteHPRemoveRecordEffect because we aren't switching the meter.
 			if and(notequal(!Setting_SpriteHP_BarAnimation, 0), notequal(!Setting_SpriteHP_BarChangeDelay, 0))
 				LDA.b #!Setting_SpriteHP_BarChangeDelay		;\Freeze damage indicator (this makes the bar animation hangs before decreasing towards current HP fill amount)

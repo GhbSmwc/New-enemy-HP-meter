@@ -89,10 +89,9 @@
 			This is because there isn't a check on who kicked/throw the shell (or who damaged the enemy).<br><br>
 			
 			A subroutine is provided here (for shared subroutines, <kbd>SpriteHPDamageNoAutoSwitchMeter</kbd>) in certain cases where
-			if an enemy dies not by the player, would not show the meter despite damage taken. For kicked sprites, you may need
-			<a href="https://www.smwcentral.net/?p=section&a=details&id=40260">this patch</a>, modify it when not flagged as &ldquo;kicked
-			by the player&rdquo; to use this subroutine instead of <kbd>SpriteHPDamage</kbd>. This subroutine is only used in this package
-			when sprites are fallen into lava.
+			if an enemy dies not by the player, would not switch the meter (unless the meter is already on that on the enemy) despite
+			damage taken. For kicked sprites, you may need <a href="https://www.smwcentral.net/?p=section&a=details&id=40260">this patch</a>,
+			modify it when not flagged as &ldquo;kicked	by the player&rdquo; to use this subroutine instead of <kbd>SpriteHPDamage</kbd>.
 	</ul>
 	<p>So few enemies in SMW can take damage without being one-shotted, they are Chucks, Wendy/Lemmy, Ludwig, Morton/Roy, Big Boo boss,
 	and Bowser (although the status bar in the last battle is disabled). However, this ASM resource optionally supports 1-shot enemies.</p>
@@ -261,10 +260,6 @@
 								<ul>
 									<li><kbd>SpriteHPIntroEffect</kbd> (delete this if you don't want to have a boss intro-fill effect)</li>
 									<li><kbd>SpritesTotalHPIntroEffect</kbd> (remove this from the JML and macro define list if you're not using the total HP system)</li>
-									<li>
-										<kbd>SpriteHPDamageNoAutoSwitchMeter</kbd> (remove this from the JML and macro define list if you're not having ways enemies can be damaged without auto-switching the HP meter, such as when enemy damages another.
-										If having <kbd class="NoLineBreak">!Setting_SpriteHP_DisplayGraphicalBar == 0</kbd> OR <kbd class="NoLineBreak">!Setting_SpriteHP_BarAnimation == 0</kbd>, also you can remove this.).
-									</li>
 								</ul>
 							</li>
 						</ul>
