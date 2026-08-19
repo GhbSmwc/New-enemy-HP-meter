@@ -592,7 +592,11 @@ main:
 						STA $04
 						LDA.b #!Setting_SpriteHP_GraphicalBarExtendLeft_StatusBarAddrProp>>16
 						STA $05
-						JSL !SharedSub_GraphicalBarExtendLeft
+						if !StatusbarFormat == $01
+							JSL !SharedSub_GraphicalBarExtendLeft
+						else
+							JSL !SharedSub_GraphicalBarExtendLeftFormat2
+						endif
 					endif
 					if !Setting_SpriteHP_LeftwardsBar == 0
 						LDA.b #!Setting_SpriteHP_GraphicalBarProp
