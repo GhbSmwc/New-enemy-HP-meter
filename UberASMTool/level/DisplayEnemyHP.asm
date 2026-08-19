@@ -366,6 +366,8 @@ main:
 	.DisplayGraphicalBar
 		if !Setting_SpriteHP_DisplayGraphicalBar
 			..HandleTimerAndPreviousHP
+				LDA #$00
+				STA $40FFFF
 				JSL !SharedSub_SetEnemyHPBarAttributes
 				LDX !Scratchram_SpriteHP_SpriteSlotToDisplay
 				PHX

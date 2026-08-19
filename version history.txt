@@ -25,6 +25,8 @@ based (8.9, then 8.10 rather than 9.0)):
  ---Added HP display for Iggy and Larry (have 1HP, only 0HP when fallen into lava), thus all 7 Koopalings are
     now complete.
  ---Added optional sound effect for when sprites sink in lava.
+ ---Added variable-length graphical bar, based on maximum HP thresholds. This is useful if you wanted health
+    bars that vary in length depending on if its a regular enemy, miniboss, or main boss.
  -Readme instruction on adding incsrc to include defines now lets user easily adjust how many subfolders deep.
  -Fixes
  --Fixed an oversight that sprites sinking in lava does not zero out HP.

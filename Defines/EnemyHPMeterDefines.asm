@@ -190,7 +190,7 @@
 				;Extend (as in the whole bar, on tiles it occupies) which direction from a given XY positon?
 				;NOTE: Not to be confused with !Setting_SpriteHP_LeftwardsBar, which deals with the FILL DIRECTION.
 				; - 0 = Rightwards
-				; - 1 = Leftwards
+				; - 1 = Leftwards (Note that subroutine "WriteBarToHUDLeftwards" and the Format2 varient will be used).
 					!Setting_SpriteHP_BarExtendLeft = 1
 				;This uses this position and tiles to the right, used when !Setting_SpriteHP_BarExtendLeft == 0 OR !Setting_SpriteHP_GraphicalBar_VariableMiddleLength == 0
 					!Setting_SpriteHP_GraphicalBarPos_x = 23
@@ -207,15 +207,17 @@
 					!Setting_SpriteHP_GraphicalBar_LeftPieces                  = 3             ;\These are the amount of fill capacity of each part of the bar.
 					!Setting_SpriteHP_GraphicalBar_MiddlePieces                = 8             ;|
 					!Setting_SpriteHP_GraphicalBar_RightPieces                 = 3             ;/
-				;Variable-length bar based on max HP?
+				;Variable-middle-length bar based on max HP?
 				; - 0 = No
 				; - 1 = Yes. Notes:
-				; -- See "SharedSubroutines/Subroutines.asm", under "SetEnemyHPBarAttributes:" to find thresholds
-				;    on what length (number of middle tiles) the bar should be based on max HP.
-				; -- Make sure !Setting_SpriteHP_GraphicalBar_VariableMiddleLengthMax is set to a value of whatever
-				;    have the most number of middle tiles. For example: if it was a length of 7, 8 or 9 middle
-				;    tiles depending on max HP, then 9 should be used.
+				; See "SharedSubroutines/Subroutines.asm", under "SetEnemyHPBarAttributes:" to find thresholds
+				; on what length (number of middle tiles) the bar should be based on max HP.
 					!Setting_SpriteHP_GraphicalBar_VariableMiddleLength = 1
+				;Maximum middle-length of the bar, when using the variable-middle-length setting.
+				;When there are multiple middle lengths of the bar based on maximum HP, the
+				;value entered here must be a value of whoever is the longest. Example: Lengths
+				;of 7, 8 and 9, means you should enter 9. This is so that it clears out the bar
+				;tile properly when it disappears.
 					!Setting_SpriteHP_GraphicalBar_VariableMiddleLengthMax = 9
 				;Fixed length of bar (number of middle tiles). Only used if !Setting_SpriteHP_GraphicalBar_VariableMiddleLength == 0.
 				;Full screen width is 32 tiles.

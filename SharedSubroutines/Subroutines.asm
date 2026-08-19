@@ -472,11 +472,12 @@ ConvertToRightAlignedFormat2:
 			else
 				REP #$20
 				LDA !Scratchram_GraphicalBar_FillByteTbl+2
-				;Here, are thresholds deterining the length of the meter by max HP.
-				;Syntax example:
-				;CMP.w 20
+				;Here, are thresholds deterining the middle-length of the meter by
+				;max HP. Syntax example:
+				;
+				;CMP.w #20
 				;BCC .ShortLength ;>Less than 20 (0-19)
-				;CMP.w 40
+				;CMP.w #40
 				;BCC .MidLength ;>Less than 40 (20-39)
 				;
 				;.LongLength ;>40 or more (40+)
@@ -484,10 +485,17 @@ ConvertToRightAlignedFormat2:
 				;
 				;Each compared number must be greater than the previous. Note that
 				;CMP values are ALWAYS 16-bit, thus a ".w" is required, reguardless
-				;of !Setting_SpriteHP_TwoByte setting.
-				CMP.w 20
+				;of !Setting_SpriteHP_TwoByte setting. Make sure the "#" is placed
+				;before the number, else it reads RAM address rather than the value.
+				;
+				;Note that if you make changes here, then you need to go to
+				;"EnemyHPMeterDefines.asm" and change a value for
+				;!Setting_SpriteHP_GraphicalBar_VariableMiddleLengthMax so that the
+				;meter can disappear properly. The value must be the value of the
+				;longest middle tile entered here.
+				CMP.w #20
 				BCC .ShortLength
-				CMP.w 40
+				CMP.w #40
 				BCC .MidLength
 				
 				.LongLength
