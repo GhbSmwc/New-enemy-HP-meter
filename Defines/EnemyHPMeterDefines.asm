@@ -613,18 +613,18 @@
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;Get status bar addresses
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-		!Setting_SpriteHP_NumericalPos_XYPos = VanillaStatusBarXYToAddress(!Setting_SpriteHP_NumericalPos_x, !Setting_SpriteHP_NumericalPos_y, !RAM_0EF9)
-		!Setting_SpriteHP_NumericalPosRightAligned_XYPos = VanillaStatusBarXYToAddress(!Setting_SpriteHP_NumericalPosRightAligned_x, !Setting_SpriteHP_NumericalPosRightAligned_y, !RAM_0EF9)
-		!Setting_SpriteHP_GraphicalBarPos_XYPos = VanillaStatusBarXYToAddress(!Setting_SpriteHP_GraphicalBarPos_x, !Setting_SpriteHP_GraphicalBarPos_y, !RAM_0EF9)
+		!Setting_SpriteHP_Numerical_StatusBarAddrTile = VanillaStatusBarXYToAddress(!Setting_SpriteHP_NumericalPos_x, !Setting_SpriteHP_NumericalPos_y, !RAM_0EF9)
+		!Setting_SpriteHP_NumericalRightAligned_StatusBarAddrTile = VanillaStatusBarXYToAddress(!Setting_SpriteHP_NumericalPosRightAligned_x, !Setting_SpriteHP_NumericalPosRightAligned_y, !RAM_0EF9)
+		!Setting_SpriteHP_GraphicalBar_StatusBarAddrTile = VanillaStatusBarXYToAddress(!Setting_SpriteHP_GraphicalBarPos_x, !Setting_SpriteHP_GraphicalBarPos_y, !RAM_0EF9)
 		if !UsingCustomStatusBar
-			!Setting_SpriteHP_NumericalPos_XYPos = PatchedStatusBarXYToAddress(!Setting_SpriteHP_NumericalPos_x, !Setting_SpriteHP_NumericalPos_y, !StatusBarPatchAddr_Tile, !StatusbarFormat)
-			!Setting_SpriteHP_NumericalPos_XYPosProp = PatchedStatusBarXYToAddress(!Setting_SpriteHP_NumericalPos_x, !Setting_SpriteHP_NumericalPos_y, !StatusBarPatchAddr_Prop, !StatusbarFormat)
+			!Setting_SpriteHP_Numerical_StatusBarAddrTile = PatchedStatusBarXYToAddress(!Setting_SpriteHP_NumericalPos_x, !Setting_SpriteHP_NumericalPos_y, !StatusBarPatchAddr_Tile, !StatusbarFormat)
+			!Setting_SpriteHP_Numerical_StatusBarAddrProp = PatchedStatusBarXYToAddress(!Setting_SpriteHP_NumericalPos_x, !Setting_SpriteHP_NumericalPos_y, !StatusBarPatchAddr_Prop, !StatusbarFormat)
 			
-			!Setting_SpriteHP_NumericalPosRightAligned_XYPos = PatchedStatusBarXYToAddress(!Setting_SpriteHP_NumericalPosRightAligned_x, !Setting_SpriteHP_NumericalPosRightAligned_y, !StatusBarPatchAddr_Tile, !StatusbarFormat)
-			!Setting_SpriteHP_NumericalPosRightAligned_XYPosProp = PatchedStatusBarXYToAddress(!Setting_SpriteHP_NumericalPosRightAligned_x, !Setting_SpriteHP_NumericalPosRightAligned_y, !StatusBarPatchAddr_Prop, !StatusbarFormat)
+			!Setting_SpriteHP_NumericalRightAligned_StatusBarAddrTile = PatchedStatusBarXYToAddress(!Setting_SpriteHP_NumericalPosRightAligned_x, !Setting_SpriteHP_NumericalPosRightAligned_y, !StatusBarPatchAddr_Tile, !StatusbarFormat)
+			!Setting_SpriteHP_NumericalRightAligned_StatusBarAddrProp = PatchedStatusBarXYToAddress(!Setting_SpriteHP_NumericalPosRightAligned_x, !Setting_SpriteHP_NumericalPosRightAligned_y, !StatusBarPatchAddr_Prop, !StatusbarFormat)
 			
-			!Setting_SpriteHP_GraphicalBarPos_XYPos = PatchedStatusBarXYToAddress(!Setting_SpriteHP_GraphicalBarPos_x, !Setting_SpriteHP_GraphicalBarPos_y, !StatusBarPatchAddr_Tile, !StatusbarFormat)
-			!Setting_SpriteHP_GraphicalBarPos_XYPosProp = PatchedStatusBarXYToAddress(!Setting_SpriteHP_GraphicalBarPos_x, !Setting_SpriteHP_GraphicalBarPos_y, !StatusBarPatchAddr_Prop, !StatusbarFormat)
+			!Setting_SpriteHP_GraphicalBar_StatusBarAddrTile = PatchedStatusBarXYToAddress(!Setting_SpriteHP_GraphicalBarPos_x, !Setting_SpriteHP_GraphicalBarPos_y, !StatusBarPatchAddr_Tile, !StatusbarFormat)
+			!Setting_SpriteHP_GraphicalBar_StatusBarAddrProp = PatchedStatusBarXYToAddress(!Setting_SpriteHP_GraphicalBarPos_x, !Setting_SpriteHP_GraphicalBarPos_y, !StatusBarPatchAddr_Prop, !StatusbarFormat)
 		endif
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;Get YXPCCCTT data

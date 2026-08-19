@@ -75,16 +75,16 @@ incsrc "../NumberDisplayRoutinesDefines.asm"
 		-
 		LDA #!StatusBarBlankTile
 		if !Setting_SpriteHP_NumericalTextAlignment == 1
-			STA !Setting_SpriteHP_NumericalPos_XYPos,x
+			STA !Setting_SpriteHP_Numerical_StatusBarAddrTile,x
 		elseif !Setting_SpriteHP_NumericalTextAlignment == 2
-			STA !Setting_SpriteHP_NumericalPosRightAligned_XYPos-((!Setting_SpriteHP_MaxStringLength-1)*!StatusbarFormat),x
+			STA !Setting_SpriteHP_NumericalRightAligned_StatusBarAddrTile-((!Setting_SpriteHP_MaxStringLength-1)*!StatusbarFormat),x
 		endif
 		if !StatusBar_UsingCustomProperties != 0
 			LDA.b #!Setting_SpriteHP_NumericalProp
 			if !Setting_SpriteHP_NumericalTextAlignment == 1
-				STA !Setting_SpriteHP_NumericalPos_XYPosProp,x
+				STA !Setting_SpriteHP_Numerical_StatusBarAddrProp,x
 			elseif !Setting_SpriteHP_NumericalTextAlignment == 2
-				STA !Setting_SpriteHP_NumericalPosRightAligned_XYPosProp-((!Setting_SpriteHP_MaxStringLength-1)*!StatusbarFormat),x
+				STA !Setting_SpriteHP_NumericalRightAligned_StatusBarAddrProp-((!Setting_SpriteHP_MaxStringLength-1)*!StatusbarFormat),x
 			endif
 		endif
 		DEX #!StatusbarFormat
@@ -327,7 +327,7 @@ main:
 				endif
 			
 				JSL !SharedSub_RemoveLeadingZeroes16Bit
-				%WriteFixedDigitsToLayer3(!Setting_SpriteHP_NumericalPos_XYPos, !Setting_SpriteHP_NumericalPos_XYPosProp)
+				%WriteFixedDigitsToLayer3(!Setting_SpriteHP_Numerical_StatusBarAddrTile, !Setting_SpriteHP_Numerical_StatusBarAddrProp)
 			elseif and(greaterequal(!Setting_SpriteHP_NumericalTextAlignment, 1), lessequal(!Setting_SpriteHP_NumericalTextAlignment, 2)) ;left/right aligned
 				if !Setting_SpriteHP_TwoByte == 0
 					%GetHealthDigits8Bit("Scratchram_GraphicalBar_FillByteTbl")
@@ -352,9 +352,9 @@ main:
 					BCS ..TooMuchChar
 				endif
 				if !Setting_SpriteHP_NumericalTextAlignment == 1
-					%WriteTileAddress(!Setting_SpriteHP_NumericalPos_XYPos, !Setting_SpriteHP_NumericalPos_XYPosProp, !Setting_SpriteHP_NumericalProp)
+					%WriteTileAddress(!Setting_SpriteHP_Numerical_StatusBarAddrTile, !Setting_SpriteHP_Numerical_StatusBarAddrProp, !Setting_SpriteHP_NumericalProp)
 				elseif !Setting_SpriteHP_NumericalTextAlignment == 2
-					%WriteTileAddress(!Setting_SpriteHP_NumericalPosRightAligned_XYPos, !Setting_SpriteHP_NumericalPosRightAligned_XYPosProp, !Setting_SpriteHP_NumericalProp)
+					%WriteTileAddress(!Setting_SpriteHP_NumericalRightAligned_StatusBarAddrTile, !Setting_SpriteHP_NumericalRightAligned_StatusBarAddrProp, !Setting_SpriteHP_NumericalProp)
 				endif
 				if !Setting_SpriteHP_NumericalTextAlignment == 2 ;Right-aligned
 					%ConvertToRightAligned()
@@ -570,18 +570,18 @@ main:
 				STZ $00									;>Set graphics mode to level layer 3
 				JSL !SharedSub_ConvertBarFillAmountToTiles
 				
-				LDA.b #!Setting_SpriteHP_GraphicalBarPos_XYPos
+				LDA.b #!Setting_SpriteHP_GraphicalBar_StatusBarAddrTile
 				STA $00
-				LDA.b #!Setting_SpriteHP_GraphicalBarPos_XYPos>>8
+				LDA.b #!Setting_SpriteHP_GraphicalBar_StatusBarAddrTile>>8
 				STA $01
-				LDA.b #!Setting_SpriteHP_GraphicalBarPos_XYPos>>16
+				LDA.b #!Setting_SpriteHP_GraphicalBar_StatusBarAddrTile>>16
 				STA $02
 				if !StatusBar_UsingCustomProperties != 0
-					LDA.b #!Setting_SpriteHP_GraphicalBarPos_XYPosProp
+					LDA.b #!Setting_SpriteHP_GraphicalBar_StatusBarAddrProp
 					STA $03
-					LDA.b #!Setting_SpriteHP_GraphicalBarPos_XYPosProp>>8
+					LDA.b #!Setting_SpriteHP_GraphicalBar_StatusBarAddrProp>>8
 					STA $04
-					LDA.b #!Setting_SpriteHP_GraphicalBarPos_XYPosProp>>16
+					LDA.b #!Setting_SpriteHP_GraphicalBar_StatusBarAddrProp>>16
 					STA $05
 					if !Setting_SpriteHP_LeftwardsBar == 0
 						LDA.b #!Setting_SpriteHP_GraphicalBarProp
@@ -628,9 +628,9 @@ main:
 				LDX.b #(!Setting_SpriteHP_GraphicalBar_TotalTiles-1)*!StatusbarFormat
 				...Loop
 					LDA.b #!StatusBarBlankTile
-					STA !Setting_SpriteHP_GraphicalBarPos_XYPos,x
+					STA !Setting_SpriteHP_GraphicalBar_StatusBarAddrTile,x
 					LDA.b #!Setting_SpriteHP_GraphicalBarProp
-					STA !Setting_SpriteHP_GraphicalBarPos_XYPosProp,x
+					STA !Setting_SpriteHP_GraphicalBar_StatusBarAddrProp,x
 					....Next
 						DEX #!StatusbarFormat
 						BPL ...Loop
