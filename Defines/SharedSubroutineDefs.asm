@@ -51,9 +51,12 @@
 	;   Shared Subroutines's routine defines, to restore the define names,
 	;   you can re-include this define file at where you want it to be
 	;   restored (rather than at the top of the ASM file).
+		%SetSharedSubDefine(SharedSub_SetEnemyHPBarAttributes)		;
 		%SetSharedSubDefine(SharedSub_CalculateGraphicalBarPercentage)		;
-		%SetSharedSubDefine(SharedSub_CalculateGraphicalBarPercentageRoundDown)		;
 		%SetSharedSubDefine(SharedSub_CalculateGraphicalBarPercentageRoundUp)		;
+		%SetSharedSubDefine(SharedSub_CalculateGraphicalBarPercentageRoundDown)		;
+		%SetSharedSubDefine(SharedSub_GraphicalBarExtendLeft)		;
+		%SetSharedSubDefine(SharedSub_GraphicalBarExtendLeftFormat2)		;
 		%SetSharedSubDefine(SharedSub_ConvertBarFillAmountToTiles)		;
 		%SetSharedSubDefine(SharedSub_ConvertToRightAligned)		;
 		%SetSharedSubDefine(SharedSub_ConvertToRightAlignedFormat2)		;
@@ -80,9 +83,6 @@
 		%SetSharedSubDefine(SharedSub_SpriteHPIntroEffect)		;
 		%SetSharedSubDefine(SharedSub_HideHPMeterIfSpriteDespawns)		;
 		%SetSharedSubDefine(SharedSub_SpritesTotalHPIntroEffect)		;
-		%SetSharedSubDefine(SharedSub_Placeholder)		;Dummy JSL to reserve space.
-		%SetSharedSubDefine(SharedSub_Placeholder)		;Dummy JSL to reserve space.
-		%SetSharedSubDefine(SharedSub_Placeholder)		;Dummy JSL to reserve space.
 		%SetSharedSubDefine(SharedSub_Placeholder)		;Dummy JSL to reserve space.
 		%SetSharedSubDefine(SharedSub_Placeholder)		;Dummy JSL to reserve space.
 		%SetSharedSubDefine(SharedSub_Placeholder)		;Dummy JSL to reserve space.

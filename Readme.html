@@ -223,9 +223,12 @@
 							<li>
 								Graphical bar routines. Not used by the sprite HP system if <kbd>!Setting_SpriteHP_DisplayGraphicalBar == 0</kbd>
 								<ul>
+									<li><kbd>SetEnemyHPBarAttributes</kbd></li>
 									<li><kbd>CalculateGraphicalBarPercentage</kbd></li>
 									<li><kbd>CalculateGraphicalBarPercentageRoundDown</kbd></li>
 									<li><kbd>CalculateGraphicalBarPercentageRoundUp</kbd></li>
+									<li><kbd>GraphicalBarExtendLeft</kbd></li>
+									<li><kbd>GraphicalBarExtendLeftFormat2</kbd></li>
 									<li><kbd>ConvertBarFillAmountToTiles</kbd></li>
 									<li><kbd>DrawGraphicalBarSubtractionLoopEdition</kbd></li>
 									<li><kbd>GraphicalBarRoundAwayEmpty</kbd></li>
@@ -267,9 +270,12 @@
 					</li>
 					<li>
 						In Shared Subroutine's <kbd>sharedsub.asm</kbd> in the JML list, paste the following (remove JML list items you won't be using for your entire hack):
-<div class="CodeBlock" style="height: 340px;"><pre>autoclean JML CalculateGraphicalBarPercentage
-autoclean JML CalculateGraphicalBarPercentageRoundDown
+<div class="CodeBlock" style="height: 340px;"><pre>autoclean JML SetEnemyHPBarAttributes
+autoclean JML CalculateGraphicalBarPercentage
 autoclean JML CalculateGraphicalBarPercentageRoundUp
+autoclean JML CalculateGraphicalBarPercentageRoundDown
+autoclean JML GraphicalBarExtendLeft
+autoclean JML GraphicalBarExtendLeftFormat2
 autoclean JML ConvertBarFillAmountToTiles
 autoclean JML ConvertToRightAligned
 autoclean JML ConvertToRightAlignedFormat2
@@ -300,9 +306,12 @@ autoclean JML SpritesTotalHPIntroEffect</pre>
 					</li>
 					<li>
 						Open Shared Subroutines' <kbd>SharedSub_Defines/SharedSubroutineDefs.asm</kbd> and paste the following (same as above, remove define list items you don't use):
-<div class="CodeBlock" style="height: 340px;"><pre>		%SetSharedSubDefine(SharedSub_CalculateGraphicalBarPercentage)
-		%SetSharedSubDefine(SharedSub_CalculateGraphicalBarPercentageRoundDown)
+<div class="CodeBlock" style="height: 340px;"><pre>		%SetSharedSubDefine(SharedSub_SetEnemyHPBarAttributes)
+		%SetSharedSubDefine(SharedSub_CalculateGraphicalBarPercentage)
 		%SetSharedSubDefine(SharedSub_CalculateGraphicalBarPercentageRoundUp)
+		%SetSharedSubDefine(SharedSub_CalculateGraphicalBarPercentageRoundDown)
+		%SetSharedSubDefine(SharedSub_GraphicalBarExtendLeft)
+		%SetSharedSubDefine(SharedSub_GraphicalBarExtendLeftFormat2)
 		%SetSharedSubDefine(SharedSub_ConvertBarFillAmountToTiles)
 		%SetSharedSubDefine(SharedSub_ConvertToRightAligned)
 		%SetSharedSubDefine(SharedSub_ConvertToRightAlignedFormat2)

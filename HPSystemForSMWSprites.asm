@@ -1484,8 +1484,6 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			%DealFixedDamage(0)
 				RTL
 		ZeroOutHPOfOneShotSprites:
-			LDA #$00
-			STA $40FFFF
 			;For sprites that should not have HP (blacklisted), simply check if max HP == 0.
 			;This code runs when sprites are instantly-killed via vanilla routines.
 			;

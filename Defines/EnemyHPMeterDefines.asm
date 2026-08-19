@@ -185,10 +185,19 @@
 				; - 0 = don't show the bar
 				; - 1 = display the bar
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-			;XY position of the bar (uses this position and tiles to the right, even when leftwards)
+			;XY position of the bar
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-				!Setting_SpriteHP_GraphicalBarPos_x = 23
-				!Setting_SpriteHP_GraphicalBarPos_y = 1
+				;Extend (as in the whole bar, on tiles it occupies) which direction from a given XY positon?
+				;NOTE: Not to be confused with !Setting_SpriteHP_LeftwardsBar, which deals with the FILL DIRECTION.
+				; - 0 = Rightwards
+				; - 1 = Leftwards
+					!Setting_SpriteHP_BarExtendLeft = 1
+				;This uses this position and tiles to the right, used when !Setting_SpriteHP_BarExtendLeft == 0 OR !Setting_SpriteHP_GraphicalBar_VariableMiddleLength == 0
+					!Setting_SpriteHP_GraphicalBarPos_x = 23
+					!Setting_SpriteHP_GraphicalBarPos_y = 1
+				;Same as above but if !Setting_SpriteHP_BarExtendLeft == 1 AND !Setting_SpriteHP_GraphicalBar_VariableMiddleLength == 1
+					!Setting_SpriteHP_GraphicalBarPos_ExtendLeft_x = 31
+					!Setting_SpriteHP_GraphicalBarPos_ExtendLeft_y = 1
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			;These below affect how much fill capacity the bar has. This value is equal to LeftPieces + (MiddlePieces * MiddleLength) + RightPieces.
 			;For more information, see info about graphical bar linked from "Documentations of other ASM resources" in the readme. Setting them to 0
@@ -198,7 +207,18 @@
 					!Setting_SpriteHP_GraphicalBar_LeftPieces                  = 3             ;\These are the amount of fill capacity of each part of the bar.
 					!Setting_SpriteHP_GraphicalBar_MiddlePieces                = 8             ;|
 					!Setting_SpriteHP_GraphicalBar_RightPieces                 = 3             ;/
-				;Length of bar (number of middle tiles). Full screen width is 32 tiles.
+				;Variable-length bar based on max HP?
+				; - 0 = No
+				; - 1 = Yes. Notes:
+				; -- See "SharedSubroutines/Subroutines.asm", under "SetEnemyHPBarAttributes:" to find thresholds
+				;    on what length (number of middle tiles) the bar should be based on max HP.
+				; -- Make sure !Setting_SpriteHP_GraphicalBar_VariableMiddleLengthMax is set to a value of whatever
+				;    have the most number of middle tiles. For example: if it was a length of 7, 8 or 9 middle
+				;    tiles depending on max HP, then 9 should be used.
+					!Setting_SpriteHP_GraphicalBar_VariableMiddleLength = 1
+					!Setting_SpriteHP_GraphicalBar_VariableMiddleLengthMax = 9
+				;Fixed length of bar (number of middle tiles). Only used if !Setting_SpriteHP_GraphicalBar_VariableMiddleLength == 0.
+				;Full screen width is 32 tiles.
 					!Setting_SpriteHP_GraphicalBarMiddleLength           = 7
 			!Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull	= 3
 				;^Round away from 0% and/or 100% when fill is close to such values:
@@ -616,6 +636,7 @@
 		!Setting_SpriteHP_Numerical_StatusBarAddrTile = VanillaStatusBarXYToAddress(!Setting_SpriteHP_NumericalPos_x, !Setting_SpriteHP_NumericalPos_y, !RAM_0EF9)
 		!Setting_SpriteHP_NumericalRightAligned_StatusBarAddrTile = VanillaStatusBarXYToAddress(!Setting_SpriteHP_NumericalPosRightAligned_x, !Setting_SpriteHP_NumericalPosRightAligned_y, !RAM_0EF9)
 		!Setting_SpriteHP_GraphicalBar_StatusBarAddrTile = VanillaStatusBarXYToAddress(!Setting_SpriteHP_GraphicalBarPos_x, !Setting_SpriteHP_GraphicalBarPos_y, !RAM_0EF9)
+		
 		if !UsingCustomStatusBar
 			!Setting_SpriteHP_Numerical_StatusBarAddrTile = PatchedStatusBarXYToAddress(!Setting_SpriteHP_NumericalPos_x, !Setting_SpriteHP_NumericalPos_y, !StatusBarPatchAddr_Tile, !StatusbarFormat)
 			!Setting_SpriteHP_Numerical_StatusBarAddrProp = PatchedStatusBarXYToAddress(!Setting_SpriteHP_NumericalPos_x, !Setting_SpriteHP_NumericalPos_y, !StatusBarPatchAddr_Prop, !StatusbarFormat)
@@ -639,6 +660,23 @@
 		!Setting_SpriteHP_GraphicalBar_RightEndExists #= notequal(!Setting_SpriteHP_GraphicalBar_RightPieces, 0)
 		!Setting_SpriteHP_GraphicalBar_TotalTiles #= !Setting_SpriteHP_GraphicalBar_LeftEndExists+!Setting_SpriteHP_GraphicalBar_MiddleExists+!Setting_SpriteHP_GraphicalBar_RightEndExists
 		!Setting_SpriteHP_GraphicalBar_TotalPieces #= !Setting_SpriteHP_GraphicalBar_LeftPieces+(!Setting_SpriteHP_GraphicalBarMiddleLength*!Setting_SpriteHP_GraphicalBar_MiddlePieces)+!Setting_SpriteHP_GraphicalBar_RightPieces
+		
+		!Setting_SpriteHP_GraphicalBar_TotalTilesVariableLengthMax #= !Setting_SpriteHP_GraphicalBar_LeftEndExists+!Setting_SpriteHP_GraphicalBar_VariableMiddleLengthMax+!Setting_SpriteHP_GraphicalBar_RightEndExists
+		
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	;Get leftmost tile of longest bar if extending left
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+		Setting_SpriteHP_GraphicalBarExtendLeftClear_StatusBarAddrTile = VanillaStatusBarXYToAddress(!Setting_SpriteHP_GraphicalBarPos_ExtendLeft_x-(!Setting_SpriteHP_GraphicalBar_TotalTilesVariableLengthMax-1), !Setting_SpriteHP_GraphicalBarPos_ExtendLeft_y, !RAM_0EF9)
+		if !UsingCustomStatusBar
+			!Setting_SpriteHP_GraphicalBarExtendLeftClear_StatusBarAddrTile = PatchedStatusBarXYToAddress(!Setting_SpriteHP_GraphicalBarPos_ExtendLeft_x-(!Setting_SpriteHP_GraphicalBar_TotalTilesVariableLengthMax-1), !Setting_SpriteHP_GraphicalBarPos_ExtendLeft_y, !StatusBarPatchAddr_Tile, !StatusbarFormat)
+			!Setting_SpriteHP_GraphicalBarExtendLeftClear_StatusBarAddrProp = PatchedStatusBarXYToAddress(!Setting_SpriteHP_GraphicalBarPos_ExtendLeft_x-(!Setting_SpriteHP_GraphicalBar_TotalTilesVariableLengthMax-1), !Setting_SpriteHP_GraphicalBarPos_ExtendLeft_y, !StatusBarPatchAddr_Prop, !StatusbarFormat)
+		endif
+		
+		Setting_SpriteHP_GraphicalBarExtendLeft_StatusBarAddrTile = VanillaStatusBarXYToAddress(!Setting_SpriteHP_GraphicalBarPos_ExtendLeft_x, !Setting_SpriteHP_GraphicalBarPos_ExtendLeft_y, !RAM_0EF9)
+		if !UsingCustomStatusBar
+			!Setting_SpriteHP_GraphicalBarExtendLeft_StatusBarAddrTile = PatchedStatusBarXYToAddress(!Setting_SpriteHP_GraphicalBarPos_ExtendLeft_x, !Setting_SpriteHP_GraphicalBarPos_ExtendLeft_y, !StatusBarPatchAddr_Tile, !StatusbarFormat)
+			!Setting_SpriteHP_GraphicalBarExtendLeft_StatusBarAddrProp = PatchedStatusBarXYToAddress(!Setting_SpriteHP_GraphicalBarPos_ExtendLeft_x, !Setting_SpriteHP_GraphicalBarPos_ExtendLeft_y, !StatusBarPatchAddr_Prop, !StatusbarFormat)
+		endif
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;Maximum string length failsafe
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

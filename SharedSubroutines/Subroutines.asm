@@ -19,9 +19,12 @@
 ; - WriteStringDigitsToHUDFormat2
 ; - ConvertToRightAligned
 ; - ConvertToRightAlignedFormat2
+; - SetEnemyHPBarAttributes
 ; - CalculateGraphicalBarPercentage
 ; - CalculateGraphicalBarPercentageRoundUp
 ; - CalculateGraphicalBarPercentageRoundDown
+; - GraphicalBarExtendLeft
+; - GraphicalBarExtendLeftFormat2
 ; - ConvertBarFillAmountToTiles
 ; - DrawGraphicalBarSubtractionLoopEdition
 ; - GraphicalBarRoundAwayEmpty
@@ -450,6 +453,57 @@ ConvertToRightAlignedFormat2:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;Graphical bar routines
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	;Set enemy HP bar attributes.
+	;
+	;NOTE: Must be called AFTER setting 2 bytes of
+	;!Scratchram_GraphicalBar_FillByteTbl+2 to hold the max HP of a
+	;sprite or total HP.
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+		SetEnemyHPBarAttributes:
+			LDA.b #!Setting_SpriteHP_GraphicalBar_LeftPieces
+			STA !Scratchram_GraphicalBar_LeftEndPiece
+			LDA.b #!Setting_SpriteHP_GraphicalBar_MiddlePieces
+			STA !Scratchram_GraphicalBar_MiddlePiece
+			LDA.b #!Setting_SpriteHP_GraphicalBar_RightPieces
+			STA !Scratchram_GraphicalBar_RightEndPiece
+			if !Setting_SpriteHP_GraphicalBar_VariableMiddleLength == 0
+				LDA.b #!Setting_SpriteHP_GraphicalBarMiddleLength
+			else
+				REP #$20
+				LDA !Scratchram_GraphicalBar_FillByteTbl+2
+				;Here, are thresholds deterining the length of the meter by max HP.
+				;Syntax example:
+				;CMP.w 20
+				;BCC .ShortLength ;>Less than 20 (0-19)
+				;CMP.w 40
+				;BCC .MidLength ;>Less than 40 (20-39)
+				;
+				;.LongLength ;>40 or more (40+)
+				;;[...]
+				;
+				;Each compared number must be greater than the previous. Note that
+				;CMP values are ALWAYS 16-bit, thus a ".w" is required, reguardless
+				;of !Setting_SpriteHP_TwoByte setting.
+				CMP.w 20
+				BCC .ShortLength
+				CMP.w 40
+				BCC .MidLength
+				
+				.LongLength
+					SEP #$20
+					LDA #$09		;>Number of middle tiles for LongLength
+					BRA .SetMiddleLength
+				.ShortLength
+					SEP #$20
+					LDA #$07		;>Number of middle tiles for ShortLength
+					BRA .SetMiddleLength
+				.MidLength
+					LDA #$08		;>Number of middle tiles for MidLength
+				.SetMiddleLength
+			endif
+			STA !Scratchram_GraphicalBar_TempLength
+			RTL
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;Calculate ratio of Quantity/MaxQuantity to FilledPieces/TotalMaxPieces.
 	;
@@ -724,6 +778,100 @@ ConvertToRightAlignedFormat2:
 				LDY #$01				;>Otherwise if Q = 0 and R != 0, then the fill amount is between 0 and 1, which rounded to zero.
 				...No
 				SEP #$20
+		RTL
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	;Bar extend leftwards (as the length increases, the final/last/
+	;rightmost tile stays on the same "rightmost" position and the left
+	;side moves to the left).
+	;
+	;Stripe image note:
+	; Don't use this for stripe image! Because stripe image explicitly
+	; stores the XY position (in the first-two bytes of the stripe
+	; header) rather than having the XY position based what RAM to write
+	; the bar tiles (like OWB+/SSB+/SMB3SB patches) you would want to
+	; modify the positions during the writing of the stripe header.
+	;
+	; Thankfully I made "SetupStripe", have its X or Y position,
+	; then subtract by (length-1), which is obtained from "GraphicalBarNumberOfTiles"
+	; then store that as the new XY position. See the example in
+	; "UberasmTool_ExampleUsage/Level_Simple_UsingStripe.asm"
+	;
+	;How this routine works: When writing the tiles to the status bar,
+	;it first uses the "origin" tile, which is the leftmost tile. It is
+	;always the leftmost tile even when the bar is x-flipped to fill
+	;leftwards. With a bar that extends leftwards, the left tile is no
+	;longer at a fixed position, therefore the left tile is calculated
+	;by being subtracted by a number of tiles towards the left.
+	;
+	;Calculates like this:
+	; BeginningTilePos = DesiredLastTilePos - (NumberOfTiles - 1)
+	;If using the 2-adjacent bytes per 8x8 tile, uses this instead:
+	; BeginningTilePos = DesiredLastTilePos - ((NumberOfTiles - 1)*2)
+	;
+	;Be careful since this uses Akaginite's simple 16bitNum - 8bitNumb
+	;it does ((-8bitNumb)+16bitNum) code that does not work with the
+	;carry flag when 8bitNum is $00, in which there is no safe way
+	;to handle bank border crosses (a bank is the highest byte of
+	;the 24-bit address: $XX****, the XX, so avoid things like going
+	;from $7EFFFF to $7F0000 (made up example)). So avoid having
+	;status bar positions that would be at different banks. This is
+	;unlikely though.
+	;
+	; Input:
+	;  - $00 to $02: the position of the final/last/rightmost tile would be at.
+	;  - $03 to $05: Same as above, but for tile properties if applicable.
+	; Output:
+	;  - $00 to $02: the position of the first tile would be at.
+	;  - $03 to $05: Same as above, but for tile properties if applicable.
+	;
+	; Status bar address write range (when using this routine and
+	; WriteBarToHUD or WriteBarToHUDLeftwards):
+	;  - [RAMAddressIn00 - ((NumberOfTiles-1)*TileFormat)]
+	;    to [RAMAddressIn00]. Where RAMAddressIn00 is the address you
+	;    enter before calling this routine.
+	;
+	;  - TileFormat is 1 if [TTTTTTTT, TTTTTTTT, ...] and 2 otherwise,
+	;    similar to !StatusBarFormat, but this also applies to OWB+.
+	;    Same applies to tile properties.
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	GraphicalBarExtendLeftFormat2:
+		JSL GraphicalBarNumberOfTiles
+		TXA
+		ASL					;>Multiply by 2 due to tile format
+		TAX					;>Transfer to X
+		BRA +
+	
+		GraphicalBarExtendLeft:
+		JSL GraphicalBarNumberOfTiles
+		TXA
+		+
+		;^A now holds the number of bytes to go back.
+		; This indicates the first tile of the bar to be written.
+		
+		REP #$21				;\A: -(NumberOfTiles-1)...
+		AND #$00FF				;|
+		EOR #$FFFF				;|
+		INC A					;/
+		ADC $00					;>...+ LastTilePos (we are doing LastTilePos - ((NumberOfTiles-1)*TileFormat))
+		STA $00					;>Store difference in $00-$01
+		SEP #$20				;
+	;	LDA $02					;\Handle bank byte (commented out because carry doesn't work like SBC if subtrahend is 0)
+	;	SBC #$00				;|[(-A) + RAM_00]
+	;	STA $02					;/
+		
+		if !StatusBar_UsingCustomProperties != 0
+			TXA
+			REP #$21				;\-(NumberOfTiles-1)
+			AND #$00FF				;|
+			EOR #$FFFF				;|
+			INC A					;/
+			ADC $03					;>+LastTilePos (we are doing LastTilePos - (NumberOfTiles-1))
+			STA $03					;>Store difference in $00-$01
+			SEP #$20				;
+	;		LDA $05					;\Handle bank byte
+	;		SBC #$00				;|
+	;		STA $05					;/
+		endif
 		RTL
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;Convert fill amount in bar to tile numbers. NOTE: does not work with double-bar.
@@ -1552,14 +1700,6 @@ SubtractSpriteHP:
 ;   current HP.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 SpriteHPRemoveRecordEffect:
-	LDA.b #!Setting_SpriteHP_GraphicalBar_LeftPieces
-	STA !Scratchram_GraphicalBar_LeftEndPiece
-	LDA.b #!Setting_SpriteHP_GraphicalBar_MiddlePieces
-	STA !Scratchram_GraphicalBar_MiddlePiece
-	LDA.b #!Setting_SpriteHP_GraphicalBar_RightPieces
-	STA !Scratchram_GraphicalBar_RightEndPiece
-	LDA.b #!Setting_SpriteHP_GraphicalBarMiddleLength
-	STA !Scratchram_GraphicalBar_TempLength
 	PHX
 	JSL SpriteHPGetSlotIndex
 	LDX !Scratchram_SpriteHP_SpriteSlotToDisplay
@@ -1577,6 +1717,7 @@ SpriteHPRemoveRecordEffect:
 		STA !Scratchram_GraphicalBar_FillByteTbl+1
 		STA !Scratchram_GraphicalBar_FillByteTbl+3
 	endif
+	JSL SetEnemyHPBarAttributes
 	if !Setting_SpriteHP_BarFillRoundDirection == 0
 		JSL CalculateGraphicalBarPercentage
 	elseif !Setting_SpriteHP_BarFillRoundDirection == 1
@@ -1584,7 +1725,7 @@ SpriteHPRemoveRecordEffect:
 	elseif !Setting_SpriteHP_BarFillRoundDirection == 2
 		JSL CalculateGraphicalBarPercentageRoundUp
 	endif
-	;$00~$01 = percentage
+	;$00~$01 = percentage, Y = rounding 0 or 100 state
 	if !Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull == 1
 		JSL GraphicalBarRoundAwayEmpty
 	elseif !Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull == 2

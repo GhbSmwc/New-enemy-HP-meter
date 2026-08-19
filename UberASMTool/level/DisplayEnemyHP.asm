@@ -366,14 +366,7 @@ main:
 	.DisplayGraphicalBar
 		if !Setting_SpriteHP_DisplayGraphicalBar
 			..HandleTimerAndPreviousHP
-				LDA.b #!Setting_SpriteHP_GraphicalBar_LeftPieces
-				STA !Scratchram_GraphicalBar_LeftEndPiece
-				LDA.b #!Setting_SpriteHP_GraphicalBar_MiddlePieces
-				STA !Scratchram_GraphicalBar_MiddlePiece
-				LDA.b #!Setting_SpriteHP_GraphicalBar_RightPieces
-				STA !Scratchram_GraphicalBar_RightEndPiece
-				LDA.b #!Setting_SpriteHP_GraphicalBarMiddleLength
-				STA !Scratchram_GraphicalBar_TempLength
+				JSL !SharedSub_SetEnemyHPBarAttributes
 				LDX !Scratchram_SpriteHP_SpriteSlotToDisplay
 				PHX
 				if !Setting_SpriteHP_BarFillRoundDirection == 0
@@ -383,7 +376,7 @@ main:
 				elseif !Setting_SpriteHP_BarFillRoundDirection == 2
 					JSL !SharedSub_CalculateGraphicalBarPercentageRoundUp
 				endif
-				;$00~$01 = percentage
+				;$00~$01 = percentage, Y = rounding 0 or 100 state
 				if !Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull == 1
 					JSL !SharedSub_GraphicalBarRoundAwayEmpty
 				elseif !Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull == 2
@@ -569,20 +562,38 @@ main:
 				JSL !SharedSub_DrawGraphicalBarSubtractionLoopEdition
 				STZ $00									;>Set graphics mode to level layer 3
 				JSL !SharedSub_ConvertBarFillAmountToTiles
-				
-				LDA.b #!Setting_SpriteHP_GraphicalBar_StatusBarAddrTile
-				STA $00
-				LDA.b #!Setting_SpriteHP_GraphicalBar_StatusBarAddrTile>>8
-				STA $01
-				LDA.b #!Setting_SpriteHP_GraphicalBar_StatusBarAddrTile>>16
-				STA $02
+				if !Setting_SpriteHP_BarExtendLeft == 0
+					LDA.b #!Setting_SpriteHP_GraphicalBar_StatusBarAddrTile
+					STA $00
+					LDA.b #!Setting_SpriteHP_GraphicalBar_StatusBarAddrTile>>8
+					STA $01
+					LDA.b #!Setting_SpriteHP_GraphicalBar_StatusBarAddrTile>>16
+					STA $02
+				else
+					LDA.b #!Setting_SpriteHP_GraphicalBarExtendLeft_StatusBarAddrTile
+					STA $00
+					LDA.b #!Setting_SpriteHP_GraphicalBarExtendLeft_StatusBarAddrTile>>8
+					STA $01
+					LDA.b #!Setting_SpriteHP_GraphicalBarExtendLeft_StatusBarAddrTile>>16
+					STA $02
+				endif
 				if !StatusBar_UsingCustomProperties != 0
-					LDA.b #!Setting_SpriteHP_GraphicalBar_StatusBarAddrProp
-					STA $03
-					LDA.b #!Setting_SpriteHP_GraphicalBar_StatusBarAddrProp>>8
-					STA $04
-					LDA.b #!Setting_SpriteHP_GraphicalBar_StatusBarAddrProp>>16
-					STA $05
+					if !Setting_SpriteHP_BarExtendLeft == 0
+						LDA.b #!Setting_SpriteHP_GraphicalBar_StatusBarAddrProp
+						STA $03
+						LDA.b #!Setting_SpriteHP_GraphicalBar_StatusBarAddrProp>>8
+						STA $04
+						LDA.b #!Setting_SpriteHP_GraphicalBar_StatusBarAddrProp>>16
+						STA $05
+					else
+						LDA.b #!Setting_SpriteHP_GraphicalBarExtendLeft_StatusBarAddrProp
+						STA $03
+						LDA.b #!Setting_SpriteHP_GraphicalBarExtendLeft_StatusBarAddrProp>>8
+						STA $04
+						LDA.b #!Setting_SpriteHP_GraphicalBarExtendLeft_StatusBarAddrProp>>16
+						STA $05
+						JSL !SharedSub_GraphicalBarExtendLeft
+					endif
 					if !Setting_SpriteHP_LeftwardsBar == 0
 						LDA.b #!Setting_SpriteHP_GraphicalBarProp
 					else
@@ -625,12 +636,24 @@ main:
 			endif
 		..ClearGraphicalBar
 			if !Setting_SpriteHP_DisplayGraphicalBar
-				LDX.b #(!Setting_SpriteHP_GraphicalBar_TotalTiles-1)*!StatusbarFormat
+				if !Setting_SpriteHP_GraphicalBar_VariableMiddleLength == 0
+					LDX.b #(!Setting_SpriteHP_GraphicalBar_TotalTiles-1)*!StatusbarFormat
+				else
+					LDX.b #(!Setting_SpriteHP_GraphicalBar_TotalTilesVariableLengthMax-1)*!StatusbarFormat
+				endif
 				...Loop
 					LDA.b #!StatusBarBlankTile
-					STA !Setting_SpriteHP_GraphicalBar_StatusBarAddrTile,x
+					if !Setting_SpriteHP_LeftwardsBar == 0
+						STA !Setting_SpriteHP_GraphicalBar_StatusBarAddrTile,x
+					else
+						STA !Setting_SpriteHP_GraphicalBarExtendLeftClear_StatusBarAddrTile,x
+					endif
 					LDA.b #!Setting_SpriteHP_GraphicalBarProp
-					STA !Setting_SpriteHP_GraphicalBar_StatusBarAddrProp,x
+					if !Setting_SpriteHP_LeftwardsBar == 0
+						STA !Setting_SpriteHP_GraphicalBar_StatusBarAddrProp,x
+					else
+						STA !Setting_SpriteHP_GraphicalBarExtendLeftClear_StatusBarAddrProp,x
+					endif
 					....Next
 						DEX #!StatusbarFormat
 						BPL ...Loop
