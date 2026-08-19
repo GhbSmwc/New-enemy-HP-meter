@@ -210,8 +210,18 @@
 				;Variable-middle-length bar based on max HP?
 				; - 0 = No
 				; - 1 = Yes. Notes:
-				; See "SharedSubroutines/Subroutines.asm", under "SetEnemyHPBarAttributes:" to find thresholds
-				; on what length (number of middle tiles) the bar should be based on max HP.
+				; -- See "SharedSubroutines/Subroutines.asm", under "SetEnemyHPBarAttributes:" to find thresholds
+				;    on what length (number of middle tiles) the bar should be based on max HP.
+				; -- The number of tiles that are occupied by the bar are FIXED. Meaning they occupy N tiles
+				;    where N is the length of the bar at its maximum length (counting end tiles if applicable).
+				;    If the bar is shorter, the space where the bar can extend to remains used. Example (ASCII)
+				;    with a middle-max-length of 9:
+				;
+				; --- [=========] <-This is the bar at it's maximum length
+				; --- **[=======] <-This is the bar at its shortest length with !Setting_SpriteHP_BarExtendLeft == 1. The "*" means a blank tile is written every frame.
+				; --- [=======]** <-Same as above but !Setting_SpriteHP_BarExtendLeft == 0
+				;
+				;    This is so that the meter can disappear properly.
 					!Setting_SpriteHP_GraphicalBar_VariableMiddleLength = 1
 				;Maximum middle-length of the bar, when using the variable-middle-length setting.
 				;When there are multiple middle lengths of the bar based on maximum HP, the
