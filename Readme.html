@@ -1072,7 +1072,7 @@ autoclean JML SpritesTotalHPIntroEffect</pre>
 			a sprite on this slot have been deleted and is supposed to hide the meter for non-existent sprites. See info <a href="#DespawnSpawnTransferBug">here</a>.
 		</li>
 		<li>
-			Q: I have a boss sprite that everything works fine, but the meter display gets stuck at 1 unit filled and/or keeps making the beeping sound. What did I do wrong?<br><br>
+			Q: I have a boss sprite that everything works fine, but the meter display gets stuck at 0 or 1 unit filled and/or keeps making the beeping sound. What did I do wrong?<br><br>
 			
 			A: Most likely you have execute the intro-fill effect every frame during a boss fight. That supposed to be done for only one frame, either via init code or a 1-frame trigger of a cutscene assuming the sprite spawns long before that.
 		</li>
