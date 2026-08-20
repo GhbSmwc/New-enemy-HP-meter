@@ -227,11 +227,11 @@
 					;    This is so that the meter can disappear properly.
 					
 				!Setting_SpriteHP_GraphicalBar_VariableMiddleLengthMax = 9
-					;^Maximum middle-length of the bar, when using the variable-middle-length setting.
-					; When there are multiple middle lengths of the bar based on maximum HP, the
-					; value entered here must be a value of whoever is the longest. Example: Lengths
-					; of 7, 8 and 9, means you should enter 9. This is so that it clears out the bar
-					; tile properly when it disappears.
+					;^Value entered here must be the middle length of the bar when it is the longest
+					; in your entire game. Only used when
+					; !Setting_SpriteHP_GraphicalBar_VariableMiddleLength != 0. For example, with
+					; possible lengths being 7, 8 or 9, then 9 should be entered here. This is
+					; needed to know how many 8x8 tiles to clear when the meter disappears.
 					
 				!Setting_SpriteHP_GraphicalBarMiddleLength           = 7
 					;^Fixed length of bar (number of middle tiles). Only used if !Setting_SpriteHP_GraphicalBar_VariableMiddleLength == 0.
