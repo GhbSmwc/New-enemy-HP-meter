@@ -469,7 +469,7 @@ ConvertToRightAlignedFormat2:
 			STA !Scratchram_GraphicalBar_RightEndPiece
 			if !Setting_SpriteHP_GraphicalBar_VariableMiddleLength == 0
 				LDA.b #!Setting_SpriteHP_GraphicalBarMiddleLength
-			else
+			elseif !Setting_SpriteHP_GraphicalBar_VariableMiddleLength == 1
 				REP #$20
 				LDA !Scratchram_GraphicalBar_FillByteTbl+2
 				;Here, are thresholds deterining the middle-length of the meter by
@@ -508,10 +508,89 @@ ConvertToRightAlignedFormat2:
 					BRA .SetMiddleLength
 				.MidLength
 					LDA #$08		;>Number of middle tiles for MidLength
-				.SetMiddleLength
+			elseif !Setting_SpriteHP_GraphicalBar_VariableMiddleLength == 2
+				;Macros to make entering sprite numbers easier
+					macro CheckSpriteNumber(SprNumb, LabelToLength)
+						;If you get "branch out of bounds" error, use
+						;"CheckSpriteNumber_Long" instead.
+						CMP.b #<SprNumb>
+						BEQ <LabelToLength>
+					endmacro
+					macro CheckSpriteNumber_Long(SprNumb, LabelToLength)
+						CMP.b #<SprNumb>
+						BNE ?+
+						JMP <LabelToLength>
+						?+
+					endmacro
+					macro CheckSpriteNumber_Range(SprNumbMin, SprNumbMax, LabelToLength)
+						CMP.b #<SprNumbMin>
+						BCC ?+
+						if <SprNumbMax> < $FF
+							CMP.b #<SprNumbMax>+1
+							BCS ?+
+						endif
+						JMP <LabelToLength>
+						?+
+					endmacro
+				;Sprite number-specific middle lengths.
+					LDA !Freeram_SpriteHP_MeterState
+					CMP.b #!sprite_slots*2
+					BCC .SpriteNumberCheck
+					if !Setting_SpriteHP_TotalHPMode
+						CMP.b #(!sprite_slots*2)+2
+						BCC .TotalHPLength
+					endif
+						JMP .ShortLength
+					if !Setting_SpriteHP_TotalHPMode
+						.TotalHPLength
+							LDA #$09				;>Number of middle tiles for total HP mode
+							JMP .SetMiddleLength
+					endif
+					
+					.SpriteNumberCheck
+						LDX !Scratchram_SpriteHP_SpriteSlotToDisplay ;>Set X register to be sprite slot.
+						CPX #$FF
+						BNE ..Valid		;>Failsafe
+						JMP .ShortLength
+						..Valid
+						if !Setting_SpriteHP_UsingCustomSprites
+								LDA !7FAB10,x
+								AND.b #%00001000
+								BEQ .VanillaSpriteMiddleLengths
+							
+							.CustomSpriteMiddleLengths
+								LDA !7FAB9E,x
+								;Enter your list of custom sprite numbers here.
+								;Use macros from above. Called using a "%", followed by name,
+								;then the parenthesis where you enter sprite numbers and the
+								;label text on where to jump to (which specifies the length
+								;of the bar).
+								;
+									;%CheckSpriteNumber($xx, .MidLength)
+								;Don't remove this.
+									JMP .ShortLength
+						endif
+				.VanillaSpriteMiddleLengths
+					LDA !9E,x
+					;Enter your list of vanilla sprite numbers here. Same as above.
+						%CheckSpriteNumber($46, .MidLength)               ;\Chargin' chucks.
+						%CheckSpriteNumber_Range($91, $98, .MidLength)    ;/
+						%CheckSpriteNumber($C5, .LongLength)              ;>Big Boo Boss
+						%CheckSpriteNumber($29, .LongLength)              ;>Koopa kids.
+					;Don't remove this.
+						JMP .ShortLength
+				.LongLength
+					LDA #$09		;>Number of middle tiles for LongLength. branch from a given sprite number.
+					BRA .SetMiddleLength
+				.MidLength
+					LDA #$08		;>Number of middle tiles for MidLength, branched from a given sprite number.
+					BRA .SetMiddleLength
+				.ShortLength
+					LDA #$07		;>Number of middle tiles for ShortLength (when sprite's number is not any that's listed).
 			endif
-			STA !Scratchram_GraphicalBar_TempLength
-			RTL
+			.SetMiddleLength
+				STA !Scratchram_GraphicalBar_TempLength
+				RTL
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;Calculate ratio of Quantity/MaxQuantity to FilledPieces/TotalMaxPieces.
 	;

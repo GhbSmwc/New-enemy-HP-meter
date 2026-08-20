@@ -97,7 +97,7 @@
 		!Scratchram_SpriteHP_SpriteSlotToDisplay = $188D|!addr
 			;[1 byte]: This holds the current sprite slot used by various codes to determine what sprite slot the HP meter is showing.
 			;This RAM address size must not be 3 bytes long (so $xx and $xxxx are okay, but $xxxxxx are not, it's being used in LDX
-			;which lacks an absolute-long address for). It is set when calling "SpriteHPGetSlotIndex" in shared subroutine code.
+			;which lacks an absolute-long address for).
 			;
 			;Note that "HPSystemForSMWSprites.asm" also uses this, which hijacks various code in SMW, avoid using currently-reserved
 			;scratch RAM such as $8A else glitches may occur.
@@ -207,45 +207,53 @@
 					!Setting_SpriteHP_GraphicalBar_LeftPieces                  = 3             ;\These are the amount of fill capacity of each part of the bar.
 					!Setting_SpriteHP_GraphicalBar_MiddlePieces                = 8             ;|
 					!Setting_SpriteHP_GraphicalBar_RightPieces                 = 3             ;/
-				;Variable-middle-length bar based on max HP?
-				; - 0 = No
-				; - 1 = Yes. Notes:
-				; -- See "SharedSubroutines/Subroutines.asm", under "SetEnemyHPBarAttributes:" to find thresholds
-				;    on what length (number of middle tiles) the bar should be based on max HP.
-				; -- The number of tiles that are occupied by the bar are FIXED. Meaning they occupy N tiles
-				;    where N is the length of the bar at its maximum length (counting end tiles if applicable).
-				;    If the bar is shorter, the space where the bar can extend to remains used. Example (ASCII)
-				;    with a middle-max-length of 9:
-				;
-				; --- [=========] <-This is the bar at it's maximum length
-				; --- **[=======] <-This is the bar at its shortest length with !Setting_SpriteHP_BarExtendLeft == 1. The "*" means a blank tile is written every frame.
-				; --- [=======]** <-Same as above but !Setting_SpriteHP_BarExtendLeft == 0
-				;
-				;    This is so that the meter can disappear properly.
-					!Setting_SpriteHP_GraphicalBar_VariableMiddleLength = 1
-				;Maximum middle-length of the bar, when using the variable-middle-length setting.
-				;When there are multiple middle lengths of the bar based on maximum HP, the
-				;value entered here must be a value of whoever is the longest. Example: Lengths
-				;of 7, 8 and 9, means you should enter 9. This is so that it clears out the bar
-				;tile properly when it disappears.
-					!Setting_SpriteHP_GraphicalBar_VariableMiddleLengthMax = 9
-				;Fixed length of bar (number of middle tiles). Only used if !Setting_SpriteHP_GraphicalBar_VariableMiddleLength == 0.
-				;Full screen width is 32 tiles.
-					!Setting_SpriteHP_GraphicalBarMiddleLength           = 7
+					
+				!Setting_SpriteHP_GraphicalBar_VariableMiddleLength = 1
+					;^Variable-middle-length bar based on max HP?
+					; - 0 = No
+					; - 1 = Yes, based on max HP.
+					; - 2 = Yes, based on sprite number or total HP mode.
+					; Notes:
+					; - See "SharedSubroutines/Subroutines.asm", under "SetEnemyHPBarAttributes:" to customize
+					;   length of the bar on certain conditions.
+					; - The tiles reserved for the bar is assumed to always be the maximum length of the bar
+					;   of the whole game. If the bar is shorter, the space where the bar can extend to
+					;   remains used. Example (ASCII) with a middle-max-length of 9:
+					; 
+					; -- [=========] <-This is the bar at it's maximum length
+					; -- **[=======] <-This is the bar at its shortest length with !Setting_SpriteHP_BarExtendLeft == 1. The "*" means a blank tile is written every frame.
+					; -- [=======]** <-Same as above but !Setting_SpriteHP_BarExtendLeft == 0
+					; 
+					;    This is so that the meter can disappear properly.
+					
+				!Setting_SpriteHP_GraphicalBar_VariableMiddleLengthMax = 9
+					;^Maximum middle-length of the bar, when using the variable-middle-length setting.
+					; When there are multiple middle lengths of the bar based on maximum HP, the
+					; value entered here must be a value of whoever is the longest. Example: Lengths
+					; of 7, 8 and 9, means you should enter 9. This is so that it clears out the bar
+					; tile properly when it disappears.
+					
+				!Setting_SpriteHP_GraphicalBarMiddleLength           = 7
+					;^Fixed length of bar (number of middle tiles). Only used if !Setting_SpriteHP_GraphicalBar_VariableMiddleLength == 0.
+					; Full screen width is 32 tiles.
+					
 			!Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull	= 3
 				;^Round away from 0% and/or 100% when fill is close to such values:
 				; - 0 = Allow bar to display 0% when HP is very close to zero and 100% when close to max.
 				; - 1 = Display 1 pixel of piece filled when low on HP and only 0 if HP is 0.
 				; - 2 = Display MaxPieces-1 when nearly full.
 				; - 3 = Display 1 piece or MaxPieces-1 if close to 0 or MaxPieces.
+				
 			!Setting_SpriteHP_BarFillRoundDirection = 0
 				;^Rounding to nearest integer fill amount of the bar:
 				; - 0 = Round to nearest
 				; - 1 = Round down (floor, bar may display 0 fill amount when close to when !Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull isn't 1 or 3).
 				; - 2 = Round up (ceiling, bar may display full when close to when !Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull isn't 2 or 3).
-			;Fill direction. 0 = Left-to-right, 1 = Right-to-left. Note that the given XY position will occupy that position and N tiles towards
-			;the right regardless of leftwards or not.
-				!Setting_SpriteHP_LeftwardsBar                       = 1
+				
+			!Setting_SpriteHP_LeftwardsBar                       = 1
+				;^Fill direction. 0 = Left-to-right, 1 = Right-to-left. Note that the given XY position will occupy that position and N tiles towards
+				; the right regardless of leftwards or not.
+				
 			;Tile properties (X-flip for leftwards bar is already handled.)
 				!Setting_SpriteHP_BarProps_Page                      = 0  ;>Use only values 0-3
 				!Setting_SpriteHP_BarProps_Palette                   = 6  ;>Use only values 0-7
