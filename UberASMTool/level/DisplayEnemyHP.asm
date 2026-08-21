@@ -183,6 +183,7 @@ main:
 	PHK
 	PLB
 	.HPMeterStateCheck
+		JSR ClearHPDisplay
 		LDA !Freeram_SpriteHP_MeterState
 		if !Setting_SpriteHP_BarAnimation == 0
 			;With no bar animation, then only 0 to 11 or 0 to 21 are valid
@@ -197,7 +198,7 @@ main:
 			CMP #(!sprite_slots*2)+2
 			BCC ..TotalHPMode
 		endif
-		JMP .ClearHPDisplay						;>Failsafe
+		JMP .Done
 		..IndividualSpritesHPMode
 			if !Setting_SpriteHP_BarAnimation
 				CMP.b #!sprite_slots					;This gets the equivilant sprite slots
@@ -257,7 +258,7 @@ main:
 						BCC .....ValidSpriteState	;/
 						BRA .....Next				;>Anything else, count as 0 HP.
 						.....ValidSpriteState
-						JSR .CheckForBlacklistedSpritesTotalHP	;\Blacklisted state = 0 HP
+						JSR CheckForBlacklistedSpritesTotalHP	;\Blacklisted state = 0 HP
 						BCS .....Next							;/
 						LDA !Freeram_SpriteHP_CurrentHPLow,x
 						CLC
@@ -299,7 +300,7 @@ main:
 				STA !Freeram_SpriteHP_MeterState	;/(like before it was turned into a coin from a fireball, or bob-omb exploding)
 				JMP .Done
 			...Exists
-				JSR .CheckForBlacklistedSprites
+				JSR CheckForBlacklistedSprites
 				BCS ...HideHPMeter				;>If sprite becomes a blacklisted state the meter is on, hide the meter
 			...DisplayNormally
 	.DisplayNumerical
@@ -619,33 +620,37 @@ main:
 					endif
 				endif
 		endif
-	BRA .Done
-	.ClearHPDisplay
+	.Done
+	PLB
+	RTL
+	ClearHPDisplay:
 		LDA !Freeram_SpriteHP_MeterState
+		CMP.b #(!sprite_slots*2)+2
+		BCC .Done	;>If any in the active states that are valid, don't clear
 		CMP #$FF
-		BEQ ..ClearEveryFrame
+		BEQ .ClearEveryFrame
 		CMP #$FE
-		BEQ ..ClearItselfOnlyOnce
+		BEQ .ClearItselfOnlyOnce
 		CMP #$FD
-		BEQ ..AlreadyClearedOnce
+		BEQ .AlreadyClearedOnce
 		
-		..ClearItselfOnlyOnce
+		.ClearItselfOnlyOnce
 			LDA #$FD
 			STA !Freeram_SpriteHP_MeterState
-		..ClearEveryFrame
+		.ClearEveryFrame
 		
-		..ClearNumerical
+		.ClearNumerical
 			if !Setting_SpriteHP_DisplayNumerical
 				%ClearNumerical()
 			endif
-		..ClearGraphicalBar
+		.ClearGraphicalBar
 			if !Setting_SpriteHP_DisplayGraphicalBar
 				if !Setting_SpriteHP_GraphicalBar_VariableMiddleLength == 0
 					LDX.b #(!Setting_SpriteHP_GraphicalBar_TotalTiles-1)*!StatusbarFormat
 				else
 					LDX.b #(!Setting_SpriteHP_GraphicalBar_TotalTilesVariableLengthMax-1)*!StatusbarFormat
 				endif
-				...Loop
+				..Loop
 					LDA.b #!StatusBarBlankTile
 					if !Setting_SpriteHP_LeftwardsBar == 0
 						STA !Setting_SpriteHP_GraphicalBar_StatusBarAddrTile,x
@@ -658,14 +663,13 @@ main:
 					else
 						STA !Setting_SpriteHP_GraphicalBarExtendLeftClear_StatusBarAddrProp,x
 					endif
-					....Next
+					...Next
 						DEX #!StatusbarFormat
-						BPL ...Loop
+						BPL ..Loop
 			endif
-		..AlreadyClearedOnce
-	.Done
-	PLB
-	RTL
+		.AlreadyClearedOnce
+		.Done
+			RTS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;Check for conditionally-blacklisted sprites.
 ;
@@ -707,23 +711,23 @@ main:
 ; -- Clear (0): if it should be allowed to show HP of it.
 ; -- Set (1): if it should not be allowed to show HP.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	.CheckForBlacklistedSprites
+	CheckForBlacklistedSprites:
 		LDA !Freeram_SpriteHP_MaxHPLow,x		;\This is a failsafe if some faulty code runs
 		if !Setting_SpriteHP_TwoByte			;|that would attempt to set the HP meter to
 			ORA !Freeram_SpriteHP_MaxHPHi,x		;|be on an always-blacklisted sprite with 0
 		endif									;|max HP (set by HPSystemForSMWSprites.asm),
-		BNE ..HasValidHP						;|would just hide the meter. Also prevents
+		BNE .HasValidHP							;|would just hide the meter. Also prevents
 		SEC										;|a division by zero when calculating fill
 		RTS										;/amount in bar.
 		
-		..HasValidHP
+		.HasValidHP
 		
 		if !Setting_SpriteHP_UsingCustomSprites
 			LDA !7FAB10,x			;\If sprite is custom, allow display
 			AND.b #%00001000		;/(can be overridden within sprite code to not display)
-			BNE ..CustomSprite		;>For custom sprites, you'll need to edit the custom sprite's code.
+			BNE .CustomSprite		;>For custom sprites, you'll need to edit the custom sprite's code.
 		endif
-		..VanillaSprite
+		.VanillaSprite
 			LDA !9E,x
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			;Here is the conditionally-blacklisted vanilla sprite numbers.
@@ -732,40 +736,40 @@ main:
 			;except for total HP mode (see ".CheckForBlacklistedSpritesTotalHP").
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 				if !Setting_SpriteHP_VanillaSprite_OneShotSprites
-					%SpriteHPMeterBlacklist($0D, ...BobOmb) ;>Bobomb (blacklisted if its an explosion)
-					%SpriteHPMeterBlacklist_Range($04, $07, ...KoopasAndEmptyShell) ;>Determine if the koopa shell is empty or not.
-					%SpriteHPMeterBlacklist($09, ...WingedBouncingKoopa) ;>Sprite $DF is techinically sprite $09, just in a stunned state
+					%SpriteHPMeterBlacklist($0D, ..BobOmb) ;>Bobomb (blacklisted if its an explosion)
+					%SpriteHPMeterBlacklist_Range($04, $07, ..KoopasAndEmptyShell) ;>Determine if the koopa shell is empty or not.
+					%SpriteHPMeterBlacklist($09, ..WingedBouncingKoopa) ;>Sprite $DF is techinically sprite $09, just in a stunned state
 				endif
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 				;Keep this here (other than listed is allowed by default)
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-					...Allowed
+					..Allowed
 						CLC
 						RTS
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			;Custom handler for conditionally-blacklisted vanilla sprites here.
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 				if !Setting_SpriteHP_VanillaSprite_OneShotSprites
-					...BobOmb
+					..BobOmb
 						LDA !1534,x
-						BNE ...Blacklisted	;>If its an explosion, it's blacklisted
+						BNE ..Blacklisted	;>If its an explosion, it's blacklisted
 						CLC
 						RTS
-					...KoopasAndEmptyShell ;>Blacklist the sprite if its an empty shell.
-						JSR .CheckIfShellEmpty
-						BCS ...Blacklisted
+					..KoopasAndEmptyShell ;>Blacklist the sprite if its an empty shell.
+						JSR CheckIfShellEmpty
+						BCS ..Blacklisted
 						CLC
 						RTS
-					...WingedBouncingKoopa
+					..WingedBouncingKoopa
 						LDA !14C8,x
 						CMP #$09
-						BCC ...Allowed
+						BCC ..Allowed
 				endif
-				...Blacklisted
+				..Blacklisted
 					SEC
 					RTS
 		if !Setting_SpriteHP_UsingCustomSprites
-			..CustomSprite
+			.CustomSprite
 				LDA !7FAB9E,x
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 				;Here is the conditionally-blacklisted for custom sprite numbers
@@ -775,54 +779,54 @@ main:
 					;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 					;Keep this here (other than listed is allowed by default)
 					;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-						...Allowed
+						..Allowed
 							CLC
 							RTS
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 				;Custom handler for conditionally blacklisted custom sprites here.
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-					...Blacklisted
+					..Blacklisted
 						SEC
 						RTS
 		endif
 	if !Setting_SpriteHP_VanillaSprite_OneShotSprites
-		.CheckIfShellEmpty
+		CheckIfShellEmpty:
 			;Since the sprite numbers and custom flags are already checked, we only need $14C8, $1540, $1558, and $187B to identify if it's a empty shell.
 			LDA !14C8,x
 			CMP #$02
-			BEQ ..KoopaInside
+			BEQ .KoopaInside
 				;^This is a "maybe" state, since it happens after its $14C8,x set to #$02 ($14C8,x could be any value prior). It is up to the code from the patch to
 				;determine should the HP meter to show HP of this sprite.
 			CMP #$07
-			BEQ ..InYoshiMouth
+			BEQ .InYoshiMouth
 				;^When a koopa inside its shell in yoshi's mouth, its stun timer still runs, and when the timer expire, they get deleted in their shells inside yoshi's mouth.
 				; That explains why holding a koopa-in-shell (after stunning it with a quake, bounce block, or cape spin) in yoshi's mouth, that the meter could disappear
 				; some time later.
 			CMP #$0A
-			BEQ ..Kicked
+			BEQ .Kicked
 				;^When a koopa-in-shell is kicked, timer that expired are ignored. At this point $C2 is the only and reliable way to check if koopa is inside ($C2 != #$00)
 			CMP #$0B
-			BEQ ..Carried
-			BRA ..KoopaInside
-			..InYoshiMouth
-			..Carried
+			BEQ .Carried
+			BRA .KoopaInside
+			.InYoshiMouth
+			.Carried
 			LDA !187B,x			;\Check if disco shell
-			BNE ..KoopaInside	;/
+			BNE .KoopaInside	;/
 			;Is in a status that have no koopa inside the stunned shell?
 			;Note that I did not check RAM $C2 (result of $1540|$1558) because
 			;it hasn't been updated yet (just in case).
 				LDA !1540,x
 				ORA !1558,x
-				BNE ..KoopaInside
-			BRA ..IsEmptyShell
-			..Kicked
+				BNE .KoopaInside
+			BRA .IsEmptyShell
+			.Kicked
 				LDA !C2,x
-				BNE ..KoopaInside
-			..IsEmptyShell
+				BNE .KoopaInside
+			.IsEmptyShell
 				;Empty shell (don't allow showing health meter)
 				SEC
 				RTS
-			..KoopaInside
+			.KoopaInside
 				;Koopa inside (entitle showing health meter)
 				CLC
 				RTS
@@ -832,34 +836,34 @@ if !Setting_SpriteHP_TotalHPMode
 	;Check for conditionally blacklisted sprites, for total HP mode
 	;Same as before.
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-		.CheckForBlacklistedSpritesTotalHP
+		CheckForBlacklistedSpritesTotalHP:
 			if !Setting_SpriteHP_UsingCustomSprites
 				LDA !7FAB10,x			;\If sprite is custom, allow display
 				AND.b #%00001000		;/(can be overridden within sprite code to not display)
-				BNE ..CustomSprite		;>For custom sprites, you'll need to edit the custom sprite's code.
+				BNE .CustomSprite		;>For custom sprites, you'll need to edit the custom sprite's code.
 			endif
-			..VanillaSprite
+			.VanillaSprite
 				LDA !9E,x
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 				;Here is the blacklist for vanilla sprite numbers.
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-					%SpriteHPMeterBlacklist($0D, ...Blacklisted) ;>Bobomb (blacklisted if its an explosion, or as a summoned sprite)
+					%SpriteHPMeterBlacklist($0D, ..Blacklisted) ;>Bobomb (blacklisted if its an explosion, or as a summoned sprite)
 					
 					
 					;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 					;Keep this here (other than listed is allowed by default)
 					;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-						...Allowed
+						..Allowed
 							CLC
 							RTS
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 				;Custom handler for conditionally blacklisted sprites here.
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-					...Blacklisted
+					..Blacklisted
 						SEC
 						RTS
 			if !Setting_SpriteHP_UsingCustomSprites
-				..CustomSprite
+				.CustomSprite
 					LDA !7FAB9E,x
 					;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 					;Here is the blacklist for custom sprite numbers
@@ -868,13 +872,13 @@ if !Setting_SpriteHP_TotalHPMode
 						;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 						;Keep this here (other than listed is allowed by default)
 						;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-							...Allowed
+							..Allowed
 								CLC
 								RTS
 					;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 					;Custom handler for conditionally blacklisted custom sprites here.
 					;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-						...Blacklisted
+						..Blacklisted
 							SEC
 							RTS
 			endif

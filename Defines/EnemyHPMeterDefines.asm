@@ -208,7 +208,7 @@
 					!Setting_SpriteHP_GraphicalBar_MiddlePieces                = 8             ;|
 					!Setting_SpriteHP_GraphicalBar_RightPieces                 = 3             ;/
 					
-				!Setting_SpriteHP_GraphicalBar_VariableMiddleLength = 1
+				!Setting_SpriteHP_GraphicalBar_VariableMiddleLength = 2
 					;^Variable-middle-length bar based on max HP?
 					; - 0 = No
 					; - 1 = Yes, based on max HP.
@@ -324,7 +324,7 @@
 			
 		!Setting_SpriteHP_Modify5FireballsSystem = 1
 			;^Make change on how fireballs work with $190F's 3 (%----X---), "takes 5 fireballs to kill":
-			; - 0 = Keep vanilla (will treat $1528 as a damage counter)
+			; - 0 = Keep vanilla (will treat $1528 ($329A in SA-1) as a damage counter)
 			; - 1 = Deal direct damage (will use this patch's HP values directly, and no longer touches $1528)
 			;Warning: This will affect all sprites using the 5-fireballs system when set to 1. The good news
 			;is that in vanilla SMW, only Chucks use this, and is extremely rare for custom sprites to use this.

@@ -183,7 +183,8 @@
 			points to shared subroutine's addresses. Do not have them in any subfolders beyond that area. Make sure you do not move (copy instead) the define files
 			in here as the patch will include those define files.<br><br>
 			
-			If you later make changes in any of the defines and reinsert by one tool, make sure you update all copies of it and reinsert by other tools with matching settings.<br><br>
+			If you later make changes in any of the defines and reinsert by one tool or ASM resource, make sure you update all copies of it and reinsert by all other tools or ASM resource
+			with matching settings. Not having them properly updated can result in glitches due to them having desync information.<br><br>
 			
 			The freeram defines are in <kbd>EnemyHPMeterDefines.asm</kbd> for the main part of the resource, in <kbd>GraphicalBarDefines.asm</kbd> for handling
 			graphical bar codes, and <kbd>NumberDisplayRoutinesDefines.asm</kbd> for handling left/right aligned number display (suppresses leading zeros). Other defines
@@ -980,6 +981,7 @@ autoclean JML SpritesTotalHPIntroEffect</pre>
 					</ul>
 				
 				</li>
+				<li>Having copies of the define files with settings not matching with each other across tools and ASM resources installed into your game. Make sure they are matching and (re)inserted.</li>
 				<li>Faulty code that you have found that I didn't catch (most likely if you haven't installed any other ASM resource). PM me or the moderators on fixing a newly discovered bug. If I'm inactive, feel free to update it.</li>
 			</ul>
 		</li>
