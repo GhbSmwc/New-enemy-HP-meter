@@ -1908,8 +1908,12 @@ if !Setting_SpriteHP_TotalHPMode
 		BEQ .Disabled                                                                      ;/
 		LDA.b #(!sprite_slots*2)+1
 		STA !Freeram_SpriteHP_MeterState
-		LDA #$00                                                                    ;\Start the meter at 0%
-		STA !Freeram_SpriteHP_BarAnimationFill                                      ;/
+		if or(!Setting_SpriteHP_BarAnimation, notequal(!Setting_SpriteHP_BarChangeDelay, 0))
+			LDA #$00
+		endif
+		if !Setting_SpriteHP_BarAnimation
+			STA !Freeram_SpriteHP_BarAnimationFill                                      ;/Start the meter at 0%
+		endif
 		if !Setting_SpriteHP_BarChangeDelay                                         ;
 			STA !Freeram_SpriteHP_BarAnimationTimer                                 ;>Set timer to 0 to make sure the animation plays correctly (allow SFX)
 		endif                                                                       ;
