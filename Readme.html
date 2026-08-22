@@ -1212,6 +1212,7 @@ function ManageSharedSubroutineUnusedSubroutines() {
 		InputsObject[Ele.id] = Value
 	})
 	let IsUsingRightAlignedSingleNumber = ((InputsObject.SharedSub_Setting_NumericalTextAlignment == 2)&&(InputsObject.SharedSub_Setting_DisplayNumerical == 1))
+	let IsAlignedTextNeeded = ((InputsObject.SharedSub_Setting_NumericalTextAlignment)&&(!IsUsingRightAlignedSingleNumber))
 	
 	let IsUsingTileNumbAndPropSeperate = (InputsObject.SharedSub_L3Format == 0)||(InputsObject.SharedSub_L3Format == 2)
 	let IsUsingTileNumbAndPropInterweaved = (InputsObject.SharedSub_L3Format == 1)||(InputsObject.SharedSub_L3Format == 2)
@@ -1224,23 +1225,23 @@ function ManageSharedSubroutineUnusedSubroutines() {
 		{SubroutineName: "GraphicalBarExtendLeft", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar && IsUsingTileNumbAndPropSeperate)},
 		{SubroutineName: "GraphicalBarExtendLeftFormat2", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar && IsUsingTileNumbAndPropInterweaved)},
 		{SubroutineName: "ConvertBarFillAmountToTiles", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar)},
-		{SubroutineName: "ConvertToRightAligned", IsUsed: Boolean((InputsObject.SharedSub_Setting_DisplayNumerical != 0)&&(InputsObject.SharedSub_Setting_NumericalTextAlignment == 2)&&(IsUsingRightAlignedSingleNumber == 0) && IsUsingTileNumbAndPropSeperate)},
-		{SubroutineName: "ConvertToRightAlignedFormat2", IsUsed: Boolean((InputsObject.SharedSub_Setting_DisplayNumerical != 0)&&(InputsObject.SharedSub_Setting_NumericalTextAlignment)&&(IsUsingRightAlignedSingleNumber == 0)&&IsUsingTileNumbAndPropInterweaved)},
+		{SubroutineName: "ConvertToRightAligned", IsUsed: Boolean((InputsObject.SharedSub_Setting_DisplayNumerical != 0)&&(InputsObject.SharedSub_Setting_NumericalTextAlignment == 2)&&(IsAlignedTextNeeded) && IsUsingTileNumbAndPropSeperate)},
+		{SubroutineName: "ConvertToRightAlignedFormat2", IsUsed: Boolean((InputsObject.SharedSub_Setting_DisplayNumerical != 0)&&(InputsObject.SharedSub_Setting_NumericalTextAlignment)&&(IsAlignedTextNeeded)&&IsUsingTileNumbAndPropInterweaved)},
 		{SubroutineName: "DrawGraphicalBarSubtractionLoopEdition", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar)},
 		{SubroutineName: "MathDiv32_16", IsUsed: true},
 		{SubroutineName: "MathDiv", IsUsed: true},
 		{SubroutineName: "MathMul16_16", IsUsed: true},
-		{SubroutineName: "RemoveLeadingZeroes16Bit", IsUsed: Boolean((InputsObject.SharedSub_Setting_DisplayNumerical != 0) && ((InputsObject.SharedSub_Setting_NumericalTextAlignment == 0)||IsUsingRightAlignedSingleNumber))},
+		{SubroutineName: "RemoveLeadingZeroes16Bit", IsUsed: Boolean((InputsObject.SharedSub_Setting_DisplayNumerical != 0) && ((InputsObject.SharedSub_Setting_NumericalTextAlignment == 0)&&(!IsAlignedTextNeeded)))},
 		{SubroutineName: "GraphicalBarRoundAwayEmpty", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar)},
 		{SubroutineName: "GraphicalBarRoundAwayEmptyFull", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar)},
 		{SubroutineName: "GraphicalBarRoundAwayFull", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar)},
 		{SubroutineName: "SixteenBitHexDecDivision", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayNumerical)},
-		{SubroutineName: "SuppressLeadingZeros", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayNumerical&&((InputsObject.SharedSub_Setting_NumericalTextAlignment != 0)&&(IsUsingRightAlignedSingleNumber)))},
+		{SubroutineName: "SuppressLeadingZeros", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayNumerical&&((InputsObject.SharedSub_Setting_NumericalTextAlignment != 0)&&(IsAlignedTextNeeded)))},
 		{SubroutineName: "WriteBarToHUD", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar && IsUsingTileNumbAndPropSeperate)},
 		{SubroutineName: "WriteBarToHUDFormat2", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar && IsUsingTileNumbAndPropInterweaved)},
 		{SubroutineName: "WriteBarToHUDLeftwards", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar && IsUsingTileNumbAndPropSeperate)},
 		{SubroutineName: "WriteBarToHUDLeftwardsFormat2", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar && IsUsingTileNumbAndPropInterweaved)},
-		{SubroutineName: "WriteStringDigitsToHUD", IsUsed: Boolean((InputsObject.SharedSub_Setting_DisplayNumerical != 0)&&(InputsObject.SharedSub_Setting_NumericalTextAlignment)&&(IsUsingRightAlignedSingleNumber == 0) && IsUsingTileNumbAndPropSeperate)},
+		{SubroutineName: "WriteStringDigitsToHUD", IsUsed: Boolean((InputsObject.SharedSub_Setting_DisplayNumerical != 0)&&(InputsObject.SharedSub_Setting_NumericalTextAlignment)&&(IsAlignedTextNeeded) && IsUsingTileNumbAndPropSeperate)},
 		{SubroutineName: "WriteStringDigitsToHUDFormat2", IsUsed: Boolean((InputsObject.SharedSub_Setting_DisplayNumerical != 0)&&(InputsObject.SharedSub_Setting_NumericalTextAlignment)&&(IsUsingRightAlignedSingleNumber == 0) && IsUsingTileNumbAndPropInterweaved)},
 		{SubroutineName: "SpriteHPDamage", IsUsed: true},
 		{SubroutineName: "SpriteHPDamageNoAutoSwitchMeter", IsUsed: true},
