@@ -51,7 +51,7 @@
 	!Setting_Ambush_SpawnIndicator = 1
 		;^Spawn with warning indicator: 0 = no, 1 = yes (requires pixi sprite "AmbushSpawnIndicator.asm",
 		; included in this ASM resource).
-	!Setting_Ambush_FinishMusic = $0B
+	!Setting_Ambush_FinishMusic = $03
 		;^The music to play when level ends after the ambush have been cleared.
 	;These are failsafe to prevent sprites from spawning on or near the player (causes sudden damage
 	;to the player without warning). This is only needed if you don't have spawn indicator enabled.
