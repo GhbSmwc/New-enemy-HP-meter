@@ -69,6 +69,9 @@
 			sup.Highlight {
 				color: yellow;
 			}
+			select {
+				font-family: monospace;
+			}
 		</style>
 	</head>
 <body style="max-width: 1250px; margin: auto; padding: 15px">
@@ -263,11 +266,91 @@
 								Other:
 								<ul>
 									<li><kbd>SpriteHPIntroEffect</kbd> (delete this if you don't want to have a boss intro-fill effect)</li>
-									<li><kbd>SpritesTotalHPIntroEffect</kbd> (remove this from the JML and macro define list if you're not using the total HP system)</li>
+									<li><kbd>SpritesTotalHPIntroEffect</kbd> (remove this from the JML and macro define list if you're not using the total HP system or not using the intro-fill effect)</li>
 								</ul>
 							</li>
 						</ul>
-						
+						If this is too daunting to you to edit them, I provided a tool below that filters out unused subroutines:
+						<div class="CodeBlock" id="SharedSubroutinesList">
+							<table id="SharedSubroutinesUsageTable">
+								<tr>
+									<td rowspan="2">Number display</td>
+									<td>
+										<kbd>!Setting_SpriteHP_DisplayNumerical</kbd>
+									</td>
+									<td>
+										<select id="SharedSub_Setting_DisplayNumerical">
+											<option>0 (Don't display numbers)</option>
+											<option>1 (Display only current HP)</option>
+											<option selected>2 (Display current/max)</option>
+										</select>
+									</td>
+								</tr>
+								<tr>
+									<td>
+										<kbd>!Setting_SpriteHP_NumericalTextAlignment</kbd>
+									</td>
+									<td>
+										<select id="SharedSub_Setting_NumericalTextAlignment">
+											<option>0 (Fixed location)</option>
+											<option>1 (Left-aligned)</option>
+											<option selected>2 (Right-aligned)</option>
+										</select>
+									</td>
+								</tr>
+								<tr>
+									<td rowspan="2">Graphical bar settings</td>
+									<td>
+										<kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd>
+									</td>
+									<td>
+										<label><input type="checkbox" checked id="SharedSub_Setting_DisplayGraphicalBar"> (0 = No, 1 = Yes)</label>
+									</td>
+								</tr>
+								<tr>
+									<td>
+										<kbd>!Setting_SpriteHP_BarAnimation</kbd>
+									</td>
+									<td>
+										<label><input type="checkbox" checked id="SharedSub_Setting_BarAnimation"> (0 = No, 1 = Yes)</label>
+									</td>
+								</tr>
+								<tr>
+									<td rowspan="3">Other</td>
+									<td>Layer 3 usage type:</td>
+									<td>
+										<select id="SharedSub_L3Format">
+											<option>!StatusbarFormat = $01</option>
+											<option>!StatusbarFormat = $02</option>
+											<option>Both formats (OWB+ and seperate tables)</option>
+										</select>
+									</td>
+								</tr>
+								<tr>
+									<td>Using intro-fill?</td>
+									<td>
+										<label><input type="Checkbox" checked id="SharedSub_Setting_IsUsingIntroFill"></label>
+									</td>
+								</tr>
+								<tr>
+									<td><kbd>!Setting_SpriteHP_TotalHPMode</kbd></td>
+									<td>
+										<label><input type="Checkbox" checked id="SharedSub_Setting_IsUsingTotalHP">(if any nonzero values, check this box)</label>
+									</td>
+								</tr>
+							</table><br>
+							
+							Sort:
+							<select id="SharedSub_Setting_Sort">
+								<option>Keep original</option>
+								<option>Alphabetically</option>
+								<option>Alphabetically (reverse)</option>
+							</select>
+							<label><input type="Checkbox" id="SharedSub_Setting_ShowRemovedSubs">Show both included and excluded with indicators.</label>
+							<br><br>
+							<kbd>Number of included subroutines: <span id="SharedSub_Output_ListLength">0</span></kbd><br>
+							<div class="CodeBlock" style="width: 229px; height: 288px;"><pre id="SubroutinesListOutput"></pre></div>
+						</div>
 					</li>
 					<li>
 						In Shared Subroutine's <kbd>sharedsub.asm</kbd> in the JML list, paste the following (remove JML list items you won't be using for your entire hack):
@@ -532,11 +615,11 @@ autoclean JML SpritesTotalHPIntroEffect</pre>
 					<tr><td><kbd>!Setting_SpriteHP_TwoByte</kbd></td><td><label><input type="checkbox" checked id="Setting_TwoByte"> (unchecked is 0, otherwise 1)</label></td></tr>
 					<tr><td><kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd></td><td><label><input type="checkbox" checked id="Setting_DisplayGraphicalBar"> (unchecked is 0, otherwise 1)</label></td></tr>
 					<tr><td><kbd>!Setting_SpriteHP_BarAnimation</kbd></td><td><label><input type="checkbox" checked id="Setting_BarAnimation"> (unchecked is 0, otherwise 1)</label></td></tr>
-					<tr><td><kbd>!Setting_SpriteHP_BarChangeDelay</kbd></td><td><label><input type="checkbox" checked id="Setting_BarChangeDelay"> (unchecked is 0 or 1, any nonzero value is checked)</label></td></tr>
+					<tr><td><kbd>!Setting_SpriteHP_BarChangeDelay</kbd></td><td><label><input type="checkbox" checked id="Setting_BarChangeDelay"> (unchecked is 0, any nonzero value is checked)</label></td></tr>
 					<tr>
 						<td>
 							<kbd>!Setting_SpriteHP_TotalHPMode =</kbd></td><td>
-							<select style="font-family: monospace;" id="Setting_TotalHPMode" onchange="UpdateHPDataDisplay()">
+							<select id="Setting_TotalHPMode" onchange="UpdateHPDataDisplay()">
 								<option id="TotalHPSetting_0">0 (Disabled)</option>
 								<option id="TotalHPSetting_1">1 (Enabled)</option>
 								<option id="TotalHPSetting_2" selected>2 (Enabled and counting unloaded sprites)</option>
@@ -1103,6 +1186,114 @@ document.addEventListener('dblclick', e => {
     document.getSelection().addRange(range);
   }
 });
+
+//Add eventlisteners onchange for shared subroutines
+	AddEventListenerToSharedSubroutinesUnusedSubroutines();
+	ManageSharedSubroutineUnusedSubroutines();
+function AddEventListenerToSharedSubroutinesUnusedSubroutines() {
+	let Inputs = [...document.getElementById("SharedSubroutinesList").querySelectorAll("input, select")]
+	Inputs.forEach(Ele => {
+		Ele.addEventListener("change", ManageSharedSubroutineUnusedSubroutines)
+	})
+}
+function ManageSharedSubroutineUnusedSubroutines() {
+	let Inputs = [...document.getElementById("SharedSubroutinesUsageTable").querySelectorAll("input, select")]
+	let InputsObject = {}
+	Inputs.forEach(Ele => {
+		let Value = 0
+		if (Ele.tagName == "SELECT") {
+			Value = Ele.selectedIndex
+		} else if (Ele.tagName == "INPUT") {
+			if (Ele.type.toLowerCase() == "checkbox") {
+				Value = Number(Ele.checked)
+			}
+		}
+		
+		InputsObject[Ele.id] = Value
+	})
+	let IsUsingRightAlignedSingleNumber = ((InputsObject.SharedSub_Setting_NumericalTextAlignment == 2)&&(InputsObject.SharedSub_Setting_DisplayNumerical == 1))
+	
+	let IsUsingTileNumbAndPropSeperate = (InputsObject.SharedSub_L3Format == 0)||(InputsObject.SharedSub_L3Format == 2)
+	let IsUsingTileNumbAndPropInterweaved = (InputsObject.SharedSub_L3Format == 1)||(InputsObject.SharedSub_L3Format == 2)
+	let SubroutinesList = 
+	[
+		{SubroutineName: "SetEnemyHPBarAttributes", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar)},
+		{SubroutineName: "CalculateGraphicalBarPercentage", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar)},
+		{SubroutineName: "CalculateGraphicalBarPercentageRoundUp", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar)},
+		{SubroutineName: "CalculateGraphicalBarPercentageRoundDown", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar)},
+		{SubroutineName: "GraphicalBarExtendLeft", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar && IsUsingTileNumbAndPropSeperate)},
+		{SubroutineName: "GraphicalBarExtendLeftFormat2", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar && IsUsingTileNumbAndPropInterweaved)},
+		{SubroutineName: "ConvertBarFillAmountToTiles", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar)},
+		{SubroutineName: "ConvertToRightAligned", IsUsed: Boolean((InputsObject.SharedSub_Setting_DisplayNumerical != 0)&&(InputsObject.SharedSub_Setting_NumericalTextAlignment == 2)&&(IsUsingRightAlignedSingleNumber == 0) && IsUsingTileNumbAndPropSeperate)},
+		{SubroutineName: "ConvertToRightAlignedFormat2", IsUsed: Boolean((InputsObject.SharedSub_Setting_DisplayNumerical != 0)&&(InputsObject.SharedSub_Setting_NumericalTextAlignment)&&(IsUsingRightAlignedSingleNumber == 0)&&IsUsingTileNumbAndPropInterweaved)},
+		{SubroutineName: "DrawGraphicalBarSubtractionLoopEdition", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar)},
+		{SubroutineName: "MathDiv32_16", IsUsed: true},
+		{SubroutineName: "MathDiv", IsUsed: true},
+		{SubroutineName: "MathMul16_16", IsUsed: true},
+		{SubroutineName: "RemoveLeadingZeroes16Bit", IsUsed: Boolean((InputsObject.SharedSub_Setting_DisplayNumerical != 0) && ((InputsObject.SharedSub_Setting_NumericalTextAlignment == 0)||IsUsingRightAlignedSingleNumber))},
+		{SubroutineName: "GraphicalBarRoundAwayEmpty", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar)},
+		{SubroutineName: "GraphicalBarRoundAwayEmptyFull", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar)},
+		{SubroutineName: "GraphicalBarRoundAwayFull", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar)},
+		{SubroutineName: "SixteenBitHexDecDivision", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayNumerical)},
+		{SubroutineName: "SuppressLeadingZeros", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayNumerical&&((InputsObject.SharedSub_Setting_NumericalTextAlignment != 0)&&(IsUsingRightAlignedSingleNumber)))},
+		{SubroutineName: "WriteBarToHUD", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar && IsUsingTileNumbAndPropSeperate)},
+		{SubroutineName: "WriteBarToHUDFormat2", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar && IsUsingTileNumbAndPropInterweaved)},
+		{SubroutineName: "WriteBarToHUDLeftwards", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar && IsUsingTileNumbAndPropSeperate)},
+		{SubroutineName: "WriteBarToHUDLeftwardsFormat2", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar && IsUsingTileNumbAndPropInterweaved)},
+		{SubroutineName: "WriteStringDigitsToHUD", IsUsed: Boolean((InputsObject.SharedSub_Setting_DisplayNumerical != 0)&&(InputsObject.SharedSub_Setting_NumericalTextAlignment)&&(IsUsingRightAlignedSingleNumber == 0) && IsUsingTileNumbAndPropSeperate)},
+		{SubroutineName: "WriteStringDigitsToHUDFormat2", IsUsed: Boolean((InputsObject.SharedSub_Setting_DisplayNumerical != 0)&&(InputsObject.SharedSub_Setting_NumericalTextAlignment)&&(IsUsingRightAlignedSingleNumber == 0) && IsUsingTileNumbAndPropInterweaved)},
+		{SubroutineName: "SpriteHPDamage", IsUsed: true},
+		{SubroutineName: "SpriteHPDamageNoAutoSwitchMeter", IsUsed: true},
+		{SubroutineName: "SpriteHPRemoveRecordEffect", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar && InputsObject.SharedSub_Setting_BarAnimation)},
+		{SubroutineName: "SpriteHPGetSlotIndex", IsUsed: true},
+		{SubroutineName: "SpriteHPIntroEffect", IsUsed: Boolean(InputsObject.SharedSub_Setting_IsUsingIntroFill)},
+		{SubroutineName: "HideHPMeterIfSpriteDespawns", IsUsed: true},
+		{SubroutineName: "SpritesTotalHPIntroEffect", IsUsed: Boolean(InputsObject.SharedSub_Setting_IsUsingIntroFill && InputsObject.SharedSub_Setting_IsUsingTotalHP)},
+	]
+	
+	let ShowRemovedSubs = document.getElementById("SharedSub_Setting_ShowRemovedSubs").checked
+	if (!ShowRemovedSubs) {
+		SubroutinesList = SubroutinesList.filter(Subroutine => Subroutine.IsUsed)
+	}
+	let SortSettingValue = document.getElementById("SharedSub_Setting_Sort").selectedIndex
+	if (SortSettingValue != 0) {
+		
+		let ReverseFlag = 1
+		if (SortSettingValue == 2) {
+			ReverseFlag = -1
+		}
+		SubroutinesList.sort((a, b) => {
+			if (a.SubroutineName === b.SubroutineName) {
+				return 0
+			}
+			return ((a.SubroutineName < b.SubroutineName) ? -1 : 1)*ReverseFlag
+		})
+	}
+	
+	let Output_SubroutinesList = ""
+	let NumberOfIncludedSubsWhenShowningRemoved = 0
+	SubroutinesList.forEach((Subroutine, Index, Arr) => {
+		if (ShowRemovedSubs) {
+			if (!Subroutine.IsUsed) {
+				Output_SubroutinesList += "❌ "
+			} else {
+				Output_SubroutinesList += "✅ "
+				NumberOfIncludedSubsWhenShowningRemoved++
+			}
+		}
+		Output_SubroutinesList += Subroutine.SubroutineName
+		if (Index != Arr.length) {
+			Output_SubroutinesList += "\n"
+		}
+	})
+	if (!ShowRemovedSubs) {
+		document.getElementById("SharedSub_Output_ListLength").textContent = SubroutinesList.length
+	} else {
+		document.getElementById("SharedSub_Output_ListLength").textContent = NumberOfIncludedSubsWhenShowningRemoved
+	}
+	
+	document.getElementById("SubroutinesListOutput").textContent = Output_SubroutinesList
+}
 function getClosest(el, tagName) {
   tagName = tagName && tagName.toUpperCase();
 
