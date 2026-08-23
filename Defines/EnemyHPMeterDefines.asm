@@ -240,7 +240,7 @@
 			!Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull	= 3
 				;^Round away from 0% and/or 100% when fill is close to such values:
 				; - 0 = Allow bar to display 0% when HP is very close to zero and 100% when close to max.
-				; - 1 = Display 1 pixel of piece filled when low on HP and only 0 if HP is 0.
+				; - 1 = Display 1 piece filled when low on HP and only 0 if HP is 0.
 				; - 2 = Display MaxPieces-1 when nearly full.
 				; - 3 = Display 1 piece or MaxPieces-1 if close to 0 or MaxPieces.
 				

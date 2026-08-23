@@ -205,6 +205,36 @@
 						Any subroutines you don't use (for your entire hack, no ASM from anywhere in your ROM using it, not just the enemy HP system), feel free to omit them (remove the subroutine code, the JML and define list item)
 						to save ROM space. Just to let you know that you can use some of these subroutines for other than sprite HP, as many of them are general-purpose.<br><br>
 						
+						Be aware that some subroutines may branch/jump into another subroutine's code, such as <kbd>GraphicalBarRoundAwayEmpty/GraphicalBarRoundAwayFull</kbd> to parts of <kbd>GraphicalBarRoundAwayEmptyFull</kbd> and
+						<kbd>ConvertToRightAligned</kbd> branching to <kbd>ConvertToRightAlignedFormat2</kbd>, if that's the case, only comment out the code that won't be executed. For example on the latter part, if you're using
+						<kbd>ConvertToRightAlignedFormat2</kbd> and will never use <kbd>ConvertToRightAligned</kbd>, then you can do this:
+						<div class="CodeBlock" style="height: 222px; width: 1000px;"><pre>;[...]
+ConvertToRightAligned:
+<span style="color: #C00000">;	TXA					;&gt;Transfer X (number of tiles) to A
+;	DEC					;&gt;Decrement A (since it's 0-based)
+;	TAY					;&gt;Transfer A status bar leftmost position to Y (Y is how many tiles of offset by, need this later)
+;	BRA +</span>
+ConvertToRightAlignedFormat2:
+	TXA					;&gt;Transfer X (number of tiles) to A
+	DEC					;&gt;Decrement A (since it's 0-based)
+	ASL					;&gt;Double A (because each tile is 2 bytes, becomming the number of tiles being 0-based)
+	TAY					;&gt;Transfer A to Y status bar leftmost position to Y (need this later)
+	+
+;[...]</pre></div>
+						Conversely, if you are using <kbd>ConvertToRightAligned</kbd> and not <kbd>ConvertToRightAlignedFormat2</kbd> (Don't worry, labels doesn't take space in the ROM, it's only for asar to tell jumps and branch where to go to):
+<div class="CodeBlock" style="height: 222px; width: 1000px;"><pre>;[...]
+ConvertToRightAligned:
+	TXA					;&gt;Transfer X (number of tiles) to A
+	DEC					;&gt;Decrement A (since it's 0-based)
+	TAY					;&gt;Transfer A status bar leftmost position to Y (Y is how many tiles of offset by, need this later)
+;	BRA + 					;&gt;Because the branch destination is the next instruction that exist below here, this is not needed.
+ConvertToRightAlignedFormat2:
+<span style="color: #C00000">;	TXA					;&gt;Transfer X (number of tiles) to A
+;	DEC					;&gt;Decrement A (since it's 0-based)
+;	ASL					;&gt;Double A (because each tile is 2 bytes, becomming the number of tiles being 0-based)
+;	TAY					;&gt;Transfer A to Y status bar leftmost position to Y (need this later)</span>
+	+
+;[...]</pre></div><br>
 						Another thing to note is that the HUD write subroutines have 2 variants with the second having &ldquo;<kbd>Format2</kbd>&rdquo; in its name to support duel-format. Various HUD patches on SMWC including an
 						overworld border have 2 different formats:
 						<ul>
@@ -270,7 +300,7 @@
 								</ul>
 							</li>
 						</ul>
-						If this is too daunting to you to edit them, I provided a tool below that filters out unused subroutines:
+						I provided a tool below that help you search for unused subroutines (you can copy the output for included subroutines here, and use Shared Subroutine's built-in JML list manager to convert them):
 						<div class="CodeBlock" id="SharedSubroutinesList">
 							<table id="SharedSubroutinesUsageTable">
 								<tr>
@@ -299,7 +329,7 @@
 									</td>
 								</tr>
 								<tr>
-									<td rowspan="2">Graphical bar settings</td>
+									<td rowspan="3">Graphical bar settings</td>
 									<td>
 										<kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd>
 									</td>
@@ -313,6 +343,17 @@
 									</td>
 									<td>
 										<label><input type="checkbox" checked id="SharedSub_Setting_BarAnimation"> (0 = No, 1 = Yes)</label>
+									</td>
+								</tr>
+								<tr>
+									<td><kbd>!Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull</kbd></td>
+									<td>
+										<select id="SharedSub_RoundAway">
+											<option>0 (Allow 0% and 100% when close to)</option>
+											<option>1 (Show 1 piece filled when close to 0)</option>
+											<option>2 (Show MaxPieces-1 when close to MaxPieces)</option>
+											<option selected>3 (Show 1 piece or MaxPieces-1 when close to 0 or MaxPieces)</option>
+										</select>
 									</td>
 								</tr>
 								<tr>
@@ -345,16 +386,28 @@
 								<option>Keep original</option>
 								<option>Alphabetically</option>
 								<option>Alphabetically (reverse)</option>
+							</select><br>
+							Mode:
+							<select id="SharedSub_Setting_OutputMode">
+								<option>Show only included</option>
+								<option>Show only excluded</option>
+								<option>Show all with indicators</option>
 							</select>
-							<label><input type="Checkbox" id="SharedSub_Setting_ShowRemovedSubs">Show both included and excluded with indicators.</label>
 							<br><br>
-							<kbd>Number of included subroutines: <span id="SharedSub_Output_ListLength">0</span></kbd><br>
-							<div class="CodeBlock" style="width: 229px; height: 288px;"><pre id="SubroutinesListOutput"></pre></div>
+							<kbd><span id="SharedSub_Output_ListLength">0</span></kbd><br>
+							<div class="CodeBlock" style="width: 222px; height: 209px;"><pre id="SubroutinesListOutput"></pre></div>
 						</div>
 					</li>
 					<li>
-						In Shared Subroutine's <kbd>sharedsub.asm</kbd> in the JML list, paste the following (remove JML list items you won't be using for your entire hack):
-<div class="CodeBlock" style="height: 340px;"><pre>autoclean JML SetEnemyHPBarAttributes
+						In Shared Subroutine, copy and paste the following (this is if you want all subroutines for testing, if you only want what's needed see previous step's tool):
+						<table>
+							<tr>
+								<th>To <kbd>sharedsub.asm</kbd></th>
+								<th>To <kbd>SharedSub_Defines/SharedSubroutineDefs.asm</kbd></th>
+							</tr>
+							<tr>
+								<td>
+<div class="CodeBlock" style="height: 341px; width: 488px;"><pre>autoclean JML SetEnemyHPBarAttributes
 autoclean JML CalculateGraphicalBarPercentage
 autoclean JML CalculateGraphicalBarPercentageRoundUp
 autoclean JML CalculateGraphicalBarPercentageRoundDown
@@ -387,10 +440,9 @@ autoclean JML SpriteHPIntroEffect
 autoclean JML HideHPMeterIfSpriteDespawns
 autoclean JML SpritesTotalHPIntroEffect</pre>
 </div>
-					</li>
-					<li>
-						Open Shared Subroutines' <kbd>SharedSub_Defines/SharedSubroutineDefs.asm</kbd> and paste the following (same as above, remove define list items you don't use):
-<div class="CodeBlock" style="height: 340px;"><pre>		%SetSharedSubDefine(SharedSub_SetEnemyHPBarAttributes)
+								</td>
+								<td>
+<div class="CodeBlock" style="height: 341px; width: 488px;"><pre>		%SetSharedSubDefine(SharedSub_SetEnemyHPBarAttributes)
 		%SetSharedSubDefine(SharedSub_CalculateGraphicalBarPercentage)
 		%SetSharedSubDefine(SharedSub_CalculateGraphicalBarPercentageRoundUp)
 		%SetSharedSubDefine(SharedSub_CalculateGraphicalBarPercentageRoundDown)
@@ -423,8 +475,14 @@ autoclean JML SpritesTotalHPIntroEffect</pre>
 		%SetSharedSubDefine(SharedSub_HideHPMeterIfSpriteDespawns)
 		%SetSharedSubDefine(SharedSub_SpritesTotalHPIntroEffect)</pre>
 </div>
-					Now make sure their order and positions in the list of the entire JML and define list matches (if you paste the JML list starting at the 51st item, then the define list must also be placed starting at the 51st item),
-					else define names gets assigned to the wrong subroutine label, which causes glitches or crashes.</li>
+								</td>
+							</tr>
+						</table>
+					</li>
+					<li>
+						Now make sure their order and positions in the list of the entire JML and define list matches (if you paste the JML list starting at the 51st item, then the define list must also be placed starting at the 51st item),
+						else define names gets assigned to the wrong subroutine label, which causes glitches or crashes.
+					</li>
 					<li>
 						Now in the define file of the previous set, you must set <kbd>!Freespace_SharedSub_JMLList</kbd> to be at an address that is the start of a freespace. Follow the instructions in Shared Subroutine's Readme on how to
 						locate freespace.
@@ -434,7 +492,8 @@ autoclean JML SpritesTotalHPIntroEffect</pre>
 			</li>
 			
 			<li>Patch a status bar/HUD enhancement patch into your game. Note that this ASM resource by default, assumes you are using the Super Status Bar patch. If this is not the case, you need to open <kbd>StatusBarDefines.asm</kbd>
-			of this package and change the base address to match with whatever status bar patch you're using that are the tile data, then reinsert UAT and pixi if you have inserted prior.</li>
+			of this package and change the base address to match with whatever status bar patch you're using that are the tile data, then reinsert UAT and pixi if you have inserted prior. Note that the SMB3 status bar also requires editing
+			the graphics as well as increasing the file size</li>
 			
 			<li>
 				Patch <kbd>HPSystemForSMWSprites.asm</kbd> to your game. This adds a health system for some sprites, one-shot enemies and bosses and fixes <a href="#JMPTo_MakeSpritesDisplayHP_DamageJank">an anomaly for SMW</a>.
@@ -1215,7 +1274,7 @@ function ManageSharedSubroutineUnusedSubroutines() {
 	let IsAlignedTextNeeded = ((InputsObject.SharedSub_Setting_NumericalTextAlignment)&&(!IsUsingRightAlignedSingleNumber))
 	
 	let IsUsingTileNumbAndPropSeperate = (InputsObject.SharedSub_L3Format == 0)||(InputsObject.SharedSub_L3Format == 2)
-	let IsUsingTileNumbAndPropInterweaved = (InputsObject.SharedSub_L3Format == 1)||(InputsObject.SharedSub_L3Format == 2)
+	let IsUsingTileNumbAndPropInterleaved = (InputsObject.SharedSub_L3Format == 1)||(InputsObject.SharedSub_L3Format == 2)
 	let SubroutinesList = 
 	[
 		{SubroutineName: "SetEnemyHPBarAttributes", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar)},
@@ -1223,42 +1282,61 @@ function ManageSharedSubroutineUnusedSubroutines() {
 		{SubroutineName: "CalculateGraphicalBarPercentageRoundUp", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar)},
 		{SubroutineName: "CalculateGraphicalBarPercentageRoundDown", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar)},
 		{SubroutineName: "GraphicalBarExtendLeft", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar && IsUsingTileNumbAndPropSeperate)},
-		{SubroutineName: "GraphicalBarExtendLeftFormat2", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar && IsUsingTileNumbAndPropInterweaved)},
+		{SubroutineName: "GraphicalBarExtendLeftFormat2", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar && IsUsingTileNumbAndPropInterleaved)},
 		{SubroutineName: "ConvertBarFillAmountToTiles", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar)},
 		{SubroutineName: "ConvertToRightAligned", IsUsed: Boolean((InputsObject.SharedSub_Setting_DisplayNumerical != 0)&&(InputsObject.SharedSub_Setting_NumericalTextAlignment == 2)&&(IsAlignedTextNeeded) && IsUsingTileNumbAndPropSeperate)},
-		{SubroutineName: "ConvertToRightAlignedFormat2", IsUsed: Boolean((InputsObject.SharedSub_Setting_DisplayNumerical != 0)&&(InputsObject.SharedSub_Setting_NumericalTextAlignment)&&(IsAlignedTextNeeded)&&IsUsingTileNumbAndPropInterweaved)},
+		{SubroutineName: "ConvertToRightAlignedFormat2", IsUsed: Boolean((InputsObject.SharedSub_Setting_DisplayNumerical != 0)&&(InputsObject.SharedSub_Setting_NumericalTextAlignment)&&(IsAlignedTextNeeded)&&IsUsingTileNumbAndPropInterleaved)},
 		{SubroutineName: "DrawGraphicalBarSubtractionLoopEdition", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar)},
 		{SubroutineName: "MathDiv32_16", IsUsed: true},
 		{SubroutineName: "MathDiv", IsUsed: true},
 		{SubroutineName: "MathMul16_16", IsUsed: true},
 		{SubroutineName: "RemoveLeadingZeroes16Bit", IsUsed: Boolean((InputsObject.SharedSub_Setting_DisplayNumerical != 0) && ((InputsObject.SharedSub_Setting_NumericalTextAlignment == 0)&&(!IsAlignedTextNeeded)))},
-		{SubroutineName: "GraphicalBarRoundAwayEmpty", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar)},
-		{SubroutineName: "GraphicalBarRoundAwayEmptyFull", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar)},
-		{SubroutineName: "GraphicalBarRoundAwayFull", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar)},
+		{SubroutineName: "GraphicalBarRoundAwayEmpty", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar && (InputsObject.SharedSub_RoundAway == 1))},
+		{SubroutineName: "GraphicalBarRoundAwayEmptyFull", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar && (InputsObject.SharedSub_RoundAway == 3))},
+		{SubroutineName: "GraphicalBarRoundAwayFull", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar && (InputsObject.SharedSub_RoundAway == 2))},
 		{SubroutineName: "SixteenBitHexDecDivision", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayNumerical)},
 		{SubroutineName: "SuppressLeadingZeros", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayNumerical&&((InputsObject.SharedSub_Setting_NumericalTextAlignment != 0)&&(IsAlignedTextNeeded)))},
 		{SubroutineName: "WriteBarToHUD", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar && IsUsingTileNumbAndPropSeperate)},
-		{SubroutineName: "WriteBarToHUDFormat2", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar && IsUsingTileNumbAndPropInterweaved)},
+		{SubroutineName: "WriteBarToHUDFormat2", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar && IsUsingTileNumbAndPropInterleaved)},
 		{SubroutineName: "WriteBarToHUDLeftwards", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar && IsUsingTileNumbAndPropSeperate)},
-		{SubroutineName: "WriteBarToHUDLeftwardsFormat2", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar && IsUsingTileNumbAndPropInterweaved)},
+		{SubroutineName: "WriteBarToHUDLeftwardsFormat2", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar && IsUsingTileNumbAndPropInterleaved)},
 		{SubroutineName: "WriteStringDigitsToHUD", IsUsed: Boolean((InputsObject.SharedSub_Setting_DisplayNumerical != 0)&&(InputsObject.SharedSub_Setting_NumericalTextAlignment)&&(IsAlignedTextNeeded) && IsUsingTileNumbAndPropSeperate)},
-		{SubroutineName: "WriteStringDigitsToHUDFormat2", IsUsed: Boolean((InputsObject.SharedSub_Setting_DisplayNumerical != 0)&&(InputsObject.SharedSub_Setting_NumericalTextAlignment)&&(IsUsingRightAlignedSingleNumber == 0) && IsUsingTileNumbAndPropInterweaved)},
+		{SubroutineName: "WriteStringDigitsToHUDFormat2", IsUsed: Boolean((InputsObject.SharedSub_Setting_DisplayNumerical != 0)&&(InputsObject.SharedSub_Setting_NumericalTextAlignment)&&(IsUsingRightAlignedSingleNumber == 0) && IsUsingTileNumbAndPropInterleaved)},
 		{SubroutineName: "SpriteHPDamage", IsUsed: true},
 		{SubroutineName: "SpriteHPDamageNoAutoSwitchMeter", IsUsed: true},
 		{SubroutineName: "SpriteHPRemoveRecordEffect", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar && InputsObject.SharedSub_Setting_BarAnimation)},
 		{SubroutineName: "SpriteHPGetSlotIndex", IsUsed: true},
 		{SubroutineName: "SpriteHPIntroEffect", IsUsed: Boolean(InputsObject.SharedSub_Setting_IsUsingIntroFill)},
 		{SubroutineName: "HideHPMeterIfSpriteDespawns", IsUsed: true},
-		{SubroutineName: "SpritesTotalHPIntroEffect", IsUsed: Boolean(InputsObject.SharedSub_Setting_IsUsingIntroFill && InputsObject.SharedSub_Setting_IsUsingTotalHP)},
+		{SubroutineName: "SpritesTotalHPIntroEffect", IsUsed: Boolean(InputsObject.SharedSub_Setting_IsUsingIntroFill && InputsObject.SharedSub_Setting_IsUsingTotalHP)}
 	]
 	
-	let ShowRemovedSubs = document.getElementById("SharedSub_Setting_ShowRemovedSubs").checked
-	if (!ShowRemovedSubs) {
-		SubroutinesList = SubroutinesList.filter(Subroutine => Subroutine.IsUsed)
+	let OutputMode = document.getElementById("SharedSub_Setting_OutputMode").selectedIndex
+	let StatisticsCount = {
+		Included: 0,
+		Excluded: 0
+	}
+	SubroutinesList.forEach(Sub => {
+		if (Sub.IsUsed) {
+			StatisticsCount.Included++
+			return
+		}
+		StatisticsCount.Excluded++
+	})
+	if (OutputMode < 2) {
+		SubroutinesList = SubroutinesList.filter(Subroutine => {
+			if (Subroutine.SubroutineName == "RemoveLeadingZeroes16Bit") {
+				let a = 0
+			}
+			if (OutputMode == 0) {
+				return Subroutine.IsUsed
+			} else {
+				return !Subroutine.IsUsed
+			}
+		});
 	}
 	let SortSettingValue = document.getElementById("SharedSub_Setting_Sort").selectedIndex
 	if (SortSettingValue != 0) {
-		
 		let ReverseFlag = 1
 		if (SortSettingValue == 2) {
 			ReverseFlag = -1
@@ -1272,14 +1350,12 @@ function ManageSharedSubroutineUnusedSubroutines() {
 	}
 	
 	let Output_SubroutinesList = ""
-	let NumberOfIncludedSubsWhenShowningRemoved = 0
 	SubroutinesList.forEach((Subroutine, Index, Arr) => {
-		if (ShowRemovedSubs) {
+		if (OutputMode == 2) {
 			if (!Subroutine.IsUsed) {
 				Output_SubroutinesList += "❌ "
 			} else {
 				Output_SubroutinesList += "✅ "
-				NumberOfIncludedSubsWhenShowningRemoved++
 			}
 		}
 		Output_SubroutinesList += Subroutine.SubroutineName
@@ -1287,11 +1363,7 @@ function ManageSharedSubroutineUnusedSubroutines() {
 			Output_SubroutinesList += "\n"
 		}
 	})
-	if (!ShowRemovedSubs) {
-		document.getElementById("SharedSub_Output_ListLength").textContent = SubroutinesList.length
-	} else {
-		document.getElementById("SharedSub_Output_ListLength").textContent = NumberOfIncludedSubsWhenShowningRemoved
-	}
+	document.getElementById("SharedSub_Output_ListLength").textContent = "Included: " + StatisticsCount.Included.toString(10) + ", Excluded: " + StatisticsCount.Excluded.toString(10) + ", Shown: " + SubroutinesList.length.toString(10)
 	
 	document.getElementById("SubroutinesListOutput").textContent = Output_SubroutinesList
 }
