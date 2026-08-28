@@ -37,6 +37,10 @@
 				resize: both;
 				background-color: #101010;
 			}
+			div.Indent {
+				padding-left: 25px;
+				background-color: #202020;
+			}
 			pre {
 				margin: 0px;
 			}
@@ -71,6 +75,11 @@
 			}
 			select {
 				font-family: monospace;
+			}
+			summary {
+				border: 1px solid white;
+				background-color: #707070;
+				cursor: pointer;
 			}
 		</style>
 	</head>
@@ -202,13 +211,20 @@
 					<li>Have the enemy HP meter's defines inside Shared Subroutines' folder <kbd>SharedSub_Defines</kbd>.</li>
 					<li>In the folder <kbd>SharedSubroutines</kbd> of this package, copy the entire code and paste it in Shared Subroutines' <kbd>subroutinecode.asm</kbd>. It can be anywhere, but not in the middle of a subroutine code.</li>
 					<li>
-						Any subroutines you don't use (for your entire hack, no ASM from anywhere in your ROM using it, not just the enemy HP system), feel free to omit them (remove the subroutine code, the JML and define list item)
-						to save ROM space. Just to let you know that you can use some of these subroutines for other than sprite HP, as many of them are general-purpose.<br><br>
+						The newly updated shared subroutines have a system that detects unused subroutines and will not insert them into the ROM.<br><br>
 						
-						Be aware that some subroutines may branch/jump into another subroutine's code, such as <kbd>GraphicalBarRoundAwayEmpty/GraphicalBarRoundAwayFull</kbd> to parts of <kbd>GraphicalBarRoundAwayEmptyFull</kbd> and
-						<kbd>ConvertToRightAligned</kbd> branching to parts of <kbd>ConvertToRightAlignedFormat2</kbd>. If that's the case, only comment out the code that won't be executed. For example on the latter part, if you're using
-						<kbd>ConvertToRightAlignedFormat2</kbd> and will never use <kbd>ConvertToRightAligned</kbd>, then you can do this:
-						<div class="CodeBlock" style="height: 222px; width: 1000px;"><pre>;[...]
+						However, there will be blank entries on the JML list to be inserted. If this is not a concern, you can skip this step.<br><br>
+
+						<details>
+							<summary>Cleaning up unused subroutines</summary>
+							<div class="Indent">
+								Any subroutines you don't use (for your entire hack, no ASM from anywhere in your ROM using it, not just the enemy HP system), feel free to omit them (remove the subroutine code, the JML and define list item)
+								to save ROM space. Just to let you know that you can use some of these subroutines for other than sprite HP, as many of them are general-purpose.<br><br>
+							
+								Be aware that some subroutines may branch/jump into another subroutine's code, such as <kbd>GraphicalBarRoundAwayEmpty/GraphicalBarRoundAwayFull</kbd> to parts of <kbd>GraphicalBarRoundAwayEmptyFull</kbd> and
+								<kbd>ConvertToRightAligned</kbd> branching to parts of <kbd>ConvertToRightAlignedFormat2</kbd>. If that's the case, only comment out the code that won't be executed. For example on the latter part, if you're using
+								<kbd>ConvertToRightAlignedFormat2</kbd> and will never use <kbd>ConvertToRightAligned</kbd>, then you can do this:
+								<div class="CodeBlock" style="height: 222px; width: 1000px;"><pre>;[...]
 ConvertToRightAligned:
 <span style="color: #C00000">;	TXA					;&gt;Transfer X (number of tiles) to A
 ;	DEC					;&gt;Decrement A (since it's 0-based)
@@ -221,7 +237,7 @@ ConvertToRightAlignedFormat2:
 	TAY					;&gt;Transfer A to Y status bar leftmost position to Y (need this later)
 	+
 ;[...]</pre></div>
-						Conversely, if you are using <kbd>ConvertToRightAligned</kbd> and not <kbd>ConvertToRightAlignedFormat2</kbd> (Remember that labels doesn't take space in the ROM, it's only for asar to tell jumps and branch where to go to):
+								Conversely, if you are using <kbd>ConvertToRightAligned</kbd> and not <kbd>ConvertToRightAlignedFormat2</kbd> (Remember that labels doesn't take space in the ROM, it's only for asar to tell jumps and branch where to go to):
 <div class="CodeBlock" style="height: 222px; width: 1000px;"><pre>;[...]
 ConvertToRightAligned:
 	TXA					;&gt;Transfer X (number of tiles) to A
@@ -235,175 +251,177 @@ ConvertToRightAlignedFormat2:
 ;	TAY					;&gt;Transfer A to Y status bar leftmost position to Y (need this later)</span>
 	+
 ;[...]</pre></div><br>
-						Another thing to note is that the HUD write subroutines have 2 variants with the second having &ldquo;<kbd>Format2</kbd>&rdquo; in its name to support duel-format. Various HUD patches on SMWC including an
-						overworld border have 2 different formats:
-						<ul>
-							<li>
-								2 Separate tables with one containing just the tile numbers (<kbd>%TTTTTTTT</kbd>) and the other tile properties (<kbd>%YXPCCCTT</kbd>). Each next byte is the next tile in the sequence. Subroutines
-								without the <kbd>Format2</kbd> in its name handle this format, and therefore you should have <kbd>!StatusbarFormat</kbd> set to <kbd>$01</kbd> in <kbd>StatusBarDefines.asm</kbd>. Some of Ladida's
-								status bar patches uses this format, including but not limited to (at the time of writing this): Minimalist and SMB3 status bar patches.
-							</li>
-							<li>
-								A single table, with interleaved, alternating bytes (every pair of bytes is the tile number followed by tile properties, like this: <kbd>%TTTTTTTT, %YXPCCCTT</kbd>). Every pair of adjacent bytes
-								is the next tile in the sequence. Subroutines with a <kbd>Format2</kbd> handle this format, and therefore you should have <kbd>!StatusbarFormat</kbd> set to <kbd>$02</kbd> in <kbd>StatusBarDefines.asm</kbd>.
-								Kaijyuu's Super Status Bar and MarioFanGamer's <a href="https://www.smwcentral.net/?p=section&a=details&id=21665">Overworld Border Plus</a> patch uses this format (at the time of writing this).
-							</li>
-						</ul>
-						In the case you are using MarioFanGamer's Overworld Border Plus patch, and using status bar patches with 2 separate tables, then its possible you need both with and without the <kbd>Format2</kbd> variants installed
-						in your hack.<br>
-						
-						Subroutines that you likely not need are:
-						<ul>
-							<li>
-								Graphical bar routines. Not used by the sprite HP system if <kbd>!Setting_SpriteHP_DisplayGraphicalBar == 0</kbd>
+								Another thing to note is that the HUD write subroutines have 2 variants with the second having &ldquo;<kbd>Format2</kbd>&rdquo; in its name to support duel-format. Various HUD patches on SMWC including an
+								overworld border have 2 different formats:
 								<ul>
-									<li><kbd>SetEnemyHPBarAttributes</kbd></li>
-									<li><kbd>CalculateGraphicalBarPercentage</kbd></li>
-									<li><kbd>CalculateGraphicalBarPercentageRoundDown</kbd></li>
-									<li><kbd>CalculateGraphicalBarPercentageRoundUp</kbd></li>
-									<li><kbd>GraphicalBarExtendLeft</kbd></li>
-									<li><kbd>GraphicalBarExtendLeftFormat2</kbd></li>
-									<li><kbd>ConvertBarFillAmountToTiles</kbd></li>
-									<li><kbd>DrawGraphicalBarSubtractionLoopEdition</kbd></li>
-									<li><kbd>GraphicalBarRoundAwayEmpty</kbd></li>
-									<li><kbd>GraphicalBarRoundAwayEmptyFull</kbd></li>
-									<li><kbd>GraphicalBarRoundAwayFull</kbd></li>
-									<li><kbd>WriteBarToHUD</kbd></li>
-									<li><kbd>WriteBarToHUDFormat2</kbd></li>
-									<li><kbd>WriteBarToHUDLeftwards</kbd> (only used if <kbd>!Setting_SpriteHP_BarExtendLeft != 0</kbd> and <kbd>!Setting_SpriteHP_GraphicalBar_VariableMiddleLength != 0</kbd>)</li>
-									<li><kbd>WriteBarToHUDLeftwardsFormat2</kbd> (same as above)</li>
+									<li>
+										2 Separate tables with one containing just the tile numbers (<kbd>%TTTTTTTT</kbd>) and the other tile properties (<kbd>%YXPCCCTT</kbd>). Each next byte is the next tile in the sequence. Subroutines
+										without the <kbd>Format2</kbd> in its name handle this format, and therefore you should have <kbd>!StatusbarFormat</kbd> set to <kbd>$01</kbd> in <kbd>StatusBarDefines.asm</kbd>. Some of Ladida's
+										status bar patches uses this format, including but not limited to (at the time of writing this): Minimalist and SMB3 status bar patches.
+									</li>
+									<li>
+										A single table, with interleaved, alternating bytes (every pair of bytes is the tile number followed by tile properties, like this: <kbd>%TTTTTTTT, %YXPCCCTT</kbd>). Every pair of adjacent bytes
+										is the next tile in the sequence. Subroutines with a <kbd>Format2</kbd> handle this format, and therefore you should have <kbd>!StatusbarFormat</kbd> set to <kbd>$02</kbd> in <kbd>StatusBarDefines.asm</kbd>.
+										Kaijyuu's Super Status Bar and MarioFanGamer's <a href="https://www.smwcentral.net/?p=section&a=details&id=21665">Overworld Border Plus</a> patch uses this format (at the time of writing this).
+									</li>
 								</ul>
-							</li>
-							<li>
-								Bar animation routines, not used by the sprite HP system if <kbd class="NoLineBreak">!Setting_SpriteHP_DisplayGraphicalBar == 0</kbd> OR <kbd class="NoLineBreak">!Setting_SpriteHP_BarAnimation == 0</kbd>
+								In the case you are using MarioFanGamer's Overworld Border Plus patch, and using status bar patches with 2 separate tables, then its possible you need both with and without the <kbd>Format2</kbd> variants installed
+								in your hack.<br>
+								
+								Subroutines that you likely not need are:
 								<ul>
-									<li><kbd>SpriteHPRemoveRecordEffect</kbd></li>
+									<li>
+										Graphical bar routines. Not used by the sprite HP system if <kbd>!Setting_SpriteHP_DisplayGraphicalBar == 0</kbd>
+										<ul>
+											<li><kbd>SetEnemyHPBarAttributes</kbd></li>
+											<li><kbd>CalculateGraphicalBarPercentage</kbd></li>
+											<li><kbd>CalculateGraphicalBarPercentageRoundDown</kbd></li>
+											<li><kbd>CalculateGraphicalBarPercentageRoundUp</kbd></li>
+											<li><kbd>GraphicalBarExtendLeft</kbd></li>
+											<li><kbd>GraphicalBarExtendLeftFormat2</kbd></li>
+											<li><kbd>ConvertBarFillAmountToTiles</kbd></li>
+											<li><kbd>DrawGraphicalBarSubtractionLoopEdition</kbd></li>
+											<li><kbd>GraphicalBarRoundAwayEmpty</kbd></li>
+											<li><kbd>GraphicalBarRoundAwayEmptyFull</kbd></li>
+											<li><kbd>GraphicalBarRoundAwayFull</kbd></li>
+											<li><kbd>WriteBarToHUD</kbd></li>
+											<li><kbd>WriteBarToHUDFormat2</kbd></li>
+											<li><kbd>WriteBarToHUDLeftwards</kbd> (only used if <kbd>!Setting_SpriteHP_BarExtendLeft != 0</kbd> and <kbd>!Setting_SpriteHP_GraphicalBar_VariableMiddleLength != 0</kbd>)</li>
+											<li><kbd>WriteBarToHUDLeftwardsFormat2</kbd> (same as above)</li>
+										</ul>
+									</li>
+									<li>
+										Bar animation routines, not used by the sprite HP system if <kbd class="NoLineBreak">!Setting_SpriteHP_DisplayGraphicalBar == 0</kbd> OR <kbd class="NoLineBreak">!Setting_SpriteHP_BarAnimation == 0</kbd>
+										<ul>
+											<li><kbd>SpriteHPRemoveRecordEffect</kbd></li>
+										</ul>
+									</li>
+									<li>
+										Number display routines, not used if <kbd class="NoLineBreak">!Setting_SpriteHP_DisplayNumerical == 0</kbd>:
+										<ul>
+											<li><kbd>ConvertToRightAligned</kbd> (only used if <kbd class="NoLineBreak">!Setting_SpriteHP_NumericalTextAlignment == 2</kbd>)</li>
+											<li><kbd>ConvertToRightAlignedFormat2</kbd> (same as above)</li>
+											<li><kbd>RemoveLeadingZeroes16Bit</kbd> (only used if <kbd class="NoLineBreak">!Setting_SpriteHP_NumericalTextAlignment == 0</kbd> or when you have <kbd class="NoLineBreak">!Setting_SpriteHP_DisplayNumerical == 1</kbd> and <kbd class="NoLineBreak">!Setting_SpriteHP_NumericalTextAlignment == 2</kbd>, which is a right-aligned single number)</li>
+											<li><kbd>SixteenBitHexDecDivision</kbd></li>
+											<li><kbd>SuppressLeadingZeros</kbd> (used if <kbd>!Setting_SpriteHP_NumericalTextAlignment</kbd> is set to <kbd>1</kbd> or <kbd>2</kbd>), left or right aligned</li>
+											<li><kbd>WriteStringDigitsToHUD</kbd></li>
+											<li><kbd>WriteStringDigitsToHUDFormat2</kbd></li>
+										</ul>
+									</li>
+									<li>
+										Other:
+										<ul>
+											<li><kbd>SpriteHPIntroEffect</kbd> (delete this if you don't want to have a boss intro-fill effect)</li>
+											<li><kbd>SpritesTotalHPIntroEffect</kbd> (remove this from the JML and macro define list if you're not using the total HP system or not using the intro-fill effect)</li>
+										</ul>
+									</li>
 								</ul>
-							</li>
-							<li>
-								Number display routines, not used if <kbd class="NoLineBreak">!Setting_SpriteHP_DisplayNumerical == 0</kbd>:
-								<ul>
-									<li><kbd>ConvertToRightAligned</kbd> (only used if <kbd class="NoLineBreak">!Setting_SpriteHP_NumericalTextAlignment == 2</kbd>)</li>
-									<li><kbd>ConvertToRightAlignedFormat2</kbd> (same as above)</li>
-									<li><kbd>RemoveLeadingZeroes16Bit</kbd> (only used if <kbd class="NoLineBreak">!Setting_SpriteHP_NumericalTextAlignment == 0</kbd> or when you have <kbd class="NoLineBreak">!Setting_SpriteHP_DisplayNumerical == 1</kbd> and <kbd class="NoLineBreak">!Setting_SpriteHP_NumericalTextAlignment == 2</kbd>, which is a right-aligned single number)</li>
-									<li><kbd>SixteenBitHexDecDivision</kbd></li>
-									<li><kbd>SuppressLeadingZeros</kbd> (used if <kbd>!Setting_SpriteHP_NumericalTextAlignment</kbd> is set to <kbd>1</kbd> or <kbd>2</kbd>), left or right aligned</li>
-									<li><kbd>WriteStringDigitsToHUD</kbd></li>
-									<li><kbd>WriteStringDigitsToHUDFormat2</kbd></li>
-								</ul>
-							</li>
-							<li>
-								Other:
-								<ul>
-									<li><kbd>SpriteHPIntroEffect</kbd> (delete this if you don't want to have a boss intro-fill effect)</li>
-									<li><kbd>SpritesTotalHPIntroEffect</kbd> (remove this from the JML and macro define list if you're not using the total HP system or not using the intro-fill effect)</li>
-								</ul>
-							</li>
-						</ul>
-						I provided a tool below that help you search for unused subroutines (you can copy the output for included subroutines here, and use Shared Subroutine's built-in JML list manager to convert them):
-						<div class="CodeBlock" id="SharedSubroutinesList">
-							<table id="SharedSubroutinesUsageTable">
-								<tr>
-									<td rowspan="2">Number display</td>
-									<td>
-										<kbd>!Setting_SpriteHP_DisplayNumerical</kbd>
-									</td>
-									<td>
-										<select id="SharedSub_Setting_DisplayNumerical">
-											<option>0 (Don't display numbers)</option>
-											<option>1 (Display only current HP)</option>
-											<option selected>2 (Display current/max)</option>
-										</select>
-									</td>
-								</tr>
-								<tr>
-									<td>
-										<kbd>!Setting_SpriteHP_NumericalTextAlignment</kbd>
-									</td>
-									<td>
-										<select id="SharedSub_Setting_NumericalTextAlignment">
-											<option>0 (Fixed location)</option>
-											<option>1 (Left-aligned)</option>
-											<option selected>2 (Right-aligned)</option>
-										</select>
-									</td>
-								</tr>
-								<tr>
-									<td rowspan="3">Graphical bar settings</td>
-									<td>
-										<kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd>
-									</td>
-									<td>
-										<label><input type="checkbox" checked id="SharedSub_Setting_DisplayGraphicalBar"> (0 = No, 1 = Yes)</label>
-									</td>
-								</tr>
-								<tr>
-									<td>
-										<kbd>!Setting_SpriteHP_BarAnimation</kbd>
-									</td>
-									<td>
-										<label><input type="checkbox" checked id="SharedSub_Setting_BarAnimation"> (0 = No, 1 = Yes)</label>
-									</td>
-								</tr>
-								<tr>
-									<td><kbd>!Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull</kbd></td>
-									<td>
-										<select id="SharedSub_RoundAway">
-											<option>0 (Allow 0% and 100% when close to)</option>
-											<option>1 (Show 1 piece filled when close to 0)</option>
-											<option>2 (Show MaxPieces-1 when close to MaxPieces)</option>
-											<option selected>3 (Show 1 piece or MaxPieces-1 when close to 0 or MaxPieces)</option>
-										</select>
-									</td>
-								</tr>
-								<tr>
-									<td rowspan="3">Other</td>
-									<td>Layer 3 usage type:</td>
-									<td>
-										<select id="SharedSub_L3Format">
-											<option>!StatusbarFormat = $01</option>
-											<option>!StatusbarFormat = $02</option>
-											<option selected>Both formats (OWB+ and seperate tables)</option>
-										</select>
-									</td>
-								</tr>
-								<tr>
-									<td>Using intro-fill?</td>
-									<td>
-										<label><input type="Checkbox" checked id="SharedSub_Setting_IsUsingIntroFill"></label>
-									</td>
-								</tr>
-								<tr>
-									<td><kbd>!Setting_SpriteHP_TotalHPMode</kbd></td>
-									<td>
-										<label><input type="Checkbox" checked id="SharedSub_Setting_IsUsingTotalHP">(if any nonzero values, check this box)</label>
-									</td>
-								</tr>
-							</table><br>
-							
-							Sort:
-							<select id="SharedSub_Setting_Sort">
-								<option>Keep original</option>
-								<option>Alphabetically</option>
-								<option>Alphabetically (reverse)</option>
-							</select><br>
-							Mode:
-							<select id="SharedSub_Setting_OutputMode">
-								<option>Show only included</option>
-								<option>Show only excluded</option>
-								<option>Show all with indicators</option>
-							</select>
-							<br><br>
-							<kbd><span id="SharedSub_Output_ListLength">0</span></kbd><br>
-							<div class="CodeBlock" style="width: 222px; height: 209px;"><pre id="SubroutinesListOutput"></pre></div>
-						</div>
+								I provided a tool below that help you search for unused subroutines (you can copy the output for included subroutines here, and use Shared Subroutine's built-in JML list manager to convert them):
+								<div class="CodeBlock" id="SharedSubroutinesList">
+									<table id="SharedSubroutinesUsageTable">
+										<tr>
+											<td rowspan="2">Number display</td>
+											<td>
+												<kbd>!Setting_SpriteHP_DisplayNumerical</kbd>
+											</td>
+											<td>
+												<select id="SharedSub_Setting_DisplayNumerical">
+													<option>0 (Don't display numbers)</option>
+													<option>1 (Display only current HP)</option>
+													<option selected>2 (Display current/max)</option>
+												</select>
+											</td>
+										</tr>
+										<tr>
+											<td>
+												<kbd>!Setting_SpriteHP_NumericalTextAlignment</kbd>
+											</td>
+											<td>
+												<select id="SharedSub_Setting_NumericalTextAlignment">
+													<option>0 (Fixed location)</option>
+													<option>1 (Left-aligned)</option>
+													<option selected>2 (Right-aligned)</option>
+												</select>
+											</td>
+										</tr>
+										<tr>
+											<td rowspan="3">Graphical bar settings</td>
+											<td>
+												<kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd>
+											</td>
+											<td>
+												<label><input type="checkbox" checked id="SharedSub_Setting_DisplayGraphicalBar"> (0 = No, 1 = Yes)</label>
+											</td>
+										</tr>
+										<tr>
+											<td>
+												<kbd>!Setting_SpriteHP_BarAnimation</kbd>
+											</td>
+											<td>
+												<label><input type="checkbox" checked id="SharedSub_Setting_BarAnimation"> (0 = No, 1 = Yes)</label>
+											</td>
+										</tr>
+										<tr>
+											<td><kbd>!Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull</kbd></td>
+											<td>
+												<select id="SharedSub_RoundAway">
+													<option>0 (Allow 0% and 100% when close to)</option>
+													<option>1 (Show 1 piece filled when close to 0)</option>
+													<option>2 (Show MaxPieces-1 when close to MaxPieces)</option>
+													<option selected>3 (Show 1 piece or MaxPieces-1 when close to 0 or MaxPieces)</option>
+												</select>
+											</td>
+										</tr>
+										<tr>
+											<td rowspan="3">Other</td>
+											<td>Layer 3 usage type:</td>
+											<td>
+												<select id="SharedSub_L3Format">
+													<option>!StatusbarFormat = $01</option>
+													<option>!StatusbarFormat = $02</option>
+													<option selected>Both formats (OWB+ and seperate tables)</option>
+												</select>
+											</td>
+										</tr>
+										<tr>
+											<td>Using intro-fill?</td>
+											<td>
+												<label><input type="Checkbox" checked id="SharedSub_Setting_IsUsingIntroFill"></label>
+											</td>
+										</tr>
+										<tr>
+											<td><kbd>!Setting_SpriteHP_TotalHPMode</kbd></td>
+											<td>
+												<label><input type="Checkbox" checked id="SharedSub_Setting_IsUsingTotalHP">(if any nonzero values, check this box)</label>
+											</td>
+										</tr>
+									</table><br>
+									
+									Sort:
+									<select id="SharedSub_Setting_Sort">
+										<option>Keep original</option>
+										<option>Alphabetically</option>
+										<option>Alphabetically (reverse)</option>
+									</select><br>
+									Mode:
+									<select id="SharedSub_Setting_OutputMode">
+										<option>Show only included</option>
+										<option>Show only excluded</option>
+										<option>Show all with indicators</option>
+									</select>
+									<br><br>
+									<kbd><span id="SharedSub_Output_ListLength">0</span></kbd><br>
+									<div class="CodeBlock" style="width: 222px; height: 209px;"><pre id="SubroutinesListOutput"></pre></div>
+								</div>
+							</div>
+						</details>
 					</li>
 					<li>
 						In Shared Subroutine, copy and paste the following (this is if you want all subroutines for testing, if you only want what's needed see previous step's tool):
 						<table>
 							<tr>
 								<th>To <kbd>sharedsub.asm</kbd></th>
-								<th>To <kbd>SharedSub_Defines/SharedSubroutineDefs.asm</kbd></th>
+								<th>To <kbd>SharedSub_Defines/SharedSubroutineDefs.asm</kbd> (same order)</th>
 							</tr>
 							<tr>
 								<td>
@@ -442,7 +460,28 @@ autoclean JML SpritesTotalHPIntroEffect</pre>
 </div>
 								</td>
 								<td>
-<div class="CodeBlock" style="height: 341px; width: 488px;"><pre>		%SetSharedSubDefine(SharedSub_SetEnemyHPBarAttributes)
+									Use flag defines:
+<div class="CodeBlock" style="height: 200px; width: 488px;"><pre>		!SharedSubUseFlag_NumberDisplayRoutines = 0
+		!SharedSubUseFlag_RightAlignedNumbers = 0
+		!SharedSubUseFlag_RemoveLeadingZeroes16Bit = 0
+		!SharedSubUseFlag_SuppressLeadingZeros = 0
+		!SharedSubUseFlag_WriteStringDigitsToHUD = 0
+		!SharedSubUseFlag_UsingGraphicalBarRoutines = 0
+		!SharedSubUseFlag_GraphicalBarRoundHalfUp = 0
+		!SharedSubUseFlag_GraphicalBarRoundUp = 0
+		!SharedSubUseFlag_UsingExtendingLeftBar = 0
+		!SharedSubUseFlag_UsingLeftwardsFillBar = 0
+		!SharedSubUseFlag_UsingRightwardsFillBar = 0
+		!SharedSubUseFlag_SpriteHPRemoveRecordEffect = 0
+		!SharedSubUseFlag_BarExtendLeft = 0</pre>
+</div>
+									incsrc use flag marker:
+<div class="CodeBlock" style="height: 16px; width: 488px;"><pre>
+		incsrc "EnemyHPMeterDefines.asm"
+</pre>
+</div>
+									Define list:
+<div class="CodeBlock" style="height: 200px; width: 488px;"><pre>		%SetSharedSubDefine(SharedSub_SetEnemyHPBarAttributes)
 		%SetSharedSubDefine(SharedSub_CalculateGraphicalBarPercentage)
 		%SetSharedSubDefine(SharedSub_CalculateGraphicalBarPercentageRoundUp)
 		%SetSharedSubDefine(SharedSub_CalculateGraphicalBarPercentageRoundDown)

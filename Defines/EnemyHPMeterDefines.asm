@@ -743,6 +743,9 @@
 			if !Setting_SpriteHP_BarAnimation
 				!SharedSubUseFlag_SpriteHPRemoveRecordEffect = 1
 			endif
+			if and(!Setting_SpriteHP_BarExtendLeft, !Setting_SpriteHP_GraphicalBar_VariableMiddleLength)
+				!SharedSubUseFlag_BarExtendLeft = 1
+			endif
 		endif
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;Other

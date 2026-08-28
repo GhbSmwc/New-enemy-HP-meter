@@ -65,6 +65,7 @@
 		!SharedSubUseFlag_UsingLeftwardsFillBar = 0
 		!SharedSubUseFlag_UsingRightwardsFillBar = 0
 		!SharedSubUseFlag_SpriteHPRemoveRecordEffect = 0
+		!SharedSubUseFlag_BarExtendLeft = 0
 		
 	;Place your "incsrc use flag marker" here. Along with placing a
 	;define file "SharedSub_Defines/SharedSubroutineDefs.asm"
