@@ -425,38 +425,38 @@ ConvertToRightAlignedFormat2:
 							</tr>
 							<tr>
 								<td>
-<div class="CodeBlock" style="height: 341px; width: 488px;"><pre>autoclean JML SetEnemyHPBarAttributes
-autoclean JML CalculateGraphicalBarPercentage
-autoclean JML CalculateGraphicalBarPercentageRoundUp
-autoclean JML CalculateGraphicalBarPercentageRoundDown
-autoclean JML GraphicalBarExtendLeft
-autoclean JML GraphicalBarExtendLeftFormat2
-autoclean JML ConvertBarFillAmountToTiles
-autoclean JML ConvertToRightAligned
-autoclean JML ConvertToRightAlignedFormat2
-autoclean JML DrawGraphicalBarSubtractionLoopEdition
-autoclean JML MathDiv32_16
-autoclean JML MathDiv
-autoclean JML MathMul16_16
-autoclean JML RemoveLeadingZeroes16Bit
-autoclean JML GraphicalBarRoundAwayEmpty
-autoclean JML GraphicalBarRoundAwayEmptyFull
-autoclean JML GraphicalBarRoundAwayFull
-autoclean JML SixteenBitHexDecDivision
-autoclean JML SuppressLeadingZeros
-autoclean JML WriteBarToHUD
-autoclean JML WriteBarToHUDFormat2
-autoclean JML WriteBarToHUDLeftwards
-autoclean JML WriteBarToHUDLeftwardsFormat2
-autoclean JML WriteStringDigitsToHUD
-autoclean JML WriteStringDigitsToHUDFormat2
-autoclean JML SpriteHPDamage
-autoclean JML SpriteHPDamageNoAutoSwitchMeter
-autoclean JML SpriteHPRemoveRecordEffect
-autoclean JML SpriteHPGetSlotIndex
-autoclean JML SpriteHPIntroEffect
-autoclean JML HideHPMeterIfSpriteDespawns
-autoclean JML SpritesTotalHPIntroEffect</pre>
+<div class="CodeBlock" style="height: 341px; width: 488px;"><pre>%ConditionalSharedSubJMLList(SetEnemyHPBarAttributes, Placeholder, !SharedSubUseFlag_UsingGraphicalBarRoutines)		;
+%ConditionalSharedSubJMLList(CalculateGraphicalBarPercentage, Placeholder, !SharedSubUseFlag_GraphicalBarRoundHalfUp)		;
+%ConditionalSharedSubJMLList(CalculateGraphicalBarPercentageRoundUp, Placeholder, !SharedSubUseFlag_GraphicalBarRoundUp)		;
+%ConditionalSharedSubJMLList(CalculateGraphicalBarPercentageRoundDown, Placeholder, !SharedSubUseFlag_UsingGraphicalBarRoutines)		;
+%ConditionalSharedSubJMLList(GraphicalBarExtendLeft, Placeholder, !SharedSubUseFlag_UsingExtendingLeftBar)		;
+%ConditionalSharedSubJMLList(GraphicalBarExtendLeftFormat2, Placeholder, !SharedSubUseFlag_UsingExtendingLeftBar)		;
+%ConditionalSharedSubJMLList(ConvertBarFillAmountToTiles, Placeholder, !SharedSubUseFlag_UsingGraphicalBarRoutines)		;
+%ConditionalSharedSubJMLList(DrawGraphicalBarSubtractionLoopEdition, Placeholder, !SharedSubUseFlag_UsingGraphicalBarRoutines)		;
+%ConditionalSharedSubJMLList(GraphicalBarRoundAwayEmpty, Placeholder, !SharedSubUseFlag_UsingGraphicalBarRoutines)		;
+%ConditionalSharedSubJMLList(GraphicalBarRoundAwayEmptyFull, Placeholder, !SharedSubUseFlag_UsingGraphicalBarRoutines)		;
+%ConditionalSharedSubJMLList(GraphicalBarRoundAwayFull, Placeholder, !SharedSubUseFlag_UsingGraphicalBarRoutines)		;
+%ConditionalSharedSubJMLList(WriteBarToHUD, Placeholder, !SharedSubUseFlag_UsingRightwardsFillBar)		;
+%ConditionalSharedSubJMLList(WriteBarToHUDFormat2, Placeholder, !SharedSubUseFlag_UsingRightwardsFillBar)		;
+%ConditionalSharedSubJMLList(WriteBarToHUDLeftwards, Placeholder, !SharedSubUseFlag_UsingLeftwardsFillBar)		;
+%ConditionalSharedSubJMLList(WriteBarToHUDLeftwardsFormat2, Placeholder, !SharedSubUseFlag_UsingLeftwardsFillBar)		;
+%ConditionalSharedSubJMLList(ConvertToRightAligned, Placeholder, !SharedSubUseFlag_RightAlignedNumbers)		;
+%ConditionalSharedSubJMLList(ConvertToRightAlignedFormat2, Placeholder, !SharedSubUseFlag_RightAlignedNumbers)		;
+%ConditionalSharedSubJMLList(RemoveLeadingZeroes16Bit, Placeholder, !SharedSubUseFlag_RemoveLeadingZeroes16Bit)		;
+%ConditionalSharedSubJMLList(SixteenBitHexDecDivision, Placeholder, !SharedSubUseFlag_NumberDisplayRoutines)		;
+%ConditionalSharedSubJMLList(SuppressLeadingZeros, Placeholder, !SharedSubUseFlag_SuppressLeadingZeros)		;
+%ConditionalSharedSubJMLList(WriteStringDigitsToHUD, Placeholder, !SharedSubUseFlag_WriteStringDigitsToHUD)		;
+%ConditionalSharedSubJMLList(WriteStringDigitsToHUDFormat2, Placeholder, !SharedSubUseFlag_WriteStringDigitsToHUD)		;
+autoclean JML MathDiv32_16		;
+autoclean JML MathDiv		;
+autoclean JML MathMul16_16		;
+autoclean JML SpriteHPDamage		;
+autoclean JML SpriteHPDamageNoAutoSwitchMeter		;
+%ConditionalSharedSubJMLList(SpriteHPRemoveRecordEffect, Placeholder, !SharedSubUseFlag_SpriteHPRemoveRecordEffect)
+autoclean JML SpriteHPGetSlotIndex		;
+autoclean JML SpriteHPIntroEffect		;
+autoclean JML HideHPMeterIfSpriteDespawns		;
+autoclean JML SpritesTotalHPIntroEffect		;</pre>
 </div>
 								</td>
 								<td>
@@ -481,38 +481,38 @@ autoclean JML SpritesTotalHPIntroEffect</pre>
 </pre>
 </div>
 									Define list:
-<div class="CodeBlock" style="height: 200px; width: 488px;"><pre>		%SetSharedSubDefine(SharedSub_SetEnemyHPBarAttributes)
-		%SetSharedSubDefine(SharedSub_CalculateGraphicalBarPercentage)
-		%SetSharedSubDefine(SharedSub_CalculateGraphicalBarPercentageRoundUp)
-		%SetSharedSubDefine(SharedSub_CalculateGraphicalBarPercentageRoundDown)
-		%SetSharedSubDefine(SharedSub_GraphicalBarExtendLeft)
-		%SetSharedSubDefine(SharedSub_GraphicalBarExtendLeftFormat2)
-		%SetSharedSubDefine(SharedSub_ConvertBarFillAmountToTiles)
-		%SetSharedSubDefine(SharedSub_ConvertToRightAligned)
-		%SetSharedSubDefine(SharedSub_ConvertToRightAlignedFormat2)
-		%SetSharedSubDefine(SharedSub_DrawGraphicalBarSubtractionLoopEdition)
-		%SetSharedSubDefine(SharedSub_MathDiv32_16)
-		%SetSharedSubDefine(SharedSub_MathDiv)
-		%SetSharedSubDefine(SharedSub_MathMul16_16)
-		%SetSharedSubDefine(SharedSub_RemoveLeadingZeroes16Bit)
-		%SetSharedSubDefine(SharedSub_GraphicalBarRoundAwayEmpty)
-		%SetSharedSubDefine(SharedSub_GraphicalBarRoundAwayEmptyFull)
-		%SetSharedSubDefine(SharedSub_GraphicalBarRoundAwayFull)
-		%SetSharedSubDefine(SharedSub_SixteenBitHexDecDivision)
-		%SetSharedSubDefine(SharedSub_SuppressLeadingZeros)
-		%SetSharedSubDefine(SharedSub_WriteBarToHUD)
-		%SetSharedSubDefine(SharedSub_WriteBarToHUDFormat2)
-		%SetSharedSubDefine(SharedSub_WriteBarToHUDLeftwards)
-		%SetSharedSubDefine(SharedSub_WriteBarToHUDLeftwardsFormat2)
-		%SetSharedSubDefine(SharedSub_WriteStringDigitsToHUD)
-		%SetSharedSubDefine(SharedSub_WriteStringDigitsToHUDFormat2)
-		%SetSharedSubDefine(SharedSub_SpriteHPDamage)
-		%SetSharedSubDefine(SharedSub_SpriteHPDamageNoAutoSwitchMeter)
-		%SetSharedSubDefine(SharedSub_SpriteHPRemoveRecordEffect)
-		%SetSharedSubDefine(SharedSub_SpriteHPGetSlotIndex)
-		%SetSharedSubDefine(SharedSub_SpriteHPIntroEffect)
-		%SetSharedSubDefine(SharedSub_HideHPMeterIfSpriteDespawns)
-		%SetSharedSubDefine(SharedSub_SpritesTotalHPIntroEffect)</pre>
+<div class="CodeBlock" style="height: 200px; width: 488px;"><pre>		%ConditionalSharedSubDefineList(SharedSub_SetEnemyHPBarAttributes, SharedSub_Placeholder, !SharedSubUseFlag_UsingGraphicalBarRoutines)		;
+		%ConditionalSharedSubDefineList(SharedSub_CalculateGraphicalBarPercentage, SharedSub_Placeholder, !SharedSubUseFlag_GraphicalBarRoundHalfUp)		;
+		%ConditionalSharedSubDefineList(SharedSub_CalculateGraphicalBarPercentageRoundUp, SharedSub_Placeholder, !SharedSubUseFlag_GraphicalBarRoundUp)		;
+		%ConditionalSharedSubDefineList(SharedSub_CalculateGraphicalBarPercentageRoundDown, SharedSub_Placeholder, !SharedSubUseFlag_UsingGraphicalBarRoutines)		;
+		%ConditionalSharedSubDefineList(SharedSub_GraphicalBarExtendLeft, SharedSub_Placeholder, !SharedSubUseFlag_UsingExtendingLeftBar)		;
+		%ConditionalSharedSubDefineList(SharedSub_GraphicalBarExtendLeftFormat2, SharedSub_Placeholder, !SharedSubUseFlag_UsingExtendingLeftBar)		;
+		%ConditionalSharedSubDefineList(SharedSub_ConvertBarFillAmountToTiles, SharedSub_Placeholder, !SharedSubUseFlag_UsingGraphicalBarRoutines)		;
+		%ConditionalSharedSubDefineList(SharedSub_DrawGraphicalBarSubtractionLoopEdition, SharedSub_Placeholder, !SharedSubUseFlag_UsingGraphicalBarRoutines)		;
+		%ConditionalSharedSubDefineList(SharedSub_GraphicalBarRoundAwayEmpty, SharedSub_Placeholder, !SharedSubUseFlag_UsingGraphicalBarRoutines)		;
+		%ConditionalSharedSubDefineList(SharedSub_GraphicalBarRoundAwayEmptyFull, SharedSub_Placeholder, !SharedSubUseFlag_UsingGraphicalBarRoutines)		;
+		%ConditionalSharedSubDefineList(SharedSub_GraphicalBarRoundAwayFull, SharedSub_Placeholder, !SharedSubUseFlag_UsingGraphicalBarRoutines)		;
+		%ConditionalSharedSubDefineList(SharedSub_WriteBarToHUD, SharedSub_Placeholder, !SharedSubUseFlag_UsingRightwardsFillBar)		;
+		%ConditionalSharedSubDefineList(SharedSub_WriteBarToHUDFormat2, SharedSub_Placeholder, !SharedSubUseFlag_UsingRightwardsFillBar)		;
+		%ConditionalSharedSubDefineList(SharedSub_WriteBarToHUDLeftwards, SharedSub_Placeholder, !SharedSubUseFlag_UsingLeftwardsFillBar)		;
+		%ConditionalSharedSubDefineList(SharedSub_WriteBarToHUDLeftwardsFormat2, SharedSub_Placeholder, !SharedSubUseFlag_UsingLeftwardsFillBar)		;
+		%ConditionalSharedSubDefineList(SharedSub_ConvertToRightAligned, SharedSub_Placeholder, !SharedSubUseFlag_RightAlignedNumbers)		;
+		%ConditionalSharedSubDefineList(SharedSub_ConvertToRightAlignedFormat2, SharedSub_Placeholder, !SharedSubUseFlag_RightAlignedNumbers)		;
+		%ConditionalSharedSubDefineList(SharedSub_RemoveLeadingZeroes16Bit, SharedSub_Placeholder, !SharedSubUseFlag_RemoveLeadingZeroes16Bit)		;
+		%ConditionalSharedSubDefineList(SharedSub_SixteenBitHexDecDivision, SharedSub_Placeholder, !SharedSubUseFlag_NumberDisplayRoutines)		;
+		%ConditionalSharedSubDefineList(SharedSub_SuppressLeadingZeros, SharedSub_Placeholder, !SharedSubUseFlag_SuppressLeadingZeros)		;
+		%ConditionalSharedSubDefineList(SharedSub_WriteStringDigitsToHUD, SharedSub_Placeholder, !SharedSubUseFlag_WriteStringDigitsToHUD)		;
+		%ConditionalSharedSubDefineList(SharedSub_WriteStringDigitsToHUDFormat2, SharedSub_Placeholder, !SharedSubUseFlag_WriteStringDigitsToHUD)		;
+		%SetSharedSubDefine(SharedSub_MathDiv32_16)		;
+		%SetSharedSubDefine(SharedSub_MathDiv)		;
+		%SetSharedSubDefine(SharedSub_MathMul16_16)		;
+		%SetSharedSubDefine(SharedSub_SpriteHPDamage)		;
+		%SetSharedSubDefine(SharedSub_SpriteHPDamageNoAutoSwitchMeter)		;
+		%SetSharedSubDefine(SharedSub_SpriteHPRemoveRecordEffect)		;
+		%SetSharedSubDefine(SharedSub_SpriteHPGetSlotIndex)		;
+		%SetSharedSubDefine(SharedSub_SpriteHPIntroEffect)		;
+		%SetSharedSubDefine(SharedSub_HideHPMeterIfSpriteDespawns)		;
+		%SetSharedSubDefine(SharedSub_SpritesTotalHPIntroEffect)		;</pre>
 </div>
 								</td>
 							</tr>
