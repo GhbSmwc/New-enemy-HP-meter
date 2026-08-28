@@ -171,288 +171,299 @@
 				SEP #$20
 				RTL
 	endif
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;16-bit hex to 4 (or 5)-digit decimal subroutine (using right-2-left
-;division). Example: 12345
-; 12345/10 = Q: 1234 R: 5 \These remainders are decimal digits (holds a value $00-$09; unpacked BCD)
-; 1234/10  = Q: 123  R: 4 |ordered from least significant digits to most.
-; 123/10   = Q: 12   R: 3 |
-; 12/10    = Q: 1    R: 2 |
-; 1/10     = Q: 0    R: 1 /
-;
-;Input:
-; - $00-$01 = the value you want to display
-;Output:
-; - !Scratchram_16bitHexDecOutput to !Scratchram_16bitHexDecOutput+4 = a digit 0-9 per byte table
-;   (used for 1-digit per 8x8 tile):
-; -- !Scratchram_16bitHexDecOutput+$00 = ten thousands
-; -- !Scratchram_16bitHexDecOutput+$01 = thousands
-; -- !Scratchram_16bitHexDecOutput+$02 = hundreds
-; -- !Scratchram_16bitHexDecOutput+$03 = tens
-; -- !Scratchram_16bitHexDecOutput+$04 = ones
-;
-;!Scratchram_16bitHexDecOutput is address $02 for normal ROM and $04 for SA-1.
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	SixteenBitHexDecDivision:
-		if !sa1 == 0
-			PHX
-			PHY
-
-			LDX #$04	;>5 bytes to write 5 digits.
-
-			.Loop
-			REP #$20	;\Dividend (in 16-bit)
-			LDA $00		;|
-			STA $4204	;|
-			SEP #$20	;/
-			LDA.b #10	;\base 10 Divisor
-			STA $4206	;/
-			JSR .Wait	;>wait
-			REP #$20	;\quotient so that next loop would output
-			LDA $4214	;|the next digit properly, so basically the value
-			STA $00		;|in question gets divided by 10 repeatedly. [Value/(10^x)]
-			SEP #$20	;/
-			LDA $4216	;>Remainder (mod 10 to stay within 0-9 per digit)
-			STA $02,x	;>Store tile
-
-			DEX
-			BPL .Loop
-
-			PLY
-			PLX
-			RTL
-
-			.Wait
-			JSR ..Done		;>Waste cycles until the calculation is done
-			..Done
-			RTS
-		else
-			PHX
-			PHY
-
-			LDX #$04
-
-			.Loop
-			REP #$20			;>16-bit XY
-			LDA.w #10			;>Base 10
-			STA $02				;>Divisor (10)
-			SEP #$20			;>8-bit XY
-			JSL MathDiv			;>divide
-			LDA $02				;>Remainder (mod 10 to stay within 0-9 per digit)
-			STA.b !Scratchram_16bitHexDecOutput,x	;>Store tile
-
-			DEX
-			BPL .Loop
-
-			PLY
-			PLX
-			RTL
-		endif
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;Leading zeroes remover.
-;Writes $FC on all leading zeroes (except the 1s place),
-;Therefore, numbers will have leading spaces instead.
-;
-;Example: 00123 ([$00, $00, $01, $02, $03]) becomes
-; __123 ([$FC, $FC, $01, $02, $03])
-;
-;Call this routine after using: [ThirtyTwoBitHexDecDivision]
-;or [SixteenBitHexDecDivision].
-;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	;16-bit version, use after [SixteenBitHexDecDivision]
-		RemoveLeadingZeroes16Bit:
-		LDX #$00				;>Start at the leftmost digit
-		
-		.Loop
-		LDA !Scratchram_16bitHexDecOutput,x	;\if current digit non-zero, don't omit trailing zeros for the rest of the number string.
-		BNE .NonZero				;/
-		LDA #!StatusBarBlankTile		;\blank tile to replace leading zero
-		STA !Scratchram_16bitHexDecOutput,x	;/
-		INX					;>next digit
-		CPX.b #$04				;>last digit to check. So that it can display a single 0.
-		BCC .Loop				;>if not done yet, continue looping.
-		
-		.NonZero
-		RTL
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;Suppress Leading zeros via left-aligned positioning
-;
-;This routine takes a 16-bit unsigned integer (works up to 5 digits),
-;suppress leading zeros and moves the digits so that the first non-zero
-;digit number is located where X is indexed to. Example: the number 00123
-;with X = $00:
-;
-; [0] [0] [1] [2] [3]
-;
-; Each bracketed item is a byte storing a digit. The X above means the X
-; index position.
-; After this routine is done, they are placed in an address defined
-; as "!Scratchram_CharacterTileTable" like this:
-;
-;              X
-; [1] [2] [3] [*] [*]...
-;
-; [*] Means garbage and/or unused data. X index is now set to $03, shown
-; above.
-;
-;Usage:
-; Input:
-;  - !Scratchram_16bitHexDecOutput to !Scratchram_16bitHexDecOutput+4 = a 5-digit 0-9 per byte (used for
-;    1-digit per 8x8 tile, using my 4/5 hexdec routine; ordered from high to low digits)
-;  - X = the starting location within the table to place the string in. X=$00 means the starting byte.
-; Output:
-;  - !Scratchram_CharacterTileTable = A table containing a string of numbers with
-;    unnecessary spaces and zeroes stripped out.
-;  - X = the location to place string AFTER the numbers (increments every character written). Also use
-;    for indicating the last digit (or any tile) number for how many tiles to be written to the status
-;    bar, overworld border, etc.
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-SuppressLeadingZeros:
-	LDY #$00								;>Start looking at the leftmost (highest) digit
-	LDA #$00								;\When the value is 0, display it as single digit as zero
-	STA !Scratchram_CharacterTileTable,x	;/(gets overwritten should nonzero input exist)
-
-	.Loop
-		LDA.w !Scratchram_16bitHexDecOutput|!dp,Y	;\If there is a leading zero, move to the next digit to check without moving the position to
-		BEQ ..LeadingZero							;/place the tile in the table
+if !SharedSubUseFlag_NumberDisplayRoutines
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	;16-bit hex to 4 (or 5)-digit decimal subroutine (using right-2-left
+	;division). Example: 12345
+	; 12345/10 = Q: 1234 R: 5 \These remainders are decimal digits (holds a value $00-$09; unpacked BCD)
+	; 1234/10  = Q: 123  R: 4 |ordered from least significant digits to most.
+	; 123/10   = Q: 12   R: 3 |
+	; 12/10    = Q: 1    R: 2 |
+	; 1/10     = Q: 0    R: 1 /
+	;
+	;Input:
+	; - $00-$01 = the value you want to display
+	;Output:
+	; - !Scratchram_16bitHexDecOutput to !Scratchram_16bitHexDecOutput+4 = a digit 0-9 per byte table
+	;   (used for 1-digit per 8x8 tile):
+	; -- !Scratchram_16bitHexDecOutput+$00 = ten thousands
+	; -- !Scratchram_16bitHexDecOutput+$01 = thousands
+	; -- !Scratchram_16bitHexDecOutput+$02 = hundreds
+	; -- !Scratchram_16bitHexDecOutput+$03 = tens
+	; -- !Scratchram_16bitHexDecOutput+$04 = ones
+	;
+	;!Scratchram_16bitHexDecOutput is address $02 for normal ROM and $04 for SA-1.
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+		SixteenBitHexDecDivision:
+			if !sa1 == 0
+				PHX
+				PHY
 	
-		..NonLeadingZeroes
-			LDA.w !Scratchram_16bitHexDecOutput|!dp,Y	;\Place digit
-			STA !Scratchram_CharacterTileTable,x		;/
-			INX											;>Next string position in table
-			INY											;\Next digit
-			CPY #$05									;|
-			BCC ..NonLeadingZeroes						;/
-			RTL
+				LDX #$04	;>5 bytes to write 5 digits.
 	
-		..LeadingZero
-			INY			;>1 digit to the right
-			CPY #$05		;\Loop until no digits left (minimum is 1 digit)
-			BCC .Loop		;/
-			...AllZeroes
-				INX			;>We wrote a default "0", thus X must be incremented here.
+				.Loop
+				REP #$20	;\Dividend (in 16-bit)
+				LDA $00		;|
+				STA $4204	;|
+				SEP #$20	;/
+				LDA.b #10	;\base 10 Divisor
+				STA $4206	;/
+				JSR .Wait	;>wait
+				REP #$20	;\quotient so that next loop would output
+				LDA $4214	;|the next digit properly, so basically the value
+				STA $00		;|in question gets divided by 10 repeatedly. [Value/(10^x)]
+				SEP #$20	;/
+				LDA $4216	;>Remainder (mod 10 to stay within 0-9 per digit)
+				STA $02,x	;>Store tile
+	
+				DEX
+				BPL .Loop
+	
+				PLY
+				PLX
 				RTL
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;Write string to Status bar/OWB+
-;
-;Input:
-; - $00-$02 = 24-bit address location to write to status bar tile number.
-; - If tile properties are edit-able (if !StatusBar_UsingCustomProperties != 0):
-; -- $03-$05 = Same as $00-$02 but tile properties
-; -- $06 = Tile properties to use for all tiles of the string.
-; - X = The number of characters to write, ("123" would have X = 3)
-; - !Scratchram_CharacterTileTable-(!Scratchram_CharacterTileTable+N-1)
-;   the string to write to the status bar.
-;Overwritten:
-; - X = Will be $FF as it uses a countdown loop.
-;
-;Note:
-; - WriteStringDigitsToHUD is designed for [TTTTTTTT, TTTTTTTT,...], [YXPCCCTT, YXPCCCTT,...]
-; - WriteStringDigitsToHUDFormat2 is designed for [TTTTTTTT, YXPCCCTT, TTTTTTTT, YXPCCCTT...]
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-WriteStringDigitsToHUD:
-	DEX
-	TXY
 	
-	.Loop
-		LDA !Scratchram_CharacterTileTable,x
-		STA [$00],y
-		if !StatusBar_UsingCustomProperties != 0
-			LDA $06
-			STA [$03],y
-		endif
-		DEX
-		DEY
-		BPL .Loop
-	RTL
-WriteStringDigitsToHUDFormat2:
-	DEX
-	TXA				;\SSB and OWB+ uses a byte pair format.
-	ASL				;|
-	TAY				;/
+				.Wait
+				JSR ..Done		;>Waste cycles until the calculation is done
+				..Done
+				RTS
+			else
+				PHX
+				PHY
 	
-	.Loop
-		LDA !Scratchram_CharacterTileTable,x
-		STA [$00],y
-		if !StatusBar_UsingCustomProperties != 0
-			LDA $06
-			STA [$03],y
-		endif
-		DEX
-		DEY #2
-		BPL .Loop
-	RTL
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;Convert left-aligned to right-aligned.
-;
-;Use this routine after calling SuppressLeadingZeros and before calling
-;WriteStringDigitsToHUD. Note: Be aware that the math of handling the address
-;does NOT account to changing the bank byte (address $XX****), so be aware of
-;having status bar tables that crosses bank borders ($7EFFFF, then $7F0000,
-;as an made-up example, but its unlikely though). This routine basically takes
-;a given RAM address stored in $00-$02, subtract by how many tiles (minus 1), then
-;$00-$02 is now the left tile position.
-;
-;Input:
-; - $00-$02 = 24-bit address location to write to status bar tile number.
-; - If tile properties are edit-able:
-; -- $03-$05 = Same as $00-$02 but tile properties.
-; - X = The number of characters to write, ("123" would have X = 3)
-;Output:
-; - $00-$02 and $03-$05 are subtracted by [(NumberOfCharacters-1)*!StatusbarFormat]
-;   so that the last character is always at a fixed location and as the number
-;   of characters increase, the string would extend leftwards. Therefore,
-;   $00-$02 and $03-$05 before calling this routine contains the ending address
-;   which the last character will be written.
-;
-;Note:
-; - ConvertToRightAligned is designed for [TTTTTTTT, TTTTTTTT,...], [YXPCCCTT, YXPCCCTT,...]
-; - ConvertToRightAlignedFormat2 is designed for [TTTTTTTT, YXPCCCTT, TTTTTTTT, YXPCCCTT...]
-; - This routine is meant to be used when displaying 2 numbers (For example: 123/456). Since
-;   when displaying a single number, using HexDec and removing leading zeroes (turns them
-;   into leading spaces) is automatically right-aligned, using this routine is pointless.
-; - X register is not modified here at all.
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-ConvertToRightAligned:
-	TXA					;>Transfer X (number of tiles) to A
-	DEC					;>Decrement A (since it's 0-based)
-	TAY					;>Transfer A status bar leftmost position to Y (Y is how many tiles of offset by, need this later)
-	BRA +
-ConvertToRightAlignedFormat2:
-	TXA					;>Transfer X (number of tiles) to A
-	DEC					;>Decrement A (since it's 0-based)
-	ASL					;>Double A (because each tile is 2 bytes, becomming the number of tiles being 0-based)
-	TAY					;>Transfer A to Y status bar leftmost position to Y (need this later)
-	+
-	REP #$21				;\-(NumberOfTiles-1)...
-	AND #$00FF				;|
-	EOR #$FFFF				;|
-	INC A					;/
-	ADC $00					;>...+LastTilePos (we are doing LastTilePos - (NumberOfTiles-1))
-	STA $00					;>Store difference in $00-$01
-	SEP #$20				;\Handle bank byte
-;	LDA $02					;|
-;	SBC #$00				;|
-;	STA $02					;/
+				LDX #$04
 	
-	if !StatusBar_UsingCustomProperties != 0
-		TYA
-		REP #$21				;\-(NumberOfTiles-1)
-		AND #$00FF				;|
-		EOR #$FFFF				;|
-		INC A					;/
-		ADC $03					;>+LastTilePos (we are doing LastTilePos - (NumberOfTiles-1))
-		STA $03					;>Store difference in $00-$01
-		SEP #$20				;\Handle bank byte
-;		LDA $05					;|
-;		SBC #$00				;|
-;		STA $05					;/
+				.Loop
+				REP #$20			;>16-bit XY
+				LDA.w #10			;>Base 10
+				STA $02				;>Divisor (10)
+				SEP #$20			;>8-bit XY
+				JSL MathDiv			;>divide
+				LDA $02				;>Remainder (mod 10 to stay within 0-9 per digit)
+				STA.b !Scratchram_16bitHexDecOutput,x	;>Store tile
+	
+				DEX
+				BPL .Loop
+	
+				PLY
+				PLX
+				RTL
+			endif
+	if !SharedSubUseFlag_RemoveLeadingZeroes16Bit
+		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+		;Leading zeroes remover.
+		;Writes $FC on all leading zeroes (except the 1s place),
+		;Therefore, numbers will have leading spaces instead.
+		;
+		;Example: 00123 ([$00, $00, $01, $02, $03]) becomes
+		; __123 ([$FC, $FC, $01, $02, $03])
+		;
+		;Call this routine after using: [ThirtyTwoBitHexDecDivision]
+		;or [SixteenBitHexDecDivision].
+		;
+		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+			;16-bit version, use after [SixteenBitHexDecDivision]
+				RemoveLeadingZeroes16Bit:
+				LDX #$00				;>Start at the leftmost digit
+				
+				.Loop
+				LDA !Scratchram_16bitHexDecOutput,x	;\if current digit non-zero, don't omit trailing zeros for the rest of the number string.
+				BNE .NonZero				;/
+				LDA #!StatusBarBlankTile		;\blank tile to replace leading zero
+				STA !Scratchram_16bitHexDecOutput,x	;/
+				INX					;>next digit
+				CPX.b #$04				;>last digit to check. So that it can display a single 0.
+				BCC .Loop				;>if not done yet, continue looping.
+				
+				.NonZero
+				RTL
 	endif
-	RTL
+	if !SharedSubUseFlag_SuppressLeadingZeros
+		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+		;Suppress Leading zeros via left-aligned positioning
+		;
+		;This routine takes a 16-bit unsigned integer (works up to 5 digits),
+		;suppress leading zeros and moves the digits so that the first non-zero
+		;digit number is located where X is indexed to. Example: the number 00123
+		;with X = $00:
+		;
+		; [0] [0] [1] [2] [3]
+		;
+		; Each bracketed item is a byte storing a digit. The X above means the X
+		; index position.
+		; After this routine is done, they are placed in an address defined
+		; as "!Scratchram_CharacterTileTable" like this:
+		;
+		;              X
+		; [1] [2] [3] [*] [*]...
+		;
+		; [*] Means garbage and/or unused data. X index is now set to $03, shown
+		; above.
+		;
+		;Usage:
+		; Input:
+		;  - !Scratchram_16bitHexDecOutput to !Scratchram_16bitHexDecOutput+4 = a 5-digit 0-9 per byte (used for
+		;    1-digit per 8x8 tile, using my 4/5 hexdec routine; ordered from high to low digits)
+		;  - X = the starting location within the table to place the string in. X=$00 means the starting byte.
+		; Output:
+		;  - !Scratchram_CharacterTileTable = A table containing a string of numbers with
+		;    unnecessary spaces and zeroes stripped out.
+		;  - X = the location to place string AFTER the numbers (increments every character written). Also use
+		;    for indicating the last digit (or any tile) number for how many tiles to be written to the status
+		;    bar, overworld border, etc.
+		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+		SuppressLeadingZeros:
+			LDY #$00								;>Start looking at the leftmost (highest) digit
+			LDA #$00								;\When the value is 0, display it as single digit as zero
+			STA !Scratchram_CharacterTileTable,x	;/(gets overwritten should nonzero input exist)
+		
+			.Loop
+				LDA.w !Scratchram_16bitHexDecOutput|!dp,Y	;\If there is a leading zero, move to the next digit to check without moving the position to
+				BEQ ..LeadingZero							;/place the tile in the table
+			
+				..NonLeadingZeroes
+					LDA.w !Scratchram_16bitHexDecOutput|!dp,Y	;\Place digit
+					STA !Scratchram_CharacterTileTable,x		;/
+					INX											;>Next string position in table
+					INY											;\Next digit
+					CPY #$05									;|
+					BCC ..NonLeadingZeroes						;/
+					RTL
+			
+				..LeadingZero
+					INY			;>1 digit to the right
+					CPY #$05		;\Loop until no digits left (minimum is 1 digit)
+					BCC .Loop		;/
+					...AllZeroes
+						INX			;>We wrote a default "0", thus X must be incremented here.
+						RTL
+	endif
+	if !SharedSubUseFlag_WriteStringDigitsToHUD
+		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+		;Write string to Status bar/OWB+
+		;
+		;Input:
+		; - $00-$02 = 24-bit address location to write to status bar tile number.
+		; - If tile properties are edit-able (if !StatusBar_UsingCustomProperties != 0):
+		; -- $03-$05 = Same as $00-$02 but tile properties
+		; -- $06 = Tile properties to use for all tiles of the string.
+		; - X = The number of characters to write, ("123" would have X = 3)
+		; - !Scratchram_CharacterTileTable-(!Scratchram_CharacterTileTable+N-1)
+		;   the string to write to the status bar.
+		;Overwritten:
+		; - X = Will be $FF as it uses a countdown loop.
+		;
+		;Note:
+		; - WriteStringDigitsToHUD is designed for [TTTTTTTT, TTTTTTTT,...], [YXPCCCTT, YXPCCCTT,...]
+		; - WriteStringDigitsToHUDFormat2 is designed for [TTTTTTTT, YXPCCCTT, TTTTTTTT, YXPCCCTT...]
+		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+		WriteStringDigitsToHUD:
+			DEX
+			TXY
+			
+			.Loop
+				LDA !Scratchram_CharacterTileTable,x
+				STA [$00],y
+				if !StatusBar_UsingCustomProperties != 0
+					LDA $06
+					STA [$03],y
+				endif
+				DEX
+				DEY
+				BPL .Loop
+			RTL
+		WriteStringDigitsToHUDFormat2:
+			DEX
+			TXA				;\SSB and OWB+ uses a byte pair format.
+			ASL				;|
+			TAY				;/
+			
+			.Loop
+				LDA !Scratchram_CharacterTileTable,x
+				STA [$00],y
+				if !StatusBar_UsingCustomProperties != 0
+					LDA $06
+					STA [$03],y
+				endif
+				DEX
+				DEY #2
+				BPL .Loop
+			RTL
+	endif
+	if !SharedSubUseFlag_RightAlignedNumbers
+		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+		;Convert left-aligned to right-aligned.
+		;
+		;Use this routine after calling SuppressLeadingZeros and before calling
+		;WriteStringDigitsToHUD. Note: Be aware that the math of handling the address
+		;does NOT account to changing the bank byte (address $XX****), so be aware of
+		;having status bar tables that crosses bank borders ($7EFFFF, then $7F0000,
+		;as an made-up example, but its unlikely though). This routine basically takes
+		;a given RAM address stored in $00-$02, subtract by how many tiles (minus 1), then
+		;$00-$02 is now the left tile position.
+		;
+		;Input:
+		; - $00-$02 = 24-bit address location to write to status bar tile number.
+		; - If tile properties are edit-able:
+		; -- $03-$05 = Same as $00-$02 but tile properties.
+		; - X = The number of characters to write, ("123" would have X = 3)
+		;Output:
+		; - $00-$02 and $03-$05 are subtracted by [(NumberOfCharacters-1)*!StatusbarFormat]
+		;   so that the last character is always at a fixed location and as the number
+		;   of characters increase, the string would extend leftwards. Therefore,
+		;   $00-$02 and $03-$05 before calling this routine contains the ending address
+		;   which the last character will be written.
+		;
+		;Note:
+		; - ConvertToRightAligned is designed for [TTTTTTTT, TTTTTTTT,...], [YXPCCCTT, YXPCCCTT,...]
+		; - ConvertToRightAlignedFormat2 is designed for [TTTTTTTT, YXPCCCTT, TTTTTTTT, YXPCCCTT...]
+		; - This routine is meant to be used when displaying 2 numbers (For example: 123/456). Since
+		;   when displaying a single number, using HexDec and removing leading zeroes (turns them
+		;   into leading spaces) is automatically right-aligned, using this routine is pointless.
+		; - X register is not modified here at all.
+		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+		ConvertToRightAligned:
+			TXA					;>Transfer X (number of tiles) to A
+			DEC					;>Decrement A (since it's 0-based)
+			TAY					;>Transfer A status bar leftmost position to Y (Y is how many tiles of offset by, need this later)
+			BRA +
+		ConvertToRightAlignedFormat2:
+			TXA					;>Transfer X (number of tiles) to A
+			DEC					;>Decrement A (since it's 0-based)
+			ASL					;>Double A (because each tile is 2 bytes, becomming the number of tiles being 0-based)
+			TAY					;>Transfer A to Y status bar leftmost position to Y (need this later)
+			+
+			REP #$21				;\-(NumberOfTiles-1)...
+			AND #$00FF				;|
+			EOR #$FFFF				;|
+			INC A					;/
+			ADC $00					;>...+LastTilePos (we are doing LastTilePos - (NumberOfTiles-1))
+			STA $00					;>Store difference in $00-$01
+			SEP #$20				;\Handle bank byte
+		;	LDA $02					;|
+		;	SBC #$00				;|
+		;	STA $02					;/
+			
+			if !StatusBar_UsingCustomProperties != 0
+				TYA
+				REP #$21				;\-(NumberOfTiles-1)
+				AND #$00FF				;|
+				EOR #$FFFF				;|
+				INC A					;/
+				ADC $03					;>+LastTilePos (we are doing LastTilePos - (NumberOfTiles-1))
+				STA $03					;>Store difference in $00-$01
+				SEP #$20				;\Handle bank byte
+		;		LDA $05					;|
+		;		SBC #$00				;|
+		;		STA $05					;/
+			endif
+			RTL
+	endif
+endif
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;Graphical bar routines
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+if !SharedSubUseFlag_UsingGraphicalBarRoutines
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;Set enemy HP bar attributes.
 	;
@@ -670,95 +681,99 @@ ConvertToRightAlignedFormat2:
 	;Overwritten/Destroyed:
 	; - $02 to $09: because math routines need that much bytes.
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	CalculateGraphicalBarPercentage:
-		JSL CalculateGraphicalBarPercentageRoundDown
-		.RoundHalfUp
-		..Rounding
-			REP #$20
-			LDA !Scratchram_GraphicalBar_FillByteTbl+2	;>Max Quantity (denominator, D). After Quantity*TotalPieces, let that be N. Following code gets 1/2 = (D/2)/D set up needed to check if >= half.
-			LSR						;>Divide by 2 (halfway point of max)... (LSR would shift bit 0 into carry, thus if number is odd, carry is set, note that A is rounded down by default).
-			BCC ...ExactHalfPoint				;>Should a remainder in the carry is 0 (no remainder, meaning denominator is an even number), don't round the 1/2 point
-			INC						;>Round the 1/2 point...
-				;^Reason 1/2 point must be rounded up, is so to truly check if remainder is greater or equal to half of MaxQuantity, to round the pieces filled up,
-				; when MaxQuantity is odd. e.g. 1 Quantity * 62 pieces / 5 MaxQuantity = Q:12 R:2, which is 12 and 2/5, or 12.4. The 1/2 point of 5 is EXACTLY 2.5,
-				; not 2 (LSR divides A by 2 and round down, thus resulting 2). This means that the lowest remainder integer to trigger a round-up of the amount of
-				; pieces filled would be 3.
-	
-			...ExactHalfPoint
-				CMP $04						;>Half of D compares with R
-				BEQ ...RoundDivQuotient				;>If Ceiling(D/2) = R, round upwards
-				BCS ...NoRoundDivQuotient			;>If Ceiling(D/2) > R (or R < D/2), round down (if exactly full, this branch is taken).
-	
-			...RoundDivQuotient
-				;Round up quotient because R >= Ceiling(D/2)
-				LDA $00						;\Round up an integer
-				INC						;/
-				STA $08						;>move towards $08 because 16bit*16bit multiplication uses $00 to $07
-	
-				....RoundingUpTowardsFullCheck
-					;check should this rounded value made a full bar when it is actually not:
-				
-					;Just as a side note, should the bar be EXACTLY full (so 62/62 and NOT 61.9/62, it guarantees
-					;that the remainder is 0, so thus, no rounding is needed.) This is due to the fact that
-					;[Quantity * FullAmount / MaxQuantity] when Quantity and MaxQuantity are the same number,
-					;thus, canceling each other out (so 62 divide by 62 = 1) and left with FullAmount (the
-					;number of pieces in the bar)
-					
-					JSL GetMaxBarInAForRoundToMaxCheck
-					
-					LDY #$00					;>Default that the meter didn't round towards empty/full (cannot be before the above subroutine since it overwrites Y).
-					
-					CMP $08						;>compare with rounded fill amount
-					BNE .....TransferFillAmtBack			;\should the rounded up fill matches with the full value, flag that
-					LDY #$02					;/it had rounded to full.
-	
-					.....TransferFillAmtBack
-						LDA $08						;\move the fill amount back to $00.
-						STA $00						;/
-						BRA .Done
+	if !SharedSubUseFlag_GraphicalBarRoundHalfUp
+		CalculateGraphicalBarPercentage:
+			JSL CalculateGraphicalBarPercentageRoundDown
+			.RoundHalfUp
+			..Rounding
+				REP #$20
+				LDA !Scratchram_GraphicalBar_FillByteTbl+2	;>Max Quantity (denominator, D). After Quantity*TotalPieces, let that be N. Following code gets 1/2 = (D/2)/D set up needed to check if >= half.
+				LSR						;>Divide by 2 (halfway point of max)... (LSR would shift bit 0 into carry, thus if number is odd, carry is set, note that A is rounded down by default).
+				BCC ...ExactHalfPoint				;>Should a remainder in the carry is 0 (no remainder, meaning denominator is an even number), don't round the 1/2 point
+				INC						;>Round the 1/2 point...
+					;^Reason 1/2 point must be rounded up, is so to truly check if remainder is greater or equal to half of MaxQuantity, to round the pieces filled up,
+					; when MaxQuantity is odd. e.g. 1 Quantity * 62 pieces / 5 MaxQuantity = Q:12 R:2, which is 12 and 2/5, or 12.4. The 1/2 point of 5 is EXACTLY 2.5,
+					; not 2 (LSR divides A by 2 and round down, thus resulting 2). This means that the lowest remainder integer to trigger a round-up of the amount of
+					; pieces filled would be 3.
 		
-			...NoRoundDivQuotient
-				....RoundingDownTowardsEmptyCheck
-					LDY #$00					;>Default that the meter didn't round towards empty/full.
-					LDA $00						;\if the rounded down (result from fraction part is less than .5) quotient value ISN't zero,
-					BNE .Done					;/(exactly 1 piece filled or more) don't even consider setting Y to #$01.
-					LDA $04						;\if BOTH rounded down quotient and the remainder are zero, the bar is TRUELY completely empty
-					BEQ .Done					;/and don't set Y to #$01.
+				...ExactHalfPoint
+					CMP $04						;>Half of D compares with R
+					BEQ ...RoundDivQuotient				;>If Ceiling(D/2) = R, round upwards
+					BCS ...NoRoundDivQuotient			;>If Ceiling(D/2) > R (or R < D/2), round down (if exactly full, this branch is taken).
+		
+				...RoundDivQuotient
+					;Round up quotient because R >= Ceiling(D/2)
+					LDA $00						;\Round up an integer
+					INC						;/
+					STA $08						;>move towards $08 because 16bit*16bit multiplication uses $00 to $07
+		
+					....RoundingUpTowardsFullCheck
+						;check should this rounded value made a full bar when it is actually not:
 					
-					LDY #$01					;>indicate that the value was rounded down towards empty
-					
-					.Done
-					SEP #$20
-		RTL
-	CalculateGraphicalBarPercentageRoundUp:
-		JSL CalculateGraphicalBarPercentageRoundDown
-		REP #$20
-		LDA $04				;\If remainder is zero, (meaning exactly an integer), don't increment
-		BEQ .NoRoundUp			;/
-		.RoundUp
-			INC $00				;>Otherwise if there is a remainder (between Quotient and Quotient+1), use Quotient+1
-			if !sa1 != 0
-				LDA $00				;\Preserve rounded quotient
-				PHA				;/
-			endif
-			JSL GetMaxBarInAForRoundToMaxCheck
-			if !sa1 != 0
-				REP #$30
-				TAY
-				PLA				;\Restore quotient
-				STA $00				;/
-				TYA
-				SEP #$30
-			endif
-			LDY #$00
+						;Just as a side note, should the bar be EXACTLY full (so 62/62 and NOT 61.9/62, it guarantees
+						;that the remainder is 0, so thus, no rounding is needed.) This is due to the fact that
+						;[Quantity * FullAmount / MaxQuantity] when Quantity and MaxQuantity are the same number,
+						;thus, canceling each other out (so 62 divide by 62 = 1) and left with FullAmount (the
+						;number of pieces in the bar)
+						
+						JSL GetMaxBarInAForRoundToMaxCheck
+						
+						LDY #$00					;>Default that the meter didn't round towards empty/full (cannot be before the above subroutine since it overwrites Y).
+						
+						CMP $08						;>compare with rounded fill amount
+						BNE .....TransferFillAmtBack			;\should the rounded up fill matches with the full value, flag that
+						LDY #$02					;/it had rounded to full.
+		
+						.....TransferFillAmtBack
+							LDA $08						;\move the fill amount back to $00.
+							STA $00						;/
+							BRA .Done
+			
+				...NoRoundDivQuotient
+					....RoundingDownTowardsEmptyCheck
+						LDY #$00					;>Default that the meter didn't round towards empty/full.
+						LDA $00						;\if the rounded down (result from fraction part is less than .5) quotient value ISN't zero,
+						BNE .Done					;/(exactly 1 piece filled or more) don't even consider setting Y to #$01.
+						LDA $04						;\if BOTH rounded down quotient and the remainder are zero, the bar is TRUELY completely empty
+						BEQ .Done					;/and don't set Y to #$01.
+						
+						LDY #$01					;>indicate that the value was rounded down towards empty
+						
+						.Done
+						SEP #$20
+			RTL
+	endif
+	if !SharedSubUseFlag_GraphicalBarRoundUp
+		CalculateGraphicalBarPercentageRoundUp:
+			JSL CalculateGraphicalBarPercentageRoundDown
 			REP #$20
-			CMP $00
-			BNE .NoRoundToMax
-			LDY #$02
-		.NoRoundToMax
-		.NoRoundUp
-		SEP #$20
-		RTL
+			LDA $04				;\If remainder is zero, (meaning exactly an integer), don't increment
+			BEQ .NoRoundUp			;/
+			.RoundUp
+				INC $00				;>Otherwise if there is a remainder (between Quotient and Quotient+1), use Quotient+1
+				if !sa1 != 0
+					LDA $00				;\Preserve rounded quotient
+					PHA				;/
+				endif
+				JSL GetMaxBarInAForRoundToMaxCheck
+				if !sa1 != 0
+					REP #$30
+					TAY
+					PLA				;\Restore quotient
+					STA $00				;/
+					TYA
+					SEP #$30
+				endif
+				LDY #$00
+				REP #$20
+				CMP $00
+				BNE .NoRoundToMax
+				LDY #$02
+			.NoRoundToMax
+			.NoRoundUp
+			SEP #$20
+			RTL
+	endif
 	CalculateGraphicalBarPercentageRoundDown:
 		;This is the main calculation for all 3 variations of CalculateGraphicalBarPercentage, prior to modifying the quantity amount.
 		;Integer division always rounds down, by default. Any rounding besides down require checking the remainder.
@@ -1381,86 +1396,86 @@ ConvertToRightAlignedFormat2:
 		
 		.NotRounded
 		RTL
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;This routine directly writes the tile to the status bar or
-;overworld border plus, filling left to right.
-;
-;Note: This only writes up to 128 (64 if using super status
-;bar and OWB+ format) tiles. But it is unlikely you would ever
-;need that much tiles, considering that the screen is 32 ($20)
-;8x8 tiles wide.
-;
-;Input:
-; - $00 to $02: The starting byte address location of the status bar (tile number).
-;   This is the leftmost tile to position.
-; -- If you're using SA-1 mode here and using vanilla status bar,
-;    the status bar tilemap table is moved to bank $40.
-; - !Scratchram_GraphicalBar_LeftEndPiece: Number of pieces in left byte (0-255), also
-;   the maximum amount of fill for this byte itself. If 0, it's not included in table.
-; - !Scratchram_GraphicalBar_MiddlePiece: Same as above but each middle byte.
-; - !Scratchram_GraphicalBar_RightEndPiece: Same as above but for right end.
-; - !Scratchram_GraphicalBar_TempLength: The length of the bar (only counts
-;   middle bytes)
-; - If you are using custom status bar patches that enables editing tile properties in-game,
-;   and have set "!StatusBar_UsingCustomProperties" to 1, you have another input:
-; -- $03 to $05: Same as $00 to $02 but for tile properties instead of tile numbers.
-; -- $06: The tile properties (YXPCCCTT) you want it to be. Note: This does not automatically
-;    modify the X-bit flip flag. You need to flip them yourself for this routine alone for flipped bars.
-;Output:
-; - [RAMAddressIn00] to [RAMAddressIn00 + ((NumberOfTiles-1)*TileFormat]: the status bar/OWB+
-;   RAM write range.
-; - If using SB/OWB+ patch that allows editing YXPCCCTT in-game and have set !StatusBar_UsingCustomProperties
-;   to 1:
-; -- [RAMAddressIn03] to [RAMAddressIn03 + ((NumberOfTiles-1)*TileFormat]: same as above but YXPCCCTT
-;Note:
-; - These routines can be used on stripe image for both horizontal (left to right) and vertical (top to
-;   bottom)
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	WriteBarToHUD:
-		JSL GraphicalBarNumberOfTiles
-		CPX #$FF				;\If 0-1 = (-1), there is no tile to write.
-		BEQ .Done				;/(non-existent bar)
-		TXY					;>STA [$xx],x does not exist! Only STA [$xx,x] does but functions differently!
-
-		.Loop
-			LDA !Scratchram_GraphicalBar_FillByteTbl,x	;\Write each tile.
-			STA [$00],y					;/
-			if !StatusBar_UsingCustomProperties != 0
-				LDA $06
-				STA [$03],y
-			endif
-			
-			..Next
-				DEX
-				DEY
-				BPL .Loop
-		
-		.Done
-			RTL
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	;This routine directly writes the tile to the status bar or
+	;overworld border plus, filling left to right.
+	;
+	;Note: This only writes up to 128 (64 if using super status
+	;bar and OWB+ format) tiles. But it is unlikely you would ever
+	;need that much tiles, considering that the screen is 32 ($20)
+	;8x8 tiles wide.
+	;
+	;Input:
+	; - $00 to $02: The starting byte address location of the status bar (tile number).
+	;   This is the leftmost tile to position.
+	; -- If you're using SA-1 mode here and using vanilla status bar,
+	;    the status bar tilemap table is moved to bank $40.
+	; - !Scratchram_GraphicalBar_LeftEndPiece: Number of pieces in left byte (0-255), also
+	;   the maximum amount of fill for this byte itself. If 0, it's not included in table.
+	; - !Scratchram_GraphicalBar_MiddlePiece: Same as above but each middle byte.
+	; - !Scratchram_GraphicalBar_RightEndPiece: Same as above but for right end.
+	; - !Scratchram_GraphicalBar_TempLength: The length of the bar (only counts
+	;   middle bytes)
+	; - If you are using custom status bar patches that enables editing tile properties in-game,
+	;   and have set "!StatusBar_UsingCustomProperties" to 1, you have another input:
+	; -- $03 to $05: Same as $00 to $02 but for tile properties instead of tile numbers.
+	; -- $06: The tile properties (YXPCCCTT) you want it to be. Note: This does not automatically
+	;    modify the X-bit flip flag. You need to flip them yourself for this routine alone for flipped bars.
+	;Output:
+	; - [RAMAddressIn00] to [RAMAddressIn00 + ((NumberOfTiles-1)*TileFormat]: the status bar/OWB+
+	;   RAM write range.
+	; - If using SB/OWB+ patch that allows editing YXPCCCTT in-game and have set !StatusBar_UsingCustomProperties
+	;   to 1:
+	; -- [RAMAddressIn03] to [RAMAddressIn03 + ((NumberOfTiles-1)*TileFormat]: same as above but YXPCCCTT
+	;Note:
+	; - These routines can be used on stripe image for both horizontal (left to right) and vertical (top to
+	;   bottom)
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+		WriteBarToHUD:
+			JSL GraphicalBarNumberOfTiles
+			CPX #$FF				;\If 0-1 = (-1), there is no tile to write.
+			BEQ .Done				;/(non-existent bar)
+			TXY					;>STA [$xx],x does not exist! Only STA [$xx,x] does but functions differently!
 	
-	WriteBarToHUDFormat2:
-		JSL GraphicalBarNumberOfTiles
-		CPX #$FF				;\If 0-1 = (-1), there is no tile to write.
-		BEQ .Done				;/(non-existent bar)
-		TXA					;\Have Y = X*2 due to SSB/OWB+ patch formated for 2 contiguous bytes per tile.
-		ASL					;|
-		TAY					;/
-		
-		.Loop
-			LDA !Scratchram_GraphicalBar_FillByteTbl,x	;\Write each tile.
-			STA [$00],y					;/
-			if !StatusBar_UsingCustomProperties != 0
-				LDA $06
-				STA [$03],y
-			endif
+			.Loop
+				LDA !Scratchram_GraphicalBar_FillByteTbl,x	;\Write each tile.
+				STA [$00],y					;/
+				if !StatusBar_UsingCustomProperties != 0
+					LDA $06
+					STA [$03],y
+				endif
+				
+				..Next
+					DEX
+					DEY
+					BPL .Loop
 			
-			..Next
-				DEX
-				DEY #2
-				BPL .Loop
+			.Done
+				RTL
 		
-		.Done
-			RTL
+		WriteBarToHUDFormat2:
+			JSL GraphicalBarNumberOfTiles
+			CPX #$FF				;\If 0-1 = (-1), there is no tile to write.
+			BEQ .Done				;/(non-existent bar)
+			TXA					;\Have Y = X*2 due to SSB/OWB+ patch formated for 2 contiguous bytes per tile.
+			ASL					;|
+			TAY					;/
+			
+			.Loop
+				LDA !Scratchram_GraphicalBar_FillByteTbl,x	;\Write each tile.
+				STA [$00],y					;/
+				if !StatusBar_UsingCustomProperties != 0
+					LDA $06
+					STA [$03],y
+				endif
+				
+				..Next
+					DEX
+					DEY #2
+					BPL .Loop
+			
+			.Done
+				RTL
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;Same as WriteBarToHUD, but fills leftwards as opposed to
 	;rightwards.
@@ -1518,88 +1533,89 @@ ConvertToRightAlignedFormat2:
 			
 			.Done
 				RTL
-GetMaxBarInAForRoundToMaxCheck:
-	;Must be called with 16-bit A.
-	;Get the full number of pieces (for checking if rounding a number between Max-1 and Max to Max.)
-	;Output: A (16-bit): Maximum fill amount (processor flag for A is 8-bit though)
-	;Destroys:
-	; -$00-$07 in LoROM
-	; -$04-$05 in SA-1
-	if !sa1 != 0
-		LDA !Scratchram_GraphicalBar_MiddlePiece	;\Get amount of pieces in middle
-		AND #$00FF					;|
-		STA $00						;|
-		LDA !Scratchram_GraphicalBar_TempLength		;|
-		AND #$00FF					;|
-		STA $02						;/
-		SEP #$20
-		JSL MathMul16_16				;>[$04-$07: Product]
-	else
-		SEP #$20
+	GetMaxBarInAForRoundToMaxCheck:
+		;Must be called with 16-bit A.
+		;Get the full number of pieces (for checking if rounding a number between Max-1 and Max to Max.)
+		;Output: A (16-bit): Maximum fill amount (processor flag for A is 8-bit though)
+		;Destroys:
+		; -$00-$07 in LoROM
+		; -$04-$05 in SA-1
+		if !sa1 != 0
+			LDA !Scratchram_GraphicalBar_MiddlePiece	;\Get amount of pieces in middle
+			AND #$00FF					;|
+			STA $00						;|
+			LDA !Scratchram_GraphicalBar_TempLength		;|
+			AND #$00FF					;|
+			STA $02						;/
+			SEP #$20
+			JSL MathMul16_16				;>[$04-$07: Product]
+		else
+			SEP #$20
+			LDA !Scratchram_GraphicalBar_MiddlePiece
+			STA $4202
+			LDA !Scratchram_GraphicalBar_TempLength
+			STA $4203
+			XBA						;\Wait 8 cycles (XBA takes 3, NOP takes 2) for calculation
+			XBA						;|
+			NOP						;/
+			LDA $4216					;\[$04-$07: Product]
+			STA $04						;|
+			LDA $4217					;|
+			STA $05						;/
+		endif
+		;add the 2 ends tiles amount (both are 8-bit, but results 16-bit)
+		
+		;NOTE: should the fill amount be exactly full OR greater, Y will be #$00.
+		;This is so that greater than full is 100% treated as exactly full.
+		LDA #$00					;\A = $YYXX, (initially YY is $00)
+		XBA						;/
+		LDA !Scratchram_GraphicalBar_LeftEndPiece	;\get total pieces
+		CLC						;|\carry is set should overflow happens (#$FF -> #$00)
+		ADC !Scratchram_GraphicalBar_RightEndPiece	;//
+		XBA						;>A = $XXYY
+		ADC #$00					;>should that overflow happen, increase the A's upper byte (the YY) by 1 ($01XX)
+		XBA						;>A = $YYXX, addition maximum shouldn't go higher than $01FE. A = 16-bit total ends pieces
+		REP #$20
+		CLC						;\plus middle pieces = full amount
+		ADC $04						;/
+		RTL
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	;Count tiles. Stupid that you cannot call a separate subroutine
+	;file from a subroutine file. This is used by other subroutines
+	;to compute the left side of the bar position so that the right
+	;side is at a fixed position.
+	;
+	;Input:
+	; - !Scratchram_GraphicalBar_LeftEndPiece,
+	;   !Scratchram_GraphicalBar_MiddlePiece,
+	;   !Scratchram_GraphicalBar_TempLength, and
+	;   !Scratchram_GraphicalBar_RightEndPiece: used to find how many
+	;   tiles.
+	;Output:
+	; - X = Number of bytes or 8x8 tiles the bar takes up of minus 1
+	;   For example: 9 total bytes, this routine would output X=$08.
+	;   Returns X=$FF should not a single tile exist.
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	GraphicalBarNumberOfTiles:
+		LDX #$00
+		LDA !Scratchram_GraphicalBar_LeftEndPiece
+		BEQ +
+		INX
+		+
 		LDA !Scratchram_GraphicalBar_MiddlePiece
-		STA $4202
-		LDA !Scratchram_GraphicalBar_TempLength
-		STA $4203
-		XBA						;\Wait 8 cycles (XBA takes 3, NOP takes 2) for calculation
-		XBA						;|
-		NOP						;/
-		LDA $4216					;\[$04-$07: Product]
-		STA $04						;|
-		LDA $4217					;|
-		STA $05						;/
-	endif
-	;add the 2 ends tiles amount (both are 8-bit, but results 16-bit)
-	
-	;NOTE: should the fill amount be exactly full OR greater, Y will be #$00.
-	;This is so that greater than full is 100% treated as exactly full.
-	LDA #$00					;\A = $YYXX, (initially YY is $00)
-	XBA						;/
-	LDA !Scratchram_GraphicalBar_LeftEndPiece	;\get total pieces
-	CLC						;|\carry is set should overflow happens (#$FF -> #$00)
-	ADC !Scratchram_GraphicalBar_RightEndPiece	;//
-	XBA						;>A = $XXYY
-	ADC #$00					;>should that overflow happen, increase the A's upper byte (the YY) by 1 ($01XX)
-	XBA						;>A = $YYXX, addition maximum shouldn't go higher than $01FE. A = 16-bit total ends pieces
-	REP #$20
-	CLC						;\plus middle pieces = full amount
-	ADC $04						;/
-	RTL
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;Count tiles. Stupid that you cannot call a separate subroutine
-;file from a subroutine file. This is used by other subroutines
-;to compute the left side of the bar position so that the right
-;side is at a fixed position.
-;
-;Input:
-; - !Scratchram_GraphicalBar_LeftEndPiece,
-;   !Scratchram_GraphicalBar_MiddlePiece,
-;   !Scratchram_GraphicalBar_TempLength, and
-;   !Scratchram_GraphicalBar_RightEndPiece: used to find how many
-;   tiles.
-;Output:
-; - X = Number of bytes or 8x8 tiles the bar takes up of minus 1
-;   For example: 9 total bytes, this routine would output X=$08.
-;   Returns X=$FF should not a single tile exist.
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-GraphicalBarNumberOfTiles:
-	LDX #$00
-	LDA !Scratchram_GraphicalBar_LeftEndPiece
-	BEQ +
-	INX
-	+
-	LDA !Scratchram_GraphicalBar_MiddlePiece
-	BEQ +
-	TXA
-	CLC
-	ADC !Scratchram_GraphicalBar_TempLength
-	TAX
-	+
-	LDA !Scratchram_GraphicalBar_RightEndPiece
-	BEQ +
-	INX
-	+
-	DEX					;>Subtract by 1 because index 0 exists.
-	RTL
+		BEQ +
+		TXA
+		CLC
+		ADC !Scratchram_GraphicalBar_TempLength
+		TAX
+		+
+		LDA !Scratchram_GraphicalBar_RightEndPiece
+		BEQ +
+		INX
+		+
+		DEX					;>Subtract by 1 because index 0 exists.
+		RTL
+endif
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;Damage sprite subroutine. Subtracts HP and switches the
 ;meter to that damaged sprite (unless meter is disabled).

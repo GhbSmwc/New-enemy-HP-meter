@@ -190,7 +190,8 @@
 				;Extend (as in the whole bar, on tiles it occupies) which direction from a given XY positon?
 				;NOTE: Not to be confused with !Setting_SpriteHP_LeftwardsBar, which deals with the FILL DIRECTION.
 				; - 0 = Rightwards
-				; - 1 = Leftwards (Note that subroutine "WriteBarToHUDLeftwards" and the Format2 varient will be used).
+				; - 1 = Leftwards (Note that along with !Setting_SpriteHP_GraphicalBar_VariableMiddleLength != 0,
+				;       subroutine "WriteBarToHUDLeftwards" and the Format2 varient will be used).
 					!Setting_SpriteHP_BarExtendLeft = 1
 				;This uses this position and tiles to the right, used when !Setting_SpriteHP_BarExtendLeft == 0 OR !Setting_SpriteHP_GraphicalBar_VariableMiddleLength == 0
 					!Setting_SpriteHP_GraphicalBarPos_x = 23
@@ -703,6 +704,52 @@
 		!Setting_SpriteHP_MaxStringLength = !Setting_SpriteHP_MaxDigits
 		if !Setting_SpriteHP_DisplayNumerical == 2
 			!Setting_SpriteHP_MaxStringLength = (!Setting_SpriteHP_MaxDigits*2)+1
+		endif
+		
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	;Shared subroutines usage flags
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;	!SharedSubUseFlag_NumberDisplayRoutines = 0
+;	!SharedSubUseFlag_RightAlignedNumbers = 0
+;	!SharedSubUseFlag_RemoveLeadingZeroes16Bit = 0
+;	!SharedSubUseFlag_SuppressLeadingZeros = 0
+;	!SharedSubUseFlag_WriteStringDigitsToHUD = 0
+;	!SharedSubUseFlag_GraphicalBarRoundHalfUp = 0
+;	!SharedSubUseFlag_GraphicalBarRoundUp = 0
+;	!SharedSubUseFlag_UsingExtendingLeftBar = 0
+;	!SharedSubUseFlag_UsingLeftwardsFillBar = 0
+;	!SharedSubUseFlag_UsingRightwardsFillBar = 0
+		if !Setting_SpriteHP_DisplayNumerical != 0
+			!SharedSubUseFlag_NumberDisplayRoutines = 1
+			if !Setting_SpriteHP_NumericalTextAlignment == 2
+				!SharedSubUseFlag_RightAlignedNumbers = 1
+			endif
+			if or(equal(!Setting_SpriteHP_NumericalTextAlignment, 0), and(equal(!Setting_SpriteHP_DisplayNumerical, 1), equal(!Setting_SpriteHP_NumericalTextAlignment, 2)))
+				!SharedSubUseFlag_RemoveLeadingZeroes16Bit = 1
+			endif
+			if or(equal(!Setting_SpriteHP_NumericalTextAlignment, 1), and(equal(!Setting_SpriteHP_NumericalTextAlignment, 2), equal(!Setting_SpriteHP_DisplayNumerical, 2)))
+				!SharedSubUseFlag_SuppressLeadingZeros = 1
+				!SharedSubUseFlag_WriteStringDigitsToHUD = 1
+			endif
+			
+		endif
+		if !Setting_SpriteHP_DisplayGraphicalBar
+			!SharedSubUseFlag_UsingGraphicalBarRoutines = 1
+		endif
+		if !SharedSubUseFlag_UsingGraphicalBarRoutines
+			if !Setting_SpriteHP_BarFillRoundDirection == 0
+				!SharedSubUseFlag_GraphicalBarRoundHalfUp = 1
+			elseif !Setting_SpriteHP_BarFillRoundDirection == 2)
+				!SharedSubUseFlag_GraphicalBarRoundUp = 1
+			endif
+			if and(notequal(!Setting_SpriteHP_GraphicalBar_VariableMiddleLength, 0), !Setting_SpriteHP_BarExtendLeft)
+				!SharedSubUseFlag_UsingExtendingLeftBar = 1
+			endif
+			if !Setting_SpriteHP_LeftwardsBar == 0
+				!SharedSubUseFlag_UsingLeftwardsFillBar = 1
+			else
+				!SharedSubUseFlag_UsingRightwardsFillBar = 1
+			endif
 		endif
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;Other

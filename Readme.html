@@ -206,7 +206,7 @@
 						to save ROM space. Just to let you know that you can use some of these subroutines for other than sprite HP, as many of them are general-purpose.<br><br>
 						
 						Be aware that some subroutines may branch/jump into another subroutine's code, such as <kbd>GraphicalBarRoundAwayEmpty/GraphicalBarRoundAwayFull</kbd> to parts of <kbd>GraphicalBarRoundAwayEmptyFull</kbd> and
-						<kbd>ConvertToRightAligned</kbd> branching to <kbd>ConvertToRightAlignedFormat2</kbd>, if that's the case, only comment out the code that won't be executed. For example on the latter part, if you're using
+						<kbd>ConvertToRightAligned</kbd> branching to parts of <kbd>ConvertToRightAlignedFormat2</kbd>. If that's the case, only comment out the code that won't be executed. For example on the latter part, if you're using
 						<kbd>ConvertToRightAlignedFormat2</kbd> and will never use <kbd>ConvertToRightAligned</kbd>, then you can do this:
 						<div class="CodeBlock" style="height: 222px; width: 1000px;"><pre>;[...]
 ConvertToRightAligned:
@@ -221,13 +221,13 @@ ConvertToRightAlignedFormat2:
 	TAY					;&gt;Transfer A to Y status bar leftmost position to Y (need this later)
 	+
 ;[...]</pre></div>
-						Conversely, if you are using <kbd>ConvertToRightAligned</kbd> and not <kbd>ConvertToRightAlignedFormat2</kbd> (Don't worry, labels doesn't take space in the ROM, it's only for asar to tell jumps and branch where to go to):
+						Conversely, if you are using <kbd>ConvertToRightAligned</kbd> and not <kbd>ConvertToRightAlignedFormat2</kbd> (Remember that labels doesn't take space in the ROM, it's only for asar to tell jumps and branch where to go to):
 <div class="CodeBlock" style="height: 222px; width: 1000px;"><pre>;[...]
 ConvertToRightAligned:
 	TXA					;&gt;Transfer X (number of tiles) to A
 	DEC					;&gt;Decrement A (since it's 0-based)
 	TAY					;&gt;Transfer A status bar leftmost position to Y (Y is how many tiles of offset by, need this later)
-;	BRA + 					;&gt;Because the branch destination is the next instruction that exist below here, this is not needed.
+<span style="color: #C0C000">;	BRA + 					;&gt;Because the branch destination is the next instruction that exist below here, this is not needed.</span>
 ConvertToRightAlignedFormat2:
 <span style="color: #C00000">;	TXA					;&gt;Transfer X (number of tiles) to A
 ;	DEC					;&gt;Decrement A (since it's 0-based)
