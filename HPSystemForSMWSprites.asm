@@ -1,5 +1,5 @@
-incsrc "Defines/SharedSubroutineDefs.asm"
 incsrc "Defines/SA1StuffDefines.asm"
+incsrc "Defines/SharedSubroutineDefs.asm"
 incsrc "Defines/EnemyHPMeterDefines.asm"
 incsrc "Defines/GraphicalBarDefines.asm"
 

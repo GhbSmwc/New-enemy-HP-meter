@@ -687,13 +687,13 @@
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;Get leftmost tile of longest bar if extending left
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-		Setting_SpriteHP_GraphicalBarExtendLeftClear_StatusBarAddrTile = VanillaStatusBarXYToAddress(!Setting_SpriteHP_GraphicalBarPos_ExtendLeft_x-(!Setting_SpriteHP_GraphicalBar_TotalTilesVariableLengthMax-1), !Setting_SpriteHP_GraphicalBarPos_ExtendLeft_y, !RAM_0EF9)
+		!Setting_SpriteHP_GraphicalBarExtendLeftClear_StatusBarAddrTile = VanillaStatusBarXYToAddress(!Setting_SpriteHP_GraphicalBarPos_ExtendLeft_x-(!Setting_SpriteHP_GraphicalBar_TotalTilesVariableLengthMax-1), !Setting_SpriteHP_GraphicalBarPos_ExtendLeft_y, !RAM_0EF9)
 		if !UsingCustomStatusBar
 			!Setting_SpriteHP_GraphicalBarExtendLeftClear_StatusBarAddrTile = PatchedStatusBarXYToAddress(!Setting_SpriteHP_GraphicalBarPos_ExtendLeft_x-(!Setting_SpriteHP_GraphicalBar_TotalTilesVariableLengthMax-1), !Setting_SpriteHP_GraphicalBarPos_ExtendLeft_y, !StatusBarPatchAddr_Tile, !StatusbarFormat)
 			!Setting_SpriteHP_GraphicalBarExtendLeftClear_StatusBarAddrProp = PatchedStatusBarXYToAddress(!Setting_SpriteHP_GraphicalBarPos_ExtendLeft_x-(!Setting_SpriteHP_GraphicalBar_TotalTilesVariableLengthMax-1), !Setting_SpriteHP_GraphicalBarPos_ExtendLeft_y, !StatusBarPatchAddr_Prop, !StatusbarFormat)
 		endif
 		
-		Setting_SpriteHP_GraphicalBarExtendLeft_StatusBarAddrTile = VanillaStatusBarXYToAddress(!Setting_SpriteHP_GraphicalBarPos_ExtendLeft_x, !Setting_SpriteHP_GraphicalBarPos_ExtendLeft_y, !RAM_0EF9)
+		!Setting_SpriteHP_GraphicalBarExtendLeft_StatusBarAddrTile = VanillaStatusBarXYToAddress(!Setting_SpriteHP_GraphicalBarPos_ExtendLeft_x, !Setting_SpriteHP_GraphicalBarPos_ExtendLeft_y, !RAM_0EF9)
 		if !UsingCustomStatusBar
 			!Setting_SpriteHP_GraphicalBarExtendLeft_StatusBarAddrTile = PatchedStatusBarXYToAddress(!Setting_SpriteHP_GraphicalBarPos_ExtendLeft_x, !Setting_SpriteHP_GraphicalBarPos_ExtendLeft_y, !StatusBarPatchAddr_Tile, !StatusbarFormat)
 			!Setting_SpriteHP_GraphicalBarExtendLeft_StatusBarAddrProp = PatchedStatusBarXYToAddress(!Setting_SpriteHP_GraphicalBarPos_ExtendLeft_x, !Setting_SpriteHP_GraphicalBarPos_ExtendLeft_y, !StatusBarPatchAddr_Prop, !StatusbarFormat)
@@ -709,16 +709,6 @@
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;Shared subroutines usage flags
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;	!SharedSubUseFlag_NumberDisplayRoutines = 0
-;	!SharedSubUseFlag_RightAlignedNumbers = 0
-;	!SharedSubUseFlag_RemoveLeadingZeroes16Bit = 0
-;	!SharedSubUseFlag_SuppressLeadingZeros = 0
-;	!SharedSubUseFlag_WriteStringDigitsToHUD = 0
-;	!SharedSubUseFlag_GraphicalBarRoundHalfUp = 0
-;	!SharedSubUseFlag_GraphicalBarRoundUp = 0
-;	!SharedSubUseFlag_UsingExtendingLeftBar = 0
-;	!SharedSubUseFlag_UsingLeftwardsFillBar = 0
-;	!SharedSubUseFlag_UsingRightwardsFillBar = 0
 		if !Setting_SpriteHP_DisplayNumerical != 0
 			!SharedSubUseFlag_NumberDisplayRoutines = 1
 			if !Setting_SpriteHP_NumericalTextAlignment == 2
@@ -739,16 +729,19 @@
 		if !SharedSubUseFlag_UsingGraphicalBarRoutines
 			if !Setting_SpriteHP_BarFillRoundDirection == 0
 				!SharedSubUseFlag_GraphicalBarRoundHalfUp = 1
-			elseif !Setting_SpriteHP_BarFillRoundDirection == 2)
+			elseif !Setting_SpriteHP_BarFillRoundDirection == 2
 				!SharedSubUseFlag_GraphicalBarRoundUp = 1
 			endif
 			if and(notequal(!Setting_SpriteHP_GraphicalBar_VariableMiddleLength, 0), !Setting_SpriteHP_BarExtendLeft)
 				!SharedSubUseFlag_UsingExtendingLeftBar = 1
 			endif
-			if !Setting_SpriteHP_LeftwardsBar == 0
+			if !Setting_SpriteHP_LeftwardsBar
 				!SharedSubUseFlag_UsingLeftwardsFillBar = 1
 			else
 				!SharedSubUseFlag_UsingRightwardsFillBar = 1
+			endif
+			if !Setting_SpriteHP_BarAnimation
+				!SharedSubUseFlag_SpriteHPRemoveRecordEffect = 1
 			endif
 		endif
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -40,9 +40,9 @@
 			
 			macro ConditionalSharedSubDefineList(DefineName_True, DefineName_False, Condition)
 				if <Condition>
-					%SetSharedSubDefine(DefineName_True)
+					%SetSharedSubDefine(<DefineName_True>)
 				else
-					%SetSharedSubDefine(DefineName_False)
+					%SetSharedSubDefine(<DefineName_False>)
 				endif
 			endmacro
 		endif
@@ -50,32 +50,41 @@
 	;Place your "use flag" defines here. It must have them be defined as
 	;0 here.
 	;
-	;This defaults the "use flag" of subroutines to 0. Then later, uses
-	;incsrc "3rd_partyDefineFile.asm", which that conditionally sets
-	;the "use flag" to 1 to indicate a subroutine being used.
+	;This defaults the "use flag" of subroutines to 0. Then immidiately,
+	;uses incsrc "3rd_partyDefineFile.asm", which that conditionally
+	;sets the "use flag" to 1 to indicate a subroutine being used.
 		!SharedSubUseFlag_NumberDisplayRoutines = 0
 		!SharedSubUseFlag_RightAlignedNumbers = 0
 		!SharedSubUseFlag_RemoveLeadingZeroes16Bit = 0
 		!SharedSubUseFlag_SuppressLeadingZeros = 0
 		!SharedSubUseFlag_WriteStringDigitsToHUD = 0
+		!SharedSubUseFlag_UsingGraphicalBarRoutines = 0
 		!SharedSubUseFlag_GraphicalBarRoundHalfUp = 0
 		!SharedSubUseFlag_GraphicalBarRoundUp = 0
 		!SharedSubUseFlag_UsingExtendingLeftBar = 0
 		!SharedSubUseFlag_UsingLeftwardsFillBar = 0
 		!SharedSubUseFlag_UsingRightwardsFillBar = 0
+		!SharedSubUseFlag_SpriteHPRemoveRecordEffect = 0
+		
 	;Place your "incsrc use flag marker" here. Along with placing a
 	;define file "SharedSub_Defines/SharedSubroutineDefs.asm"
 	;(which the pasted define file conditionally sets the use flag
-	;depending on the configuration). The example below:
+	; to 1 depending on the configuration). The example below:
 	
 		;incsrc "DefineConfigurationThingThatMayUseDMA.asm"
 			;^This contains the following somewhere in the file:
 			;	if !Setting != 0
 			;		!SharedSubUseFlag_FindFreeUploadSlot = 1
 			;	endif
-			; Make sure no 3rd party ASM files' defines incsrcs into
-			; this define file else it will infinitely include this
-			; file and the other file and cause an error.
+			; NOTES:
+			; - Make sure no 3rd party ASM files' defines incsrcs into
+			;   this define file else it will infinitely include this
+			;   file and the other file and cause an error.
+			; - Make sure they DO NOT set the use flag to 0 if not
+			;   used. Either it set it to 1, or leave it as is.
+			;   Setting it to 0 risks excluding a subroutine define
+			;   when it is actually used.
+		incsrc "EnemyHPMeterDefines.asm"
 	
 	;[Safe to Edit]
 	;These below assign each subroutine JML address location to a define.
@@ -97,28 +106,28 @@
 	;   substituting with other item in the list or a placeholder (using
 	;   "else"). Easiest way is to use the aformentioned conditional
 	;   macro, which automatically handles the substitute.
-		%ConditionalSharedSubDefineList(SharedSub_SetEnemyHPBarAttributes, SharedSub_Placeholder, !SharedSubUseFlag_UsingGraphicalBarRoutines)
-		%ConditionalSharedSubDefineList(SharedSub_CalculateGraphicalBarPercentage, SharedSub_Placeholder, !SharedSubUseFlag_GraphicalBarRoundHalfUp)
-		%ConditionalSharedSubDefineList(SharedSub_CalculateGraphicalBarPercentageRoundUp, SharedSub_Placeholder, !SharedSubUseFlag_GraphicalBarRoundUp)
-		%ConditionalSharedSubDefineList(SharedSub_CalculateGraphicalBarPercentageRoundDown, Placeholder, !SharedSubUseFlag_UsingGraphicalBarRoutines)
-		%ConditionalSharedSubDefineList(SharedSub_GraphicalBarExtendLeft, Placeholder, !SharedSubUseFlag_UsingExtendingLeftBar)
-		%ConditionalSharedSubDefineList(SharedSub_GraphicalBarExtendLeftFormat2, Placeholder, !SharedSubUseFlag_UsingExtendingLeftBar)
-		%ConditionalSharedSubDefineList(SharedSub_ConvertBarFillAmountToTiles, Placeholder, !SharedSubUseFlag_UsingGraphicalBarRoutines)
-		%ConditionalSharedSubDefineList(SharedSub_DrawGraphicalBarSubtractionLoopEdition, Placeholder, !SharedSubUseFlag_UsingGraphicalBarRoutines)
-		%ConditionalSharedSubDefineList(SharedSub_GraphicalBarRoundAwayEmpty, Placeholder, !SharedSubUseFlag_UsingGraphicalBarRoutines)
-		%ConditionalSharedSubDefineList(SharedSub_GraphicalBarRoundAwayEmptyFull, Placeholder, !SharedSubUseFlag_UsingGraphicalBarRoutines)
-		%ConditionalSharedSubDefineList(SharedSub_GraphicalBarRoundAwayFull, Placeholder, !SharedSubUseFlag_UsingGraphicalBarRoutines)
-		%ConditionalSharedSubDefineList(SharedSub_WriteBarToHUD, Placeholder, !SharedSubUseFlag_UsingRightwardsFillBar)
-		%ConditionalSharedSubDefineList(SharedSub_WriteBarToHUDFormat2, Placeholder, !SharedSubUseFlag_UsingRightwardsFillBar)
-		%ConditionalSharedSubDefineList(SharedSub_WriteBarToHUDLeftwards, Placeholder, !SharedSubUseFlag_UsingLeftwardsFillBar)
-		%ConditionalSharedSubDefineList(SharedSub_WriteBarToHUDLeftwardsFormat2, Placeholder, !SharedSubUseFlag_UsingLeftwardsFillBar)
-		%ConditionalSharedSubDefineList(SharedSub_ConvertToRightAligned, Placeholder, !SharedSubUseFlag_RightAlignedNumbers)
-		%ConditionalSharedSubDefineList(SharedSub_ConvertToRightAlignedFormat2, Placeholder, !SharedSubUseFlag_RightAlignedNumbers)
-		%ConditionalSharedSubDefineList(SharedSub_RemoveLeadingZeroes16Bit, Placeholder, !SharedSubUseFlag_RemoveLeadingZeroes16Bit)
-		%ConditionalSharedSubDefineList(SharedSub_SixteenBitHexDecDivision, Placeholder, !SharedSubUseFlag_NumberDisplayRoutines)
-		%ConditionalSharedSubDefineList(SharedSub_SuppressLeadingZeros, Placeholder, !SharedSubUseFlag_SuppressLeadingZeros)
-		%ConditionalSharedSubDefineList(SharedSub_WriteStringDigitsToHUD, Placeholder, !SharedSubUseFlag_WriteStringDigitsToHUD)
-		%ConditionalSharedSubDefineList(SharedSub_WriteStringDigitsToHUDFormat2, Placeholder, !SharedSubUseFlag_WriteStringDigitsToHUD)
+		%ConditionalSharedSubDefineList(SharedSub_SetEnemyHPBarAttributes, SharedSub_Placeholder, !SharedSubUseFlag_UsingGraphicalBarRoutines)		;
+		%ConditionalSharedSubDefineList(SharedSub_CalculateGraphicalBarPercentage, SharedSub_Placeholder, !SharedSubUseFlag_GraphicalBarRoundHalfUp)		;
+		%ConditionalSharedSubDefineList(SharedSub_CalculateGraphicalBarPercentageRoundUp, SharedSub_Placeholder, !SharedSubUseFlag_GraphicalBarRoundUp)		;
+		%ConditionalSharedSubDefineList(SharedSub_CalculateGraphicalBarPercentageRoundDown, SharedSub_Placeholder, !SharedSubUseFlag_UsingGraphicalBarRoutines)		;
+		%ConditionalSharedSubDefineList(SharedSub_GraphicalBarExtendLeft, SharedSub_Placeholder, !SharedSubUseFlag_UsingExtendingLeftBar)		;
+		%ConditionalSharedSubDefineList(SharedSub_GraphicalBarExtendLeftFormat2, SharedSub_Placeholder, !SharedSubUseFlag_UsingExtendingLeftBar)		;
+		%ConditionalSharedSubDefineList(SharedSub_ConvertBarFillAmountToTiles, SharedSub_Placeholder, !SharedSubUseFlag_UsingGraphicalBarRoutines)		;
+		%ConditionalSharedSubDefineList(SharedSub_DrawGraphicalBarSubtractionLoopEdition, SharedSub_Placeholder, !SharedSubUseFlag_UsingGraphicalBarRoutines)		;
+		%ConditionalSharedSubDefineList(SharedSub_GraphicalBarRoundAwayEmpty, SharedSub_Placeholder, !SharedSubUseFlag_UsingGraphicalBarRoutines)		;
+		%ConditionalSharedSubDefineList(SharedSub_GraphicalBarRoundAwayEmptyFull, SharedSub_Placeholder, !SharedSubUseFlag_UsingGraphicalBarRoutines)		;
+		%ConditionalSharedSubDefineList(SharedSub_GraphicalBarRoundAwayFull, SharedSub_Placeholder, !SharedSubUseFlag_UsingGraphicalBarRoutines)		;
+		%ConditionalSharedSubDefineList(SharedSub_WriteBarToHUD, SharedSub_Placeholder, !SharedSubUseFlag_UsingRightwardsFillBar)		;
+		%ConditionalSharedSubDefineList(SharedSub_WriteBarToHUDFormat2, SharedSub_Placeholder, !SharedSubUseFlag_UsingRightwardsFillBar)		;
+		%ConditionalSharedSubDefineList(SharedSub_WriteBarToHUDLeftwards, SharedSub_Placeholder, !SharedSubUseFlag_UsingLeftwardsFillBar)		;
+		%ConditionalSharedSubDefineList(SharedSub_WriteBarToHUDLeftwardsFormat2, SharedSub_Placeholder, !SharedSubUseFlag_UsingLeftwardsFillBar)		;
+		%ConditionalSharedSubDefineList(SharedSub_ConvertToRightAligned, SharedSub_Placeholder, !SharedSubUseFlag_RightAlignedNumbers)		;
+		%ConditionalSharedSubDefineList(SharedSub_ConvertToRightAlignedFormat2, SharedSub_Placeholder, !SharedSubUseFlag_RightAlignedNumbers)		;
+		%ConditionalSharedSubDefineList(SharedSub_RemoveLeadingZeroes16Bit, SharedSub_Placeholder, !SharedSubUseFlag_RemoveLeadingZeroes16Bit)		;
+		%ConditionalSharedSubDefineList(SharedSub_SixteenBitHexDecDivision, SharedSub_Placeholder, !SharedSubUseFlag_NumberDisplayRoutines)		;
+		%ConditionalSharedSubDefineList(SharedSub_SuppressLeadingZeros, SharedSub_Placeholder, !SharedSubUseFlag_SuppressLeadingZeros)		;
+		%ConditionalSharedSubDefineList(SharedSub_WriteStringDigitsToHUD, SharedSub_Placeholder, !SharedSubUseFlag_WriteStringDigitsToHUD)		;
+		%ConditionalSharedSubDefineList(SharedSub_WriteStringDigitsToHUDFormat2, SharedSub_Placeholder, !SharedSubUseFlag_WriteStringDigitsToHUD)		;
 		%SetSharedSubDefine(SharedSub_MathDiv32_16)		;
 		%SetSharedSubDefine(SharedSub_MathDiv)		;
 		%SetSharedSubDefine(SharedSub_MathMul16_16)		;

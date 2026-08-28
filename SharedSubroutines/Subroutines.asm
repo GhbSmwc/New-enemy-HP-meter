@@ -1780,68 +1780,70 @@ SubtractSpriteHP:
 		.Normal
 		STA !Scratchram_SpriteHP_SpriteSlotToDisplay
 		RTL
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;This subroutine sets the graphical bar animation
-;fill value to its current HP fill amount. Effectively
-;removing the transparent fill loss of taking damage.
-;
-;This is used to get the fill amount prior to taking
-;damage, when the HP meter switches sprite slots
-;(including from $FF of a null-sprite). That way the
-;bar always show its before-damage fill amount but not
-;before even that if the player damages the this
-;sprite, then the other sprite, than this sprite
-;quickly.
-;
-;Input:
-; - !Setting_SpriteHP_GraphicalBar_LeftPieces = Number of pieces, to find total pieces of the bar.
-; - !Setting_SpriteHP_GraphicalBar_MiddlePieces = Number of pieces, to find total pieces of the bar.
-; - !Setting_SpriteHP_GraphicalBar_RightPieces = Number of pieces, to find total pieces of the bar.
-; - !Setting_SpriteHP_GraphicalBarMiddleLength = Number of middle tiles, to find total pieces of the bar.
-;Output:
-; - $00 = Amount of fill in the bar of the sprite's
-;   current HP.
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-SpriteHPRemoveRecordEffect:
-	PHX
-	JSL SpriteHPGetSlotIndex
-	LDX !Scratchram_SpriteHP_SpriteSlotToDisplay
-	LDA !Freeram_SpriteHP_CurrentHPLow,x
-	STA !Scratchram_GraphicalBar_FillByteTbl
-	LDA !Freeram_SpriteHP_MaxHPLow,x
-	STA !Scratchram_GraphicalBar_FillByteTbl+2
-	if !Setting_SpriteHP_TwoByte
-		LDA !Freeram_SpriteHP_CurrentHPHi,x
-		STA !Scratchram_GraphicalBar_FillByteTbl+1
-		LDA !Freeram_SpriteHP_MaxHPHi,x
-		STA !Scratchram_GraphicalBar_FillByteTbl+3
-	else
-		LDA #$00
-		STA !Scratchram_GraphicalBar_FillByteTbl+1
-		STA !Scratchram_GraphicalBar_FillByteTbl+3
-	endif
-	JSL SetEnemyHPBarAttributes
-	if !Setting_SpriteHP_BarFillRoundDirection == 0
-		JSL CalculateGraphicalBarPercentage
-	elseif !Setting_SpriteHP_BarFillRoundDirection == 1
-		JSL CalculateGraphicalBarPercentageRoundDown
-	elseif !Setting_SpriteHP_BarFillRoundDirection == 2
-		JSL CalculateGraphicalBarPercentageRoundUp
-	endif
-	;$00~$01 = percentage, Y = rounding 0 or 100 state
-	if !Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull == 1
-		JSL GraphicalBarRoundAwayEmpty
-	elseif !Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull == 2
-		JSL GraphicalBarRoundAwayFull
-	elseif !Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull == 3
-		JSL GraphicalBarRoundAwayEmptyFull
-	endif
-	PLX
-	if !Setting_SpriteHP_BarAnimation
-		LDA $00
-		STA !Freeram_SpriteHP_BarAnimationFill
-	endif
-	RTL
+if !SharedSubUseFlag_UsingGraphicalBarRoutines
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	;This subroutine sets the graphical bar animation
+	;fill value to its current HP fill amount. Effectively
+	;removing the transparent fill loss of taking damage.
+	;
+	;This is used to get the fill amount prior to taking
+	;damage, when the HP meter switches sprite slots
+	;(including from $FF of a null-sprite). That way the
+	;bar always show its before-damage fill amount but not
+	;before even that if the player damages the this
+	;sprite, then the other sprite, than this sprite
+	;quickly.
+	;
+	;Input:
+	; - !Setting_SpriteHP_GraphicalBar_LeftPieces = Number of pieces, to find total pieces of the bar.
+	; - !Setting_SpriteHP_GraphicalBar_MiddlePieces = Number of pieces, to find total pieces of the bar.
+	; - !Setting_SpriteHP_GraphicalBar_RightPieces = Number of pieces, to find total pieces of the bar.
+	; - !Setting_SpriteHP_GraphicalBarMiddleLength = Number of middle tiles, to find total pieces of the bar.
+	;Output:
+	; - $00 = Amount of fill in the bar of the sprite's
+	;   current HP.
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	SpriteHPRemoveRecordEffect:
+		PHX
+		JSL SpriteHPGetSlotIndex
+		LDX !Scratchram_SpriteHP_SpriteSlotToDisplay
+		LDA !Freeram_SpriteHP_CurrentHPLow,x
+		STA !Scratchram_GraphicalBar_FillByteTbl
+		LDA !Freeram_SpriteHP_MaxHPLow,x
+		STA !Scratchram_GraphicalBar_FillByteTbl+2
+		if !Setting_SpriteHP_TwoByte
+			LDA !Freeram_SpriteHP_CurrentHPHi,x
+			STA !Scratchram_GraphicalBar_FillByteTbl+1
+			LDA !Freeram_SpriteHP_MaxHPHi,x
+			STA !Scratchram_GraphicalBar_FillByteTbl+3
+		else
+			LDA #$00
+			STA !Scratchram_GraphicalBar_FillByteTbl+1
+			STA !Scratchram_GraphicalBar_FillByteTbl+3
+		endif
+		JSL SetEnemyHPBarAttributes
+		if !Setting_SpriteHP_BarFillRoundDirection == 0
+			JSL CalculateGraphicalBarPercentage
+		elseif !Setting_SpriteHP_BarFillRoundDirection == 1
+			JSL CalculateGraphicalBarPercentageRoundDown
+		elseif !Setting_SpriteHP_BarFillRoundDirection == 2
+			JSL CalculateGraphicalBarPercentageRoundUp
+		endif
+		;$00~$01 = percentage, Y = rounding 0 or 100 state
+		if !Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull == 1
+			JSL GraphicalBarRoundAwayEmpty
+		elseif !Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull == 2
+			JSL GraphicalBarRoundAwayFull
+		elseif !Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull == 3
+			JSL GraphicalBarRoundAwayEmptyFull
+		endif
+		PLX
+		if !Setting_SpriteHP_BarAnimation
+			LDA $00
+			STA !Freeram_SpriteHP_BarAnimationFill
+		endif
+		RTL
+endif
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;Sprite HP Intro fill effect
 ;To be used in boss sprites and not to be executed
@@ -1929,10 +1931,10 @@ if !Setting_SpriteHP_TotalHPMode
 		endif
 		if !Setting_SpriteHP_BarAnimation
 			STA !Freeram_SpriteHP_BarAnimationFill                                      ;/Start the meter at 0%
+			if !Setting_SpriteHP_BarChangeDelay                                         ;
+				STA !Freeram_SpriteHP_BarAnimationTimer                                 ;>Set timer to 0 to make sure the animation plays correctly (allow SFX)
+			endif                                                                       ;
 		endif
-		if !Setting_SpriteHP_BarChangeDelay                                         ;
-			STA !Freeram_SpriteHP_BarAnimationTimer                                 ;>Set timer to 0 to make sure the animation plays correctly (allow SFX)
-		endif                                                                       ;
 		.Disabled
 		RTL
 endif
