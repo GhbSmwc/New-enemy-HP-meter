@@ -92,3 +92,6 @@ endmacro
 %define_sprite_table(sprite_extra_prop1, "7FAB28", $7FAB28, $6057)
 %define_sprite_table(sprite_extra_prop2, "7FAB34", $7FAB34, $606D)
 %define_sprite_table(sprite_custom_num, "7FAB9E", $7FAB9E, $6083)
+
+;Pixi
+%define_sprite_table(sprite_load_table, "7FAF00", $7FAF00, $418A00)

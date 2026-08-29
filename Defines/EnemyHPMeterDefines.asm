@@ -348,6 +348,9 @@
 			; in $7FAB10 being garbage values on certain emulators, which can cause glitches on
 			; those emulators related to the HP meter system to incorrectly think sprites are
 			; custom or not.
+		!Setting_SpriteHP_PixiDisable255SpritesPerLevel = 0
+			;^This is pixi's "!Disable255SpritesPerLevel" setting. The value here must match that, because
+			; the patch also modifies the suboffscreen routine.
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		;Apply (proper) HP system on various vanilla SMW sprites that are not strictly one-shot: 0 = no, 1 = yes.
 		;Use only mentioned values, unless stated otherwise. Having these turned off will COMPLETELY revert back

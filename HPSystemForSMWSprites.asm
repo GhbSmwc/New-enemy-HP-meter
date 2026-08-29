@@ -149,6 +149,36 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			STA !14C8,<String_IndexToUse>
 		endif
 	endmacro
+	macro SubOffScreenHijacks(Addr_Hijack, Label_ToFreespace, Addr_BranchToKillSpr)
+		;This macro hijacks a 4-byte area related to sub-offscreen, to execute
+		;JSL SharedSub_HideHPMeterIfSpriteDespawns to prevent HP meter transfer
+		;bug when a sprite goes off-screen, despawns, new sprite spawns on same
+		;slot as the despawned sprite at the same frame.
+		;	CMP.b #$08					;Addr+$00 ;\Hijacked
+		;	BCC OffScrKillSprite		;Addr+$02 ;/
+		;	LDY.w $161A,X				;Addr+$04 ;\This is skipped
+		;	CPY.b #$FF					;Addr+$07 ;|
+		;	BEQ OffScrKillSprite		;Addr+$09 ;|
+		;	LDA.b #$00					;Addr+$0B ;|\Hijacked by pixi on LoROM and !Disable255SpritesPerLevel == 0.
+		;	STA.w $1938,Y				;Addr+$0D ;|/
+		;OffScrKillSprite:				;-------- ;|
+		;	STZ.w $14C8,X				;Addr+$10 ;/
+		;ReturnXXXXXX:					;
+		;	RTS							;Addr+$13 ;>Will execute this after this finished.
+		?SubOffScreenXBnkX:
+			if !Setting_SpriteHP_RemoveOrApplyPatch
+				org <Addr_Hijack>
+				autoclean JML <Label_ToFreespace>
+			else
+				%RemoveFreespaceCodeFromJMLJSL(<Addr_Hijack>)
+				org <Addr_Hijack>
+				CMP #$08
+				BCC ?.OffScrKillSprite
+				
+				org <Addr_BranchToKillSpr>
+				?.OffScrKillSprite
+			endif
+	endmacro
 	macro JSLRTS(JumpTo, RTLOfSameBank)
 		;This allows calling subroutines ending with an RTS from a different bank
 		;without crashing the game.
@@ -589,83 +619,48 @@ incsrc "Defines/GraphicalBarDefines.asm"
 	;Suboffscreen hijacks (prevent HP meter transfer if a sprite despawns and a new sprite spawns on the same slot
 	;on the same frame). Like I said, anytime a $14C8,x is set to 0, you almost always need to run
 	;JSL !SharedSub_HideHPMeterIfSpriteDespawns
-		SubOffscreenXBnk1:
-			;Because STZ.w $14C8,X happens in less than 4 bytes before RTS, I have to hijack
-			;an address before that, which looks ugly. Following disassembly shows what's
-			;hijacked:
-			;	CMP.b #$08					;$01AC91	||
-			;	BCC OffScrKillSprite		;$01AC93	||
-			;	LDY.w $161A,X				;$01AC95	||
-			;	CPY.b #$FF					;$01AC98	|| Erase the sprite.
-			;	BEQ OffScrKillSprite		;$01AC9A	||  If it wasn't killed, set it to respawn.
-			;	LDA.b #$00					;$01AC9C	||
-			;	STA.w $1938,Y				;$01AC9E	||
-			;OffScrKillSprite:				;			||
-			;	STZ.w $14C8,X				;$01ACA1	|/
-			;Return01ACA4:					;			|
-			;	RTS							;$01ACA4	|
-			if !Setting_SpriteHP_RemoveOrApplyPatch
-				org $01AC91
-				autoclean JML SubOffscreenXBnk1PreventHPMeterTransfer
-			else
-				%RemoveFreespaceCodeFromJMLJSL($01AC91)
-				org $01AC91
-				CMP #$08
-				BCC .OffScrKillSprite
-				
-				org $01ACA1
-				.OffScrKillSprite
-			endif
-		SubOffscreenXBnk2:
-			;Similar code as above. I can move the restore code to a subroutine here.
-			;	CMP.b #$08					;$02D07D	||
-			;	BCC OffScrKillSprBnk2		;$02D07F	||
-			;	LDY.w $161A,X				;$02D081	||
-			;	CPY.b #$FF					;$02D084	|| Erase the sprite.
-			;	BEQ OffScrKillSprBnk2		;$02D086	||  If it wasn't killed, set it to respawn.
-			;	LDA.b #$00					;$02D088	||
-			;	STA.w $1938,Y				;$02D08A	||
-			;OffScrKillSprBnk2:				;			||
-			;	STZ.w $14C8,X				;$02D08D	|/
-			;Return02D090:					;			|
-			;	RTS							;$02D090	|
-			if !Setting_SpriteHP_RemoveOrApplyPatch
-				org $02D07D
-				autoclean JML SubOffscreenXBnk2PreventHPMeterTransfer
-			else
-				%RemoveFreespaceCodeFromJMLJSL($02D07D)
-				org $02D07D
-				CMP #$08
-				BCC .OffScrKillSprite
-				
-				org $02D08D
-				.OffScrKillSprite
-			endif
-		SubOffscreenXBnk3:
-			;Same.
-			;	CMP.b #$08					;$03B8AF	|
-			;	BCC OffScrKillSprBnk3		;$03B8B1	|
-			;	LDY.w $161A,X				;$03B8B3	|
-			;	CPY.b #$FF					;$03B8B6	|
-			;	BEQ OffScrKillSprBnk3		;$03B8B8	|
-			;	LDA.b #$00					;$03B8BA	|
-			;	STA.w $1938,Y				;$03B8BC	|
-			;OffScrKillSprBnk3:				;			|
-			;	STZ.w $14C8,X				;$03B8BF	|
-			;Return03B8C2:					;			|
-			;	RTS							;$03B8C2	|
-			if !Setting_SpriteHP_RemoveOrApplyPatch
-				org $03B8AF
-				autoclean JML SubOffscreenXBnk3PreventHPMeterTransfer
-			else
-				%RemoveFreespaceCodeFromJMLJSL($03B8AF)
-				org $03B8AF
-				CMP #$08
-				BCC .OffScrKillSprite
-				
-				org $03B8BF
-				.OffScrKillSprite
-			endif
+		;Because STZ.w $14C8,X happens in less than 4 bytes before RTS, I have to hijack
+		;an address before that, which looks ugly. Following disassembly shows what's
+		;hijacked:
+		;	CMP.b #$08					;$01AC91	||
+		;	BCC OffScrKillSprite		;$01AC93	||
+		;	LDY.w $161A,X				;$01AC95	||
+		;	CPY.b #$FF					;$01AC98	|| Erase the sprite.
+		;	BEQ OffScrKillSprite		;$01AC9A	||  If it wasn't killed, set it to respawn.
+		;	LDA.b #$00					;$01AC9C	||\Hijacked by pixi on LoROM and !Disable255SpritesPerLevel == 0.
+		;	STA.w $1938,Y				;$01AC9E	||/
+		;OffScrKillSprite:				;			||
+		;	STZ.w $14C8,X				;$01ACA1	|/
+		;Return01ACA4:					;			|
+		;	RTS							;$01ACA4	|
+		%SubOffScreenHijacks($01AC91, SubOffscreenXBnk1PreventHPMeterTransfer, $01ACA1)
+		
+		;Similar code as above. I can move the restore code to a subroutine here.
+		;	CMP.b #$08					;$02D07D	||
+		;	BCC OffScrKillSprBnk2		;$02D07F	||
+		;	LDY.w $161A,X				;$02D081	||
+		;	CPY.b #$FF					;$02D084	|| Erase the sprite.
+		;	BEQ OffScrKillSprBnk2		;$02D086	||  If it wasn't killed, set it to respawn.
+		;	LDA.b #$00					;$02D088	||\Hijacked by pixi on LoROM and !Disable255SpritesPerLevel == 0.
+		;	STA.w $1938,Y				;$02D08A	||/
+		;OffScrKillSprBnk2:				;			||
+		;	STZ.w $14C8,X				;$02D08D	|/
+		;Return02D090:					;			|
+		;	RTS							;$02D090	|
+		%SubOffScreenHijacks($02D07D, SubOffscreenXBnk2PreventHPMeterTransfer, $02D08D)
+		;Same.
+		;	CMP.b #$08					;$03B8AF	|
+		;	BCC OffScrKillSprBnk3		;$03B8B1	|
+		;	LDY.w $161A,X				;$03B8B3	|
+		;	CPY.b #$FF					;$03B8B6	|
+		;	BEQ OffScrKillSprBnk3		;$03B8B8	|
+		;	LDA.b #$00					;$03B8BA	|\Hijacked by pixi on LoROM and !Disable255SpritesPerLevel == 0.
+		;	STA.w $1938,Y				;$03B8BC	|/
+		;OffScrKillSprBnk3:				;			|
+		;	STZ.w $14C8,X				;$03B8BF	|
+		;Return03B8C2:					;			|
+		;	RTS							;$03B8C2	|
+		%SubOffScreenHijacks($03B8AF, SubOffscreenXBnk3PreventHPMeterTransfer, $03B8BF)
 	;Bosses below (only applies to bosses with a HP system, and not bowser)
 		;Reznor. Note that when killed, it calls the "InitSpriteTables" subroutine at $xxxxxx.
 		;Thus resulting in the meter jumping to 0 back to 1. I had to hijack at $039AF2 to force it to be zero
@@ -1510,8 +1505,17 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				LDY !161A,x
 				CPY #$FF
 				BEQ ..OffScrKillSprite
-				LDA.b #$00
-				STA $1938|!addr,y
+				
+				if or(!Setting_SpriteHP_PixiDisable255SpritesPerLevel, equal(!Setting_SpriteHP_UsingCustomSprites, 0))
+					LDA.b #$00
+					STA !1938,y
+				else
+					PHX
+					TYX
+					LDA.b #$00
+					STA !7FAF00,x
+					PLX
+				endif
 				..OffScrKillSprite
 					STZ !14C8,x
 			.HideHPMeterImmidiately
