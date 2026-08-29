@@ -1,3 +1,4 @@
+incsrc "../EnemyHPMeterDefines.asm"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;Heal sprite.
 ;
@@ -34,7 +35,7 @@
 		SBC !Freeram_SpriteHP_MaxHPHi,x
 	endif
 	BCS ?.Overflow ;>If HP is greater than max, cap HP (SBC would clear carry if A unsigned underflows (when A - B results in negatives))
-	if and(notequal(!Setting_SpriteHP_BarAnimation, 0) notequal(!Setting_SpriteHP_BarChangeDelay, 0))
+	if and(notequal(!Setting_SpriteHP_BarAnimation, 0), notequal(!Setting_SpriteHP_BarChangeDelay, 0))
 		BRA ?.BarAnimation
 	else
 		RTL
@@ -48,7 +49,7 @@
 			STA !Freeram_SpriteHP_CurrentHPHi,x
 		endif
 	?.BarAnimation
-		if and(notequal(!Setting_SpriteHP_BarAnimation, 0) notequal(!Setting_SpriteHP_BarChangeDelay, 0))
+		if and(notequal(!Setting_SpriteHP_BarAnimation, 0), notequal(!Setting_SpriteHP_BarChangeDelay, 0))
 			LDA !Freeram_SpriteHP_MeterState	;\If HP meter is showing total HP...
 			CMP.b #!sprite_slots*2				;|
 			BEQ ?..AllowAnimation				;|

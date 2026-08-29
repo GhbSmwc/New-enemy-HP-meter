@@ -161,6 +161,12 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		
 		?ReturnAddr:
 	endmacro
+	
+	macro VanillaSubOffScrnFreespaceCode(ToFreespaceCode, JMLAddressToReturn)
+		<ToFreespaceCode>:
+			JSR SubOffScreenClearSpriteTableRestore
+			JML <JMLAddressToReturn>|!bank
+	endmacro
 ;Hijacks
 	;Chucks
 		;Code that runs every frame. Ensures the HP values in the new sprite RAM is in sync (for display).
@@ -580,6 +586,86 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			LDA #$05
 			STA !14C8,x
 		endif
+	;Suboffscreen hijacks (prevent HP meter transfer if a sprite despawns and a new sprite spawns on the same slot
+	;on the same frame). Like I said, anytime a $14C8,x is set to 0, you almost always need to run
+	;JSL !SharedSub_HideHPMeterIfSpriteDespawns
+		SubOffscreenXBnk1:
+			;Because STZ.w $14C8,X happens in less than 4 bytes before RTS, I have to hijack
+			;an address before that, which looks ugly. Following disassembly shows what's
+			;hijacked:
+			;	CMP.b #$08					;$01AC91	||
+			;	BCC OffScrKillSprite		;$01AC93	||
+			;	LDY.w $161A,X				;$01AC95	||
+			;	CPY.b #$FF					;$01AC98	|| Erase the sprite.
+			;	BEQ OffScrKillSprite		;$01AC9A	||  If it wasn't killed, set it to respawn.
+			;	LDA.b #$00					;$01AC9C	||
+			;	STA.w $1938,Y				;$01AC9E	||
+			;OffScrKillSprite:				;			||
+			;	STZ.w $14C8,X				;$01ACA1	|/
+			;Return01ACA4:					;			|
+			;	RTS							;$01ACA4	|
+			if !Setting_SpriteHP_RemoveOrApplyPatch
+				org $01AC91
+				autoclean JML SubOffscreenXBnk1PreventHPMeterTransfer
+			else
+				%RemoveFreespaceCodeFromJMLJSL($01AC91)
+				org $01AC91
+				CMP #$08
+				BCC .OffScrKillSprite
+				
+				org $01ACA1
+				.OffScrKillSprite
+			endif
+		SubOffscreenXBnk2:
+			;Similar code as above. I can move the restore code to a subroutine here.
+			;	CMP.b #$08					;$02D07D	||
+			;	BCC OffScrKillSprBnk2		;$02D07F	||
+			;	LDY.w $161A,X				;$02D081	||
+			;	CPY.b #$FF					;$02D084	|| Erase the sprite.
+			;	BEQ OffScrKillSprBnk2		;$02D086	||  If it wasn't killed, set it to respawn.
+			;	LDA.b #$00					;$02D088	||
+			;	STA.w $1938,Y				;$02D08A	||
+			;OffScrKillSprBnk2:				;			||
+			;	STZ.w $14C8,X				;$02D08D	|/
+			;Return02D090:					;			|
+			;	RTS							;$02D090	|
+			if !Setting_SpriteHP_RemoveOrApplyPatch
+				org $02D07D
+				autoclean JML SubOffscreenXBnk2PreventHPMeterTransfer
+			else
+				%RemoveFreespaceCodeFromJMLJSL($02D07D)
+				org $02D07D
+				CMP #$08
+				BCC .OffScrKillSprite
+				
+				org $02D08D
+				.OffScrKillSprite
+			endif
+		SubOffscreenXBnk3:
+			;Same.
+			;	CMP.b #$08					;$03B8AF	|
+			;	BCC OffScrKillSprBnk3		;$03B8B1	|
+			;	LDY.w $161A,X				;$03B8B3	|
+			;	CPY.b #$FF					;$03B8B6	|
+			;	BEQ OffScrKillSprBnk3		;$03B8B8	|
+			;	LDA.b #$00					;$03B8BA	|
+			;	STA.w $1938,Y				;$03B8BC	|
+			;OffScrKillSprBnk3:				;			|
+			;	STZ.w $14C8,X				;$03B8BF	|
+			;Return03B8C2:					;			|
+			;	RTS							;$03B8C2	|
+			if !Setting_SpriteHP_RemoveOrApplyPatch
+				org $03B8AF
+				autoclean JML SubOffscreenXBnk3PreventHPMeterTransfer
+			else
+				%RemoveFreespaceCodeFromJMLJSL($03B8AF)
+				org $03B8AF
+				CMP #$08
+				BCC .OffScrKillSprite
+				
+				org $03B8BF
+				.OffScrKillSprite
+			endif
 	;Bosses below (only applies to bosses with a HP system, and not bowser)
 		;Reznor. Note that when killed, it calls the "InitSpriteTables" subroutine at $xxxxxx.
 		;Thus resulting in the meter jumping to 0 back to 1. I had to hijack at $039AF2 to force it to be zero
@@ -1413,6 +1499,24 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				STA !14C8,x
 			.Done
 				RTL
+				
+			%VanillaSubOffScrnFreespaceCode(SubOffscreenXBnk1PreventHPMeterTransfer, $01ACA4) ;>JML from $01AC91
+			%VanillaSubOffScrnFreespaceCode(SubOffscreenXBnk2PreventHPMeterTransfer, $02D090) ;>JML from $02D07D
+			%VanillaSubOffScrnFreespaceCode(SubOffscreenXBnk3PreventHPMeterTransfer, $03B8C2) ;>JML from $03B8AF
+		SubOffScreenClearSpriteTableRestore:
+			.CommonRestore
+				CMP #$08
+				BCC ..OffScrKillSprite
+				LDY !161A,x
+				CPY #$FF
+				BEQ ..OffScrKillSprite
+				LDA.b #$00
+				STA $1938|!addr,y
+				..OffScrKillSprite
+					STZ !14C8,x
+			.HideHPMeterImmidiately
+				JSL !SharedSub_HideHPMeterIfSpriteDespawns
+				RTS
 	endif
 	if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
 		StompKill:	;>JSL from $01A9D3
