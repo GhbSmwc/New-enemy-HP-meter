@@ -1,16 +1,19 @@
 !Freespace_SharedSub_JMLList = $90C5CA
 	;^[BytesUsed = RatsIfNeeded+(NumberOfJMLs*4)]
 	; RatsIfNeeded = 0 if you have [BankNumber & $7F] less than $10
-	;  (so if you are in banks $00-$7F, its $10-$7F, for $80-$FF, its
-	; $90-$FF). RatsIfNeeded = 8 otherwise.
+	; otherwise RatsIfNeeded = 8. BankNumber is the value of the
+	; highest byte of the 3-byte 24-bit address (in hex, its the XX
+	; of $XX****):
+	; - Banks $00-$0F or $80-$8F: RatsIfNeeded = 0
+	; - Banks $10-$7F or $90-$FF: RatsIfNeeded = 8
 	;
-	; The fixed location where the JMLs list to be inserted to.
-	; Must be a freespace location.
+	; This is the manually-placed fixed location where the JMLs list
+	; to be inserted to. Must be a freespace location.
 	;
 	; Warning: Patching this, editing this address, then re-patching
 	; does not remove the old JML list and the subroutines the list
 	; points to. This causes freespace leaks (unused data that tools
-	; would think it's reserved space).
+	; would think it's reserved space, wasting it).
 	;
 	; To move this without causing freespace leaks, do this instead:
 	;
@@ -47,8 +50,8 @@
 			endmacro
 		endif
 	;[Safe to Edit]
-	;Place your "use flag" defines here. It must have them be defined as
-	;0 here.
+	;Place your "use flag" defines here. It must have them initally be
+	;set to 0.
 	;
 	;This defaults the "use flag" of subroutines to 0. Then immidiately,
 	;uses incsrc "3rd_partyDefineFile.asm", which that conditionally
@@ -77,6 +80,7 @@
 			;	if !Setting != 0
 			;		!SharedSubUseFlag_FindFreeUploadSlot = 1
 			;	endif
+			
 			; NOTES:
 			; - Make sure no 3rd party ASM files' defines incsrcs into
 			;   this define file else it will infinitely include this
@@ -84,7 +88,7 @@
 			; - Make sure they DO NOT set the use flag to 0 if not
 			;   used. Either it set it to 1, or leave it as is.
 			;   Setting it to 0 risks excluding a subroutine define
-			;   when it is actually used.
+			;   when it is actually used by a later ASM resource.
 		incsrc "EnemyHPMeterDefines.asm"
 	
 	;[Safe to Edit]
