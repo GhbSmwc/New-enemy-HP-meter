@@ -1,31 +1,34 @@
 ;>bytes 1
 
-;This simple ASM code tests the total HP system utilizing "!Freeram_SpriteHP_TotalHPOfUnloadedSprites",
-;by simulating an ambush system. This will make the meter show the total HP for sprites currently loaded,
-;and the enemies yet to spawn in the level.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;This simple ASM code tests the total HP system utilizing "!Freeram_SpriteHP_TotalHPOfUnloadedSprites", by
+;simulating an ambush system. This will make the meter show the total HP for sprites currently loaded, and the
+;enemies yet to spawn in the level.
 ;
 ;Note:
 ; - The patch, "HPSystemForSMWSprites.asm" is required.
-; - For custom sprites, they need to be adopted to use this ASM resource's HP system to properly track
-;   the total health remaining (unless you wish not to show the total HP).
-; - Because "DisplayEnemyHP.asm" total HP mode display counts all HP of loaded sprites, this also includes
-;   sprites that are placed in Lunar Magic.
-; - If the meter increases or decreases when enemies spawn, that indicates that the enemy was spawn with
-;   an improper health amount, causing the value stored in RAM defined !Freeram_SpriteHP_TotalHPOfUnloadedSprites
-;   to be subtracted by an incorrect amount. It relies on the sprite table clearing routine that now
-;   have a default HP amount at spawn (see HPSystemForSMWSprites.asm under "DefaultHPOnSpawn").
+; - For custom sprites, they need to be adopted to use this ASM resource's HP system to properly track the total
+;   health remaining (unless you wish not to show the total HP). If you're spawning sprites with conditional
+;   amounts of HP (such as a Pokey), based on their extra byte setting, see ".DeductHPOfUnloaded". Displaying total
+;   HP does not support sprites that spawn with different HP amounts depending on a condition in-game, such as the
+;   vanilla Pokey, depending if you're riding yoshi or not, which requires knowing the true total HP in advance.
+; - Because "DisplayEnemyHP.asm" total HP mode display counts all HP of loaded sprites, this also includes sprites
+;   that are placed in Lunar Magic.
+; - If the meter increases or decreases when enemies spawn, that indicates that the enemy was spawn with an
+;   improper health amount, causing the value stored in RAM defined !Freeram_SpriteHP_TotalHPOfUnloadedSprites
+;   to be subtracted by an incorrect amount. It relies on the sprite table clearing routine that now have a default
+;   HP amount at spawn (see HPSystemForSMWSprites.asm under "DefaultHPOnSpawn").
 ; - Make sure that enemies cannot spawn another enemy that has health, such as "Splittin Chuck" (Sprite $92).
 ; - Enemies spawn by this ambush system will always have "process off-screen" tweaker bit set ($167A bit 2 set)
-;   this allows ambush rooms to span more than a single screen wide and long without allowing the player to
-;   despawn them by moving the screen.
+;   this allows ambush rooms to span more than a single screen wide and long without allowing the player to despawn
+;   them by moving the screen.
 ; - If you wish not to show the total HP, but want this ambush system, have !Setting_SpriteHP_TotalHPMode set to
 ;   1 or 0, or set !Setting_SpriteHP_VanillaSprite_OneShotSprites to 0. Note that the overall "progress" is not
 ;   shown to the player in this configuration.
 ;
 ;A test level file is provided, for level 106 (Yoshi's Island 2), as seen in
-;"LM stuff/Levels/Level_106_TotalHPTest.mwl". You just need to have this file
-;be placed in uberasm tool's level folder (and make sure the defines are placed
-;in where the .exe program is at).
+;"LM stuff/Levels/Level_106_TotalHPTest.mwl". You just need to have this file be placed in uberasm tool's level
+;folder (and make sure the defines are placed in where the .exe program is at).
 ;
 ;In this example, and using default HP values, the level should play out like this:
 ; - First wave: 2 Rexes, 1 Chuck

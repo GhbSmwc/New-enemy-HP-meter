@@ -24,6 +24,13 @@
 ;*This sprite actually turns into the sprite, to
 ;avoid potentially being repositioned in the sprite
 ;table slot.
+;
+;Remember that the ambush system does not support
+;displaying HP when dealing with HP amount that
+;changes depending on an in-game condition such as a
+;vanilla Pokey based on if you're riding yoshi or
+;not (which requires knowing the true total HP in
+;advance).
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;Configurations

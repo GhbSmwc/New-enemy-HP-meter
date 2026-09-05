@@ -1216,12 +1216,13 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			;Default HP values for sprites and custom sprites. These are values that their current and max HP are set when they first spawn
 			;(before their init code executes).
 			;
-			;Any sprite with a max HP of 0 are consitered "blacklisted" and the meter will not display HP for that (when instantly killed).
-			;If !Setting_SpriteHP_TwoByte == 0, then only enter values 0-255, else 0-65535 is allowed. Values at and above 256 or 65536
-			;will be modulo'ed by those values. A value without a prefix ("%" = binary, "$" = hex) means decimal.
+			;Any sprite with a max HP of 0 are consitered "blacklisted" and the meter will not display HP for that.
 			;
-			;For conditionally blacklisted sprites (where a specific state should not have HP), see "UberASMTool/level/DisplayEnemyHP.asm"
-			;under ".CheckForBlacklistedSprites"
+			;If !Setting_SpriteHP_TwoByte == 0, then only enter values 0-255, else 0-65535 is allowed. Values at or above 256 or 65536 will
+			;be modulo'ed by those values. A value without a prefix ("%" = binary, "$" = hex) means decimal.
+			;
+			;For conditionally blacklisted sprites (where a specific state should not have HP, such as a bob-omb), see
+			;"UberASMTool/level/DisplayEnemyHP.asm" under ".CheckForBlacklistedSprites"
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1349,7 +1350,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 						!DefaultHPTableSize 00000 ; <- $6D - Invisible solid block
 						!DefaultHPTableSize 00002 ; <- $6E - Dino-Rhino
 						!DefaultHPTableSize 00001 ; <- $6F - Dino-Torch
-						!DefaultHPTableSize 00001 ; <- $70 - Pokey (<-Note that this sprite's HP depends on how many segments, including its head, thus this will be overridden at init)
+						!DefaultHPTableSize 00001 ; <- $70 - Pokey (<-Note that this sprite's HP depends on how many segments, including its head, thus this will be overridden at init), don't use this for ambush.
 						!DefaultHPTableSize 00001 ; <- $71 - Super Koopa (red cape)
 						!DefaultHPTableSize 00001 ; <- $72 - Super Koopa (yellow cape)
 						!DefaultHPTableSize 00001 ; <- $73 - Super Koopa (ground/feather)
@@ -1439,12 +1440,14 @@ incsrc "Defines/GraphicalBarDefines.asm"
 						!DefaultHPTableSize 00000 ; <- $C7 - Invisible mushroom
 						!DefaultHPTableSize 00000 ; <- $C8 - Light switch
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-				;These are default HP table values for custom sprites. Here, valid custom sprite numbers are $00-$BF. Same rules as above.
+				;These are default HP table values for custom sprites. Here, valid custom sprite numbers are $00-$BF (according to pixi's
+				;documentation). Same rules as above.
 				;
-				;Note that this alone does not support sprites whose starting HP differs based on its extra bits/bytes. Which means you
-				;need to edit its init code to set its HP values accordingly rather than just relying on the default values here.
+				;Note that this alone does not support sprites whose starting HP differs based on its extra bits/bytes. Which means you need to
+				;edit its init code to set its HP values accordingly rather than just relying on the default values here.
+				;
 				;If total HP mode is being used, along with the aformentioned conditional HP, the uberasm tool code or the spawning indicator
-				;also needs to be modified to deduct how much HP the sprite has properly accounting for its conditional health.
+				;also needs to be modified to deduct how much HP for sprites yet to spawn to properly account for its conditional health.
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 					if !Setting_SpriteHP_UsingCustomSprites
 						.DefaultCustSprHP
