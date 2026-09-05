@@ -1697,8 +1697,9 @@ SpriteHPDamage:
 ;into lava.
 ;
 ;Input:
-; - $00 to $00+!Setting_SpriteHP_TwoByte = Amount of damage.
-; - X register (8-bit): What sprite (slot) the sprite is
+; - $00 to $00+!Setting_SpriteHP_TwoByte = Amount of
+;   damage.
+; - X register (8-bit): What sprite slot the sprite is
 ;   involved.
 ;Output:
 ; - HP is already subtracted, if damage > currentHP, HP is
@@ -1859,6 +1860,8 @@ SpriteHPIntroEffect:
 	BCC .IntroFill                                ;>If between $00 and !sprite_slots-1, allow intro-fill mode
 	CMP.b #!sprite_slots*2
 	BCC .AlreadyIntroFill                         ;>If between !sprite_slots and (!sprite_slots*2)-1, it's already intro-fill
+	CMP.b #(!sprite_slots*2)+2
+	BCC .TotalMode                                ;>If between !sprite_slots*2 and (!sprite_slots*2)+1, then don't interfere with total HP mode
 	CMP #$FE                                      ;\First check if the meter is locked from displaying
 	BEQ .Disabled                                 ;|if so, then don't set the meter state
 	CMP #$FD                                      ;|
