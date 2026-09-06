@@ -626,7 +626,7 @@ main:
 	ClearHPDisplay:
 		LDA !Freeram_SpriteHP_MeterState
 		CMP.b #(!sprite_slots*2)+2
-		BCC .Done	;>If any in the active states that are valid, don't clear
+		BCC .ClearGraphicalBar	;>If any in the active states that are valid, clear (in case like switching to a shorter bar to remove leftover tiles)
 		CMP #$FF
 		BEQ .ClearEveryFrame
 		CMP #$FE

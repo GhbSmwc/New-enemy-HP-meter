@@ -1350,7 +1350,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 						!DefaultHPTableSize 00000 ; <- $6D - Invisible solid block
 						!DefaultHPTableSize 00002 ; <- $6E - Dino-Rhino
 						!DefaultHPTableSize 00001 ; <- $6F - Dino-Torch
-						!DefaultHPTableSize 00001 ; <- $70 - Pokey (<-Note that this sprite's HP depends on how many segments, including its head, thus this will be overridden at init), don't use this for ambush.
+						!DefaultHPTableSize 00001 ; <- $70 - Pokey (<-Note that this sprite's HP depends on how many segments, including its head, based on if riding yoshi during spawn, thus this will be overridden at init), don't use this for ambush.
 						!DefaultHPTableSize 00001 ; <- $71 - Super Koopa (red cape)
 						!DefaultHPTableSize 00001 ; <- $72 - Super Koopa (yellow cape)
 						!DefaultHPTableSize 00001 ; <- $73 - Super Koopa (ground/feather)
