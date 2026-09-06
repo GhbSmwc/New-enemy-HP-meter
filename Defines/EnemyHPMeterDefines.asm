@@ -16,8 +16,8 @@
 	; + ((!sprite_slots*2) * !Setting_SpriteHP_TwoByte)                                                                   ;>Bytes used for the high bytes of current and max HP, if !Setting_SpriteHP_TwoByte == 1
 	; + (!Setting_SpriteHP_DisplayGraphicalBar * !Setting_SpriteHP_BarAnimation)                                          ;>Byte used as a secondary fill amount for animation.
 	; + ((!Setting_SpriteHP_DisplayGraphicalBar * !Setting_SpriteHP_BarAnimation)*(!Setting_SpriteHP_BarAnimation != 0))] ;>Byte used as a timer of how long the secondary fill amount pauses before following current HP fill.
-	; + ((1 + !Setting_SpriteHP_TwoByte) * (!Setting_SpriteHP_TotalHPMode == 2))                                          ;>1-2 bytes used for how much HP of sprites yet to spawn (HP of unloaded sprites)
-	; + ((1 + !Setting_SpriteHP_TwoByte) * (!Setting_SpriteHP_TotalHPMode != 0))                                          ;>1-2 bytes used to track the max HP of total sprites.
+	; + ((1 + !Setting_SpriteHP_TwoByte) * (!Setting_SpriteHP_TotalHPMode == 2))                                          ;>1-2 bytes used for how much HP of sprites yet to spawn (HP of unloaded sprites), for total mode.
+	; + ((1 + !Setting_SpriteHP_TwoByte) * (!Setting_SpriteHP_TotalHPMode != 0))                                          ;>1-2 bytes used to track the max HP of total sprites, for total mode.
 	;
 	;A series of HP data stored in memory, in this order (placed contiguously, if any of these disabled (0 bytes),
 	;following data occupies after the last used address without gaps in between):

@@ -590,7 +590,7 @@ autoclean JML SpritesTotalHPIntroEffect		;</pre>
 		<p>
 			Other than the RAM data for graphical bar and HexDec routines (defines are in <kbd>GraphicalBarDefines.asm</kbd> and <kbd>NumberDisplayRoutinesDefines.asm</kbd>), the sprite HP data and display handler are in <kbd>EnemyHPMeterDefines.asm</kbd>,
 			defined as <kbd>!Freeram_SpriteHP_SpriteHPData</kbd>. It's layout are, in this order, starting at an address defined as <kbd>!Freeram_SpriteHP_SpriteHPData</kbd>, and advancing to higher-addresses based on its size/length,
-			<abbr title="Any data disabled from using RAM results in following data to be placed after the last occupied data without gaps in between.">placed contiguously</abbr>:
+			<abbr title="Any data disabled from using RAM results in following enabled data to be placed after the last occupied data without gaps in between.">placed contiguously</abbr>:
 			<div class="CodeBlock" style="width: 1250px;">
 				<table>
 					<tr>
