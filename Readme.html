@@ -1240,8 +1240,8 @@ autoclean JML SpritesTotalHPIntroEffect		;</pre>
 					this would look weird with the HP bar persisting until the coin is either grabbed or despawned.
 				</li>
 			</ul>
-			If you want the meter to persist temporarily to show 0 HP, you would not want to use an instant-kill effect that would immediately becomes a free sprite slot. One way is to have a death animation that spans several
-			frames before it disappears, such as falling down the screen (<kbd>$14C8</kbd> set to <kbd>$02</kbd>), or dying in a similar way in <i>Super Mario Land</i> where an enemy lies on the ground stunned before disappearing.<br><br>
+			If you want the meter to persist temporarily to show 0 HP, you would not want to use an instant-kill effect that would immediately become a free sprite slot, or transforms into a sprite that shouldn't have HP. One way is to have
+			a death animation that spans several frames before it disappears, such as falling down the screen (<kbd>$14C8</kbd> set to <kbd>$02</kbd>), or dying in a similar way in <i>Super Mario Land</i> where an enemy lies on the ground stunned before disappearing.<br><br>
 			
 			It's important to note that despite <kbd>$14C8</kbd> being nonzero, there are other states that results in the sprite not running their main code at all. For example, being killed by a spinjump (<kbd>$14C8</kbd> set to
 			<kbd>$04</kbd>). Because a code at <kbd>$018127</kbd> (named <kbd>HandleSprite</kbd> in disassembly), it skips the main sprite code entirely, and because a code that would set the HP meter to show HP of that sprite slot
