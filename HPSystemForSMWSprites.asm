@@ -197,6 +197,19 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			JSR SubOffScreenClearSpriteTableRestore
 			JML <JMLAddressToReturn>|!bank
 	endmacro
+	
+	macro BabyYoshiEatSprites(HijackAddr)
+		if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
+			org <HijackAddr>
+			autoclean JSL BabyYoshiEatsSprite
+			NOP
+		else
+			%RemoveFreespaceCodeFromJMLJSL(<HijackAddr>)
+			org <HijackAddr>
+			LDA #$00
+			STA !14C8,y
+		endif
+	endmacro
 ;Hijacks
 	;Chucks
 		;Code that runs every frame. Ensures the HP values in the new sprite RAM is in sync (for display).
@@ -374,6 +387,9 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				LDY !sprite_num_cache
 			endif
 		endif
+	;Sprites eaten by baby yoshi
+		%BabyYoshiEatSprites($01A28B)
+		%BabyYoshiEatSprites($03C032) ;>Double-eat glitch handler.
 	;Optional feature if user wished to have stunned koopas not leave their shells
 		if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, notequal(!Setting_SpriteHP_Koopas_ClassicBehavior, 0))
 			org $0196C5
@@ -444,7 +460,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 	;   on this ASM file.
 	; - Reznor is not included here and is handled differently because trying to hijack at $039ACC
 	;   results in a full HP meter due to a call to clear and load sprite tables at $039AEE aftwards.
-	
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		%HijacksForFallingOffScrn($01A5E3, ShowHPForFallingOffScrnYregister, y) ;>Koopas catching shells
 		%HijacksForFallingOffScrn($01A66B, ShowHPForFallingOffScrn, x) ;>Sprite to sprite collision - Throwned sprites into a normal-status sprite
 		%HijacksForFallingOffScrn($01A68F, ShowHPForFallingOffScrn, x) ;>Sprite to sprite collision - Carried sprites, both throwned sprites, or sprA is a goomba
@@ -455,11 +471,13 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		%HijacksForFallingOffScrn($028168, ShowHPForFallingOffScrnYregister, y) ;>Display HP for sprites blown up by bob-omb explosions
 		%HijacksForFallingOffScrn($02945B, ShowHPForFallingOffScrnCapeSpinQuakeNetPunch, x) ;>From quake effects (the ones that would flip koopas).
 		%HijacksForFallingOffScrn($02C7B3, ShowHPForFallingOffScrn, x) ;>Chargin' chuck's death by star
-		%HijacksForFallingOffScrn($02F29D, ShowHPForFallingOffScrn, x) ;>Wiggler killed by star
+		%HijacksForFallingOffScrn($02F29D, ShowHPForFallingOffScrn, x) ;>Wiggler death by star
 		%HijacksForFallingOffScrn($0395F2, ShowHPForFallingOffScrn, x) ;>Rex's death by star
-		
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;Make Amazing Hammer bro platform when bonked by player to show HP
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		%HijacksForFallingOffScrn($02DBFD, ShowHPForFallingOffScrnYregister, y)
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;Hijack the clear-sprite tables routine (when sprite spawns) to default sprites with a
 	;certain amount of HP (most of them to have 1/1 HP). This is needed so that sprites not
 	;have 0 HP and not be a zombie-like state (makes the HUD actually say the sprite
@@ -473,6 +491,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 	; - This entire routine runs AFTER its sprite numbers ($9E/$7FAB9E) have been set, and before its
 	;   init code runs. Thus I can set HP values differently based on sprite number, as well as the
 	;   sprite's init to set HP would override this.
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		if !Setting_SpriteHP_RemoveOrApplyPatch
 			org $07F779
 			autoclean JSL DefaultHPOnSpawn
@@ -1635,6 +1654,28 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					LDY !sprite_num_cache
 				endif
 				RTL
+		BabyYoshiEatsSprite: ;>JSL from $01A28B and $03C032
+			.Restore
+				LDA #$00
+				STA !14C8,y
+			.HideMeterPreventTransfer
+				PHX
+				TYX
+				JSL !SharedSub_HideHPMeterIfSpriteDespawns
+				PLX
+			.HandleTotalModeAnimation
+				if and(and(notequal(!Setting_SpriteHP_TotalHPMode, 0), notequal(!Setting_SpriteHP_BarAnimation, 0)), notequal(!Setting_SpriteHP_BarChangeDelay, 0))
+					LDA !Freeram_SpriteHP_MeterState
+					CMP.b #!sprite_slots*2
+					BCC ..No
+					CMP.b #(!sprite_slots*2)+2
+					BCS ..No
+					LDA.b #!Setting_SpriteHP_BarChangeDelay
+					STA !Freeram_SpriteHP_BarAnimationTimer
+					
+					..No
+				endif
+			RTL
 		if !Setting_SpriteHP_Koopas_ClassicBehavior == 0
 			TransferHPFromKoopaToShelllessKoopa: ;>JSL from $0196F6
 				;$15E9 = The index of the in-shell koopa/empty shell. $15E9 is also at this value.

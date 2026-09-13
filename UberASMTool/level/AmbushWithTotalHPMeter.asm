@@ -309,6 +309,11 @@ CheckIfEnemyExists:
 		;
 		;Output:
 		; - Carry: Clear if not an enemy (to ignore), otherwise set.
+;		LDA !Freeram_SpriteHP_MaxHPLow,x
+;		if !Setting_SpriteHP_TwoByte
+;			ORA !Freeram_SpriteHP_MaxHPHi,x
+;		endif
+;		BEQ .NotACountedEnemy
 		if !Setting_SpriteHP_UsingCustomSprites
 			LDA !7FAB10,x
 			AND.b #%00001000
@@ -324,6 +329,8 @@ CheckIfEnemyExists:
 			;Put your list here for vanilla sprites
 			%IgnoreSprite($B9) ;>Message block
 			%IgnoreSprite($21) ;>Moving coin
+			%IgnoreSprite($2D) ;>Baby yoshi (all colors)
+			%IgnoreSprite($35) ;>Yoshi
 			;Don't touch this tough
 				JMP .CountedEnemy
 		.NotACountedEnemy

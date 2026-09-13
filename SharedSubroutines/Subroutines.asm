@@ -42,6 +42,7 @@
 ; - SpriteHPGetSlotIndex
 ; - SpriteHPRemoveRecordEffect
 ; - SpriteHPIntroEffect
+; - HideHPMeterIfSpriteDespawns
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;General math routines.
 ;Due to the fact that registers have limitations and such.
