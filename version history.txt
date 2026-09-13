@@ -29,6 +29,16 @@ based (8.9, then 8.10 rather than 9.0)):
     bars that vary in length depending on if its a regular enemy, miniboss, or main boss.
  -Readme instruction on adding incsrc to include defines now lets user easily adjust how many subfolders deep.
  -Fixes
+ --Fixed most cases where the HP meter could transfer from one sprite to another (often with a "healing"
+   animation) if a sprite gets deleted ($14C8,x == 0) and a new sprite spawns on the same slot as the deleted
+   sprite on the same frame (done by hijacking most instances of setting $14C8,x to $00 then immidiately call
+   JSL !SharedSub_HideHPMeterIfSpriteDespawns to make the meter disappear. This includes, but not limited to:
+ ---Sprites falling into a pit.
+ ---Scrolled offscreen without "process off screen" checked (tweaker bit $167A bit 2 set %00000*00) and calling
+    suboffscreen routine.
+ ---Eaten by yoshi (baby and adult).
+ ---End of death animation (falling to bottom of screen and leaves the screen), getting squished (shell-less
+    koopas showing their flattened animation).
  --Fixed an oversight that sprites sinking in lava does not zero out HP.
  
 3/16/2025

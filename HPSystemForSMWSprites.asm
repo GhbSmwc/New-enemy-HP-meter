@@ -198,10 +198,10 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			JML <JMLAddressToReturn>|!bank
 	endmacro
 	
-	macro BabyYoshiEatSprites(HijackAddr)
+	macro YoshiSwallowDeleteSprites(HijackAddr)
 		if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
 			org <HijackAddr>
-			autoclean JSL BabyYoshiEatsSprite
+			autoclean JSL YoshiEatsSprite
 			NOP
 		else
 			%RemoveFreespaceCodeFromJMLJSL(<HijackAddr>)
@@ -387,9 +387,14 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				LDY !sprite_num_cache
 			endif
 		endif
-	;Sprites eaten by baby yoshi
-		%BabyYoshiEatSprites($01A28B)
-		%BabyYoshiEatSprites($03C032) ;>Double-eat glitch handler.
+	;Sprites eaten by Yoshi (both baby and adult)
+		;Hijack:
+		; Addr+0  LDA #$00
+		; Addr+2  STA $14C8,y
+		%YoshiSwallowDeleteSprites($01A28B) ;>Baby yoshi eats a sprite while his mouth is empty
+		%YoshiSwallowDeleteSprites($01F1B5) ;>When adult yoshi swallows a sprite
+		%YoshiSwallowDeleteSprites($01F373) ;>Same as above but when yoshi eats a sprite that doesn't stay in its mouth
+		%YoshiSwallowDeleteSprites($03C032) ;>Double-eat glitch handler (eating a sprite while his mouth is full).
 	;Optional feature if user wished to have stunned koopas not leave their shells
 		if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, notequal(!Setting_SpriteHP_Koopas_ClassicBehavior, 0))
 			org $0196C5
@@ -1654,7 +1659,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					LDY !sprite_num_cache
 				endif
 				RTL
-		BabyYoshiEatsSprite: ;>JSL from $01A28B and $03C032
+		YoshiEatsSprite: ;>JSL from $01A28B and $03C032
 			.Restore
 				LDA #$00
 				STA !14C8,y
