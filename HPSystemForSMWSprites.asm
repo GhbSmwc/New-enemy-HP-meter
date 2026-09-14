@@ -394,7 +394,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		%YoshiSwallowDeleteSprites($01A28B) ;>Baby yoshi eats a sprite while his mouth is empty
 		%YoshiSwallowDeleteSprites($01F1B5) ;>When adult yoshi swallows a sprite
 		%YoshiSwallowDeleteSprites($01F373) ;>Same as above but when yoshi eats a sprite that doesn't stay in its mouth
-		%YoshiSwallowDeleteSprites($03C032) ;>Double-eat glitch handler (eating a sprite while his mouth is full).
+		%YoshiSwallowDeleteSprites($03C032) ;>Baby yoshi double-eat handler (eating a 2nd sprite while his mouth is full).
 	;Optional feature if user wished to have stunned koopas not leave their shells
 		if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, notequal(!Setting_SpriteHP_Koopas_ClassicBehavior, 0))
 			org $0196C5
