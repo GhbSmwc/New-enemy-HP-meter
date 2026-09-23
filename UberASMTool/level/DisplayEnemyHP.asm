@@ -70,6 +70,26 @@ incsrc "../NumberDisplayRoutinesDefines.asm"
 			STA $06
 		endif
 	endmacro
+	macro ClearNumerical()
+		LDX.b #(!Setting_SpriteHP_MaxStringLength-1)*!StatusbarFormat	;>2 !Setting_SpriteHP_MaxDigits due to 2 numbers displayed, plus 1 because of the "/" symbol.
+		-
+		LDA #!StatusBarBlankTile
+		if !Setting_SpriteHP_NumericalTextAlignment == 1
+			STA !Setting_SpriteHP_Numerical_StatusBarAddrTile,x
+		elseif !Setting_SpriteHP_NumericalTextAlignment == 2
+			STA !Setting_SpriteHP_NumericalRightAligned_StatusBarAddrTile-((!Setting_SpriteHP_MaxStringLength-1)*!StatusbarFormat),x
+		endif
+		if !StatusBar_UsingCustomProperties != 0
+			LDA.b #!Setting_SpriteHP_NumericalProp
+			if !Setting_SpriteHP_NumericalTextAlignment == 1
+				STA !Setting_SpriteHP_Numerical_StatusBarAddrProp,x
+			elseif !Setting_SpriteHP_NumericalTextAlignment == 2
+				STA !Setting_SpriteHP_NumericalRightAligned_StatusBarAddrProp-((!Setting_SpriteHP_MaxStringLength-1)*!StatusbarFormat),x
+			endif
+		endif
+		DEX #!StatusbarFormat
+		BPL -
+	endmacro
 	macro GetHealthDigits8Bit(ValueToDisplay)
 			LDA !<ValueToDisplay>
 			STA $00
@@ -603,7 +623,9 @@ main:
 	ClearHPDisplay:
 		LDA !Freeram_SpriteHP_MeterState
 		CMP.b #(!sprite_slots*2)+2
-		BCC .ClearGraphicalBar	;>If any in the active states that are valid, clear (in case like switching to a shorter bar to remove leftover tiles)
+		BCC .ClearEveryFrame
+			;^If any in the active states that are valid, clear.
+			; This handles things like switching to a shorter bar or shorter string to remove leftover tiles.
 		CMP #$FF
 		BEQ .ClearEveryFrame
 		CMP #$FE
