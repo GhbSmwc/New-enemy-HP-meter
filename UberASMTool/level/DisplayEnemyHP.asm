@@ -163,7 +163,10 @@ main:
 	PHK
 	PLB
 	.HPMeterStateCheck
-		JSR ClearHPDisplay ;>Default to blank tiles when !Freeram_SpriteHP_MeterState is a value of $FF.
+		JSR ClearHPDisplay
+			;^Default to blank tiles (may get overritten afterwards to ensure tiles that should disappear will disappear when number
+			; string and bar gets shorter without leftover tiles). With the exception of not setting to blank tiles if
+			; !Freeram_SpriteHP_MeterState is set to $FD.
 		LDA !Freeram_SpriteHP_MeterState
 		if !Setting_SpriteHP_BarAnimation == 0
 			;With no bar animation, then only 0 to 11 or 0 to 21 are valid
@@ -604,8 +607,6 @@ main:
 		LDA !Freeram_SpriteHP_MeterState
 		CMP.b #(!sprite_slots*2)+2
 		BCC .ClearEveryFrame
-			;^If any in the active states that are valid, clear.
-			; This handles things like switching to a shorter bar or shorter string to remove leftover tiles.
 		CMP #$FF
 		BEQ .ClearEveryFrame
 		CMP #$FE
