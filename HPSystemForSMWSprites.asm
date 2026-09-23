@@ -1720,7 +1720,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				.CheckIfGreenParatroopaShell
 					;This code handles a situation where a 1 HP shell-less koopa enters a koopa shell that
 					;ignores special world completion, Lunar magic Sprite $DF (it's actually sprite $09,
-					;the Green Paratroopa, in its carrable state).
+					;the Green Bouncing Paratroopa, in its carrable state).
 					;
 					;Without this, if a koopa enters this shell, his HP will not be "updated" to having 2/2 HP,
 					;resulting in having 1/1 HP and showing 0/1 HP (without dying) when removed from its shell.
@@ -1739,7 +1739,10 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					LDA !9E,y					;|
 					CMP #$09					;|
 					BNE .TransferHPValues		;/
-				.ShellLessBecommingGreenParatroopa ;>Switch the HP display from 1/1 HP to 2/2.
+				.ShellLessBecommingGreenParatroopa ;\Switch the HP display from 1/1 HP to 2/2.
+					if and(!SharedSubUseFlag_UsingGraphicalBarRoutines, !SharedSubUseFlag_SpriteHPRemoveRecordEffect)
+						JSL !SharedSub_SpriteHPRemoveRecordEffect ;>This prevents an issue where if player gets a 1/2HP shell-less koopa into sprite $DF ($09 stunned).
+					endif
 					BRA .Restore
 				.TransferHPValues
 					JSR TransferHPBetweenKoopaAndShell
