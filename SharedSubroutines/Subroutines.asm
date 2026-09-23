@@ -1784,7 +1784,7 @@ SubtractSpriteHP:
 		.Normal
 		STA !Scratchram_SpriteHP_SpriteSlotToDisplay
 		RTL
-if !SharedSubUseFlag_UsingGraphicalBarRoutines
+if and(!SharedSubUseFlag_UsingGraphicalBarRoutines, !SharedSubUseFlag_SpriteHPRemoveRecordEffect)
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;This subroutine sets the graphical bar animation
 	;fill value to its current HP fill amount. Effectively

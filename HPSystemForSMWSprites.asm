@@ -1739,7 +1739,14 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					LDA !9E,y					;|
 					CMP #$09					;|
 					BNE .TransferHPValues		;/
-					BRA .Restore				;>Otherwise make its HP 2/2 (HP bar on this shell-less koopa will hide the meter).
+				.ShellLessBecommingGreenParatroopa
+					;Switch the HP display from 1/1 HP to 2/2.
+					LDA #$00
+					STA $40FFFF
+;					if and(!SharedSubUseFlag_UsingGraphicalBarRoutines, !SharedSubUseFlag_SpriteHPRemoveRecordEffect)
+;						JSL !SharedSub_SpriteHPRemoveRecordEffect ;>We don't want heal animation when max HP changes, just show its now-HP.
+;					endif
+					BRA .Restore
 				.TransferHPValues
 					JSR TransferHPBetweenKoopaAndShell
 				.Restore

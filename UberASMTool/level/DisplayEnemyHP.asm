@@ -183,7 +183,7 @@ main:
 	PHK
 	PLB
 	.HPMeterStateCheck
-		JSR ClearHPDisplay
+		JSR ClearHPDisplay ;>Default to blank tiles when !Freeram_SpriteHP_MeterState is a value of $FF.
 		LDA !Freeram_SpriteHP_MeterState
 		if !Setting_SpriteHP_BarAnimation == 0
 			;With no bar animation, then only 0 to 11 or 0 to 21 are valid
@@ -756,14 +756,11 @@ main:
 						CLC
 						RTS
 					..KoopasAndEmptyShell ;>Blacklist the sprite if its an empty shell.
+					..WingedBouncingKoopa
 						JSR CheckIfShellEmpty
 						BCS ..Blacklisted
 						CLC
 						RTS
-					..WingedBouncingKoopa
-						LDA !14C8,x
-						CMP #$09
-						BCC ..Allowed
 				endif
 				..Blacklisted
 					SEC
