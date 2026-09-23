@@ -435,7 +435,8 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				JSL $07F7D2|!bank
 			endif
 		;When shell-less koopas enter their shells, switch the HP meter to the koopa/shell.
-			if and(and(!Setting_ModifySprAndDisplayHPOfSMWSpr, equal(!Setting_SpriteHP_Koopas_ClassicBehavior, 0)), notequal(!Setting_SpriteHP_VanillaSprite_OneShotSprites, 0))
+		;Note that this hijack will apply ignoring !Setting_SpriteHP_Koopas_ClassicBehavior because a user could place shell-less koopas directly in the level.
+			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, notequal(!Setting_SpriteHP_VanillaSprite_OneShotSprites, 0))
 				org $018ACC
 				autoclean JSL TransferHPFromShelllessKoopaToKoopa
 				NOP
@@ -1687,34 +1688,60 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				;X and Y = The index of newly spawned sprite - shell-less koopa
 				.Restore
 					JSL $07F7D2|!bank
-				.SwitchMeter
 					LDX $15E9|!addr
+				.CheckIfMeterIsOnKoopa
 					JSL !SharedSub_SpriteHPGetSlotIndex
 					TXA
 					CMP !Scratchram_SpriteHP_SpriteSlotToDisplay
 					BNE .Done									;>If HP meter isn't on the enemy that the player just jumped on or is stunned in their shells and unstun themselves, skip
+				.SwitchMeter
 					TYA											;\Switch meter to the shell-less koopa (note that since these enemies have 1HP, we don't need bar animation)
 					STA !Freeram_SpriteHP_MeterState			;/
-					..TransferHPValues
-						;This prevents an issue where if the player jumps on a winged koopa, then jumped on the now-transformed koopa, it wouldn't have its max HP reduced, causing the bar
-						;to go from 50% to 100% because it went from 1/2HP to 1/1HP. This is done by transfering HP from the shell to the spawned shell-less koopa and making the shell to have 1/1HP
-						JSR TransferHPBetweenKoopaAndShell
-					
+				.TransferHPValues
+					;This prevents an issue where if the player jumps on a winged koopa, then jumped on the now-transformed koopa, it wouldn't have its max HP reduced, causing the bar
+					;to go from 50% to 100% because it went from 1/2HP to 1/1HP. This is done by transfering HP from the shell to the spawned shell-less koopa and making the shell to have 1/1HP
+					;(will bug out if somehow you jump on a green paratroopa (sprite $09) to spawn a green shell-less koopa without transforming into a regular green koopa (sprite $04))
+					JSR TransferHPBetweenKoopaAndShell
 				.Done
 					RTL
 			TransferHPFromShelllessKoopaToKoopa: ;>JSL from $018ACC
 				;X = Index of the shell-less koopa entering an empty shell. $15E9 is also at this value.
 				;Y = Index of the shell the koopa is entering
-				.SwitchMeter
+				.CheckIfMeterIsOnShelllessKoopa
 					JSL !SharedSub_SpriteHPGetSlotIndex
 					LDY !1594,x
 					TXA
 					CMP !Scratchram_SpriteHP_SpriteSlotToDisplay
-					BNE ..TransferHPValues						;>If the HP meter isn't on the shell-less koopa, skip (just transfer HP values)
-					TYA											;\Switch meter to the shell (which will turn into a regular koopa)
-					STA !Freeram_SpriteHP_MeterState			;/
-					..TransferHPValues
-						JSR TransferHPBetweenKoopaAndShell
+					BNE .CheckIfGreenParatroopaShell	;>If the HP meter isn't on the shell-less koopa, skip (just transfer HP values)
+				.SwitchMeter
+					TYA												;\Switch meter to the shell (which will turn into a regular koopa)
+					STA !Freeram_SpriteHP_MeterState				;/
+					
+				.CheckIfGreenParatroopaShell
+					;This code handles a situation where a 1 HP shell-less koopa enters a koopa shell that
+					;ignores special world completion, Lunar magic Sprite $DF (it's actually sprite $09,
+					;the Green Paratroopa, in its carrable state).
+					;
+					;Without this, if a koopa enters this shell, his HP will not be "updated" to having 2/2 HP,
+					;resulting in having 1/1 HP and showing 0/1 HP (without dying) when removed from its shell.
+					if !Setting_SpriteHP_UsingCustomSprites
+						if !sa1 == 0
+							PHX
+							TYX
+							LDA !7FAB10,x ;>In LoROM, a 24-bit address representing the sprite extra bit is being used, and opcodes using long-addressing index Y (LDA $xxxxxx,y) does not exist.
+							PLX
+						else
+							LDA !7FAB10,y
+						endif
+						AND.b #%00001000			;\If it's not the shell that is a green paratroopa, allow HP transfer
+						BNE .TransferHPValues		;|
+					endif
+					LDA !9E,y					;|
+					CMP #$09					;|
+					BNE .TransferHPValues		;/
+					BRA .Restore				;>Otherwise make its HP 2/2 (HP bar on this shell-less koopa will hide the meter).
+				.TransferHPValues
+					JSR TransferHPBetweenKoopaAndShell
 				.Restore
 					LDY !1594,x
 					LDA.b #$10
