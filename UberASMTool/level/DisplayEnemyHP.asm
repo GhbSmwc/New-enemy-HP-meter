@@ -70,26 +70,6 @@ incsrc "../NumberDisplayRoutinesDefines.asm"
 			STA $06
 		endif
 	endmacro
-	macro ClearNumerical()
-		LDX.b #(!Setting_SpriteHP_MaxStringLength-1)*!StatusbarFormat	;>2 !Setting_SpriteHP_MaxDigits due to 2 numbers displayed, plus 1 because of the "/" symbol.
-		-
-		LDA #!StatusBarBlankTile
-		if !Setting_SpriteHP_NumericalTextAlignment == 1
-			STA !Setting_SpriteHP_Numerical_StatusBarAddrTile,x
-		elseif !Setting_SpriteHP_NumericalTextAlignment == 2
-			STA !Setting_SpriteHP_NumericalRightAligned_StatusBarAddrTile-((!Setting_SpriteHP_MaxStringLength-1)*!StatusbarFormat),x
-		endif
-		if !StatusBar_UsingCustomProperties != 0
-			LDA.b #!Setting_SpriteHP_NumericalProp
-			if !Setting_SpriteHP_NumericalTextAlignment == 1
-				STA !Setting_SpriteHP_Numerical_StatusBarAddrProp,x
-			elseif !Setting_SpriteHP_NumericalTextAlignment == 2
-				STA !Setting_SpriteHP_NumericalRightAligned_StatusBarAddrProp-((!Setting_SpriteHP_MaxStringLength-1)*!StatusbarFormat),x
-			endif
-		endif
-		DEX #!StatusbarFormat
-		BPL -
-	endmacro
 	macro GetHealthDigits8Bit(ValueToDisplay)
 			LDA !<ValueToDisplay>
 			STA $00
