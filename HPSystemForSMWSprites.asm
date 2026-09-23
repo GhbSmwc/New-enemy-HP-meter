@@ -437,14 +437,14 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		;When shell-less koopas enter their shells, switch the HP meter to the koopa/shell.
 		;Note that this hijack will apply ignoring !Setting_SpriteHP_Koopas_ClassicBehavior because a user could place shell-less koopas directly in the level.
 			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, notequal(!Setting_SpriteHP_VanillaSprite_OneShotSprites, 0))
-				org $018ACC
+				org $018AC9
 				autoclean JSL TransferHPFromShelllessKoopaToKoopa
-				NOP
+				NOP #2
 			else
-				%RemoveFreespaceCodeFromJMLJSL($018ACC)
-				org $018ACC
+				%RemoveFreespaceCodeFromJMLJSL($018AC9)
+				org $018AC9
+				JSR.w $01AC80
 				LDY !1594,x
-				LDA.b #$10
 			endif
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;When sprites are falling down screen
@@ -1704,7 +1704,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					JSR TransferHPBetweenKoopaAndShell
 				.Done
 					RTL
-			TransferHPFromShelllessKoopaToKoopa: ;>JSL from $018ACC
+			TransferHPFromShelllessKoopaToKoopa: ;>JSL from $018AC9
 				;X = Index of the shell-less koopa entering an empty shell. $15E9 is also at this value.
 				;Y = Index of the shell the koopa is entering
 				.CheckIfMeterIsOnShelllessKoopa
@@ -1743,8 +1743,13 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				.TransferHPValues
 					JSR TransferHPBetweenKoopaAndShell
 				.Restore
+					%JSLRTS($01AC80, $01AD06)
+						;^OffScrEraseSprite, the subroutine called to erase the shell-less koopa without permanently erasing it.
+						; Must be called AFTER transfering HP meter display to the koopa/shell sprite (because it is hijacked
+						; at $01AC91 to prevent potential HP transfer should a sprite despawns and a new sprite spawns on the
+						; same slot at the same frame). If this is called earlier, then the HP meter would disappear instead
+						; of switching.
 					LDY !1594,x
-					LDA.b #$10
 					RTL
 			TransferHPBetweenKoopaAndShell:
 				;Input:
