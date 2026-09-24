@@ -1767,23 +1767,26 @@ SubtractSpriteHP:
 ;espically when dealing with intro-mode feature.
 ;
 ;Output:
-; - !Scratchram_SpriteHP_SpriteSlotToDisplay: Sprite slot index number. $FF means invalid.
+; - !Scratchram_SpriteHP_SpriteSlotToDisplay: Sprite slot index number the meter is on.
+;   $FF means invalid or total mode.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	SpriteHPGetSlotIndex:
 		LDA !Freeram_SpriteHP_MeterState
 		CMP.b #!sprite_slots
-		BCC .Normal				;0 to 11 or 0 to 21
+		BCC .Normal				;>0 to !sprite_slots-1
 		CMP.b #(!sprite_slots*2)
-		BCC .IntroFillMode			;12 to 23 or 22 to 43
-		LDA #$FF
-		STA !Scratchram_SpriteHP_SpriteSlotToDisplay
-		RTL
+		BCC .IntroFillMode			;>!sprite_slots to (!sprite_slots*2)-1
+		.NotSpecificSlot ;>Any other value = no.
+			LDA #$FF
+			STA !Scratchram_SpriteHP_SpriteSlotToDisplay
+			RTL
 		.IntroFillMode
 			SEC
 			SBC.b #!sprite_slots
 		.Normal
-		STA !Scratchram_SpriteHP_SpriteSlotToDisplay
-		RTL
+			STA !Scratchram_SpriteHP_SpriteSlotToDisplay
+		.Done
+			RTL
 if and(!SharedSubUseFlag_UsingGraphicalBarRoutines, !SharedSubUseFlag_SpriteHPRemoveRecordEffect)
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;This subroutine sets the graphical bar animation
