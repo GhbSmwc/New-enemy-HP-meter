@@ -855,8 +855,9 @@ autoclean JML SpritesTotalHPIntroEffect		;</pre>
 		One sprite that does this is the <a href="https://www.smwcentral.net/?p=section&a=details&id=3723">Spiny Boss</a> from SMWCP1. It stores its HP data in RAM <kbd>$1528</kbd> (defined as <kbd>!sprite_health</kbd>). In that case, you simply have to
 		do this: <span class="NoLineBreak">%TransferHealthToHPData(!sprite_health, !MaxHP)</span> under its &ldquo;<kbd>SpriteCode</kbd>&rdquo; before any code.<br><br>
 	
-		Note that if you patched <kbd>HPSystemForSMWSprites.asm</kbd>, and your sprite uses the HP system directly, then 99% of cases you don't need to set its HP at init. The only times you need to set its HP at init are sprites that conditionally
-		have a variable amount of HP depending on its extra byte/bits, such as the <a href="https://www.smwcentral.net/?p=section&a=details&id=36812">Better Pokey</a> custom sprite, whose HP depends on how many segments (including the head), the sprite has.
+		Note that if you patched <kbd>HPSystemForSMWSprites.asm</kbd>, and your sprite uses the HP system directly, then 99% of cases you don't need to set its HP at init (see under <kbd>DefaultHPOnSpawn</kbd> in the aformentioned ASM file). The only
+		times you need to set its HP at init are sprites that conditionally have a variable amount of HP depending on its extra byte/bits, such as the <a href="https://www.smwcentral.net/?p=section&a=details&id=36812">Better Pokey</a> custom sprite,
+		whose HP depends on how many segments (including the head), the sprite has.
 	</p>
 	<h3><a href="#ToC_MakeSpritesDisplayHP_TakingDamage" id="JMPTo_MakeSpritesDisplayHP_TakingDamage">^</a>Damage handler</h3>
 	<p>
