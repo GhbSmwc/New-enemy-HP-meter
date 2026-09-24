@@ -1716,6 +1716,11 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				.SwitchMeter
 					TYA												;\Switch meter to the shell (which will turn into a regular koopa)
 					STA !Freeram_SpriteHP_MeterState				;/
+					if and(!SharedSubUseFlag_UsingGraphicalBarRoutines, !SharedSubUseFlag_SpriteHPRemoveRecordEffect)
+						PHY
+						JSL !SharedSub_SpriteHPRemoveRecordEffect ;>This prevents an issue where if player gets a 1/2HP shell-less koopa into sprite $DF ($09 stunned).
+						PLY
+					endif
 					
 				.CheckIfGreenParatroopaShell
 					;This code handles a situation where a 1 HP shell-less koopa enters a koopa shell that
@@ -1740,9 +1745,6 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					CMP #$09					;|
 					BNE .TransferHPValues		;/
 				.ShellLessBecommingGreenParatroopa ;\Switch the HP display from 1/1 HP to 2/2.
-					if and(!SharedSubUseFlag_UsingGraphicalBarRoutines, !SharedSubUseFlag_SpriteHPRemoveRecordEffect)
-						JSL !SharedSub_SpriteHPRemoveRecordEffect ;>This prevents an issue where if player gets a 1/2HP shell-less koopa into sprite $DF ($09 stunned).
-					endif
 					BRA .Restore
 				.TransferHPValues
 					JSR TransferHPBetweenKoopaAndShell
