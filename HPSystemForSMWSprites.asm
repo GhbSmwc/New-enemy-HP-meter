@@ -1768,25 +1768,24 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				;Input:
 				; - X: Sprite slot that the current sprite to transer HP from (will use $00 to store due to Y-indexed long-addressing not existing).
 				; - Y: Sprite slot that the current sprite is interacting with or a newly spawned sprite to transfer HP to.
-				STX $00
 				LDA !Freeram_SpriteHP_CurrentHPLow,x
 				TYX
 				STA !Freeram_SpriteHP_CurrentHPLow,x
-				LDX $00
+				LDX $15E9|!addr
 				LDA !Freeram_SpriteHP_MaxHPLow,x
 				TYX
 				STA !Freeram_SpriteHP_MaxHPLow,x
 				if !Setting_SpriteHP_TwoByte
-					LDX $00
+					LDX $15E9|!addr
 					LDA !Freeram_SpriteHP_CurrentHPHi,x
 					TYX
 					STA !Freeram_SpriteHP_CurrentHPHi,x
-					LDX $00
+					LDX $15E9|!addr
 					LDA !Freeram_SpriteHP_MaxHPHi,x
 					TYX
 					STA !Freeram_SpriteHP_MaxHPHi,x
 				endif
-				LDX $00 
+				LDX $15E9|!addr
 ;				LDA #$01	;>These scrapped to prevent fill animation from being set to 100% when a shell-less koopa, removed from paratroopa, enters a shell
 ;				STA !Freeram_SpriteHP_CurrentHPLow,x
 ;				STA !Freeram_SpriteHP_MaxHPLow,x
