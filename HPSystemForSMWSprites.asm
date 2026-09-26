@@ -1712,42 +1712,19 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					LDY !1594,x
 					TXA
 					CMP !Scratchram_SpriteHP_SpriteSlotToDisplay
-					BNE .CheckIfGreenParatroopaShell	;>If the HP meter isn't on the shell-less koopa, skip (just transfer HP values)
+					BNE .NoSwitchMeter			;>If the HP meter isn't on the shell-less koopa, skip (just transfer HP values)
 				.SwitchMeter
 					TYA												;\Switch meter to the shell (which will turn into a regular koopa)
 					STA !Freeram_SpriteHP_MeterState				;/
 					if and(!SharedSubUseFlag_UsingGraphicalBarRoutines, !SharedSubUseFlag_SpriteHPRemoveRecordEffect)
+						JSR .HealthTransfer ;>Transfer HP first so the subroutine SharedSub_SpriteHPRemoveRecordEffect gets the proper HP amount.
 						PHY
-						JSL !SharedSub_SpriteHPRemoveRecordEffect ;>This prevents an issue where if player gets a 1/2HP shell-less koopa into sprite $DF ($09 stunned).
+						JSL !SharedSub_SpriteHPRemoveRecordEffect ;>This prevents an issue where if player guides a 1/2HP shell-less koopa into sprite $DF ($09 stunned).
 						PLY
+						BRA .Restore
 					endif
-					
-				.CheckIfGreenParatroopaShell
-					;This code handles a situation where a 1 HP shell-less koopa enters a koopa shell that
-					;ignores special world completion, Lunar magic Sprite $DF (it's actually sprite $09,
-					;the Green Bouncing Paratroopa, in its carrable state).
-					;
-					;Without this, if a koopa enters this shell, his HP will not be "updated" to having 2/2 HP,
-					;resulting in having 1/1 HP and showing 0/1 HP (without dying) when removed from its shell.
-					if !Setting_SpriteHP_UsingCustomSprites
-						if !sa1 == 0
-							PHX
-							TYX
-							LDA !7FAB10,x ;>In LoROM, a 24-bit address representing the sprite extra bit is being used, and opcodes using long-addressing index Y (LDA $xxxxxx,y) does not exist.
-							PLX
-						else
-							LDA !7FAB10,y
-						endif
-						AND.b #%00001000			;\If it's not the shell that is a green paratroopa, allow HP transfer
-						BNE .TransferHPValues		;|
-					endif
-					LDA !9E,y					;|
-					CMP #$09					;|
-					BNE .TransferHPValues		;/
-				.ShellLessBecommingGreenParatroopa ;\Switch the HP display from 1/1 HP to 2/2.
-					BRA .Restore
-				.TransferHPValues
-					JSR TransferHPBetweenKoopaAndShell
+				.NoSwitchMeter
+					JSR .HealthTransfer
 				.Restore
 					%JSLRTS($01AC80, $01AD06)
 						;^OffScrEraseSprite, the subroutine called to erase the shell-less koopa without permanently erasing it.
@@ -1757,36 +1734,67 @@ incsrc "Defines/GraphicalBarDefines.asm"
 						; of switching.
 					LDY !1594,x
 					RTL
+
+				.HealthTransfer
+					..CheckIfGreenParatroopaShell
+						;This code handles a situation where a 1 HP shell-less koopa enters a koopa shell that
+						;ignores special world completion, Lunar magic Sprite $DF (it's actually sprite $09,
+						;the Green Bouncing Paratroopa, in its carrable state).
+						;
+						;Without this, if a koopa enters this shell, his HP will not be "updated" to having 2/2 HP,
+						;resulting in having 1/1 HP and showing 0/1 HP (without dying) when removed from its shell.
+						if !Setting_SpriteHP_UsingCustomSprites
+							if !sa1 == 0
+								PHX
+								TYX
+								LDA !7FAB10,x ;>In LoROM, a 24-bit address representing the sprite extra bit is being used, and opcodes using long-addressing index Y (LDA $xxxxxx,y) does not exist.
+								PLX
+							else
+								LDA !7FAB10,y
+							endif
+							AND.b #%00001000			;\If it's not the shell that is a green paratroopa, allow HP transfer
+							BNE ..TransferHPValues		;|
+						endif
+						LDA !9E,y					;|
+						CMP #$09					;|
+						BNE ..TransferHPValues		;/
+					..ShellLessBecommingGreenParatroopa ;\Switch the HP display from 1/1 HP to 2/2.
+						BRA ..Done
+					..TransferHPValues
+						JSR TransferHPBetweenKoopaAndShell
+					..Done
+						RTS
 			TransferHPBetweenKoopaAndShell:
 				;Input:
-				; - Y: Sprite that the current sprite is interacting with or a newly spawned sprite to transfer HP to.
-				LDX $15E9|!addr
+				; - X: Sprite slot that the current sprite to transer HP from (will use $00 to store due to Y-indexed long-addressing not existing).
+				; - Y: Sprite slot that the current sprite is interacting with or a newly spawned sprite to transfer HP to.
+				STX $00
 				LDA !Freeram_SpriteHP_CurrentHPLow,x
 				TYX
 				STA !Freeram_SpriteHP_CurrentHPLow,x
-				LDX $15E9|!addr
+				LDX $00
 				LDA !Freeram_SpriteHP_MaxHPLow,x
 				TYX
 				STA !Freeram_SpriteHP_MaxHPLow,x
 				if !Setting_SpriteHP_TwoByte
-					LDX $15E9|!addr
+					LDX $00
 					LDA !Freeram_SpriteHP_CurrentHPHi,x
 					TYX
 					STA !Freeram_SpriteHP_CurrentHPHi,x
-					LDX $15E9|!addr
+					LDX $00
 					LDA !Freeram_SpriteHP_MaxHPHi,x
 					TYX
 					STA !Freeram_SpriteHP_MaxHPHi,x
 				endif
-				LDX $15E9|!addr
-				LDA #$01
-				STA !Freeram_SpriteHP_CurrentHPLow,x
-				STA !Freeram_SpriteHP_MaxHPLow,x
-				if !Setting_SpriteHP_TwoByte
-					LDA #$00
-					STA !Freeram_SpriteHP_CurrentHPHi,x
-					STA !Freeram_SpriteHP_MaxHPHi,x
-				endif
+				LDX $00 
+;				LDA #$01	;>These scrapped to prevent fill animation from being set to 100% when a shell-less koopa, removed from paratroopa, enters a shell
+;				STA !Freeram_SpriteHP_CurrentHPLow,x
+;				STA !Freeram_SpriteHP_MaxHPLow,x
+;				if !Setting_SpriteHP_TwoByte
+;					LDA #$00
+;					STA !Freeram_SpriteHP_CurrentHPHi,x
+;					STA !Freeram_SpriteHP_MaxHPHi,x
+;				endif
 				RTS
 		endif
 	endif
