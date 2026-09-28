@@ -406,7 +406,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 	;Some other misc fixes and additions
 		;Fix lava-sinking sprites from phasing through walls leftward
 			LavaPassThroughWallsFix:
-				if !Setting_LavaSinkingFix
+				if !Setting_SpriteHP_LavaSinkingFix
 					org $019A92
 					BRA .InteractWithObjects
 					

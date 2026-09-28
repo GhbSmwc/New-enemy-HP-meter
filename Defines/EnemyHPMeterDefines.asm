@@ -197,6 +197,7 @@
 					!Setting_SpriteHP_GraphicalBarPos_x = 23
 					!Setting_SpriteHP_GraphicalBarPos_y = 1
 				;Same as above but if !Setting_SpriteHP_BarExtendLeft == 1 AND !Setting_SpriteHP_GraphicalBar_VariableMiddleLength == 1
+				;and that this is the XY pos of the RIGHTMOST tile, not the leftmost, and occupies tiles to the left from here.
 					!Setting_SpriteHP_GraphicalBarPos_ExtendLeft_x = 31
 					!Setting_SpriteHP_GraphicalBarPos_ExtendLeft_y = 1
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -225,7 +226,7 @@
 					; -- **[=======] <-This is the bar at its shortest length with !Setting_SpriteHP_BarExtendLeft == 1. The "*" means a blank tile is written every frame.
 					; -- [=======]** <-Same as above but !Setting_SpriteHP_BarExtendLeft == 0
 					; 
-					;    This is so that the meter can disappear properly.
+					;    This is so that the meter can disappear properly. See following define to ensure that.
 					
 				!Setting_SpriteHP_GraphicalBar_VariableMiddleLengthMax = 9
 					;^Value entered here must be the middle length of the bar when it is the longest
@@ -459,6 +460,10 @@
 		;from any attack). That is, unless stated otherwise.
 		;
 		;This only applies if !Setting_SpriteHP_RemoveOrApplyPatch == 1 and their respective settings being 1.
+		;
+		;For other sprites to modify default HP value, see "HPSystemForSMWSprites.asm":
+		; - Vanilla SMW: (which are mostly 1-shot), see under ".DefaultSMWSprHP".
+		; - Custom sprites (pixi): see under ".DefaultCustSprHP".
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			;Chucks. Values can be up to 65535 if these conditions are met:
@@ -486,10 +491,11 @@
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			;Following settings are HP and damage values for Ludwig, Morton and Roy.
 			;
-			;Be careful with having too much health and too little damage from stomp attacks for Roy, if its possible to stomp Roy too many times
-			;(from my testing, 7 and higher) before he dies, the pillars of the arena can glitch since Nintendo didn't program a limit on how
-			;far the pillars can move. To know if its possible, do the math: NumberOfStomps = ceiling(Health/StompDamage), where ceiling rounds
-			;the number up to an integer. A division by zero obviously means you can trigger the walls bugging out without damage.
+			;Be careful with having too much health and too little damage from stomp attacks for Roy, if its possible to stomp Roy
+			;too many times (from my testing, 7 and higher) before he dies, the pillars of the arena can glitch since Nintendo
+			;didn't program a limit on how far the pillars can move. To know if its possible, do the math:
+			;NumberOfStomps = ceiling(Health/StompDamage), where ceiling rounds the number up to an integer. A division by zero
+			;obviously means you can trigger the walls bugging out without damage.
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 				!Setting_SpriteHP_VanillaSprite_LudwigMortonRoy_HPAmount	= 12
 				!Setting_SpriteHP_VanillaSprite_LudwigMortonRoy_StompDamage	= 4
@@ -538,6 +544,19 @@
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 					!Setting_SpriteHP_VanillaSprite_LavaSink_SoundNumber = $20
 					!Setting_SpriteHP_VanillaSprite_LavaSink_SoundPort = $1DFC|!addr
+		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+		;Misc
+		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+			!Setting_SpriteHP_Koopas_ClassicBehavior = 0
+				;^Koopas do what when stomped/stunned-in-shells (this is because of a hijack at $01AA14):
+				; - 0 = Come out of shells (vanilla).
+				; - 1 = Stay in their shells (applies hex edits at $0196C6 and $01AA15).
+				; Note that the patch still applies HP transfer code for when koopas enter their shells since it's possible
+				; to place shell-less koopas in the level either via LM or sprite spawn.
+			!Setting_SpriteHP_LavaSinkingFix = 1
+				;^Apply a bugfix that sprites sinking in lava moving left goes through solid blocks?
+				; - 0 = No
+				; - 1 = Yes
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;Size of the HP and total mode:
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -560,14 +579,6 @@
 			;^Display RAM usage on Asar console window:
 			; - 0 = No
 			; - 1 = Yes, display the HP data RAM usage on asar console (would not work for pixi due to print command reserved for description).
-		!Setting_SpriteHP_Koopas_ClassicBehavior = 0
-			;^Koopas do what when stomped/stunned-in-shells (this is because of a hijack at $01AA14):
-			; - 0 = Come out of shells (vanilla).
-			; - 1 = Stay in their shells (applies hex edits at $0196C6 and $01AA15).
-		!Setting_LavaSinkingFix = 1
-			;^Apply a bugfix that sprites sinking in lava moving left goes through solid blocks?
-			; - 0 = No
-			; - 1 = Yes
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;Don't touch these unless you know what you're doing
