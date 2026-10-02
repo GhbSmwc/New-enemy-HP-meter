@@ -1251,8 +1251,8 @@ if !SharedSubUseFlag_UsingGraphicalBarRoutines
 	;   A table array containing the amount of fill for each tile byte, ordered
 	;   with N (can be zero) tile bytes being full (filled to maximum), 0 or 1
 	;   tile bytes being fraction (fill amount between inclusively 0 to max-1),
-	;   then N (can be zero) tile bytes being empty empty (fill amount being
-	;   $00). The amount of bytes occupied here is:
+	;   then N (can be zero) tile bytes being empty (fill amount being $00). The
+	;   amount of bytes occupied here is:
 	;
 	;    NumberOfBytes = (L + MLength + R)
 	;
