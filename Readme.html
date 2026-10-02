@@ -894,14 +894,10 @@ autoclean JML SpritesTotalHPIntroEffect		;</pre>
 		Should be changed to:<br>
 <div class="CodeBlock" style="height: 230px;"><pre>
     INC !1534,x                 ; increment sprite hit counter (this counts the damage up by 1)
+    LDA #$01
+    STA $00
     if !Setting_SpriteHP_TwoByte
-        REP #$20
-        LDA #$0001
-        STA $00
-        SEP #$20
-    else
-        LDA #$01
-        STA $00
+        STZ $01
     endif
     JSL !SharedSub_SpriteHPDamage             ;&gt;Reflect the damage over to the sprite HP data (yes, the HP data is already synced via macro call of "ConvertDamageAmountToHP", however this may only happen before this code, which may cause 1-frame off-sync, also we need the bar animation to be set)
     LDA !1534,x                               ;\ If it has incremented to the "max", do death animation.
