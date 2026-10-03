@@ -416,7 +416,10 @@ main:
 								STA !Freeram_SpriteHP_BarAnimationFill
 							endif
 						....ShowFilllingUp
-							.....TerminateIntroFillIfAtCurrentHP
+							.....TerminateIntroFillIfAtOrAboveCurrentHPFill
+								;This handles a situation where if a player reduces the sprite/total HP that results
+								;in the current fill amount $00 to be less than !Freeram_SpriteHP_BarAnimationFill,
+								;to terminate the filling animation prematurely.
 								LDA !Freeram_SpriteHP_MeterState
 								CMP.b #!sprite_slots
 								BCC ......NoTerminate
@@ -445,8 +448,8 @@ main:
 							if !Setting_SpriteHP_ShowHealedTransparent
 								LDA !Freeram_SpriteHP_MeterState
 								CMP.b #!sprite_slots
-								BCS .....IntroFill
-								LDA $13
+								BCS .....IntroFill ;>Skip the rapid-flicker (display HP recovery) if intro-filling
+								LDA $13 ;\Otherwise show heal amount.
 								AND.b #%00000001
 								BNE .....FillSoundEffect ;On odd frames, show current HP fill
 								.....IntroFill
