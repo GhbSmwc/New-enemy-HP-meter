@@ -521,6 +521,8 @@ if !SharedSubUseFlag_UsingGraphicalBarRoutines
 				.MidLength
 					LDA #$08		;>Number of middle tiles for MidLength
 			elseif !Setting_SpriteHP_GraphicalBar_VariableMiddleLength == 2
+				;Here, are sprite numbers that dictate what middle-length the bar should be.
+				
 				;Macros to make entering sprite numbers easier
 					macro CheckSpriteNumber(SprNumb, LabelToLength)
 						;If you get "branch out of bounds" error, use
@@ -587,7 +589,7 @@ if !SharedSubUseFlag_UsingGraphicalBarRoutines
 					;Enter your list of vanilla sprite numbers here. Same as above.
 						%CheckSpriteNumber($46, .MidLength)               ;\Chargin' chucks.
 						%CheckSpriteNumber_Range($91, $98, .MidLength)    ;/
-						%CheckSpriteNumber($C5, .LongLength)              ;>Big Boo Boss
+						%CheckSpriteNumber($C5, .LongLength)              ;>Big Boo Boss.
 						%CheckSpriteNumber($29, .LongLength)              ;>Koopa kids.
 					;Don't remove this.
 						JMP .ShortLength
