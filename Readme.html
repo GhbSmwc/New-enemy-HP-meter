@@ -280,7 +280,7 @@ ConvertToRightAlignedFormat2:
 											<li><kbd>GraphicalBarExtendLeft</kbd></li>
 											<li><kbd>GraphicalBarExtendLeftFormat2</kbd></li>
 											<li><kbd>ConvertBarFillAmountToTiles</kbd></li>
-											<li><kbd>DrawGraphicalBarSubtractionLoopEdition</kbd></li>
+											<li><kbd>GraphicalBarSplitFill</kbd></li>
 											<li><kbd>GraphicalBarRoundAwayEmpty</kbd></li>
 											<li><kbd>GraphicalBarRoundAwayEmptyFull</kbd></li>
 											<li><kbd>GraphicalBarRoundAwayFull</kbd></li>
@@ -432,7 +432,7 @@ ConvertToRightAlignedFormat2:
 %ConditionalSharedSubJMLList(GraphicalBarExtendLeft, Placeholder, !SharedSubUseFlag_UsingExtendingLeftBar)		;
 %ConditionalSharedSubJMLList(GraphicalBarExtendLeftFormat2, Placeholder, !SharedSubUseFlag_UsingExtendingLeftBar)		;
 %ConditionalSharedSubJMLList(ConvertBarFillAmountToTiles, Placeholder, !SharedSubUseFlag_UsingGraphicalBarRoutines)		;
-%ConditionalSharedSubJMLList(DrawGraphicalBarSubtractionLoopEdition, Placeholder, !SharedSubUseFlag_UsingGraphicalBarRoutines)		;
+%ConditionalSharedSubJMLList(GraphicalBarSplitFill, Placeholder, !SharedSubUseFlag_UsingGraphicalBarRoutines)		;
 %ConditionalSharedSubJMLList(GraphicalBarRoundAwayEmpty, Placeholder, !SharedSubUseFlag_UsingGraphicalBarRoutines)		;
 %ConditionalSharedSubJMLList(GraphicalBarRoundAwayEmptyFull, Placeholder, !SharedSubUseFlag_UsingGraphicalBarRoutines)		;
 %ConditionalSharedSubJMLList(GraphicalBarRoundAwayFull, Placeholder, !SharedSubUseFlag_UsingGraphicalBarRoutines)		;
@@ -488,7 +488,7 @@ autoclean JML SpritesTotalHPIntroEffect		;</pre>
 		%ConditionalSharedSubDefineList(SharedSub_GraphicalBarExtendLeft, SharedSub_Placeholder, !SharedSubUseFlag_UsingExtendingLeftBar)		;
 		%ConditionalSharedSubDefineList(SharedSub_GraphicalBarExtendLeftFormat2, SharedSub_Placeholder, !SharedSubUseFlag_UsingExtendingLeftBar)		;
 		%ConditionalSharedSubDefineList(SharedSub_ConvertBarFillAmountToTiles, SharedSub_Placeholder, !SharedSubUseFlag_UsingGraphicalBarRoutines)		;
-		%ConditionalSharedSubDefineList(SharedSub_DrawGraphicalBarSubtractionLoopEdition, SharedSub_Placeholder, !SharedSubUseFlag_UsingGraphicalBarRoutines)		;
+		%ConditionalSharedSubDefineList(SharedSub_GraphicalBarSplitFill, SharedSub_Placeholder, !SharedSubUseFlag_UsingGraphicalBarRoutines)		;
 		%ConditionalSharedSubDefineList(SharedSub_GraphicalBarRoundAwayEmpty, SharedSub_Placeholder, !SharedSubUseFlag_UsingGraphicalBarRoutines)		;
 		%ConditionalSharedSubDefineList(SharedSub_GraphicalBarRoundAwayEmptyFull, SharedSub_Placeholder, !SharedSubUseFlag_UsingGraphicalBarRoutines)		;
 		%ConditionalSharedSubDefineList(SharedSub_GraphicalBarRoundAwayFull, SharedSub_Placeholder, !SharedSubUseFlag_UsingGraphicalBarRoutines)		;
@@ -1325,7 +1325,7 @@ function ManageSharedSubroutineUnusedSubroutines() {
 		{SubroutineName: "ConvertBarFillAmountToTiles", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar)},
 		{SubroutineName: "ConvertToRightAligned", IsUsed: Boolean((InputsObject.SharedSub_Setting_DisplayNumerical != 0)&&(InputsObject.SharedSub_Setting_NumericalTextAlignment == 2)&&(IsAlignedTextNeeded) && IsUsingTileNumbAndPropSeperate)},
 		{SubroutineName: "ConvertToRightAlignedFormat2", IsUsed: Boolean((InputsObject.SharedSub_Setting_DisplayNumerical != 0)&&(InputsObject.SharedSub_Setting_NumericalTextAlignment)&&(IsAlignedTextNeeded)&&IsUsingTileNumbAndPropInterleaved)},
-		{SubroutineName: "DrawGraphicalBarSubtractionLoopEdition", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar)},
+		{SubroutineName: "GraphicalBarSplitFill", IsUsed: Boolean(InputsObject.SharedSub_Setting_DisplayGraphicalBar)},
 		{SubroutineName: "MathDiv32_16", IsUsed: true},
 		{SubroutineName: "MathDiv", IsUsed: true},
 		{SubroutineName: "MathMul16_16", IsUsed: true},

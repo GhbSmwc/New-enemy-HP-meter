@@ -118,7 +118,7 @@
 		%ConditionalSharedSubDefineList(SharedSub_GraphicalBarExtendLeft, SharedSub_Placeholder, !SharedSubUseFlag_UsingExtendingLeftBar)		;
 		%ConditionalSharedSubDefineList(SharedSub_GraphicalBarExtendLeftFormat2, SharedSub_Placeholder, !SharedSubUseFlag_UsingExtendingLeftBar)		;
 		%ConditionalSharedSubDefineList(SharedSub_ConvertBarFillAmountToTiles, SharedSub_Placeholder, !SharedSubUseFlag_UsingGraphicalBarRoutines)		;
-		%ConditionalSharedSubDefineList(SharedSub_DrawGraphicalBarSubtractionLoopEdition, SharedSub_Placeholder, !SharedSubUseFlag_UsingGraphicalBarRoutines)		;
+		%ConditionalSharedSubDefineList(SharedSub_GraphicalBarSplitFill, SharedSub_Placeholder, !SharedSubUseFlag_UsingGraphicalBarRoutines)		;
 		%ConditionalSharedSubDefineList(SharedSub_GraphicalBarRoundAwayEmpty, SharedSub_Placeholder, !SharedSubUseFlag_UsingGraphicalBarRoutines)		;
 		%ConditionalSharedSubDefineList(SharedSub_GraphicalBarRoundAwayEmptyFull, SharedSub_Placeholder, !SharedSubUseFlag_UsingGraphicalBarRoutines)		;
 		%ConditionalSharedSubDefineList(SharedSub_GraphicalBarRoundAwayFull, SharedSub_Placeholder, !SharedSubUseFlag_UsingGraphicalBarRoutines)		;

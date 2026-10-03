@@ -540,7 +540,7 @@ main:
 					...AnimationDone
 					
 				endif
-				JSL !SharedSub_DrawGraphicalBarSubtractionLoopEdition
+				JSL !SharedSub_GraphicalBarSplitFill
 				STZ $00									;>Set graphics mode to level layer 3
 				JSL !SharedSub_ConvertBarFillAmountToTiles
 				if !Setting_SpriteHP_BarExtendLeft == 0

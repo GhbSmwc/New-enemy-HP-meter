@@ -26,7 +26,7 @@
 ; - GraphicalBarExtendLeft
 ; - GraphicalBarExtendLeftFormat2
 ; - ConvertBarFillAmountToTiles
-; - DrawGraphicalBarSubtractionLoopEdition
+; - GraphicalBarSplitFill
 ; - GraphicalBarRoundAwayEmpty
 ; - GraphicalBarRoundAwayFull
 ; - GraphicalBarRoundAwayEmptyFull
@@ -647,10 +647,9 @@ if !SharedSubUseFlag_UsingGraphicalBarRoutines
 	;*MaxQuantity = the maximum amount of something, say max HP.
 	;*FilledPieces = the number of pieces filled in the whole bar (rounded 1/2 up).
 	; *Note that this value isn't capped (mainly Quantity > MaxQuantity), the
-	;  "DrawGraphicalBar" (and "DrawGraphicalBarSubtractionLoopEdition") subroutine will
-	;  detect and will not display over max, just in case if you somehow want to use the
-	;  over-the-max-value on advance use (such as filling 2 separate bars, filling up
-	;  the 2nd one after the 1st is full).
+	;  "GraphicalBarSplitFill" subroutine will detect and will not display over max, just
+	;  in case if you somehow want to use the over-the-max-value on advance use (such as
+	;  filling 2 separate bars, filling up the 2nd one after the 1st is full).
 	;*TotalMaxPieces = the number of pieces of the whole bar when full.
 	;
 	;Input:
@@ -1213,10 +1212,10 @@ if !SharedSubUseFlag_UsingGraphicalBarRoutines
 					PLB						;>Pull bank
 					RTL
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	;Convert amount of fill to each fill per byte, repeated subtraction edition.
+	;Convert amount of fill to each fill per byte.
+	;
 	;It takes a given fill amount for the whole bar, and splits them into
-	;individual tile bytes starting from the first byte to the last. A
-	;replacement of "DrawGraphicalBar".
+	;individual tile bytes starting from the first byte to the last.
 	;
 	;It works by:
 	;
@@ -1263,7 +1262,7 @@ if !SharedSubUseFlag_UsingGraphicalBarRoutines
 	;   [RemainingFill = OriginalFill - EntireBarCapicity]. (overall calculation:
 	;   RemainingFill = max((InputFillAmount - BarMaximumFull), 0))
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	DrawGraphicalBarSubtractionLoopEdition:
+	GraphicalBarSplitFill:
 			LDX #$00
 		.Leftend
 			LDA !Scratchram_GraphicalBar_LeftEndPiece       ;\If left end does not exist, skip
