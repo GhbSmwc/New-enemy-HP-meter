@@ -1785,8 +1785,8 @@ SubtractSpriteHP:
 			STA !Scratchram_SpriteHP_SpriteSlotToDisplay
 			RTL
 		.IntroFillMode
-			SEC
-			SBC.b #!sprite_slots
+			SEC						;\Convert range to equivilant sprite slot numbers.
+			SBC.b #!sprite_slots	;/
 		.Normal
 			STA !Scratchram_SpriteHP_SpriteSlotToDisplay
 		.Done
@@ -1897,7 +1897,7 @@ SpriteHPIntroEffect:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;Hide meter if sprite the meter is on despawns.
 ;
-;This subroutine to be used immidiately after its
+;This subroutine to be used immediately after its
 ;$14C8,x is potentially set to $00 in a sprite code.
 ;It's to prevent a bug where if a sprite is despawned
 ;and a new sprite is spawned at the same slot that was

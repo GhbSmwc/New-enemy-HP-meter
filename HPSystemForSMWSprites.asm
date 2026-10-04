@@ -348,7 +348,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		;Most sprites (within general mario-interact-sprites routine - JSR $01A83B)
 			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
 				org $01A935
-				autoclean JSL SpinjumpKillDisplayHP
+				autoclean JSL DeathAnimationSpinJumpKill
 				NOP #3
 			else
 				%RemoveFreespaceCodeFromJMLJSL($01A935)
@@ -356,10 +356,10 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				JSR.w $019ACB
 				JSL $07FC3B|!bank
 			endif
-		;Rex
+		;Rex (runs its own code, evident in the disassembly and the fact the player is launched upwards, similar with dry bones and bony beetle)
 			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Rex)
 				org $0395EC
-				autoclean JSL SpinjumpKillDisplayHPRex
+				autoclean JSL DeathAnimationSpinJumpKillRex
 				NOP
 			else
 				%RemoveFreespaceCodeFromJMLJSL($0395EC)
@@ -367,10 +367,10 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				LDA #$08
 				STA $1DF9|!addr
 			endif
-	;Same as above but when stomping enemies regularly (flatten).
+	;Modify the way how enemies are killed via flattening animation (shell-less koopas, Dino Torch, etc.).
 		if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
 			org $01A9D3
-			autoclean JSL StompKill
+			autoclean JSL DeathAnimationFlatten
 			NOP
 		else
 			%RemoveFreespaceCodeFromJMLJSL($01A9D3)
@@ -697,7 +697,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		endif
 	;Suboffscreen hijacks (prevent HP meter transfer if a sprite despawns and a new sprite spawns on the same slot
 	;on the same frame). Like I said, anytime a $14C8,x is set to 0, you almost always need to run
-	;JSL !SharedSub_HideHPMeterIfSpriteDespawns
+	;JSL !SharedSub_HideHPMeterIfSpriteDespawns.
 		;Because STZ.w $14C8,X happens in less than 4 bytes before RTS, I have to hijack
 		;an address before that, which looks ugly. Following disassembly shows what's
 		;hijacked:
@@ -712,6 +712,8 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		;	STZ.w $14C8,X				;$01ACA1	|/
 		;Return01ACA4:					;			|
 		;	RTS							;$01ACA4	|
+		;^Note that this subroutine is also used to delete sprites once their falling-off-screen animation ends,
+		; when it falls below the level (runs $018127 -> $019AA2 -> $019ADD -> $01AC3E -> $01ACA1).
 		%SubOffScreenHijacks($01AC91, SubOffscreenXBnk1PreventHPMeterTransfer, $01ACA1)
 		
 		;Similar code as above. I can move the restore code to a subroutine here.
@@ -990,15 +992,14 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				.SpriteDead
 					JML $02C7F2|!bank
 			endif
-		PreventHPDisplayTransferChuck:
+		PreventHPDisplayTransferChuck: ;>JSL from $02C20C
 			.Restore
 				LDA #$28
 				STA !163E,x
 			.HideDisplay
 				LDA !14C8,x
 				BNE ..NotDead
-				LDA #$FF
-				STA !Freeram_SpriteHP_MeterState
+				JSL !SharedSub_HideHPMeterIfSpriteDespawns
 				
 				..NotDead
 			RTL
@@ -1098,7 +1099,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 	endif
 	if !Setting_ModifySprAndDisplayHPOfSMWSpr
 		if !Setting_SpriteHP_VanillaSprite_OneShotSprites
-			SpinjumpKillDisplayHP:	;>JSL from $01A935
+			DeathAnimationSpinJumpKill:	;>JSL from $01A935
 				.CheckSprite
 					JSR IsKoopaShellEmpty
 					BCS .Restore
@@ -1109,7 +1110,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					RTL
 		endif
 		if !Setting_SpriteHP_VanillaSprite_Rex
-			SpinjumpKillDisplayHPRex: ;>JSL from $0395EC
+			DeathAnimationSpinJumpKillRex: ;>JSL from $0395EC
 				%IncreaseDamageCounter(!C2, !Setting_SpriteHP_VanillaSprite_Rex_HPAmount, !Setting_SpriteHP_VanillaSprite_Rex_HPAmount)
 				.Restore
 					LDA #$08
@@ -1605,7 +1606,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				RTS
 	endif
 	if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
-		StompKill:	;>JSL from $01A9D3
+		DeathAnimationFlatten:	;>JSL from $01A9D3
 			.DisplayOneHP
 				JSR ZeroOutHPOfOneShotSprites
 			.Restore
@@ -1628,7 +1629,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				endif
 				LDA !15F6,x
 				RTL
-		FeatherSuperKoopaInit:
+		FeatherSuperKoopaInit: ;>JSL from $018531
 			.Default1HP
 				LDA #$01
 				STA !Freeram_SpriteHP_CurrentHPLow,x
@@ -1652,7 +1653,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					PLA
 				..NonFeathered
 				RTL
-		ParachuteEnemies:
+		ParachuteEnemies: ;>JSL from $01A98E
 			.Restore
 				LDA #$80
 				STA !1540,x

@@ -1125,13 +1125,38 @@ autoclean JML SpritesTotalHPIntroEffect		;</pre>
 </pre></div>
 			Thus what's hijacked by <kbd>HPSystemForSMWSprites.asm</kbd> so that in addition to zeroing out <kbd>$14C8</kbd> are:
 			<ul>
-				<li>SubOffScreen subroutines (all 3 of the vanilla code). This package also includes a version of pixi's suboffscreen for pixi sprites, which any sprite using this HP system should use instead of the original.</li>
+				<li>
+					SubOffScreen subroutines (all 3 of the vanilla code). This package also includes a version of pixi's suboffscreen for pixi sprites, which any sprite using this HP system should use instead of the original. Note that
+					the one at <kbd>$01AC31</kbd> is used by a code at <kbd>$019ADD</kbd> when sprites are killed via falling off the level.
+				</li>
 				<li>
 					Magikoopa, Bullet Bill, Spike Top (or any wall-following sprites) that manuelly and permanently deletes itself if vertically off-screen, which is actually a bug. They can be found in the patch file under
 					&ldquo;<kbd>Vertical despawn fixes</kbd>&rdquo;. Yes, this is (and includes) the <a href="https://www.smwcentral.net/?p=section&a=details&id=22833">Vertical Despawn fix</a> patch, but only applied if both
-					<kbd>!Setting_SpriteHP_RemoveOrApplyPatch</kbd> and <kbd>!Setting_SpriteHP_VanillaSprite_OneShotSprites</kbd> are set to <kbd>1</kbd>.<br><br>
+					<kbd>!Setting_SpriteHP_RemoveOrApplyPatch</kbd> and <kbd>!Setting_SpriteHP_VanillaSprite_OneShotSprites</kbd> are set to <kbd>1</kbd>.
+				</li>
+				<li>
+					During sprite death animation handled by the vanilla game that would eventually and automatically set <kbd>$14C8</kbd> to zero once the animation ends.
 				</li>
 			</ul>
+		</li>
+		<li>
+			If you having in-between boss phase sequence, and wanted the HP meter to only shows the HP of the current phase (meter goes empty first, rather than at specific amounts before next phase)
+			and you want the HP bar to not show up during this, then perform the following:
+<div class="CodeBlock" style="width: 872px; height: 184px;"><pre>
+;After the current phase ended, and the meter goes empty, hide the meter if the meter is on this sprite
+	;[...]
+	HideBossHPMeterDuringPhaseTransition:
+		JSL !SharedSub_SpriteHPGetSlotIndex
+		TXA
+		CMP !Scratchram_SpriteHP_SpriteSlotToDisplay
+		BNE .No ;&gt;If HP meter is not on specifically this sprite, don't hide the meter.
+		.Hide
+			LDA #$FF
+			STA !Freeram_SpriteHP_MeterState
+		.No
+	;[...]
+</pre></div><br>
+			Then, at an area of the code where the start of the next phase, simply replay the filling animation (again, should only be called for 1 frame) by calling <kbd>JSL !SharedSub_SpriteHPIntroEffect</kbd>
 		</li>
 	</ul>
 	<hr>
