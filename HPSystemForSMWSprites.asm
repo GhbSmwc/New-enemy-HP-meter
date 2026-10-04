@@ -174,7 +174,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		;OffScrKillSprite:				;-------- ;|
 		;	STZ.w $14C8,X				;Addr+$10 ;/
 		;ReturnXXXXXX:					;
-		;	RTS							;Addr+$13 ;>Will execute this after this finished.
+		;	RTS							;Addr+$13 ;>Will execute this after this hijack code finishes.
 		?SubOffScreenXBnkX:
 			if !Setting_SpriteHP_RemoveOrApplyPatch
 				org <Addr_Hijack>
@@ -429,7 +429,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					org $019A9D
 					.CODE_019A9D
 				endif
-	;Shell and shell-less koopa HP meter switcher. A koopa and an empty shell are the same sprite (but with a different state).
+	;Shell and shell-less koopa HP meter switcher. A normal koopa and an empty shell are the same sprite (but with a different state).
 	;A shell-less koopa being seperated from their shell is a seperate sprite spawned in the level. When entering an empty shell,
 	;they simply just get deleted.
 		;When koopas exit their shells, switch the HP meter to them and not the koopa/shell (now an empty shell) itself
@@ -520,13 +520,13 @@ incsrc "Defines/GraphicalBarDefines.asm"
 	;NOTES:
 	; - If your custom sprites uses a vanilla death routine and you don't want a health meter
 	;   for those sprites, see "ZeroOutHPOfOneShotSprites:" (without quotes and including the colon)
-	;   on this ASM file.
+	;   on this ASM file, and find the custom sprite number, and have its HP set to 0.
 	; - Reznor is not included here and is handled differently because trying to hijack at $039ACC
 	;   results in a full HP meter due to a call to clear and load sprite tables at $039AEE aftwards.
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-		%HijacksForFallingOffScrn($01A5E3, ShowHPForFallingOffScrnYregister, y) ;>Koopas catching shells
-		%HijacksForFallingOffScrn($01A66B, ShowHPForFallingOffScrn, x) ;>Sprite to sprite collision - Throwned sprites into a normal-status sprite
-		%HijacksForFallingOffScrn($01A68F, ShowHPForFallingOffScrn, x) ;>Sprite to sprite collision - Carried sprites, both throwned sprites, or sprA is a goomba
+		%HijacksForFallingOffScrn($01A5E3, ShowHPForFallingOffScrnYregister, y) ;>Sprite to sprite collision - Throwned sprites into a normal-status sprite (Sprite B kills A).
+		%HijacksForFallingOffScrn($01A66B, ShowHPForFallingOffScrn, x) ;>Sprite to sprite collision - Throwned sprites into a normal-status sprite (Sprite A kills B)
+		%HijacksForFallingOffScrn($01A68F, ShowHPForFallingOffScrn, x) ;>Sprite to sprite collision - Carried sprites, both throwned sprites, or Sprite A is a goomba
 		%HijacksForFallingOffScrn($01A6AC, ShowHPForFallingOffScrnYregister, y) ;>Misc version of $01A68F
 		%HijacksForFallingOffScrn($01A86B, ShowHPForFallingOffScrn, x) ;>Kill routine for star power/sliding
 		%HijacksForFallingOffScrn($01A9E9, ShowHPForFallingOffScrn, x) ;>Default death when killed by stomping (no sqush animation)
@@ -536,10 +536,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		%HijacksForFallingOffScrn($02C7B3, ShowHPForFallingOffScrn, x) ;>Chargin' chuck's death by star
 		%HijacksForFallingOffScrn($02F29D, ShowHPForFallingOffScrn, x) ;>Wiggler death by star
 		%HijacksForFallingOffScrn($0395F2, ShowHPForFallingOffScrn, x) ;>Rex's death by star
-	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	;Make Amazing Hammer bro platform when bonked by player to show HP
-	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-		%HijacksForFallingOffScrn($02DBFD, ShowHPForFallingOffScrnYregister, y)
+		%HijacksForFallingOffScrn($02DBFD, ShowHPForFallingOffScrnYregister, y) ;>When Amazing Hammer bro is being hit by a bonked platform
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;Hijack the clear-sprite tables routine (when sprite spawns) to default sprites with a
 	;certain amount of HP (most of them to have 1/1 HP). This is needed so that sprites not
@@ -553,7 +550,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 	; -- $07F785-$07F78A (5 bytes): Hijacked by Pixi.
 	; - This entire routine runs AFTER its sprite numbers ($9E/$7FAB9E) have been set, and before its
 	;   init code runs. Thus I can set HP values differently based on sprite number, as well as the
-	;   sprite's init to set HP would override this.
+	;   sprite's init to set HP to override this.
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		if !Setting_SpriteHP_RemoveOrApplyPatch
 			org $07F779
@@ -744,7 +741,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		;	RTS							;$03B8C2	|
 		%SubOffScreenHijacks($03B8AF, SubOffscreenXBnk3PreventHPMeterTransfer, $03B8BF)
 	;Bosses below (only applies to bosses with a HP system, and not bowser)
-		;Reznor. Note that when killed, it calls the "InitSpriteTables" subroutine at $xxxxxx.
+		;Reznor. Note that when killed, it calls the "InitSpriteTables" subroutine from $039AEE.
 		;Thus resulting in the meter jumping to 0 back to 1. I had to hijack at $039AF2 to force it to be zero
 			ReznorHijack:
 				if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Bosses)
@@ -791,7 +788,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				STA $1DFC|!addr				;/
 			endif
 			org $03819B										;\Big Boo's hit counter actually increments
-			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Bosses)		;|when switching state, not the instant the
+			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Bosses)		;|when switching from "hurt" state, not the instant the
 				NOP #3										;|boo gits hit.
 			else											;|
 				INC.W !1534,X									;|
