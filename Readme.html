@@ -1095,10 +1095,19 @@ autoclean JML SpritesTotalHPIntroEffect		;</pre>
 		<li>
 			<span id="DespawnSpawnTransferBug">
 				If the HP meter is on a sprite slot that <abbr title="$14C8 set to $00.">despawned</abbr>, and a newly spawned sprite occupies that same slot at the same frame, this may cause a glitch that the meter to
-				transfer to the newly spawned sprite rather than disappearing. This is because despawning and then spawning happened before <kbd>DisplayEnemyHP.asm</kbd> checks if the sprite slot become empty. To
-				prevent this, call <kbd>JSL !SharedSub_HideHPMeterIfSpriteDespawns</kbd> after <kbd>$14C8</kbd> gets potentially set to <kbd>$00</kbd>, before any spawning-sprite-related action occurs. Example:
+				transfer to the newly spawned sprite rather than disappearing (and possibly play the filling animation). This is because despawning and then spawning happened before <kbd>DisplayEnemyHP.asm</kbd> checks
+				if the sprite slot become empty. To	prevent this, call <kbd>JSL !SharedSub_HideHPMeterIfSpriteDespawns</kbd> after <kbd>$14C8</kbd> gets potentially set to <kbd>$00</kbd>, before any
+				spawning-sprite-related action occurs. Example:
 			</span>
-<div class="CodeBlock" style="height: 186px; width: 687px;"><pre>
+<div class="CodeBlock" style="height: 301px; width: 934px;"><pre>
+	incsrc "SharedSubroutineDefs.asm"
+		;^You need this at the top (modification of the file path may be needed
+		; depending on where you placed the define to the shared subroutines
+		; define file) on 3rd-party ASM resources such as patches, custom
+		; blocks, etc. otherwise Asar will not recognize
+		; !SharedSub_HideHPMeterIfSpriteDespawns that points to shared
+		; subroutines' routine.
+
 	;Off-screen despawn:
 		;[...]
 		LDA #$00
@@ -1111,6 +1120,15 @@ autoclean JML SpritesTotalHPIntroEffect		;</pre>
 		JSL !SharedSub_HideHPMeterIfSpriteDespawns ;&gt;Hide the HP meter immidiately.
 		;[...]
 </pre></div>
+			Thus what's hijacked by <kbd>HPSystemForSMWSprites.asm</kbd> so that in addition to zeroing out <kbd>$14C8</kbd> are:
+			<ul>
+				<li>SubOffScreen subroutines (all 3 of the vanilla code). This package also includes a version of pixi's suboffscreen for pixi sprites, which any sprite using this HP system should use instead of the original.</li>
+				<li>
+					Magikoopa, Bullet Bill, Spike Top (or any wall-following sprites) that manuelly and permanently deletes itself if vertically off-screen, which is actually a bug. They can be found in the patch file under
+					&ldquo;<kbd>Vertical despawn fixes</kbd>&rdquo;. Yes, this is (and includes) the <a href="https://www.smwcentral.net/?p=section&a=details&id=22833">Vertical Despawn fix</a> patch, but only applied if both
+					<kbd>!Setting_SpriteHP_RemoveOrApplyPatch</kbd> and <kbd>!Setting_SpriteHP_VanillaSprite_OneShotSprites</kbd> are set to <kbd>1</kbd>.<br><br>
+				</li>
+			</ul>
 		</li>
 	</ul>
 	<hr>

@@ -11,6 +11,13 @@ incsrc "Defines/GraphicalBarDefines.asm"
 ; - Rex.
 ;For all 1-shot enemies, this is enabled by having both !Setting_SpriteHP_VanillaSprite_OneShotSprites
 ;and !Setting_SpriteHP_DisplayHPOfSMWSprites set to 1.
+;
+;Other patches included is:
+; - Vertical Spawn/Despawn Fix (version that is accepted  2020-06-24). Only applied if
+;   !Setting_SpriteHP_RemoveOrApplyPatch and !Setting_SpriteHP_VanillaSprite_OneShotSprites set to 1.
+;   it's part of the many hijacks that fixes a potential bug where if a sprite with its HP displayed
+;   gets despawned and a new sprite spawn on the same slot at the same frame causes the HP to
+;   transfer to that new sprite.
 
 
 ;Note to self (at the time of writing this)
@@ -23,10 +30,17 @@ incsrc "Defines/GraphicalBarDefines.asm"
 	!sprite_num_pointer = $B4
 
 ;Don't touch unless you know what you're doing
-	!DefaultHPTableSize = "db"
-	if !Setting_SpriteHP_TwoByte
-		!DefaultHPTableSize = "dw"
-	endif
+	;Determine size of the HP data for starting HP when spawned
+		!DefaultHPTableSize = "db"
+		if !Setting_SpriteHP_TwoByte
+			!DefaultHPTableSize = "dw"
+		endif
+	;Part of the needed info for vertical offscreen despawn fix
+		!EXLEVEL = 0
+		if (((read1($0FF0B4)-'0')*100)+((read1($0FF0B4+2)-'0')*10)+(read1($0FF0B4+3)-'0')) > 253
+			!EXLEVEL = 1
+		endif
+
 
 ;Macros
 	macro RemoveFreespaceCodeFromJMLJSL(Addr)
@@ -445,6 +459,53 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				org $018AC9
 				JSR.w $01AC80
 				LDY !1594,x
+			endif
+	;Vertical despawn fixes
+		;Magikoopa
+			if and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
+				org $01BCD3
+				autoclean JSL DeleteIfBelowLvl
+				RTS
+			else
+				%RemoveFreespaceCodeFromJMLJSL($01BCD3)
+				org $01BCD3
+				LDA !D8,x
+				SEC
+				SBC $1C
+			endif
+		;Bullet Bill
+			if and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_VanillaSprite_OneShotSprites
+				BulletBillVertOffScrnHijack:
+					org $019017
+					autoclean JSL DeleteIfBelowLvl
+					BRA .CODE_019023
+					
+					org $019023
+					.CODE_019023
+			else
+				%RemoveFreespaceCodeFromJMLJSL($019017)
+				org $019017
+				LDA !D8,x
+				SEC
+				SBC $1C
+				CMP #$F0
+			endif
+		;Wall-following sprites (spike tops, urchins, etc.)
+			if and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_VanillaSprite_OneShotSprites
+				WallFollower:
+					org $02BDA7
+					autoclean JSL DeleteIfBelowLvl
+					BRA .CODE_02BDB3
+					
+					org $02BDB3
+					.CODE_02BDB3
+			else
+				%RemoveFreespaceCodeFromJMLJSL($02BDA7)
+				org $02BDA7
+				LDA !D8,x
+				SEC
+				SBC $1C
+				CMP #$E0
 			endif
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;When sprites are falling down screen
@@ -1796,6 +1857,73 @@ incsrc "Defines/GraphicalBarDefines.asm"
 ;				endif
 				RTS
 		endif
+	endif
+	if and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_VanillaSprite_OneShotSprites
+		DeleteIfBelowLvl:
+			LDA $5B
+			LSR
+			BCC .HorizontalLevel
+			.VerticalLevel
+				LDA #$E0            ;\ $00 (16 bit) = bottom of vertical level
+				STA $00             ;|
+				LDA $5F             ;|
+				DEC                 ;|
+				STA $01             ;/
+				BRA .CheckPosition
+			.HorizontalLevel
+				if !EXLEVEL == 0
+					; LM <= 2.53
+					LDA #$E0            ;\ $00 (16 bit) = bottom of horizontal level
+					STA $00             ;|
+					LDA #$01            ;|
+					STA $01             ;/
+				else
+					; LM >= 3.00
+					REP #$20            ;\ $00 (16 bit) = bottom of horizontal level
+					LDA $13D7|!addr     ;|
+					SEC                 ;|
+					SBC #$0010          ;|
+					STA $00             ;/
+					SEP #$20
+				endif
+			.CheckPosition
+				LDA !14D4,x         ;\ Sprite Y position
+				XBA                 ;|
+				LDA !D8,x           ;/
+				REP #$20
+				STA $02             ;> $02 (16 bit) = Sprite's Y pos
+				CMP $00             ;> Bottom of vertical level
+				BPL .Delete         ;> Delete if below the bottom of vertical level (or past the top).
+				SEP #$20
+			.CheckSprite
+				LDA !9E,x
+				CMP #$20            ;\ Magikoopa magic
+				BEQ ..Magic         ;/
+				CMP #$1C            ;\ Bullet Bill (if upwards one goes above vertical level)
+				BEQ ..BulletBill    ;/
+				;CMP #$xx            ;\ If any more smw sprites are to be found that were bugged.
+				;BEQ ..Sprite1       ;|
+				;CMP #$xx            ;|
+				;BEQ ..Sprite2       ;/
+				RTL
+
+				..Magic
+				..BulletBill
+					REP #$20
+					LDA $02             ;\ Y pos onscreen
+					SEC                 ;|
+					SBC $1C             ;/
+					CMP #$FF80
+					BMI .Delete
+					SEP #$20
+					RTL
+
+			.Delete
+				SEP #$20
+				STZ !14C8,x         ;> Delete if below level.
+				JSL !SharedSub_HideHPMeterIfSpriteDespawns ;>And prevent potential HP meter transfer if a new sprite spawns on this slot at the same frame.
+			.NoDelete
+				RTL
 	endif
 	if !Setting_ModifySprAndDisplayHPOfSMWSpr
 		PokeyInitHP_YoshiHPTable:

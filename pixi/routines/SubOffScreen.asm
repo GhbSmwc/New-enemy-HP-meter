@@ -1,9 +1,9 @@
 incsrc "../SharedSubroutineDefs.asm"
 
 ;This is a edited version of Pixi's routine "SubOffScreen.asm", but with bugfix
-;that prevents the HP meter from transferring to another sprite if a sprite despawns
-;and a new sprite spawns on the same sprite slot at the same frame. Immidiately after !14C8,x
-;gets cleared, call JSL !SharedSub_HideHPMeterIfSpriteDespawns.
+;that prevents the HP meter from transferring to another sprite if a sprite the HP meter
+;is on despawns and a new sprite spawns on the same sprite slot at the same frame.
+;Immidiately after !14C8,x gets cleared, call JSL !SharedSub_HideHPMeterIfSpriteDespawns.
 ;
 ;Replace that file with this file, unless there are changes in pixi's SubOffScreen.asm,
 ;then this file needs to be updated prior to replacing. And yes, if such a change occurs,
