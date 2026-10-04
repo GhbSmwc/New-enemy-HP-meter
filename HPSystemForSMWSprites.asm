@@ -61,30 +61,26 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					LDA #$00                                                ;>...Set it to 0.
 				?.NotMoreThanEnoughDamage
 					STA !Freeram_SpriteHP_CurrentHPLow,x                    ;>otherwise just write the non-negative difference as HP.
-				if !Setting_SpriteHP_TwoByte
-					LDA #$00                                                ;\Rid high bytes.
-					STA !Freeram_SpriteHP_CurrentHPHi,x                     ;|(So far, there is never a sprite that stores a 16-bit damage counter)
-					STA !Freeram_SpriteHP_MaxHPHi,x                         ;/
-				endif
+					if !Setting_SpriteHP_TwoByte
+						LDA #$00                                            ;\Rid high bytes.
+						STA !Freeram_SpriteHP_CurrentHPHi,x                 ;|(So far, there is never a sprite that stores a 16-bit damage counter)
+						STA !Freeram_SpriteHP_MaxHPHi,x                     ;/
+					endif
 			endif
 	endmacro
 	macro DealFixedDamage(DamageAmount)
 		if !Setting_SpriteHP_DisplayHPOfSMWSprites
-			if !Setting_SpriteHP_TwoByte
-				REP #$20
-				if <DamageAmount> != 0
-					LDA.w #<DamageAmount>
-					STA $00
-				else
-					STZ $00
+			if <DamageAmount> != 0
+				LDA.b #<DamageAmount>
+				STA $00
+				if !Setting_SpriteHP_TwoByte
+					LDA.b #<DamageAmount>>>8
+					STA $01
 				endif
-				SEP #$20
 			else
-				if <DamageAmount> != 0
-					LDA.b #<DamageAmount>
-					STA $00
-				else
-					STZ $00
+				STZ $00
+				if !Setting_SpriteHP_TwoByte
+					STZ $01
 				endif
 			endif
 			JSL !SharedSub_SpriteHPDamage ;>This would display HP
@@ -474,7 +470,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				SBC $1C
 			endif
 		;Bullet Bill
-			if and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_VanillaSprite_OneShotSprites
+			if and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
 				BulletBillVertOffScrnHijack:
 					org $019017
 					autoclean JSL DeleteIfBelowLvl
@@ -491,7 +487,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				CMP #$F0
 			endif
 		;Wall-following sprites (spike tops, urchins, etc.)
-			if and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_VanillaSprite_OneShotSprites
+			if and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
 				WallFollower:
 					org $02BDA7
 					autoclean JSL DeleteIfBelowLvl
@@ -1858,7 +1854,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				RTS
 		endif
 	endif
-	if and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_VanillaSprite_OneShotSprites
+	if and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
 		DeleteIfBelowLvl:
 			LDA $5B
 			LSR

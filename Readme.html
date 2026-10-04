@@ -736,8 +736,14 @@ autoclean JML SpritesTotalHPIntroEffect		;</pre>
 		</p>
 	<hr>
 	<h2><a href="#ToC_MakeSpritesDisplayHP" id="JMPTo_MakeSpritesDisplayHP">^</a>Making sprites display their HP</h2>
-	<p>Note that this section assumes you know how to program in 65c816 assembly language as well as instructions for Asar on how it compiles code. <a href="https://www.smwcentral.net/?p=section&a=details&id=14268">See this tutorial</a> on how to get started and asar's
-	document on codes for the tool (<kbd>docs/manuel/index.html</kbd>).</p>
+	<p>
+		Note that this section assumes you know how to program in 65c816 assembly language, how to program custom sprites, and as well as instructions for Asar on how it compiles code. If you don't
+		know how to do these, see these tutorials/documentations:
+		<ul>
+			<li><a href="https://www.smwcentral.net/?p=section&a=details&id=14268">Ersanio's ASM Tutorial - Assembly for the SNES</a></li>
+			<li><a href="https://www.smwcentral.net/?p=viewthread&t=92218">MarioFanGamer's In-Depth Sprite Coding Tutorial</a></li>
+		</ul>
+	</p>
 	
 	<p>This section covers on how to <b>display</b> the sprite's HP.</p>
 	
@@ -747,7 +753,7 @@ autoclean JML SpritesTotalHPIntroEffect		;</pre>
 	
 	<p>I provided an example test sprite under <kbd>pixi/sprites/simple_sprite.asm</kbd> for testing the HP system.</p>
 	
-	<p>Because HP-related defines are heavily involved here, it's important to include the define files at the top of your sprite's ASM file, like this:</p>
+	<p>Because HP-related defines are heavily involved here, it's important to include the define files at the top of every sprite's ASM file used, it should be like this:</p>
 	
 	Number of (sub)folders deep: <input type="number" value="1" min="1" max="10" onchange="UpdateFilePathParentDirectory()">
 <div class="CodeBlock" style="height: 50px;"><pre>	incsrc "<span class="ParentDirectoryCount">../</span>SharedSubroutineDefs.asm"
@@ -807,11 +813,11 @@ autoclean JML SpritesTotalHPIntroEffect		;</pre>
 				LDA #$00                                                ;&gt;...Set it to 0.
 			?.NotMoreThanEnoughDamage
 				STA !Freeram_SpriteHP_CurrentHPLow,x                    ;&gt;otherwise just write the non-negative difference as HP.
-			if !Setting_SpriteHP_TwoByte != 0
-				LDA #$00                                                ;\Rid high bytes.
-				STA !Freeram_SpriteHP_CurrentHPHi,x                     ;|(So far, there is never a sprite that stores a 16-bit damage counter)
-				STA !Freeram_SpriteHP_MaxHPHi,x                         ;/
-			endif
+				if !Setting_SpriteHP_TwoByte != 0
+					LDA #$00                                        ;\Rid high bytes.
+					STA !Freeram_SpriteHP_CurrentHPHi,x             ;|(So far, there is never a sprite that stores a 16-bit damage counter)
+					STA !Freeram_SpriteHP_MaxHPHi,x                 ;/
+				endif
 	endmacro
 </pre></div>
 	For example, Chargin' Chucks have their damage counter stored at sprite table <a href="https://smwc.me/m/smw/ram/7E1528"><kbd>$1528</kbd></a>. This means to call the macro with the <kbd>DamageCountSpriteTableRAM</kbd> set to <kbd>!1528</kbd> (address changed to a define for SA-1 hybrid support).
@@ -857,7 +863,9 @@ autoclean JML SpritesTotalHPIntroEffect		;</pre>
 	
 		Note that if you patched <kbd>HPSystemForSMWSprites.asm</kbd>, and your sprite uses the HP system directly, then 99% of cases you don't need to set its HP at init (see under <kbd>DefaultHPOnSpawn</kbd> in the aformentioned ASM file). The only
 		times you need to set its HP at init are sprites that conditionally have a variable amount of HP depending on its extra byte/bits, such as the <a href="https://www.smwcentral.net/?p=section&a=details&id=36812">Better Pokey</a> custom sprite,
-		whose HP depends on how many segments (including the head), the sprite has.
+		whose HP depends on how many segments (including the head), the sprite has.<br><br>
+		
+		The sprite's init will override its default HP on spawn, thus no worries about <kbd>HPSystemForSMWSprites.asm</kbd> causing HP to be at wrong values.
 	</p>
 	<h3><a href="#ToC_MakeSpritesDisplayHP_TakingDamage" id="JMPTo_MakeSpritesDisplayHP_TakingDamage">^</a>Damage handler</h3>
 	<p>
@@ -873,11 +881,12 @@ autoclean JML SpritesTotalHPIntroEffect		;</pre>
 			<li>
 				Ensure that the health meter always switches to the recently damaged enemy when hit. Otherwise it either stays hidden, stays on the enemy second-or-later-last sprite the player caused damage to or by intro-fill.
 			</li>
+			<li>If total HP mode is used, the sprite shall not switch the HP meter from total mode to its own sprite slot.</li>
 		</ul>
 		Thankfully, all that logic is handled automatically in a subroutine defined as <kbd>!SharedSub_SpriteHPDamage</kbd>, with the inputs stored in RAM <kbd>$00</kbd> (2 bytes, <kbd>$00~$01</kbd>, if <kbd>!Setting_SpriteHP_TwoByte == 1</kbd>). Feel free to check out the subroutines as you wish.<br><br>
 		
 		The same rule applies to healing as well (to show how much the fill increases). A subroutine for pixi <kbd>pixi/routines/EnemyHPHeal.asm</kbd>, which can be called via <kbd>%EnemyHPHeal()</kbd> (similarly <kbd>$00</kbd> or <kbd>$00~$01</kbd> for how much HP recovered).
-		Why in pixi? It's because none of vanilla SMW sprites heals, and at the time of writing this, not a single custom sprite can actually heal.
+		Why in pixi? It's because none of vanilla SMW sprites heals, and at the time of writing this, not a single custom sprite on SMWC's sprite section can actually heal.
 	</p>
 	
 	<p>If you want to know how it works, just open the provided Shared Subroutines code, pixi routine, custom sprite's asm file or view the provided patch and seeing the SMW disassembly.</p>
@@ -892,7 +901,7 @@ autoclean JML SpritesTotalHPIntroEffect		;</pre>
     BEQ SpriteDead              ;/
 </pre></div><br>
 		Should be changed to:<br>
-<div class="CodeBlock" style="height: 230px;"><pre>
+<div class="CodeBlock" style="height: 171px; width: 998px;"><pre>
     INC !1534,x                 ; increment sprite hit counter (this counts the damage up by 1)
     LDA #$01
     STA $00
@@ -909,15 +918,11 @@ autoclean JML SpritesTotalHPIntroEffect		;</pre>
     LDA !sprite_health,x        ; \ Check if the sprite has been hit 3 times
     BNE .justHit</pre></div><br>
 		To be changed to:<br>
-<div class="CodeBlock" style="height: 200px"><pre>    DEC !sprite_health,x        ; Increase hit counter and...
+<div class="CodeBlock" style="height: 139px; width: 1005px;"><pre>    DEC !sprite_health,x        ; Increase hit counter and...
+    LDA #$01
+    STA $00
     if !Setting_SpriteHP_TwoByte
-        REP #$20
-        LDA #$0001
-        STA $00
-        SEP #$20
-    else
-        LDA #$01
-        STA $00
+        STZ $01
     endif
     JSL !SharedSub_SpriteHPDamage
     LDA !sprite_health,x        ; \ Check if the sprite has been hit 3 times
@@ -927,11 +932,10 @@ autoclean JML SpritesTotalHPIntroEffect		;</pre>
 		it shoud look like this:
 <div class="CodeBlock" style="height: 390px"><pre>    ;[...]
     if !Setting_SpriteHP_TwoByte
-        REP #$20
-		PEI ($00)				;&gt;Push RAM $00~$01 into stack ("PEI ($XX)" is like "LDA $xx : PHA" in 16-bit but without affecting A and code occupying 1 less byte)
-        LDA #$0001
+        PEI ($00)               ;&gt;Push RAM $00~$01 into stack ("PEI ($XX)" is like "LDA $xx : PHA" in 16-bit but without affecting A and code occupying 1 less byte)
+        LDA #$01
         STA $00
-        SEP #$20
+        STZ $01
     else
         LDA $00                 ;\Push RAM $00 into stack
         PHA                     ;/
@@ -984,8 +988,8 @@ autoclean JML SpritesTotalHPIntroEffect		;</pre>
 	;[...]
 </pre></div><br>
 		Now this sprite did have damages handled in its own subroutine called from the stomping and thrown sprite handler. If there are multiple instances of increasing/decreasing the RAM (not using a subroutine to merge them into
-		one), then every one of them should be changed to include setting RAM <kbd>$00</kbd> and then calling <kbd>JSL !SharedSub_SpriteHPDamage</kbd> so all damage types will perform the bar animation (if you enabled it) and other
-		effects (such as switching the health meter to the sprite you dealt damage to).
+		one), then every one of them should be changed to include setting RAM <kbd>$00</kbd> and then calling <kbd>JSL !SharedSub_SpriteHPDamage</kbd> (or <kbd>%EnemyHPHeal()</kbd> if your custom sprite can heal) so all damage
+		types will perform the bar animation (if you enabled it) and other effects (such as switching the health meter to the sprite you dealt damage to, if not in total HP mode).
 	</p>
 	<p>
 		For 1-shot custom sprites (or any sprite that can be instantly-killed, either a 1HP enemy or any enemy with any amount of HP but there are attacks that instantly-kills them), to display their HP, that can easily be done
@@ -993,24 +997,22 @@ autoclean JML SpritesTotalHPIntroEffect		;</pre>
 		
 		However, this only works if they're using the vanilla death routine. If your 1-shot enemy have custom methods of of it being killed by the player, then find (could be in the custom sprite's code, or in a routine) where
 		it sets <kbd>$14C8</kbd> to any death state (commonly used death values are <kbd>$02~$05</kbd>) and add this line of code to make it show its HP meter:
-<div class="CodeBlock" style="height: 210px; width: 570px;"><pre>
+<div class="CodeBlock" style="height: 155px; width: 571px;"><pre>
 	LDA.b #&lt;DeathStateValue&gt;
 	STA !14C8,x
 	;Display 0HP (deals 255 or 65535 damage, cannot underflow)
-		if !Setting_SpriteHP_TwoByte == 0
-			LDA.b #!SpriteHP_MaxHPAndDamageValue
-			STA $00
-		else
-			REP #$20
-			LDA.w #!SpriteHP_MaxHPAndDamageValue
-			STA $00
-			SEP #$20
+		LDA.b #!SpriteHP_MaxHPAndDamageValue
+		STA $00
+		if !Setting_SpriteHP_TwoByte
+			LDA.b #!SpriteHP_MaxHPAndDamageValue&gt;&gt;8
+			STA $01
 		endif
 		JSL !SharedSub_SpriteHPDamage
 </pre></div><br>
-		Note that setting <kbd>$14C8</kbd> to <kbd>#$00</kbd> would not show the meter because the sprite have instantly become a free sprite slot, which this ASM pack would avoid showing HP of a non-existent sprite. If a new sprite
-		is spawned on this sprite slot on the same frame this sprite became free, this causes a glitch where the HP meter would switch to that newly spawned sprite, thus to prevent this, call <kbd>JSL !SharedSub_HideHPMeterIfSpriteDespawns</kbd>
-		immidiately after its <kbd>$14C8</kbd> is set to <kbd>#$00</kbd>.
+		Note that setting <kbd>$14C8</kbd> to <kbd>#$00</kbd> would not show the meter because the sprite have instantly become a free sprite slot (deleted), which this ASM pack would avoid showing HP of a non-existent sprite. Thus if you want
+		to display an empty bar for such a sprite, it needs to have a death animation before the sprite vanishes.<br><br>
+		
+		Also important to note that it should be performed <a href="#DespawnSpawnTransferBug">immediately after the sprite is erased</a>.
 	</p>
 	<h3><a href="#ToC_MakeSpritesDisplayHP_GetHPValue_TotalHPAllPhases" id="JMPTo_MakeSpritesDisplayHP_GetHPValue_TotalHPAllPhases">^</a>Getting total HP of all phases</h3>
 	<p>This section covers sprites, most likely bosses, that stores HP in memory that is per-phase, and we need to get the total HP value of all phases. So far, I have not seen any sprite released in the section that does this. If they have, most likely they would have different coding and behavior structures.
@@ -1068,9 +1070,10 @@ autoclean JML SpritesTotalHPIntroEffect		;</pre>
 			processed by the fireballs' code (at <kbd>$02A0FC</kbd>) rather than the sprite's code.<br><br>
 			
 			However, if you have <kbd>!Setting_SpriteHP_Modify5FireballsSystem</kbd> (in <kbd>EnemyHPMeterDefines.asm</kbd>) set to <kbd>1</kbd>, it will use the HP values from this ASM resource directly instead, and not modify <kbd>$1528</kbd>. Again, make sure
-			custom sprites using the <kbd>take 5 fireballs to kill</kbd>'s code is adopted to work with this.
+			custom sprites using the <kbd>take 5 fireballs to kill</kbd>'s code is adopted to work with this.<br><br>
+			
+			Ludwig, Morton, and Roy, however, their sprite code processes the fireball damage manually and in their own sprite code, and does not utilizes the 5 fireballs tweaker bit.
 		</li>
-		<li>Ludwig, Morton, and Roy, however, their sprite code processes the fireball damage manually and in their own sprite code, and does not utilizes the 5 fireballs tweaker bit.</li>
 		<li>There is a bug on how SMW handles player kicking carried sprites. If you release a sprite (either by kicking or dropping them) on the frame the sprite you're carrying (<kbd><a href="https://smwc.me/m/smw/ram/7E14C8">$14C8</a></kbd>) is set to other values, (such as erasing the sprite),
 		you'll cancel out the status being written. This is because the player releasing the sprite action overrides whatever previous code meant to make it perform certain actions.<br><br>
 		
@@ -1088,7 +1091,7 @@ autoclean JML SpritesTotalHPIntroEffect		;</pre>
 			</ul>
 		</li>
 		<li>
-			When Koopa Troopas get seperated from their shells (either by jumping on them, or stunning them in their shells via capespin, bounce block, cape diving into the ground, or net punch and waiting till they exit), the Koopa Troopa itself turns into a shell of the same sprite number (just with a changed state), and spawns a shell-less Koopa.
+			When Koopa Troopas get seperated from their shells (either by jumping on them, or stunning them in their shells via capespin, bounce block, cape diving into the ground, or net punch and waiting till they exit), the Koopa Troopa itself turns into a shell of the same sprite number (just with a changed state), and spawns a shell-less Koopa (different sprite number).
 			And when a shell-less Koopa (except the blue one) enters a shell, the shell becomes a Koopa Troopa and the shell-less koopa despawns (via suboffscreen function, to prevent it from permanently disappearing if the shell-less koopa was placed directly in the level, see <kbd>$018AC9</kbd>). Thus, the HP meter needs to switch between a
 			koopa/shell and shell-less koopa sprite.
 		</li>
@@ -1117,7 +1120,7 @@ autoclean JML SpritesTotalHPIntroEffect		;</pre>
 	;Deleting the sprite instantly:
 		;[...]
 		STZ !14C8,x
-		JSL !SharedSub_HideHPMeterIfSpriteDespawns ;&gt;Hide the HP meter immidiately.
+		JSL !SharedSub_HideHPMeterIfSpriteDespawns ;&gt;Hide the HP meter immediately.
 		;[...]
 </pre></div>
 			Thus what's hijacked by <kbd>HPSystemForSMWSprites.asm</kbd> so that in addition to zeroing out <kbd>$14C8</kbd> are:
@@ -1203,18 +1206,14 @@ autoclean JML SpritesTotalHPIntroEffect		;</pre>
 						<li>
 							The sprite may be programmed to instantly die without setting its HP to 0, usually for scripted cutscenes, or you found a bug that resulted in the sprite using the vanilla instant-kill interaction. So far, I never seen a custom sprite does this intentionally. An easy way to fix this
 							is to simply set its <i>display HP</i> to 0 rather than its actual HP sprite table RAM (just in case it might break the sprite functionality) when this death state occurs:
-<div class="CodeBlock" style="height: 208px"><pre>
+<div class="CodeBlock" style="height: 143px; width: 781px;"><pre>
 	;These are just to have a proper damage animation on the meter.
 	;Either it subtracts by a larger value, detects that, sets to zero,
 	;or subtracts by the same value and also results zero.
+		LDA #$FF
+		STA $00
 		if !Setting_SpriteHP_TwoByte
-			REP #$20
-			LDA #$FFFF
-			STA $00
-			SEP #$20
-		else
-			LDA #$FF
-			STA $00
+			STA $01
 		endif
 		JSL !SharedSub_SpriteHPDamage
 </pre></div>
