@@ -629,7 +629,7 @@ autoclean JML SpritesTotalHPIntroEffect		;</pre>
 										<kbd>$00-$15</kbd>
 									</td>
 									<td>
-										Makes the bar visible and displays HP. Its value here represents the current sprite slot to display.
+										Normal mode. Makes the bar visible and displays HP. Its value here represents the current sprite slot to display.
 									</td>
 								</tr>
 								<tr>
@@ -643,8 +643,9 @@ autoclean JML SpritesTotalHPIntroEffect		;</pre>
 										<kbd>$16-$2B</kbd>
 									</td>
 									<td>
-										Intro-fill state (graphical bar fills upward). Only used if <kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd> and <kbd>!Setting_SpriteHP_BarAnimation</kbd> is set to <kbd>1</kbd>.
-										The sprite slot index number the meter is on is this value minus <kbd>!sprite_slots</kbd>.
+										Intro-fill mode (graphical bar fills upward). Only used if <kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd> and <kbd>!Setting_SpriteHP_BarAnimation</kbd> is set to <kbd>1</kbd>.
+										The sprite slot index number the meter is on is this value minus <kbd>!sprite_slots</kbd>. Once the meter reaches full, or at or above its current HP, then this switches to
+										normal mode of the corresponding slot (subtract itself by <kbd>!sprite_slots</kbd>).
 									</td>
 								</tr>
 								<tr>
