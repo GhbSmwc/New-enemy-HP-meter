@@ -1,4 +1,5 @@
 incsrc "../EnemyHPMeterDefines.asm"
+incsrc "../SharedSubroutineDefs.asm"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;Heal sprite.
 ;

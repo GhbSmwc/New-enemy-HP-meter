@@ -585,7 +585,7 @@ autoclean JML SpritesTotalHPIntroEffect		;</pre>
 		<p>
 			Notes:
 			<ul>
-				<li>Define <kbd>!sprite_slots</kbd> holds the number of sprite slots that exists. For LoROM, its 12, if SA-1, its 22. Note that at the time of writing this, Pixi have <kbd>!SprSize</kbd> and not <kbd>!sprite_Slots</kbd>.</li>
+				<li>Define <kbd>!sprite_slots</kbd> holds the number of sprite slots that exists. For LoROM, its 12, if SA-1, its 22. Note that at the time of writing this, Pixi have <kbd>!SprSize</kbd> and not <kbd>!sprite_slots</kbd>.</li>
 				<li>The RAM stuff here are merely for <b>displaying</b> the amount of HP. Meaning depending on how the sprite's code is formatted, most often it's actual HP value is stored in a vanilla sprite table, which may be transferred to here. If it's
 				a damage counter, it is converted to &ldquo;remaining hits/damage left to kill&rdquo; before written to these new RAM stuff here. Of course, for custom sprites, you can make changes to it to directly use these table instead.</li>
 			</ul>
@@ -609,24 +609,100 @@ autoclean JML SpritesTotalHPIntroEffect		;</pre>
 						<td class="NoLineBreak Center">1</td>
 						<td>
 							HP meter state, the values are:
-							<ul>
-								<li>
-									From <abbr title="LoROM: $00-$0B (0-11)&#013;SA-1: $00-$15 (0-21)"><kbd>$00</kbd> to <kbd>!sprite_slots-1</kbd></abbr> will make the bar visible and display HP of the sprite of the slot corresponding to this value.
-								</li>
-								<li>
-									From <abbr title="LoROM: $0C-$17 (12-23)&#013;SA-1: $16-$2B (22-43)"><kbd>!sprite_slots</kbd> to <kbd>(!sprite_slots*2)-1</kbd></abbr> is the same as above (subtract by <kbd>!sprite_slots</kbd> to obtain the sprite slot number) but for the <kbd>intro-fill</kbd> animation (bar appears empty, and fills up, useful for boss fights). This only applies
-									if <kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd> and <kbd>!Setting_SpriteHP_BarAnimation</kbd> set to <kbd>1</kbd>.
-								</li>
-								<li>
-									<abbr title="LoROM: $18 (24)&#013; SA-1: $2C (44)"><kbd>!sprite_slots*2</kbd></abbr> Is &ldquo;Total HP&rdquo; mode, which results in the game displaying the total HP of all active applicable sprites. If <kbd>!Setting_SpriteHP_TotalHPMode == 2</kbd>, then its all sprites plus whatever value is in <kbd>!Freeram_SpriteHP_TotalHPOfUnloadedSprites</kbd>. Only usable if <kbd>!Setting_SpriteHP_TotalHPMode</kbd> is set to 1 or 2.<sup style="color: yellow;">Disable-able</sup>
-								</li>
-								<li>
-									<abbr title="LoROM: $19 (25)&#013; SA-1: $2D (45)"><kbd>(!sprite_slots*2)+1</kbd></abbr> Same as above but for intro fill mode.<sup style="color: yellow;">Disable-able</sup>
-								</li>
-								<li><kbd>$FF</kbd> Means don't display the meter, which occurs when the enemy despawns or dies the meter is displaying for. Note that this will write blank tiles every frame.</li>
-								<li><kbd>$FE</kbd> is &ldquo;disabled&rdquo;, will only write blank tiles to clear the HP meter display once, then set itself to <kbd>$FD</kbd>. Make sure you do not set this to <kbd>$FE</kbd> every frame though.</li>
-								<li><kbd>$FD</kbd> is also &ldquo;disabled&rdquo;, but will not write anything on the spot the meter occupies (stops writing tiles here every frame, including blank tiles).</li>
-							</ul>
+							<table>
+								<tr>
+									<th colspan="3"><kbd>!Freeram_SpriteHP_MeterState</kbd> value</th><th rowspan="2">Description</th>
+								</tr>
+								<tr>
+									<th>Formula</th>
+									<th>LoROM</th>
+									<th>SA-1</th>
+								</tr>
+								<tr>
+									<td class="center">
+										<kbd>0</kbd> to <kbd>!sprite_slots-1</kbd>
+									</td>
+									<td class="center">
+										<kbd>$00-$0B</kbd>
+									</td>
+									<td class="center">
+										<kbd>$00-$15</kbd>
+									</td>
+									<td>
+										Makes the bar visible and displays HP. Its value here represents the current sprite slot to display.
+									</td>
+								</tr>
+								<tr>
+									<td class="center">
+										<kbd>!sprite_slots</kbd> to <kbd>(!sprite_slots*2)-1</kbd>
+									</td>
+									<td class="center">
+										<kbd>$0C-$17</kbd>
+									</td>
+									<td class="center">
+										<kbd>$16-$2B</kbd>
+									</td>
+									<td>
+										Intro-fill state (graphical bar fills upward). Only used if <kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd> and <kbd>!Setting_SpriteHP_BarAnimation</kbd> is set to <kbd>1</kbd>.
+										The sprite slot index number the meter is on is this value minus <kbd>!sprite_slots</kbd>.
+									</td>
+								</tr>
+								<tr>
+									<td class="center">
+										<kbd>!sprite_slots*2</kbd>
+									</td>
+									<td class="center">
+										<kbd>$18</kbd>
+									</td>
+									<td class="center">
+										<kbd>$2C</kbd>
+									</td>
+									<td>
+										&ldquo;Total HP mode&rdquo;. The meter displays the total HP of all applicable sprites. If <kbd>!Setting_SpriteHP_TotalHPMode</kbd> is set to <kbd>2</kbd>, it also add by a value stored RAM defined
+										<kbd>!Freeram_SpriteHP_TotalHPOfUnloadedSprites</kbd>. Only used when <kbd>!Setting_SpriteHP_TotalHPMode</kbd> is set to <kbd>1</kbd> or <kbd>2</kbd>.<sup style="color: yellow;">Disable-able</sup>
+									</td>
+								</tr>
+								<tr>
+									<td class="center">
+										<kbd>(!sprite_slots*2)+1</kbd>
+									</td>
+									<td class="center">
+										<kbd>$19</kbd>
+									</td>
+									<td class="center">
+										<kbd>$2D</kbd>
+									</td>
+									<td>
+										Same as above but for intro-fill.<sup style="color: yellow;">Disable-able</sup>
+									</td>
+								</tr>
+								<tr>
+									<td colspan="3" class="center">
+										<kbd>$FF</kbd>
+									</td>
+									<td>
+										Don't show meter. It is the default state after entering a level, and after the enemy is deleted. The meter can show up the next time an enemy is hit or an intro-fill animation plays.
+										Note that tiles the meter was on are set to blank tiles every frame.
+									</td>
+								</tr>
+								<tr>
+									<td colspan="3" class="center">
+										<kbd>$FE</kbd>
+									</td>
+									<td>
+										Don't show meter (disabled). This time, disables the meter display. It will clear all the meter tiles for 1 frame, then sets itself to <kbd>$FD</kbd>.
+										Make sure you don't set this to <kbd>$FE</kbd> every frame though.
+									</td>
+								</tr>
+								<tr>
+									<td colspan="3" class="center">
+										<kbd>$FD</kbd>
+									</td>
+									<td>
+										HP meter is completely disabled. No tile is written on the spot that was occupied by the meter (not even blank tiles).
+									</td>
+								</tr>
+							</table>
 							Notes:
 							<ul>
 								<li>Note that when disabled (<kbd>$FD</kbd>), you can use that spot where the meter occupies without it being overwritten. It also prevents displaying the meter if the intro-fill animation plays, as well as displaying the meter when damaging enemies.</li>
@@ -740,6 +816,7 @@ autoclean JML SpritesTotalHPIntroEffect		;</pre>
 		Note that this section assumes you know how to program in 65c816 assembly language, how to program custom sprites, and as well as instructions for Asar on how it compiles code. If you don't
 		know how to do these, see these tutorials/documentations:
 		<ul>
+			<li><a href="https://www.smwcentral.net/?p=section&a=details&id=37443">Alcaro's Asar</a> (see after downloading it at <kbd>/docs/manual/index.html</kbd>)</li>
 			<li><a href="https://www.smwcentral.net/?p=section&a=details&id=14268">Ersanio's ASM Tutorial - Assembly for the SNES</a></li>
 			<li><a href="https://www.smwcentral.net/?p=viewthread&t=92218">MarioFanGamer's In-Depth Sprite Coding Tutorial</a></li>
 		</ul>
@@ -748,7 +825,7 @@ autoclean JML SpritesTotalHPIntroEffect		;</pre>
 	<p>This section covers on how to <b>display</b> the sprite's HP.</p>
 	
 	<p>To program a health system for existing custom sprites that can be damaged without being killed, they should store a value in sprite table RAM representing how much damage (can be any value it
-	increases), hits (counts up by one regardless of an attack), or remaining health (starts at any nonzero value and decreases each damage) else the sprite will never die or dies in one hit. Because
+	increases), hits (counts up by one regardless of an attack), or remaining health (starts at any nonzero value and decreases each damage) else the sprite will never die or die in one hit. Because
 	each sprite is different, documenting every one of them would make this tutorial very long. So I'll explain the method that works with most sprites and with some examples.</p>
 	
 	<p>I provided an example test sprite under <kbd>pixi/sprites/simple_sprite.asm</kbd> for testing the HP system.</p>
@@ -758,11 +835,12 @@ autoclean JML SpritesTotalHPIntroEffect		;</pre>
 	Number of (sub)folders deep: <input type="number" value="1" min="1" max="10" onchange="UpdateFilePathParentDirectory()">
 <div class="CodeBlock" style="height: 50px;"><pre>	incsrc "<span class="ParentDirectoryCount">../</span>SharedSubroutineDefs.asm"
 	incsrc "<span class="ParentDirectoryCount">../</span>EnemyHPMeterDefines.asm"
-	incsrc "<span class="ParentDirectoryCount">../</span>GraphicalBarDefines.asm"</pre></div><br>
-	Keep in mind that the custom sprite may be multiple folders deep from where the <kbd>pixi.exe</kbd> is at, if that's the case, you'll need to add more &ldquo;<kbd>../</kbd>&rdquo;
-	at the beginning of the file path (<kbd>../</kbd> means go to a parent directory, from where the ASM file in question is at).<br><br>
+	incsrc "<span class="ParentDirectoryCount">../</span>GraphicalBarDefines.asm"
+</pre></div><br>
+	Note that &ldquo;<kbd>../</kbd>&rdquo; means to go up a directory (parent directory, exiting a &ldquo;folder&rdquo;), relative to the ASM file at the start of the file path string.
+	The more folders down the ASM file is located, the more <kbd>../</kbd> is needed.<br><br>
 	
-	Else you get define not being defined errors. Then after the include-defines, have the macros (the ones on this HTML file) being set/defined (anything with a <span class="NoLineBreak">macro MacroName(Pram1, Pram2...) ... endmacro</span>).</p>
+	Else you get define not being defined errors.
 	
 	<p>The following stuff is transferring its health and damage RAM to this resource's HP RAM so that it gets displayed. Yes you can modify the custom sprite not to use its own vanilla sprite table RAM
 	at all and instead directly use this ASM resources' current and max HP RAM (in a way similar to the provided example sprite), however that comes with caveats and may need further edits:
@@ -1040,14 +1118,14 @@ autoclean JML SpritesTotalHPIntroEffect		;</pre>
 		<ul>
 			<li>It requires having <kbd>!Setting_SpriteHP_VanillaSprite_OneShotSprites == 1</kbd>.</li>
 			<li>
-				It also requires having <kbd>!Setting_SpriteHP_TotalHPMode == 2</kbd>, since the main feature is the meter showing total HP of all (applicible)
+				It also requires having <kbd>!Setting_SpriteHP_TotalHPMode == 2</kbd>, since the main feature is the meter showing total HP of all (applicable)
 				sprites, including ones yet to spawn.
 			</li>
 			<li>Total HP cannot exceed the maximum integer limit, 255 (if <kbd>!Setting_SpriteHP_TwoByte == 0</kbd>), or 65535 otherwise.</li>
 			<li>Subroutine <kbd>SpriteHPDamage</kbd> automatically handles total HP mode.</li>
 		</ul>
 		
-		The display is handled internally, in <kbd>UberASMTool/level/DisplayEnemyHP.asm</kbd>, under sublabel <kbd>..TotalHPMode</kbd> it loops across all sprite slots, adds HP of any applicible (See under label &ldquo;<kbd>.CheckForBlacklistedSprites</kbd>&rdquo; without an opcode before it) sprites, and optionally adds by a value stored in
+		The display is handled internally, in <kbd>UberASMTool/level/DisplayEnemyHP.asm</kbd>, under sublabel <kbd>..TotalHPMode</kbd> it loops across all sprite slots, adds HP of any applicable (See under label &ldquo;<kbd>.CheckForBlacklistedSprites</kbd>&rdquo; without an opcode before it) sprites, and optionally adds by a value stored in
 		<kbd>!Freeram_SpriteHP_TotalHPOfUnloadedSprites</kbd> (if <kbd>!Setting_SpriteHP_TotalHPMode == 2</kbd>), and the total is the value used to display the HP amount.<br><br>
 		
 		For further information on how to make sure the meter works correctly, see the comments in <kbd>AmbushWithTotalHPMeter.asm</kbd> with a text editor.
