@@ -876,7 +876,7 @@ autoclean JML SpritesTotalHPIntroEffect		;</pre>
 	<h3><a href="#ToC_MakeSpritesDisplayHP_GetHPValue" id="JMPTo_MakeSpritesDisplayHP_GetHPValue">^</a>Obtaining HP value...</h3>
 	<p>This covers on how to extract data from a sprite table that is being used to track the amount of damage or health, then storing that data to <kbd>!Freeram_SpriteHP_CurrentHPLow</kbd>, <kbd>!Freeram_SpriteHP_MaxHPLow</kbd>
 	(<kbd>!Freeram_SpriteHP_CurrentHPHi</kbd> and <kbd>!Freeram_SpriteHP_MaxHPHi</kbd> in addition if <kbd>!Setting_SpriteHP_TwoByte == 1</kbd>) so that it gets displayed on the HUD. This must run every frame (as a failsafe in
-	case if the sprite's real health sprite table changes without that being shown) on the sprite main (preferably at the start). Note that the following code uses a macro that doesn't get used unless you call it.</p>
+	case if the sprite's real health sprite table changes without that being shown) on the sprite <kbd>main</kbd> (preferably at the start). Note that the following code uses a macro that doesn't get used unless you call it.</p>
 	<h4><a href="#ToC_MakeSpritesDisplayHP_GetHPValue_ConvertDamageToHP" id="JMPTo_MakeSpritesDisplayHP_GetHPValue_ConvertDamageToHP">^</a>...from a damage counter (&ldquo;Inverted health&rdquo;)</h4>
 	<p>When a custom sprite stores a number (<kbd>DamageCount</kbd>) that starts at 0 (spawned sprites automatically sets their sprite table values to <kbd>$00</kbd> by default), and increases (commonly by 1 as a hit counter) for each hit the sprite receives, HP can be found by
 	taking the amount of damage needed to defeat the enemy, and subtract that by <kbd>DamageCount</kbd> to obtain the remaining damage needed to defeat the sprite:
@@ -965,7 +965,7 @@ autoclean JML SpritesTotalHPIntroEffect		;</pre>
 		Thankfully, all that logic is handled automatically in a subroutine defined as <kbd>!SharedSub_SpriteHPDamage</kbd>, with the inputs stored in RAM <kbd>$00</kbd> (2 bytes, <kbd>$00~$01</kbd>, if <kbd>!Setting_SpriteHP_TwoByte == 1</kbd>). Feel free to check out the subroutines as you wish.<br><br>
 		
 		The same rule applies to healing as well (to show how much the fill increases). A subroutine for pixi <kbd>pixi/routines/EnemyHPHeal.asm</kbd>, which can be called via <kbd>%EnemyHPHeal()</kbd> (similarly <kbd>$00</kbd> or <kbd>$00~$01</kbd> for how much HP recovered).
-		Why in pixi? It's because none of vanilla SMW sprites heals, and at the time of writing this, not a single custom sprite on SMWC's sprite section can actually heal.
+		Why in pixi? It's because none of vanilla SMW sprites heals.
 	</p>
 	
 	<p>If you want to know how it works, just open the provided Shared Subroutines code, pixi routine, custom sprite's asm file or view the provided patch and seeing the SMW disassembly.</p>
@@ -1022,14 +1022,11 @@ autoclean JML SpritesTotalHPIntroEffect		;</pre>
         STA $00
     endif
     JSL !SharedSub_SpriteHPDamage
+    PLA                     ;\Restore $00~$01 from the stack
+    STA $00                 ;/
     if !Setting_SpriteHP_TwoByte
-        REP #$20
-        PLA                     ;\Restore $00~$01 from the stack
-        STA $00                 ;/
-        SEP #$20
-    else
-        PLA                     ;\Restore $00 from the stack
-        STA $00                 ;/
+        PLA
+        STA $01
     endif
     ;[...]</pre></div><br>
 		Now, if the sprite can take <b>multiple points and different amounts of damage</b> instead of <kbd>1</kbd> point (and often have multiple ways to deal damage than just stomp), such as the <a href="https://www.smwcentral.net/?p=section&a=details&id=30909">Wreckin' Chuck</a> by Sonikku,
