@@ -422,12 +422,14 @@ main:
 								;to terminate the filling animation prematurely.
 								LDA !Freeram_SpriteHP_MeterState
 								CMP.b #!sprite_slots
-								BCC ......NoTerminate
+								BCC ......NoTerminate ;>If not in introfill, skip
 								LDA !Freeram_SpriteHP_BarAnimationFill
 								CMP $00
-								BCC ......NoTerminate
+								BCC ......NoTerminate ;>If the fill-up animation fill amount is less than the current fill amount, don't terminate
 								
 								......Terminate
+									;^Otherwise if fill animation did goes greater than its now-reduced HP fill (player damages boss so that its
+									; current HP fill drops below the animation fill), instantly end the intro-fill animation.
 									LDA !Freeram_SpriteHP_MeterState
 									if !Setting_SpriteHP_TotalHPMode
 										CMP.b #!sprite_slots*2  ;>Total HP, main mode.
