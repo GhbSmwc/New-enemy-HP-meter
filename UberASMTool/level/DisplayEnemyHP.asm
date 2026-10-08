@@ -275,9 +275,10 @@ main:
 			LDX !Scratchram_SpriteHP_SpriteSlotToDisplay
 			LDA !14C8,x				;\If sprite exists, allow meter to show, otherwise hide it.
 			BNE ...Exists			;/
-				;^Note: if a sprite status gets set to #$00, and at the same frame, a new sprite spawns on the same slot
-				; that have its status set to #$00, the meter could transfer to the newly spawned sprite. A way to prevent
-				; that is anytime $14C8,x gets set to 0, clear the meter by executing "JSL !HideHPMeterIfSpriteDespawns".
+				;^Note: if a sprite status gets set to #$00 that the meter is on, and at the same frame, a new sprite spawns
+				; on the same slot that have its status set to other than #$00, the meter could transfer to the newly
+				; spawned sprite. A way to prevent that is anytime $14C8,x gets set to 0, clear the meter by executing
+				; "JSL !HideHPMeterIfSpriteDespawns" before anything spawns on its slot.
 			...HideHPMeter
 				LDA #$FF				;\Hide HP for non-existing sprites, sprites that have HP in certain cases
 				STA !Freeram_SpriteHP_MeterState	;/(like before it was turned into a coin from a fireball, or bob-omb exploding)

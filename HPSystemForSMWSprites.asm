@@ -293,6 +293,16 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			org $02A103
 			db 5
 		endif
+	;Fireball hits enemy and is immune (fireball dissapates). Makes HP meter displays for enemies that don't take damage from fireballs (fireball merely dissapates on contact with immuned enemies)
+		if and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
+			org $02A0EE
+			autoclean JML ShowHPOnFireImmune
+		else
+			%RemoveFreespaceCodeFromJMLJSL($02A0EE)
+			org $02A0EE
+			LDA !166E,x
+			AND.b #%00010000
+		endif
 	;Fireball turns enemy into coin. In normal cases, the meter should disappear since it is no longer an enemy.
 	;However, for total HP mode, we need to make sure that the damage animation plays out properly.
 		!Setting_FreezeTotalHPBarAnimationDelayFromFireballs = and(and(and(notequal(!Setting_ModifySprAndDisplayHPOfSMWSpr, 0), notequal(!Setting_SpriteHP_BarAnimation, 0)), notequal(!Setting_SpriteHP_BarChangeDelay, 0)), notequal(!Setting_SpriteHP_TotalHPMode, 0))
@@ -486,7 +496,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				SBC $1C
 				CMP #$F0
 			endif
-		;Wall-following sprites (spike tops, urchins, etc.)
+		;Wall-following sprites (spike tops)
 			if and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
 				WallFollower:
 					org $02BDA7
@@ -1029,6 +1039,27 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					JML $02A106|!bank
 			endif
 			
+	endif
+	if and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
+		ShowHPOnFireImmune: ;>JML from $02A0EE
+			.Restore
+				LDA !166E,x
+				AND.b #%00010000
+				BNE ..Immune ;>After potentially erasing the fireball when it hits a sprite ($02A0EA), is enemy immune?
+				..NotImmune ;>If not immune, allow standard damage apply (chuck fireball and turn-into-coin already handled via hijacks)
+					JML $02A0F5|!bank
+				..Immune ;>Otherwise, if it is immune, just show a HP bar without damage to sprite if it has HP system applied.
+			.CheckIfEnemyShouldHaveHPDisplay
+				LDA !Freeram_SpriteHP_MaxHPLow,x
+				if !Setting_SpriteHP_TwoByte
+					ORA !Freeram_SpriteHP_MaxHPHi,x
+				endif
+				BEQ ..NoDisplay
+				..Display
+					%DealFixedDamage(0)
+				..NoDisplay
+			.Done
+				JML $02A143|!bank
 	endif
 	if !Setting_FreezeTotalHPBarAnimationDelayFromFireballs
 		TotalHPFireballTurnEnemyIntoCoin: ;>JSL from $02A12D
