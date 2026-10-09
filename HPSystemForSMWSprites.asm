@@ -303,6 +303,16 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			LDA !166E,x
 			AND.b #%00010000
 		endif
+	;Cape spin hits enemy and is immune. Like above, merely shows HP meter and deals no damage.
+		if and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
+			org $0293BE
+			autoclean JML ShowHPOnCapeImmune
+		else
+			%RemoveFreespaceCodeFromJMLJSL($0293BE)
+			org $0293BE
+			LDA !166E,x
+			AND.b #%00100000
+		endif
 	;Fireball turns enemy into coin. In normal cases, the meter should disappear since it is no longer an enemy.
 	;However, for total HP mode, we need to make sure that the damage animation plays out properly.
 		!Setting_FreezeTotalHPBarAnimationDelayFromFireballs = and(and(and(notequal(!Setting_ModifySprAndDisplayHPOfSMWSpr, 0), notequal(!Setting_SpriteHP_BarAnimation, 0)), notequal(!Setting_SpriteHP_BarChangeDelay, 0)), notequal(!Setting_SpriteHP_TotalHPMode, 0))
@@ -1060,6 +1070,52 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				..NoDisplay
 			.Done
 				JML $02A143|!bank
+		ShowHPOnCapeImmune: ;>JML from $0293BE
+			;Here, the code is re-arranged so that if enemies are "truly" intanagble, will not show the meter,
+			;but if they are tangable but takes no hit, then merely switch the HP meter.
+			.Restore
+				LDA !15D0,x ;>Yoshi tongued
+				ORA !154C,x ;>No contact with player
+				ORA !1FE2,x ;>Invulnerability after being hit by quake effect prior
+				BNE .NextSlot ;If sprite isn't "cape-tangable", skip
+				..SceneryCheck
+					LDA !1632,x
+					PHY
+					LDY $74
+					BEQ ...SkipFlipScenery
+					...FlipScenery
+						EOR #$01
+					...SkipFlipScenery
+					PLY
+					EOR $13F9|!addr
+					BNE .NextSlot ;>...this includes not on matching layer
+			.CapeHitsDoesNothingDisplayHP
+				LDA !166E,x
+				AND.b #%00100000
+				BEQ .NotImmune ;>If not immune, let flip-sprite effects hijack handle this.
+				..Immune
+					JSL $03B69F|!bank
+					LDA $0E ;>$0E: 0 for quake sprite, 1 = capespin/net punch
+					BEQ .QuakeSprite
+					
+					...CapeSpinNetPunch
+						%JSLRTS($029696|!bank, $028071|!bank) ;Get cape clipping
+						JSL $03B72B|!bank ;>Check contact
+						BCC .NextSlot ;>If hit nothing, no HP meter switch
+						LDA !Freeram_SpriteHP_MaxHPLow,x
+						if !Setting_SpriteHP_TwoByte
+							ORA !Freeram_SpriteHP_MaxHPHi,x
+						endif
+						BEQ ....NoDisplay
+						....Display
+							%DealFixedDamage(0)
+						....NoDisplay
+			.NextSlot
+				JML $0293F7|!bank
+			.QuakeSprite
+				JML $0293EB|!bank
+			.NotImmune
+				JML $0293CE|!bank
 	endif
 	if !Setting_FreezeTotalHPBarAnimationDelayFromFireballs
 		TotalHPFireballTurnEnemyIntoCoin: ;>JSL from $02A12D
@@ -1812,7 +1868,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				.NoSwitchMeter
 					JSR .HealthTransfer
 				.Restore
-					%JSLRTS($01AC80, $01AD06)
+					%JSLRTS($01AC80|!bank, $01AD06|!bank)
 						;^OffScrEraseSprite, the subroutine called to erase the shell-less koopa without permanently erasing it.
 						; Must be called AFTER transfering HP meter display to the koopa/shell sprite (because it is hijacked
 						; at $01AC91 to prevent potential HP transfer should a sprite despawns and a new sprite spawns on the

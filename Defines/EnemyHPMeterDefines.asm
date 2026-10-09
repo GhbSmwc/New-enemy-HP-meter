@@ -395,7 +395,8 @@
 		!Setting_SpriteHP_VanillaSprite_OneShotSprites			= 1
 			;^Display HP for all one-shot enemies. Modifies various vanilla kill routines used by the vast majority
 			; of enemies. 0 = No, 1 = Yes. Note that this also modifies the sprite table clearing routine (when sprite
-			; spawns) to allow initalizing HP values by default.
+			; spawns) to allow initalizing HP values by default. This also modifies when enemies are hit by fireballs
+			; or cape when they are immune to, to simply display HP.
 			;
 			; Notes:
 			; - This includes enemies that turn into another sprite number when jumped on. Most of these will treat
