@@ -4,7 +4,7 @@ Version history (finally, ordered from recent to oldest, version numbers are sub
 based (8.9, then 8.10 rather than 9.0)):
 ---------------------------------------------------------------------------------------------------------------
 
-06/14/2026
+06/14/2026 3.0.0
  -Features added:
  --Most sprites now have default HP values during spawn (calling subroutine "ZeroSpriteTables", which is
    $07F722), rather than init. This also optionally supports custom sprites (which you no longer need to have
@@ -17,6 +17,8 @@ based (8.9, then 8.10 rather than 9.0)):
  ---Added HP meter display for one-shot sprites (and bosses are techinically a one-shot). Note that this also
     includes spites that transforms into another sprite, such as winged enemes, Dino Rhino, and others, which
     counts as 1 extra HP.
+ ---When enemies immune to fireballs and cape get hit by such attacks, the HP meter will switch to those
+    enemies. The only exception is when a fireball hits an enemy with tweaker $167A bit 1 is set.
  ---Added "total HP" mode, useful for enemy ambush system that the meter shows the total HP of all enemies to
     defeat.
  ---Added an optional feature to completely change how "take 5 fireballs to kill" works. It now decreases this
