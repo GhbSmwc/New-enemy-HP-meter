@@ -50,6 +50,11 @@ based (8.9, then 8.10 rather than 9.0)):
  --Fixed an oversight that sprites sinking in lava does not zero out HP.
  --If the player deals 0 damage to a sprite via calling a damage subroutine, it no longer freezes the bar
    animation delay that shows how damage before decreasing to current HP.
+ -Merged with other, optional patches:
+ --Vertical despawn fix (https://www.smwcentral.net/?p=section&a=details&id=22833,
+   !Setting_SpriteHP_RemoveOrApplyPatch and !Setting_SpriteHP_VanillaSprite_OneShotSprites set to 1.)
+ --Classic Fireball (https://www.smwcentral.net/?p=section&a=details&id=40151,
+   !Setting_SpriteHP_ClassicFireball set to 1.)
  
 3/16/2025
  -Fixed a very minor copy-paste issue where option "!Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull" seems

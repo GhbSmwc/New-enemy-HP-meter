@@ -601,7 +601,7 @@
 		; - 2 = Yes (same as above but also including the value in !Freeram_SpriteHP_TotalHPOfUnloadedSprites)
 			!Setting_SpriteHP_TotalHPMode = 2
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	;Misc settings
+	;Debug settings
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		!Setting_SpriteHP_DisplaySpriteHPDataOnConsole = 0
 			;^Display RAM usage on Asar console window:
