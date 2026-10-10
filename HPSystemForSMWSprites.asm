@@ -232,7 +232,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				LDA.W !187B,X					;\Then restore the original, overwritten code.
 				PHA						;/
 			endif
-		;Taking a hit from a stomp attack. This is also part of the Chuck's HP jank fix.
+		;Taking a hit from a stomp attack. This is also part of the Chuck's HP jank fix (note that this runs if the chuck is hit while not stunned).
 			if and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_VanillaSprite_Chuck)
 				org $02C7E8
 				if !Setting_SpriteHP_Modify5FireballsSystem == 0
@@ -246,6 +246,16 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				org $02C7E8
 				INC.W !1528,X
 				LDA.W !1528,X
+			endif
+		;If player jumps on a chuck while stunned, then just switch the HP meter without damage.
+			if and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_VanillaSprite_Chuck)
+				org $02C7E2
+				autoclean JSL ShowHPOnJumpingOnStunnedChucks
+			else
+				%RemoveFreespaceCodeFromJMLJSL($02C7E2)
+				org $02C7E2
+				LDA !C2,x
+				CMP #$03
 			endif
 		;Modify hit count to kill to be the minimum amount of damage to kill (stomping)
 			if and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_VanillaSprite_Chuck)
@@ -375,6 +385,17 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				org $01A935
 				JSR.w $019ACB
 				JSL $07FC3B|!bank
+			endif
+		;Spinjumping/riding yoshi on a spikey enemy to switch HP meter (and no damage)
+			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
+				org $01A8D8
+				autoclean JSL ShowHPOnSpinjumpOrYoshiNoKill
+				NOP
+			else
+				%RemoveFreespaceCodeFromJMLJSL($01A8D8)
+				org $01A8D8
+				LDA #$02
+				STA $1DF9|!addr
 			endif
 		;Rex (runs its own code, evident in the disassembly and the fact the player is launched upwards, similar with dry bones and bony beetle)
 			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Rex)
@@ -1012,6 +1033,17 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				.SpriteDead
 					JML $02C7F2|!bank
 			endif
+		ShowHPOnJumpingOnStunnedChucks: ;>JSL from $02C7E2
+			.Restore
+				LDA !C2,x
+				CMP #$03
+				BEQ ..Stunned
+				RTL
+				..Stunned
+					PHP
+					%DealFixedDamage(0)
+					PLP
+					RTL
 		PreventHPDisplayTransferChuck: ;>JSL from $02C20C
 			.Restore
 				LDA #$28
@@ -1194,6 +1226,14 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				.Restore
 					%JSLRTS($019ACB|!bank, $01A7E3|!bank)
 					JSL $07FC3B|!bank
+					RTL
+			ShowHPOnSpinjumpOrYoshiNoKill: ;>JSL from $01A8D8
+				.Restore
+					LDA #$02
+					STA $1DF9|!addr
+				.ShowHP
+					%DealFixedDamage(0)
+				.Done
 					RTL
 		endif
 		if !Setting_SpriteHP_VanillaSprite_Rex

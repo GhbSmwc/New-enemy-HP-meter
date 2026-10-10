@@ -17,8 +17,14 @@ based (8.9, then 8.10 rather than 9.0)):
  ---Added HP meter display for one-shot sprites (and bosses are techinically a one-shot). Note that this also
     includes spites that transforms into another sprite, such as winged enemes, Dino Rhino, and others, which
     counts as 1 extra HP.
- ---When enemies immune to fireballs and cape get hit by such attacks, the HP meter will switch to those
-    enemies. The only exception is when a fireball hits an enemy with tweaker $167A bit 1 is set.
+ ---When enemies are hit by an attack they're immune to, and with the setting
+    !Setting_SpriteHP_VanillaSprite_OneShotSprites set to 1, the HP meter will switch. This includes:
+ ----Cape spin
+ ----Fireballs (both by fire powerup or yoshi's fire breath). Note that this doesn't work if tweaker $167A bit
+     1 is set.
+ ----Jumping Chargin chucks while they're stunned.
+ ----Spinjumping on enemies immune to jumps, that would cause the player to bounce upwards (like a Spiny or
+     Boo).
  ---Added "total HP" mode, useful for enemy ambush system that the meter shows the total HP of all enemies to
     defeat.
  ---Added an optional feature to completely change how "take 5 fireballs to kill" works. It now decreases this
@@ -42,6 +48,8 @@ based (8.9, then 8.10 rather than 9.0)):
  ---End of death animation (falling to bottom of screen and leaves the screen), getting squished (shell-less
     koopas showing their flattened animation).
  --Fixed an oversight that sprites sinking in lava does not zero out HP.
+ --If the player deals 0 damage to a sprite via calling a damage subroutine, it no longer freezes the bar
+   animation delay that shows how damage before decreasing to current HP.
  
 3/16/2025
  -Fixed a very minor copy-paste issue where option "!Setting_SpriteHP_GraphicalBar_RoundAwayEmptyFull" seems

@@ -1680,6 +1680,11 @@ SpriteHPDamage:
 		..Disabled
 		..TotalHPMode
 		if and(notequal(!Setting_SpriteHP_BarAnimation, 0), notequal(!Setting_SpriteHP_BarChangeDelay, 0))
+			LDA $00
+			if !Setting_SpriteHP_TwoByte
+				ORA $01
+			endif
+			BEQ .Done ;>Skip the animation if no damage incurred.
 			LDA.b #!Setting_SpriteHP_BarChangeDelay		;\Freeze damage indicator (this makes the bar animation hangs before decreasing towards current HP fill amount)
 			STA !Freeram_SpriteHP_BarAnimationTimer		;/
 		endif
@@ -1728,6 +1733,11 @@ SpriteHPDamageNoAutoSwitchMeter:
 		..HandleAnimation
 			;we don't need JSL SpriteHPRemoveRecordEffect because we aren't switching the meter.
 			if and(notequal(!Setting_SpriteHP_BarAnimation, 0), notequal(!Setting_SpriteHP_BarChangeDelay, 0))
+				LDA $00
+				if !Setting_SpriteHP_TwoByte
+					ORA $01
+				endif
+				BEQ .Done ;>Skip the animation if no damage incurred.
 				LDA.b #!Setting_SpriteHP_BarChangeDelay		;\Freeze damage indicator (this makes the bar animation hangs before decreasing towards current HP fill amount)
 				STA !Freeram_SpriteHP_BarAnimationTimer		;/
 			endif

@@ -394,11 +394,10 @@
 				
 		!Setting_SpriteHP_VanillaSprite_OneShotSprites			= 1
 			;^Display HP for all one-shot enemies. Modifies various vanilla kill routines used by the vast majority
-			; of enemies. 0 = No, 1 = Yes. Note that this also modifies the sprite table clearing routine (when sprite
-			; spawns) to allow initalizing HP values by default. This also modifies when enemies are hit by fireballs
-			; or cape when they are immune to, to simply display HP.
+			; of enemies. 0 = No, 1 = Yes.
 			;
 			; Notes:
+			; - This modifies the sprite table clearing routine so that it spawns with an appropriate HP by default.
 			; - This includes enemies that turn into another sprite number when jumped on. Most of these will treat
 			;   them as if they have 2 HP with the first jump transforming the sprite and now have 1 HP:
 			; -- Dino Rhino (sprite $6E).
@@ -422,7 +421,6 @@
 			; - If there are enemies/sprites that shouldn't have HP meter display for them when killed, see under the
 			;   label "ZeroOutHPOfOneShotSprites" in HPSystemForSMWSprites.asm. This runs once per sprite gets
 			;   insta-killed.
-			;
 			; - For enemies that are switching states or changing sprite number from a thing that should have an HP
 			;   meter and currently displayed for, into another thing that should make its HP meter disappear, see
 			;   "UberASMTool/level/DisplayEnemyHP.asm" under label ".CheckForBlacklistedSprites" (without the JSR
@@ -450,6 +448,11 @@
 			;    JSL !SharedSub_SpriteHPDamage
 			;    PLX
 			; - This does not include Reznor, however it is catagorized as "bosses" instead.
+			; - With this set to 1, this also makes the HP meter switch/show when hit by an attack they're immune to:
+			; -- Getting hit by fireballs (both via fire Mario/Luigi and yoshi), if $167A bit 1 is clear.
+			; -- Capespins
+			; -- Spinjumping or jumping while on yoshi, on enemies when they're immune to such attacks and would
+			;    simply bounce the player (e.g Spiny, Boo)
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		;Amount of HP SMW sprites has (for non-one-shot sprites, including ones that optionally be insta-killed by a specific
 		;attack).
