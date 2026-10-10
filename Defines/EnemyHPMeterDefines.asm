@@ -557,6 +557,30 @@
 				; - 1 = Stay in their shells (applies hex edits at $0196C6 and $01AA15).
 				; Note that the patch still applies HP transfer code for when koopas enter their shells since it's possible
 				; to place shell-less koopas in the level either via LM or sprite spawn.
+			!Setting_SpriteHP_ClassicFireball = 1
+				;^Enemies simply die and not spawn (and actually transforms into) coin?
+				; - 0 = No (spawns a coin)
+				; - 1 = Yes (will die falling off the screen) and not spawn a coin.
+			;Classic Fireball Settings
+				!Setting_SpriteHP_ClassicFireball_Speed = $10
+					;^X speed of a sprite being knocked by fireball. Use only values $00-$7F.
+					; Negative speeds automatically handled.
+				!Setting_SpriteHP_ClassicFireball_Score = $05
+					;^Score awarded, only use these values:
+					; - $00 = No score
+					; - $01 = 10
+					; - $02 = 20
+					; - $03 = 40
+					; - $04 = 80
+					; - $05 = 100
+					; - $06 = 200
+					; - $07 = 400
+					; - $08 = 800
+					; - $09 = 1000
+					; - $0A = 2000
+					; - $0B = 4000
+					; - $0C = 8000
+					; - $0D = 1-up
 			!Setting_SpriteHP_LavaSinkingFix = 1
 				;^Apply a bugfix that sprites sinking in lava moving left goes through solid blocks?
 				; - 0 = No

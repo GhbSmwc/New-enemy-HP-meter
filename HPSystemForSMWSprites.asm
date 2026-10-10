@@ -13,11 +13,13 @@ incsrc "Defines/GraphicalBarDefines.asm"
 ;and !Setting_SpriteHP_DisplayHPOfSMWSprites set to 1.
 ;
 ;Other patches included is:
-; - Vertical Spawn/Despawn Fix (version that is accepted  2020-06-24). Only applied if
+; - Vertical Spawn/Despawn Fix (version that is accepted 2020-06-24). Only applied if
 ;   !Setting_SpriteHP_RemoveOrApplyPatch and !Setting_SpriteHP_VanillaSprite_OneShotSprites set to 1.
 ;   it's part of the many hijacks that fixes a potential bug where if a sprite with its HP displayed
 ;   gets despawned and a new sprite spawn on the same slot at the same frame causes the HP to
 ;   transfer to that new sprite.
+; - If !Setting_SpriteHP_ClassicFireball == 1, would include Alcaro's Classic Fireball patch (makes
+;   sprites killed by fireball to no longer spawn a coin), due to conflicting hijacks.
 
 
 ;Note to self (at the time of writing this)
@@ -324,17 +326,22 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			AND.b #%00100000
 		endif
 	;Fireball turns enemy into coin. In normal cases, the meter should disappear since it is no longer an enemy.
-	;However, for total HP mode, we need to make sure that the damage animation plays out properly.
-		!Setting_FreezeTotalHPBarAnimationDelayFromFireballs = and(and(and(notequal(!Setting_ModifySprAndDisplayHPOfSMWSpr, 0), notequal(!Setting_SpriteHP_BarAnimation, 0)), notequal(!Setting_SpriteHP_BarChangeDelay, 0)), notequal(!Setting_SpriteHP_TotalHPMode, 0))
-		if !Setting_FreezeTotalHPBarAnimationDelayFromFireballs
-			org $02A12D
-			autoclean JSL TotalHPFireballTurnEnemyIntoCoin
-			NOP
+	;However:
+	; - For total HP mode, we need to make sure that the bar damage animation plays out properly.
+	; - If Classic fireball (included in this patch) is enabled, the HP meter must show up as it falls down the screen.
+		!Setting_SpriteHP_ModifyFireballKill = or(and(and(!Setting_SpriteHP_BarAnimation, !Setting_SpriteHP_BarChangeDelay), !Setting_SpriteHP_TotalHPMode), !Setting_SpriteHP_ClassicFireball)
+		if !Setting_SpriteHP_ModifyFireballKill
+			org $02A129
+			autoclean JML TotalHPFireballTurnEnemyIntoCoin
 		else
-			%RemoveFreespaceCodeFromJMLJSL($02A12D)
-			org $02A12D
-			LDA #$08
-			STA !14C8,x
+			%RemoveFreespaceCodeFromJMLJSL($02A129)
+			org $02A129
+			LDA #$21
+			if !sa1
+				STA (!sprite_num_pointer)
+			else
+				STA $9E
+			endif
 		endif
 	;Rex to display HP
 		;This code runs every frame, for this reason: when rex gets insta-killed by, fireballs, quake, etc.
@@ -1149,21 +1156,60 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			.NotImmune
 				JML $0293CE|!bank
 	endif
-	if !Setting_FreezeTotalHPBarAnimationDelayFromFireballs
-		TotalHPFireballTurnEnemyIntoCoin: ;>JSL from $02A12D
-			LDA !Freeram_SpriteHP_MeterState
-			CMP.b #!sprite_slots*2
-			BEQ .BarAnimationForTotalHP
-			CMP.b #(!sprite_slots*2)+1
-			BEQ .BarAnimationForTotalHP
-			BRA .Restore
-			
-			.BarAnimationForTotalHP
-				LDA.b #!Setting_SpriteHP_BarChangeDelay
-				STA !Freeram_SpriteHP_BarAnimationTimer
+	if !Setting_SpriteHP_ModifyFireballKill
+		TotalHPFireballTurnEnemyIntoCoin: ;>JSL from $02A129
+			if and(and(!Setting_SpriteHP_BarAnimation, !Setting_SpriteHP_BarChangeDelay), !Setting_SpriteHP_TotalHPMode)
+				;Total HP mode, with bar animation and with delay.
+				LDA !Freeram_SpriteHP_MeterState
+				CMP.b #!sprite_slots*2
+				BEQ .BarAnimationForTotalHP
+				CMP.b #(!sprite_slots*2)+1
+				BEQ .BarAnimationForTotalHP
+				BRA .Restore
+				
+				.BarAnimationForTotalHP
+					LDA.b #!Setting_SpriteHP_BarChangeDelay
+					STA !Freeram_SpriteHP_BarAnimationTimer
+			endif
 			.Restore
-				LDA #$08
-				STA !14C8,x
+				if !Setting_SpriteHP_ClassicFireball == 0
+					LDA #$21
+					if !sa1
+						STA (!sprite_num_pointer)
+					else
+						STA $9E
+					endif
+					JML $02A12D|!bank
+				else
+					..ClassicFireballEffect
+						;Yes, unlike Alcaro's classic fireball standalone patch,
+						;the code must be rearranged so stuff like this is in the
+						;freespace in case the user patches this with
+						;!Setting_SpriteHP_ClassicFireball being changed to avoid
+						;potential freespace leaks.
+						LDA #$02
+						STA !14C8,x
+						LDY $185E|!addr
+						LDA $1747|!addr,y
+						BMI ...Left
+						
+						...Right
+							LDA.b #!Setting_SpriteHP_ClassicFireball_Speed
+							BRA ...SetSpeed
+						...Left
+							LDA.b #(!Setting_SpriteHP_ClassicFireball_Speed^$FF)+$01
+						...SetSpeed
+							STA !B6,x
+						...Score
+							if !Setting_SpriteHP_ClassicFireball_Score
+								LDA.b #!Setting_SpriteHP_ClassicFireball_Score
+								JSL $02ACEF|!bank
+							endif
+						...SwitchMeter
+							%DealFixedDamage(!SpriteHP_MaxHPAndDamageValue)
+						...Done
+							JML $02A136|!bank
+				endif
 			RTL
 	endif
 	if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Rex)
