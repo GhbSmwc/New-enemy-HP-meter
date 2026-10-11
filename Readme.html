@@ -1319,6 +1319,11 @@ autoclean JML SpritesTotalHPIntroEffect		;</pre>
 		JSL !SharedSub_SpriteHPDamage
 </pre></div>
 						</li>
+						<li>
+							It's possible that its HP value stored in its own sprite table and the value stored in <kbd>!Freeram_SpriteHP_CurrentHPLow</kbd>/<kbd>!Freeram_SpriteHP_CurrentHPHi</kbd> are desynchronized.
+							A situation where its internal HP value is updated without updating the RAM data of this ASM pack. Make sure every instance of changing the HP value also accounts to updating values in this
+							ASM pack's freeram.
+						</li>
 					</ul>
 				</li>
 				<li>You are using an entirely wrong sprite table RAM address as HP. Probable causes is either a typo or an incorrect assigning a sprite table define to another define.</li>
