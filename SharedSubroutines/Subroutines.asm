@@ -1626,9 +1626,13 @@ endif
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;Damage sprite subroutine. Subtracts HP and switches the
 ;meter to that damaged sprite (unless meter is disabled).
+;This also handles bar animation if enabled.
 ;
 ;Input:
-; - $00 to $00+!Setting_SpriteHP_TwoByte = Amount of damage.
+; - $00 to $00+!Setting_SpriteHP_TwoByte = Amount of
+;   damage. Note: If bar damage animation is enabled, and
+;   is set to 0 damage, bar damage freeze is skipped (can
+;   be used for sprites being immune to attacks).
 ; - X register (8-bit): What sprite (slot) to damage and
 ;   the meter to switch to.
 ;Output:
@@ -1684,7 +1688,7 @@ SpriteHPDamage:
 			if !Setting_SpriteHP_TwoByte
 				ORA $01
 			endif
-			BEQ .Done ;>Skip the animation if no damage incurred.
+			BEQ .Done ;>Skip the freeze damage animation if no damage incurred.
 			LDA.b #!Setting_SpriteHP_BarChangeDelay		;\Freeze damage indicator (this makes the bar animation hangs before decreasing towards current HP fill amount)
 			STA !Freeram_SpriteHP_BarAnimationTimer		;/
 		endif
