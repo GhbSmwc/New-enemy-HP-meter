@@ -2147,12 +2147,16 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			PHA
 			SEP #$20
 			%DealFixedDamage(0)
-			;We are just calling the subroutine for 2 things: Switch HP meter, and meter animation.
-			;We then adjust the HP based on the value of $C2, which tracks the pokey segments.
-			;Like I said, because of a bug that causes pokey to not lose a segment but still spawn
-			;a segment sprite when a thrown sprite hits the very top of the sprite, this would've
-			;caused a desync between HP (HP decreases) and number of segments remaining (no segment
-			;lost).
+			;We are just calling the subroutine for simply switching the meter (dealing 0 damage
+			;would skip the animation like attacking an enemy when immune to). We then adjust the
+			;HP based on the value of $C2, which tracks the pokey segments. Like I said, because of
+			;a bug that causes pokey to not lose a segment but still spawn a segment sprite when a
+			;thrown sprite hits the very top of the sprite, this would've caused a desync between
+			;HP (HP decreases) and number of segments remaining (no segment lost).
+			if and(!Setting_SpriteHP_BarAnimation, !Setting_SpriteHP_BarChangeDelay)
+				LDA.b #!Setting_SpriteHP_BarChangeDelay		;\Freeze damage indicator (this makes the bar animation hangs before decreasing towards current HP fill amount)
+				STA !Freeram_SpriteHP_BarAnimationTimer		;/
+			endif
 			.CountSegmentBits
 				LDY #$00
 				LDA !C2,x

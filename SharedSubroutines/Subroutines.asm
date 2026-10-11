@@ -1679,7 +1679,7 @@ SpriteHPDamage:
 			endif
 		..Disabled
 		..TotalHPMode
-		if and(notequal(!Setting_SpriteHP_BarAnimation, 0), notequal(!Setting_SpriteHP_BarChangeDelay, 0))
+		if and(!Setting_SpriteHP_BarAnimation, !Setting_SpriteHP_BarChangeDelay)
 			LDA $00
 			if !Setting_SpriteHP_TwoByte
 				ORA $01
@@ -1732,7 +1732,7 @@ SpriteHPDamageNoAutoSwitchMeter:
 		
 		..HandleAnimation
 			;we don't need JSL SpriteHPRemoveRecordEffect because we aren't switching the meter.
-			if and(notequal(!Setting_SpriteHP_BarAnimation, 0), notequal(!Setting_SpriteHP_BarChangeDelay, 0))
+			if and(!Setting_SpriteHP_BarAnimation, !Setting_SpriteHP_BarChangeDelay)
 				LDA $00
 				if !Setting_SpriteHP_TwoByte
 					ORA $01
