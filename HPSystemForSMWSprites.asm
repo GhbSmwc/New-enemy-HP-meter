@@ -19,14 +19,25 @@ incsrc "Defines/GraphicalBarDefines.asm"
 ;   gets despawned and a new sprite spawn on the same slot at the same frame causes the HP to
 ;   transfer to that new sprite.
 ; - If !Setting_SpriteHP_ClassicFireball == 1, would include Alcaro's Classic Fireball patch (makes
-;   sprites killed by fireball to no longer spawn a coin), due to conflicting hijacks.
+;   sprites killed by fireball to no longer spawn a coin). Note that the version included here does
+;   not X-flip the sprite unlike the original that was submitted around 2025-07-21.
+;Hex edits included is:
+; - If !Setting_SpriteHP_Koopas_ClassicBehavior == 1, applies a modification equivalent to ROM map
+;   noting $0196C6/$01AA15.
+; - If !Setting_SpriteHP_LavaSinkingFix == 1, applies a modification to prevent a vanilla bug in SMW
+;   causing lava-sinking left-moving sprites to pass through walls.
+;
+;Note that patching the standalone patches and hex edits of above along with this ASM pack is not
+;recommended due to hijack conflicts (often will crash or glitch).
 
 
 ;Note to self (at the time of writing this)
-; - In SA-1, assuming default settings, RAM $87 is a backup of the sprite number, $9E,x ($3200,x)
-;   defined as "!sprite_num_cache". This is because it needs to remap the addresses used without
-;   the code needing to be relocated. See "SA1-Pack-140/more_sprites/more_sprites.asm".
-; - A similar thing with RAM $B4, defined as "!sprite_num_pointer"
+; - SA-1 notes:
+; -- Assuming default settings, RAM $87 is a backup of the sprite number, $9E,x ($3200,x)
+;    defined as "!sprite_num_cache". This is because it needs to remap the addresses used without
+;    the code needing to be relocated (an 8-bit address is now 16-bit). See
+;    "SA1-Pack-140/more_sprites/more_sprites.asm".
+; -- A similar thing with RAM $B4, defined as "!sprite_num_pointer"
 
 	!sprite_num_cache = $87
 	!sprite_num_pointer = $B4
@@ -225,6 +236,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 ;Hijacks
 	;Chucks
 		;Code that runs every frame. Ensures the HP values in the new sprite RAM is in sync (for display).
+		;If !Setting_SpriteHP_VanillaSprite_OneShotSprites == 0, then let modified common vanilla death routines handle it instead.
 			if and(and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Chuck), equal(!Setting_SpriteHP_VanillaSprite_OneShotSprites, 0))
 				org $02C1F8
 				autoclean JML CharginChuckHitCountToHP		;>Had to be JML instead JSL because you cannot PHA : RTL [...] PLA.
@@ -326,9 +338,12 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			AND.b #%00100000
 		endif
 	;Fireball turns enemy into coin. In normal cases, the meter should disappear since it is no longer an enemy.
-	;However:
+	;However if any of the following are true:
 	; - For total HP mode, we need to make sure that the bar damage animation plays out properly.
-	; - If Classic fireball (included in this patch) is enabled, the HP meter must show up as it falls down the screen.
+	; - If Classic fireball (included in this patch) is enabled, the HP meter must show up as it falls down the
+	;   screen (without classic fireball, SMW would spawn a coin (actually the enemy *transforms* into a coin),
+	;   which is a blacklisted sprite that shouldn't have an HP meter).
+	;would apply the hijack.
 		!Setting_SpriteHP_ModifyFireballKill = or(and(and(!Setting_SpriteHP_BarAnimation, !Setting_SpriteHP_BarChangeDelay), !Setting_SpriteHP_TotalHPMode), !Setting_SpriteHP_ClassicFireball)
 		if !Setting_SpriteHP_ModifyFireballKill
 			org $02A129
@@ -345,6 +360,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		endif
 	;Rex to display HP
 		;This code runs every frame, for this reason: when rex gets insta-killed by, fireballs, quake, etc.
+		;This is similar to Chucks' $02C1F8 hijack.
 			if and(and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Rex), equal(!Setting_SpriteHP_VanillaSprite_OneShotSprites, 0))
 				org $03951A
 				autoclean JSL RexStateToHP
@@ -393,7 +409,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				JSR.w $019ACB
 				JSL $07FC3B|!bank
 			endif
-		;Spinjumping/riding yoshi on a spikey enemy to switch HP meter (and no damage)
+		;Spinjumping/riding yoshi on a spikey enemy to switch HP meter (and no damage/kill)
 			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
 				org $01A8D8
 				autoclean JSL ShowHPOnSpinjumpOrYoshiNoKill
@@ -404,7 +420,8 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				LDA #$02
 				STA $1DF9|!addr
 			endif
-		;Rex (runs its own code, evident in the disassembly and the fact the player is launched upwards, similar with dry bones and bony beetle)
+		;Rex (runs its own spinjump death code, evident in the disassembly and the fact the player is launched upwards from a spinjump,
+		;similar with dry bones and bony beetle).
 			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Rex)
 				org $0395EC
 				autoclean JSL DeathAnimationSpinJumpKillRex
@@ -428,6 +445,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		endif
 	;Show HP meter when enemies merely get stunned when jumped on (Goomba, Bob-omb, Buzzy Beetle, and Mecha Koopa).
 	;Again, this is mario-interact-sprites routine. EDIT: This also triggers when kicking carried sprites.
+	;This also handles koopas being forced out their shells when stomped.
 		if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
 			org $01AA14
 			autoclean JSL StunnedKoopaShowHP
@@ -453,7 +471,8 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		%YoshiSwallowDeleteSprites($01F1B5) ;>When adult yoshi swallows a sprite
 		%YoshiSwallowDeleteSprites($01F373) ;>Same as above but when yoshi eats a sprite that doesn't stay in its mouth
 		%YoshiSwallowDeleteSprites($03C032) ;>Baby yoshi double-eat handler (eating a 2nd sprite while his mouth is full).
-	;Optional feature if user wished to have stunned koopas not leave their shells
+	;Optional feature if user wished to have stunned koopas not leave their stunned shells (hit by cape spins, bounce
+	;blocks, and quakes, then some times later, pop out of their shells)
 		if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, notequal(!Setting_SpriteHP_Koopas_ClassicBehavior, 0))
 			org $0196C5
 			BNE $04
@@ -478,8 +497,8 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					.CODE_019A9D
 				endif
 	;Shell and shell-less koopa HP meter switcher. A normal koopa and an empty shell are the same sprite (but with a different state).
-	;A shell-less koopa being seperated from their shell is a seperate sprite spawned in the level. When entering an empty shell,
-	;they simply just get deleted.
+	;A shell-less koopa being seperated from their shell is a seperate sprite spawned in the level. When a shell-less koopa enters an empty shell,
+	;the shell-less just get deleted.
 		;When koopas exit their shells, switch the HP meter to them and not the koopa/shell (now an empty shell) itself
 			if and(and(!Setting_ModifySprAndDisplayHPOfSMWSpr, equal(!Setting_SpriteHP_Koopas_ClassicBehavior, 0)), notequal(!Setting_SpriteHP_VanillaSprite_OneShotSprites, 0))
 				org $0196F6
@@ -493,7 +512,8 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				JSL $07F7D2|!bank
 			endif
 		;When shell-less koopas enter their shells, switch the HP meter to the koopa/shell.
-		;Note that this hijack will apply ignoring !Setting_SpriteHP_Koopas_ClassicBehavior because a user could place shell-less koopas directly in the level.
+		;Note that this hijack will apply ignoring !Setting_SpriteHP_Koopas_ClassicBehavior because a user could place shell-less koopas and empty
+		;shells directly in the level and in gameplay, could enter empty shells.
 			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, notequal(!Setting_SpriteHP_VanillaSprite_OneShotSprites, 0))
 				org $018AC9
 				autoclean JSL TransferHPFromShelllessKoopaToKoopa
@@ -556,7 +576,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 	; - kicked/carried sprites hit a 1-shottable enemy
 	; - Stomped (e.g. Monty Mole) and falling down the screen
 	; - Stunned sprites kicked automatically by player (stunned koopas (except blue) and fish)
-	; - Killed via Sliding down a slope or via star power
+	; - Killed via sliding down a slope or via star power
 	;
 	;The following hijacks a 5-byte area being:
 	;  Addr+0  LDA.b #$02
@@ -599,6 +619,10 @@ incsrc "Defines/GraphicalBarDefines.asm"
 	; - This entire routine runs AFTER its sprite numbers ($9E/$7FAB9E) have been set, and before its
 	;   init code runs. Thus I can set HP values differently based on sprite number, as well as the
 	;   sprite's init to set HP to override this.
+	;Other note:
+	; - If hijacking within $07F722-$07F78A, make sure you preserve the carry flag via PHP...PLP.
+	;   This is because the sprite spawning routine by various ASM tools uses the $07F722 routine
+	;   then later checks the carry flag to determine if the sprite is vanilla or custom.
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		if !Setting_SpriteHP_RemoveOrApplyPatch
 			org $07F779
@@ -611,7 +635,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			STZ.w !1594,x
 		endif
 	;When sprite changes into another sprite (become a different sprite number) when jumped on
-	;Covers winged enemies and Dino Rhino.
+	;e.g. Winged enemies and Dino Rhino.
 			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
 				org $01A99B
 				autoclean JSL TransformWhenStomped
@@ -718,7 +742,8 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			SEC
 		endif
 	;Failsafe measures to prevent a potential glitch where the HP meter transfers if a sprite the meter is on becomes a
-	;free slot ($14C8,x == $00), then a newly spawned sprite spawns on the same sprite slot, at the same frame.
+	;free slot ($14C8,x == $00), then a newly spawned sprite spawns on the same sprite slot, at the same frame when
+	;smushed.
 		SmushedHijack:
 			if !Setting_SpriteHP_RemoveOrApplyPatch
 				org $019AEB
@@ -1208,7 +1233,9 @@ incsrc "Defines/GraphicalBarDefines.asm"
 						...SwitchMeter
 							%DealFixedDamage(!SpriteHP_MaxHPAndDamageValue)
 						...Done
-							JML $02A136|!bank
+							LDA #$D0
+							STA !AA,x
+							JML $02A143|!bank
 				endif
 			RTL
 	endif
