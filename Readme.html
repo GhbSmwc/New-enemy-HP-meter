@@ -962,7 +962,7 @@ autoclean JML SpritesTotalHPIntroEffect		;</pre>
 			</li>
 			<li>If total HP mode is used, the sprite shall not switch the HP meter from total mode to its own sprite slot.</li>
 		</ul>
-		Thankfully, all that logic is handled automatically in a subroutine defined as <kbd>!SharedSub_SpriteHPDamage</kbd>, with the inputs stored in RAM <kbd>$00</kbd> (2 bytes, <kbd>$00~$01</kbd>, if <kbd>!Setting_SpriteHP_TwoByte == 1</kbd>). Feel free to check out the subroutines as you wish.<br><br>
+		Thankfully, all that logic is handled automatically in a shared subroutine defined as <kbd>!SharedSub_SpriteHPDamage</kbd>, with the inputs stored in RAM <kbd>$00</kbd> (2 bytes, <kbd>$00~$01</kbd>, if <kbd>!Setting_SpriteHP_TwoByte == 1</kbd>). Feel free to check out the subroutines and comments as you wish.<br><br>
 		
 		The same rule applies to healing as well (to show how much the fill increases). A subroutine for pixi <kbd>pixi/routines/EnemyHPHeal.asm</kbd>, which can be called via <kbd>%EnemyHPHeal()</kbd> (similarly <kbd>$00</kbd> or <kbd>$00~$01</kbd> for how much HP recovered).
 		Why in pixi? It's because none of vanilla SMW sprites heals.
