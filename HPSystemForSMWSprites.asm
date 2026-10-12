@@ -473,7 +473,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		%YoshiSwallowDeleteSprites($03C032) ;>Baby yoshi double-eat handler (eating a 2nd sprite while his mouth is full).
 	;Optional feature if user wished to have stunned koopas not leave their stunned shells (hit by cape spins, bounce
 	;blocks, and quakes, then some times later, pop out of their shells)
-		if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, notequal(!Setting_SpriteHP_Koopas_ClassicBehavior, 0))
+		if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_Koopas_ClassicBehavior)
 			org $0196C5
 			BNE $04
 		else
@@ -514,7 +514,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		;When shell-less koopas enter their shells, switch the HP meter to the koopa/shell.
 		;Note that this hijack will apply ignoring !Setting_SpriteHP_Koopas_ClassicBehavior because a user could place shell-less koopas and empty
 		;shells directly in the level and in gameplay, could enter empty shells.
-			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, notequal(!Setting_SpriteHP_VanillaSprite_OneShotSprites, 0))
+			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
 				org $018AC9
 				autoclean JSL TransferHPFromShelllessKoopaToKoopa
 				NOP #2
@@ -1970,98 +1970,98 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					JSR TransferHPBetweenKoopaAndShell
 				.Done
 					RTL
-			TransferHPFromShelllessKoopaToKoopa: ;>JSL from $018AC9
-				;X = Index of the shell-less koopa entering an empty shell. $15E9 is also at this value.
-				;Y = Index of the shell the koopa is entering
-				.CheckIfMeterIsOnShelllessKoopa
-					JSL !SharedSub_SpriteHPGetSlotIndex
-					LDY !1594,x
-					TXA
-					CMP !Scratchram_SpriteHP_SpriteSlotToDisplay
-					BNE .NoSwitchMeter			;>If the HP meter isn't on the shell-less koopa, skip (just transfer HP values)
-				.SwitchMeter
-					TYA												;\Switch meter to the shell (which will turn into a regular koopa)
-					STA !Freeram_SpriteHP_MeterState				;/
-					if and(!SharedSubUseFlag_UsingGraphicalBarRoutines, !SharedSubUseFlag_SpriteHPRemoveRecordEffect)
-						JSR .HealthTransfer ;>Transfer HP first so the subroutine SharedSub_SpriteHPRemoveRecordEffect gets the proper HP amount.
-						PHY
-						JSL !SharedSub_SpriteHPRemoveRecordEffect ;>This prevents an issue where if player guides a 1/2HP shell-less koopa into sprite $DF ($09 stunned).
-						PLY
-						BRA .Restore
-					endif
-				.NoSwitchMeter
-					JSR .HealthTransfer
-				.Restore
-					%JSLRTS($01AC80|!bank, $01AD06|!bank)
-						;^OffScrEraseSprite, the subroutine called to erase the shell-less koopa without permanently erasing it.
-						; Must be called AFTER transfering HP meter display to the koopa/shell sprite (because it is hijacked
-						; at $01AC91 to prevent potential HP transfer should a sprite despawns and a new sprite spawns on the
-						; same slot at the same frame). If this is called earlier, then the HP meter would disappear instead
-						; of switching.
-					LDY !1594,x
-					RTL
-
-				.HealthTransfer
-					..CheckIfGreenParatroopaShell
-						;This code handles a situation where a 1 HP shell-less koopa enters a koopa shell that
-						;ignores special world completion, Lunar magic Sprite $DF (it's actually sprite $09,
-						;the Green Bouncing Paratroopa, in its carrable state).
-						;
-						;Without this, if a koopa enters this shell, his HP will not be "updated" to having 2/2 HP,
-						;resulting in having 1/1 HP and showing 0/1 HP (without dying) when removed from its shell.
-						if !Setting_SpriteHP_UsingCustomSprites
-							if !sa1 == 0
-								PHX
-								TYX
-								LDA !7FAB10,x ;>In LoROM, a 24-bit address representing the sprite extra bit is being used, and opcodes using long-addressing index Y (LDA $xxxxxx,y) does not exist.
-								PLX
-							else
-								LDA !7FAB10,y
-							endif
-							AND.b #%00001000			;\If it's not the shell that is a green paratroopa, allow HP transfer
-							BNE ..TransferHPValues		;|
-						endif
-						LDA !9E,y					;|
-						CMP #$09					;|
-						BNE ..TransferHPValues		;/
-					..ShellLessBecommingGreenParatroopa ;\Switch the HP display from 1/1 HP to 2/2.
-						BRA ..Done
-					..TransferHPValues
-						JSR TransferHPBetweenKoopaAndShell
-					..Done
-						RTS
-			TransferHPBetweenKoopaAndShell:
-				;Input:
-				; - X: Sprite slot that the current sprite to transer HP from (will use $00 to store due to Y-indexed long-addressing not existing).
-				; - Y: Sprite slot that the current sprite is interacting with or a newly spawned sprite to transfer HP to.
-				LDA !Freeram_SpriteHP_CurrentHPLow,x
-				TYX
-				STA !Freeram_SpriteHP_CurrentHPLow,x
-				LDX $15E9|!addr
-				LDA !Freeram_SpriteHP_MaxHPLow,x
-				TYX
-				STA !Freeram_SpriteHP_MaxHPLow,x
-				if !Setting_SpriteHP_TwoByte
-					LDX $15E9|!addr
-					LDA !Freeram_SpriteHP_CurrentHPHi,x
-					TYX
-					STA !Freeram_SpriteHP_CurrentHPHi,x
-					LDX $15E9|!addr
-					LDA !Freeram_SpriteHP_MaxHPHi,x
-					TYX
-					STA !Freeram_SpriteHP_MaxHPHi,x
-				endif
-				LDX $15E9|!addr
-;				LDA #$01	;>These scrapped to prevent fill animation from being set to 100% when a shell-less koopa, removed from paratroopa, enters a shell
-;				STA !Freeram_SpriteHP_CurrentHPLow,x
-;				STA !Freeram_SpriteHP_MaxHPLow,x
-;				if !Setting_SpriteHP_TwoByte
-;					LDA #$00
-;					STA !Freeram_SpriteHP_CurrentHPHi,x
-;					STA !Freeram_SpriteHP_MaxHPHi,x
-;				endif
-				RTS
 		endif
+		TransferHPFromShelllessKoopaToKoopa: ;>JSL from $018AC9
+			;X = Index of the shell-less koopa entering an empty shell. $15E9 is also at this value.
+			;Y = Index of the shell the koopa is entering
+			.CheckIfMeterIsOnShelllessKoopa
+				JSL !SharedSub_SpriteHPGetSlotIndex
+				LDY !1594,x
+				TXA
+				CMP !Scratchram_SpriteHP_SpriteSlotToDisplay
+				BNE .NoSwitchMeter			;>If the HP meter isn't on the shell-less koopa, skip (just transfer HP values)
+			.SwitchMeter
+				TYA												;\Switch meter to the shell (which will turn into a regular koopa)
+				STA !Freeram_SpriteHP_MeterState				;/
+				if and(!SharedSubUseFlag_UsingGraphicalBarRoutines, !SharedSubUseFlag_SpriteHPRemoveRecordEffect)
+					JSR .HealthTransfer ;>Transfer HP first so the subroutine SharedSub_SpriteHPRemoveRecordEffect gets the proper HP amount.
+					PHY
+					JSL !SharedSub_SpriteHPRemoveRecordEffect ;>This prevents an issue where if player guides a 1/2HP shell-less koopa into sprite $DF ($09 stunned).
+					PLY
+					BRA .Restore
+				endif
+			.NoSwitchMeter
+				JSR .HealthTransfer
+			.Restore
+				%JSLRTS($01AC80|!bank, $01AD06|!bank)
+					;^OffScrEraseSprite, the subroutine called to erase the shell-less koopa without permanently erasing it.
+					; Must be called AFTER transfering HP meter display to the koopa/shell sprite (because it is hijacked
+					; at $01AC91 to prevent potential HP transfer should a sprite despawns and a new sprite spawns on the
+					; same slot at the same frame). If this is called earlier, then the HP meter would disappear instead
+					; of switching.
+				LDY !1594,x
+				RTL
+
+			.HealthTransfer
+				..CheckIfGreenParatroopaShell
+					;This code handles a situation where a 1 HP shell-less koopa enters a koopa shell that
+					;ignores special world completion, Lunar magic Sprite $DF (it's actually sprite $09,
+					;the Green Bouncing Paratroopa, in its carrable state).
+					;
+					;Without this, if a koopa enters this shell, his HP will not be "updated" to having 2/2 HP,
+					;resulting in having 1/1 HP and showing 0/1 HP (without dying) when removed from its shell.
+					if !Setting_SpriteHP_UsingCustomSprites
+						if !sa1 == 0
+							PHX
+							TYX
+							LDA !7FAB10,x ;>In LoROM, a 24-bit address representing the sprite extra bit is being used, and opcodes using long-addressing index Y (LDA $xxxxxx,y) does not exist.
+							PLX
+						else
+							LDA !7FAB10,y
+						endif
+						AND.b #%00001000			;\If it's not the shell that is a green paratroopa, allow HP transfer
+						BNE ..TransferHPValues		;|
+					endif
+					LDA !9E,y					;|
+					CMP #$09					;|
+					BNE ..TransferHPValues		;/
+				..ShellLessBecommingGreenParatroopa ;\Switch the HP display from 1/1 HP to 2/2.
+					BRA ..Done
+				..TransferHPValues
+					JSR TransferHPBetweenKoopaAndShell
+				..Done
+					RTS
+		TransferHPBetweenKoopaAndShell:
+			;Input:
+			; - X: Sprite slot that the current sprite to transer HP from (will use $00 to store due to Y-indexed long-addressing not existing).
+			; - Y: Sprite slot that the current sprite is interacting with or a newly spawned sprite to transfer HP to.
+			LDA !Freeram_SpriteHP_CurrentHPLow,x
+			TYX
+			STA !Freeram_SpriteHP_CurrentHPLow,x
+			LDX $15E9|!addr
+			LDA !Freeram_SpriteHP_MaxHPLow,x
+			TYX
+			STA !Freeram_SpriteHP_MaxHPLow,x
+			if !Setting_SpriteHP_TwoByte
+				LDX $15E9|!addr
+				LDA !Freeram_SpriteHP_CurrentHPHi,x
+				TYX
+				STA !Freeram_SpriteHP_CurrentHPHi,x
+				LDX $15E9|!addr
+				LDA !Freeram_SpriteHP_MaxHPHi,x
+				TYX
+				STA !Freeram_SpriteHP_MaxHPHi,x
+			endif
+			LDX $15E9|!addr
+;			LDA #$01	;>These scrapped to prevent fill animation from being set to 100% when a shell-less koopa, removed from paratroopa, enters a shell
+;			STA !Freeram_SpriteHP_CurrentHPLow,x
+;			STA !Freeram_SpriteHP_MaxHPLow,x
+;			if !Setting_SpriteHP_TwoByte
+;				LDA #$00
+;				STA !Freeram_SpriteHP_CurrentHPHi,x
+;				STA !Freeram_SpriteHP_MaxHPHi,x
+;			endif
+			RTS
 	endif
 	if and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
 		DeleteIfBelowLvl:

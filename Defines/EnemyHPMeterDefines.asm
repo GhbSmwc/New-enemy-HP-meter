@@ -614,10 +614,8 @@
 	if !Setting_SpriteHP_DisplayGraphicalBar == 0	;>Override to disable unused animation for the bar if the bar doesn't exist.
 		!Setting_SpriteHP_BarAnimation = 0
 	endif
-	!SpriteHP_MaxHPAndDamageValue = 255
-	if !Setting_SpriteHP_TwoByte
-		!SpriteHP_MaxHPAndDamageValue = 65535
-	endif
+	!SpriteHP_MaxHPAndDamageValue = min((10**!Setting_SpriteHP_MaxDigits)-1, (2**(8*(1+!Setting_SpriteHP_TwoByte)))-1)
+		;^This obtains the maximum value to display, either 9/99/999/9999 or 255/65535.
 	;Check if user enters over-limit values
 		!SpriteHP_5FireballsMaxHPAndDamageValue = 255
 		if and(notequal(!Setting_SpriteHP_Modify5FireballsSystem, 0), notequal(!Setting_SpriteHP_TwoByte, 0))
