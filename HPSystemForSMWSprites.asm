@@ -217,7 +217,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 	
 	macro VanillaSubOffScrnFreespaceCode(ToFreespaceCode, JMLAddressToReturn)
 		<ToFreespaceCode>:
-			JSR SubOffScreenClearSpriteTableRestore
+			JSR SubOffScrnHandleHPMeter
 			JML <JMLAddressToReturn>|!bank
 	endmacro
 	
@@ -1781,7 +1781,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			%VanillaSubOffScrnFreespaceCode(SubOffscreenXBnk1PreventHPMeterTransfer, $01ACA4) ;>JML from $01AC91
 			%VanillaSubOffScrnFreespaceCode(SubOffscreenXBnk2PreventHPMeterTransfer, $02D090) ;>JML from $02D07D
 			%VanillaSubOffScrnFreespaceCode(SubOffscreenXBnk3PreventHPMeterTransfer, $03B8C2) ;>JML from $03B8AF
-		SubOffScreenClearSpriteTableRestore:
+		SubOffScrnHandleHPMeter:
 			.CommonRestore
 				CMP #$08
 				BCC ..OffScrKillSprite
@@ -1801,6 +1801,17 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				endif
 				..OffScrKillSprite
 					STZ !14C8,x
+			.HandleTotalHP
+				;Plays the bar animation for total HP when enemies despawn via falling off the level
+				if and(and(!Setting_SpriteHP_TotalHPMode, !Setting_SpriteHP_BarAnimation), !Setting_SpriteHP_BarChangeDelay)
+					LDA !Freeram_SpriteHP_MeterState
+					CMP.b #!sprite_slots*2
+					BCC .HideHPMeterImmidiately
+					CMP.b #(!sprite_slots*2)+2
+					BCS .HideHPMeterImmidiately
+					LDA.b #!Setting_SpriteHP_BarChangeDelay		;\Freeze damage indicator (this makes the bar animation hangs before decreasing towards current HP fill amount)
+					STA !Freeram_SpriteHP_BarAnimationTimer		;/
+				endif
 			.HideHPMeterImmidiately
 				JSL !SharedSub_HideHPMeterIfSpriteDespawns
 				RTS
