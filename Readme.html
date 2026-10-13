@@ -1173,32 +1173,62 @@ autoclean JML SpritesTotalHPIntroEffect		;</pre>
 		</li>
 		<li>
 			<span id="DespawnSpawnTransferBug">
-				If the HP meter is on a sprite slot that <abbr title="$14C8 set to $00.">despawned</abbr>, and a newly spawned sprite occupies that same slot at the same frame, this may cause a glitch that the meter to
-				transfer to the newly spawned sprite rather than disappearing (and possibly play the filling animation). This is because despawning and then spawning happened before <kbd>DisplayEnemyHP.asm</kbd> checks
-				if the sprite slot become empty. To	prevent this, call <kbd>JSL !SharedSub_HideHPMeterIfSpriteDespawns</kbd> after <kbd>$14C8</kbd> gets potentially set to <kbd>$00</kbd>, before any
-				spawning-sprite-related action occurs. Example:
+				If the HP meter is on a sprite slot that despawned (sprite status of RAM <kbd>$14C8</kbd> to be zeroed out), and a newly spawned sprite occupies that same slot at the same frame, this may cause a
+				glitch that the meter to transfer to the newly spawned sprite rather than disappearing (and possibly play the filling animation). This is because despawning and then spawning happened before
+				<kbd>DisplayEnemyHP.asm</kbd> checks if the sprite slot become empty. To prevent this, call <kbd>JSL !SharedSub_HideHPMeterIfSpriteDespawns</kbd> after <kbd>$14C8</kbd> gets potentially set to
+				<kbd>$00</kbd>, before any spawning-sprite-related action occurs. Note that this applies to <i>any and all</i> ASM resource type (blocks, sprite, patches, etc.) that would zero out its status.
+				Example (this is sprite code):
 			</span>
 <div class="CodeBlock" style="height: 301px; width: 934px;"><pre>
-	incsrc "SharedSubroutineDefs.asm"
-		;^You need this at the top (modification of the file path may be needed
-		; depending on where you placed the define to the shared subroutines
-		; define file) on 3rd-party ASM resources such as patches, custom
-		; blocks, etc. otherwise Asar will not recognize
-		; !SharedSub_HideHPMeterIfSpriteDespawns that points to shared
-		; subroutines' routine.
+incsrc "SharedSubroutineDefs.asm"
+	;^You need this at the top (modification of the file path may be needed
+	; depending on where you placed the define to the shared subroutines
+	; define file) on 3rd-party ASM resources such as patches, custom
+	; blocks, etc. otherwise Asar will not recognize
+	; !SharedSub_HideHPMeterIfSpriteDespawns that points to shared
+	; subroutines' routine.
 
-	;Off-screen despawn:
-		;[...]
-		LDA #$00
-		%SubOffScreen() ;&gt;Here, $14C8,x may be zero after this.
-		JSL !SharedSub_HideHPMeterIfSpriteDespawns ;&gt;Call a subroutine that turns the meter display off if $14C8,x is zero.
-		;[...]
-	;Deleting the sprite instantly:
-		;[...]
-		STZ !14C8,x
-		JSL !SharedSub_HideHPMeterIfSpriteDespawns ;&gt;Hide the HP meter immediately.
-		;[...]
+;Off-screen despawn:
+	;[...]
+	LDA #$00
+	%SubOffScreen() ;&gt;Here, $14C8,x may be zero after this.
+	JSL !SharedSub_HideHPMeterIfSpriteDespawns ;&gt;Call a subroutine that turns the meter display off if $14C8,x is zero.
+	;[...]
+;Deleting the sprite instantly:
+	;[...]
+	STZ !14C8,x
+	JSL !SharedSub_HideHPMeterIfSpriteDespawns ;&gt;Hide the HP meter immediately.
+	;[...]
 </pre></div>
+			If it were a custom block (made-up example):
+<div class="CodeBlock" style="height: 301px; width: 934px;"><pre>
+incsrc "../SharedSubroutineDefs.asm"
+	;^This assumes you have the custom block ASM file inside the blocks
+	; folder but not in any subfolders further deep.
+	; don't forget to have "SharedSubroutineDefs.asm" be where the
+	; "gps.exe" is at.
+
+db $42
+JMP MarioBelow : JMP MarioAbove : JMP MarioSide : JMP SpriteV
+JMP SpriteH : JMP MarioCape : JMP MarioFireball : JMP TopCorner
+JMP BodyInside : JMP HeadInside
+
+SpriteV:
+SpriteH:
+	STZ !14C8,x
+	JSL !SharedSub_HideHPMeterIfSpriteDespawns ;&gt;Hide the HP meter immediately.
+MarioBelow:
+MarioAbove:
+MarioSide:
+TopCorner:
+BodyInside:
+HeadInside:
+MarioCape:
+MarioFireball:
+	RTL
+</pre></div>
+			
+			
 			Thus what's hijacked by <kbd>HPSystemForSMWSprites.asm</kbd> so that in addition to zeroing out <kbd>$14C8</kbd> are:
 			<ul>
 				<li>
