@@ -12,8 +12,8 @@
 	;    !sprite_slots = Number of sprite slots: 12 for LoROM, 22 for SA-1
 	;
 	;[BytesUsed = 1                                                                                                       ;>1 Byte for HP meter state
-	; + (!sprite_slots*2)                                                                                                 ;>Bytes used for low bytes of current and max HP.
-	; + ((!sprite_slots*2) * !Setting_SpriteHP_TwoByte)                                                                   ;>Bytes used for the high bytes of current and max HP, if !Setting_SpriteHP_TwoByte == 1
+	; + (!sprite_slots*2)                                                                                                 ;>!sprite_slots Bytes used for low bytes of current and max HP.
+	; + ((!sprite_slots*2) * !Setting_SpriteHP_TwoByte)                                                                   ;>!sprite_slots Bytes used for the high bytes of current and max HP, if !Setting_SpriteHP_TwoByte == 1
 	; + (!Setting_SpriteHP_DisplayGraphicalBar * !Setting_SpriteHP_BarAnimation)                                          ;>Byte used as a secondary fill amount for animation.
 	; + ((!Setting_SpriteHP_DisplayGraphicalBar * !Setting_SpriteHP_BarAnimation)*(!Setting_SpriteHP_BarAnimation != 0))] ;>Byte used as a timer of how long the secondary fill amount pauses before following current HP fill.
 	; + ((1 + !Setting_SpriteHP_TwoByte) * (!Setting_SpriteHP_TotalHPMode == 2))                                          ;>1-2 bytes used for how much HP of sprites yet to spawn (HP of unloaded sprites), for total mode.
@@ -148,7 +148,7 @@
 		;Number display settings
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 				!Setting_SpriteHP_DisplayNumerical = 2
-					;^Display numerical HP?
+					;^Display HP numerically?
 					; - 0 = Don't display numbers
 					; - 1 = Display only current HP
 					; - 2 = Display Current/Max
@@ -156,19 +156,22 @@
 					;^Alignment of the digits display:
 					; - 0 = Digits at fixed location (may have leading spaces)
 					; - 1 = Left-Aligned
-					; - 2 = Right-aligned (if used with !Setting_SpriteHP_DisplayNumerical == 1, will treat this as using fixed location)
+					; - 2 = Right-aligned (if used with !Setting_SpriteHP_DisplayNumerical == 1, will treat this as using
+					;   fixed location since layer 3 single-number alignment is redundant).
 				!Setting_SpriteHP_ExcessDigitProt = 1
 					;^Maximum character write failsafe. If there are longer strings than expected, the number display routine will simply
 					; not display the number.
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			;Position of the numerical HP display, will occupy this position and tiles to the right
-			;when set to. Only used when !Setting_SpriteHP_NumericalTextAlignment < 2.
+			;when set to. Only used when one of these are true:
+			; - !Setting_SpriteHP_NumericalTextAlignment == 1.
+			; - !Setting_SpriteHP_DisplayNumerical == 1 AND !Setting_SpriteHP_NumericalTextAlignment == 2.
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 				!Setting_SpriteHP_NumericalPos_x = 21
 				!Setting_SpriteHP_NumericalPos_y = 0
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-			;Position for right-aligned, when !Setting_SpriteHP_NumericalTextAlignment == 2. This occupies
-			;tiles at this position, and to the left.
+			;Position for right-aligned, used when !Setting_SpriteHP_NumericalTextAlignment == 2 AND
+			;!Setting_SpriteHP_DisplayNumerical == 2. This occupies tiles at this position, and to the left.
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 				!Setting_SpriteHP_NumericalPosRightAligned_x = 31
 				!Setting_SpriteHP_NumericalPosRightAligned_y = 0
@@ -314,6 +317,8 @@
 					!Setting_SpriteHP_FillingSFXPort		= $1DFC|!addr	;>Use $1DF9, $1DFA, or $1DFC, followed by "|!addr" if you're using SA-1
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;Patching settings
+	;
+	;These are configurations for the patch "HPSystemForSMWSprites.asm".
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		!Setting_SpriteHP_RemoveOrApplyPatch		= 1
 			;^Option to install or remove the patch.
@@ -606,7 +611,8 @@
 		!Setting_SpriteHP_DisplaySpriteHPDataOnConsole = 0
 			;^Display RAM usage on Asar console window:
 			; - 0 = No
-			; - 1 = Yes, display the HP data RAM usage on asar console (would not work for pixi due to print command reserved for description).
+			; - 1 = Yes, display the HP data RAM usage on asar console (would not work for pixi due to print command
+			;   reserved for description).
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;Don't touch these unless you know what you're doing
@@ -746,7 +752,7 @@
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		!Setting_SpriteHP_MaxStringLength = !Setting_SpriteHP_MaxDigits
 		if !Setting_SpriteHP_DisplayNumerical == 2
-			!Setting_SpriteHP_MaxStringLength = (!Setting_SpriteHP_MaxDigits*2)+1
+			!Setting_SpriteHP_MaxStringLength = (!Setting_SpriteHP_MaxDigits*2)+1 ;>2 numbers with N-digit at max, plus a slash character.
 		endif
 		
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
