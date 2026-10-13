@@ -275,10 +275,9 @@ main:
 			LDX !Scratchram_SpriteHP_SpriteSlotToDisplay
 			LDA !14C8,x				;\If sprite exists, allow meter to show, otherwise hide it.
 			BNE ...Exists			;/
-				;^Note: if a sprite status gets set to #$00 that the meter is on, and at the same frame, a new sprite spawns
-				; on the same slot that have its status set to other than #$00, the meter could transfer to the newly
-				; spawned sprite. A way to prevent that is anytime $14C8,x gets set to 0, clear the meter by executing
-				; "JSL !HideHPMeterIfSpriteDespawns" before anything spawns on its slot.
+				;^Note: if a sprite status gets set to #$00, and at the same frame, a new sprite spawns on the same slot
+				; that have its status set to #$00, the meter could transfer to the newly spawned sprite. A way to prevent
+				; that is anytime $14C8,x gets set to 0, clear the meter by executing "JSL !HideHPMeterIfSpriteDespawns".
 			...HideHPMeter
 				LDA #$FF				;\Hide HP for non-existing sprites, sprites that have HP in certain cases
 				STA !Freeram_SpriteHP_MeterState	;/(like before it was turned into a coin from a fireball, or bob-omb exploding)
@@ -294,14 +293,12 @@ main:
 		; - !Scratchram_GraphicalBar_FillByteTbl+2 (and !Scratchram_GraphicalBar_FillByteTbl+3) are used as maximum HP for individual
 		;   sprites or total maximum HP across multiple sprites
 	
-		;Detect user trying to make a right-aligned single number (which avoids unnecessarily use suppress leading zeroes)
-			!IsUsingRightAlignedSingleNumber = and(equal(!Setting_SpriteHP_NumericalTextAlignment, 2),equal(!Setting_SpriteHP_DisplayNumerical, 1))
 		if !Setting_SpriteHP_DisplayNumerical != 0 ;User allow displaying HP numerically
 			;Clear the tiles. To prevent leftover "ghost" tiles that should've
 			;disappear when the number of digits decreases (so when "10" becomes "9",
 			;won't display "90").
 			..IndividualSpriteWriteString
-			if or(equal(!Setting_SpriteHP_NumericalTextAlignment, 0), equal(!IsUsingRightAlignedSingleNumber, 1)) ;Fixed digit location
+			if or(equal(!Setting_SpriteHP_NumericalTextAlignment, 0), equal(!Setting_SpriteHP_NumericalRightAlignedSingleNumber, 1)) ;Fixed digit location
 				if !Setting_SpriteHP_TwoByte == 0
 					%GetHealthDigits8Bit("Scratchram_GraphicalBar_FillByteTbl")
 				else
@@ -417,20 +414,15 @@ main:
 								STA !Freeram_SpriteHP_BarAnimationFill
 							endif
 						....ShowFilllingUp
-							.....TerminateIntroFillIfAtOrAboveCurrentHPFill
-								;This handles a situation where if a player reduces the sprite/total HP that results
-								;in the current fill amount $00 to be less than !Freeram_SpriteHP_BarAnimationFill,
-								;to terminate the filling animation prematurely.
+							.....TerminateIntroFillIfAtCurrentHP
 								LDA !Freeram_SpriteHP_MeterState
 								CMP.b #!sprite_slots
-								BCC ......NoTerminate ;>If not in introfill, skip
+								BCC ......NoTerminate
 								LDA !Freeram_SpriteHP_BarAnimationFill
 								CMP $00
-								BCC ......NoTerminate ;>If the fill-up animation fill amount is less than the current fill amount, don't terminate
+								BCC ......NoTerminate
 								
 								......Terminate
-									;^Otherwise if fill animation did goes greater than its now-reduced HP fill (player damages boss so that its
-									; current HP fill drops below the animation fill), instantly end the intro-fill animation.
 									LDA !Freeram_SpriteHP_MeterState
 									if !Setting_SpriteHP_TotalHPMode
 										CMP.b #!sprite_slots*2  ;>Total HP, main mode.
@@ -451,8 +443,8 @@ main:
 							if !Setting_SpriteHP_ShowHealedTransparent
 								LDA !Freeram_SpriteHP_MeterState
 								CMP.b #!sprite_slots
-								BCS .....IntroFill ;>Skip the rapid-flicker (display HP recovery) if intro-filling
-								LDA $13 ;\Otherwise show heal amount.
+								BCS .....IntroFill
+								LDA $13
 								AND.b #%00000001
 								BNE .....FillSoundEffect ;On odd frames, show current HP fill
 								.....IntroFill
@@ -630,14 +622,14 @@ main:
 				LDX.b #(!Setting_SpriteHP_MaxStringLength-1)*!StatusbarFormat	;>2 !Setting_SpriteHP_MaxDigits due to 2 numbers displayed, plus 1 because of the "/" symbol.
 				..Loop
 					LDA #!StatusBarBlankTile
-					if !Setting_SpriteHP_NumericalTextAlignment == 1
+					if or(less(!Setting_SpriteHP_NumericalTextAlignment, 2), !Setting_SpriteHP_NumericalRightAlignedSingleNumber)
 						STA !Setting_SpriteHP_Numerical_StatusBarAddrTile,x
 					elseif !Setting_SpriteHP_NumericalTextAlignment == 2
 						STA !Setting_SpriteHP_NumericalRightAligned_StatusBarAddrTile-((!Setting_SpriteHP_MaxStringLength-1)*!StatusbarFormat),x
 					endif
 					if !StatusBar_UsingCustomProperties != 0
 						LDA.b #!Setting_SpriteHP_NumericalProp
-						if !Setting_SpriteHP_NumericalTextAlignment == 1
+						if or(less(!Setting_SpriteHP_NumericalTextAlignment, 2), !Setting_SpriteHP_NumericalRightAlignedSingleNumber)
 							STA !Setting_SpriteHP_Numerical_StatusBarAddrProp,x
 						elseif !Setting_SpriteHP_NumericalTextAlignment == 2
 							STA !Setting_SpriteHP_NumericalRightAligned_StatusBarAddrProp-((!Setting_SpriteHP_MaxStringLength-1)*!StatusbarFormat),x
