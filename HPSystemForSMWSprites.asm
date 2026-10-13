@@ -139,6 +139,8 @@ incsrc "Defines/GraphicalBarDefines.asm"
 	
 	macro IntroFill(IntroStateSpriteTableRAM)
 		?HandleIntro:
+			;This is a code intended to run for sprites that lack an init (code runs for 1-frame when sprite spawns)
+			;effectively giving it an init code but solely for bar intro-fill.
 			if !Setting_SpriteHP_DisplayHPOfSMWSprites
 				if !Setting_SpriteHP_BarAnimation
 					LDA <IntroStateSpriteTableRAM>,x
@@ -155,8 +157,12 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					endif
 					?.IntroDone
 				else
+					LDA <IntroStateSpriteTableRAM>,x
+					BNE ?.IntroDone
+					INC <IntroStateSpriteTableRAM>,x
 					TXA
 					STA !Freeram_SpriteHP_MeterState
+					?.IntroDone
 				endif
 			endif
 	endmacro
@@ -2206,7 +2212,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				LDA #$28
 				STA $1DFC|!addr
 				RTL
-		BigBooBossHitCountToHP:
+		BigBooBossHitCountToHP: ;>JML from $0380A2
 			%ConvertDamageAmountToHP(!1534, !Setting_SpriteHP_VanillaSprite_BigBooBoss_HPAmount)
 			%IntroFill(!1594)
 			.Restore
