@@ -163,15 +163,17 @@
 					; not display the number.
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			;Position of the numerical HP display, will occupy this position and tiles to the right
-			;when set to. Only used when one of these are true:
-			; - !Setting_SpriteHP_NumericalTextAlignment == 1.
-			; - !Setting_SpriteHP_DisplayNumerical == 1 AND !Setting_SpriteHP_NumericalTextAlignment == 2.
+			;when set to. Used when one of these are true:
+			; - !Setting_SpriteHP_NumericalTextAlignment == 1 (left-aligned).
+			; - !Setting_SpriteHP_DisplayNumerical == 1 AND !Setting_SpriteHP_NumericalTextAlignment == 2 (showing only current HP
+			;   and is right-aligned).
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 				!Setting_SpriteHP_NumericalPos_x = 21
 				!Setting_SpriteHP_NumericalPos_y = 0
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			;Position for right-aligned, used when !Setting_SpriteHP_NumericalTextAlignment == 2 AND
-			;!Setting_SpriteHP_DisplayNumerical == 2. This occupies tiles at this position, and to the left.
+			;!Setting_SpriteHP_DisplayNumerical == 2 (right-aligned and showing both current and max HP). This occupies tiles at
+			;this position, and to the left.
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 				!Setting_SpriteHP_NumericalPosRightAligned_x = 31
 				!Setting_SpriteHP_NumericalPosRightAligned_y = 0
