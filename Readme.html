@@ -1390,7 +1390,11 @@ MarioFireball:
 				</li>
 				<li>
 					Killing enemies (such as a Rex) with a fireball (from Fire Mario or Yoshi) doesn't actually delete the sprite, rather the sprite <i>transforms</i> into a coin. Without making the HP meter disappear,
-					this would look weird with the HP bar persisting until the coin is either grabbed or despawned.
+					this would look weird with the HP bar persisting until the coin is either grabbed or despawned. (This can be turned off by patching <kbd>HPSystemForSMWSprites.asm</kbd> with <kbd>EnemyHPMeterDefines.asm</kbd>'s
+					<kbd>!Setting_SpriteHP_ClassicFireball</kbd> set to <kbd>1</kbd>, but will disable coin spawning).
+				</li>
+				<li>
+					States that shouldn't have the HP meter shown such as on a Bob-Omb when it explodes.
 				</li>
 			</ul>
 			If you want the meter to persist temporarily to show 0 HP, you would not want to use an instant-kill effect that would immediately become a free sprite slot, or transforms into a sprite that shouldn't have HP. One way is to have
