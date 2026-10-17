@@ -361,7 +361,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			if !sa1
 				STA (!sprite_num_pointer)
 			else
-				STA $9E
+				STA $9E,x
 			endif
 		endif
 	;Rex to display HP

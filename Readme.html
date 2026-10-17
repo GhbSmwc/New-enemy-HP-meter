@@ -456,7 +456,7 @@ autoclean JML SpriteHPDamageNoAutoSwitchMeter		;
 autoclean JML SpriteHPGetSlotIndex		;
 autoclean JML SpriteHPIntroEffect		;
 autoclean JML HideHPMeterIfSpriteDespawns		;
-autoclean JML SpritesTotalHPIntroEffect		;</pre>
+%ConditionalSharedSubJMLList (SpritesTotalHPIntroEffect, Placeholder, !SharedSubUseFlag_TotalHPModeIntro)		;</pre>
 </div>
 								</td>
 								<td>
@@ -473,7 +473,8 @@ autoclean JML SpritesTotalHPIntroEffect		;</pre>
 		!SharedSubUseFlag_UsingLeftwardsFillBar = 0
 		!SharedSubUseFlag_UsingRightwardsFillBar = 0
 		!SharedSubUseFlag_SpriteHPRemoveRecordEffect = 0
-		!SharedSubUseFlag_BarExtendLeft = 0</pre>
+		!SharedSubUseFlag_BarExtendLeft = 0
+		!SharedSubUseFlag_TotalHPModeIntro = 0</pre>
 </div>
 									incsrc use flag marker:
 <div class="CodeBlock" style="height: 16px; width: 488px;"><pre>
@@ -512,7 +513,7 @@ autoclean JML SpritesTotalHPIntroEffect		;</pre>
 		%SetSharedSubDefine(SharedSub_SpriteHPGetSlotIndex)		;
 		%SetSharedSubDefine(SharedSub_SpriteHPIntroEffect)		;
 		%SetSharedSubDefine(SharedSub_HideHPMeterIfSpriteDespawns)		;
-		%SetSharedSubDefine(SharedSub_SpritesTotalHPIntroEffect)		;</pre>
+		%ConditionalSharedSubDefineList(SharedSub_SpritesTotalHPIntroEffect, SharedSub_Placeholder, !SharedSubUseFlag_TotalHPModeIntro)		;</pre>
 </div>
 								</td>
 							</tr>

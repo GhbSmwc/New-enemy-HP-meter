@@ -812,7 +812,7 @@
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		;Ambush display mode. In case you do not want to display total HP but wanted the ambush system.
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-			!Setting_ShowTotalHPOfAmbushIfTotalHPEnabled = and(equal(!Setting_SpriteHP_TotalHPMode, 2), notequal(!Setting_SpriteHP_VanillaSprite_OneShotSprites, 0))
+			!Setting_ShowTotalHPOfAmbushIfTotalHPEnabled = and(equal(!Setting_SpriteHP_TotalHPMode, 2), !Setting_SpriteHP_VanillaSprite_OneShotSprites)
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;Debug display
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

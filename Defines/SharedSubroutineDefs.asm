@@ -1,3 +1,4 @@
+;!Freespace_SharedSub_JMLList = $90C5CA
 !Freespace_SharedSub_JMLList = $128000
 	;^[BytesUsed = RatsIfNeeded+(NumberOfJMLs*4)]
 	; RatsIfNeeded = 0 if you have [BankNumber & $7F] less than $10
@@ -69,6 +70,7 @@
 		!SharedSubUseFlag_UsingRightwardsFillBar = 0
 		!SharedSubUseFlag_SpriteHPRemoveRecordEffect = 0
 		!SharedSubUseFlag_BarExtendLeft = 0
+		!SharedSubUseFlag_TotalHPModeIntro = 0
 		
 	;Place your "incsrc use flag marker" here. Along with placing a
 	;define file "SharedSub_Defines/SharedSubroutineDefs.asm"
@@ -142,7 +144,7 @@
 		%SetSharedSubDefine(SharedSub_SpriteHPGetSlotIndex)		;
 		%SetSharedSubDefine(SharedSub_SpriteHPIntroEffect)		;
 		%SetSharedSubDefine(SharedSub_HideHPMeterIfSpriteDespawns)		;
-		%SetSharedSubDefine(SharedSub_SpritesTotalHPIntroEffect)		;
+		%ConditionalSharedSubDefineList(SharedSub_SpritesTotalHPIntroEffect, SharedSub_Placeholder, !SharedSubUseFlag_TotalHPModeIntro)		;
 		%SetSharedSubDefine(SharedSub_Placeholder)		;Dummy JSL to reserve space.
 		%SetSharedSubDefine(SharedSub_Placeholder)		;Dummy JSL to reserve space.
 		%SetSharedSubDefine(SharedSub_Placeholder)		;Dummy JSL to reserve space.
