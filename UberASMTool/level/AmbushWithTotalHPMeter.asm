@@ -147,6 +147,8 @@ init:
 				STA !Freeram_SpriteHP_TotalMaxHP
 				SEP #$20
 			endif
+		else
+			SEP #$30
 		endif
 	;Delay timer just in case
 		LDA.b #!Setting_Ambush_WaveDelay
