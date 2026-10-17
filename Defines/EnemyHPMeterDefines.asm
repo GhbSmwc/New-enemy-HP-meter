@@ -567,7 +567,7 @@
 			!Setting_SpriteHP_ClassicFireball = 0
 				;^Enemies simply die and not spawn (actually, transforms into) coin?
 				; - 0 = No, keep vanilla (will spawn a coin)
-				; - 1 = Yes (will die falling off the screen) and not spawn a coin.
+				; - 1 = Yes (will die falling off the screen, allowing HP meter) and not spawn a coin.
 			;Classic Fireball Settings
 				!Setting_SpriteHP_ClassicFireball_Speed = $10
 					;^X speed of a sprite being knocked by fireball. Use only values $00-$7F.
