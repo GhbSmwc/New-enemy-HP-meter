@@ -1208,7 +1208,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					if !sa1
 						STA (!sprite_num_pointer)
 					else
-						STA $9E
+						STA $9E,x
 					endif
 					JML $02A12D|!bank
 				else
