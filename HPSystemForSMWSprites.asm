@@ -2028,7 +2028,11 @@ incsrc "Defines/GraphicalBarDefines.asm"
 						AND.b #%00001000			;\If it's not the shell that is a green paratroopa, allow HP transfer
 						BNE ..TransferHPValues		;|
 					endif
-					LDA !9E,y					;|
+					if !sa1
+						LDA !9E,y					;|
+					else
+						LDA $009E,y
+					endif
 					CMP #$09					;|
 					BNE ..TransferHPValues		;/
 				..ShellLessBecommingGreenParatroopa ;\Switch the HP display from 1/1 HP to 2/2.

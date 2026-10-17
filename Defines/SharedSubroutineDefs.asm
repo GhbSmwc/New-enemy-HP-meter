@@ -1,4 +1,4 @@
-!Freespace_SharedSub_JMLList = $90C5CA
+!Freespace_SharedSub_JMLList = $128000
 	;^[BytesUsed = RatsIfNeeded+(NumberOfJMLs*4)]
 	; RatsIfNeeded = 0 if you have [BankNumber & $7F] less than $10
 	; otherwise RatsIfNeeded = 8. BankNumber is the value of the

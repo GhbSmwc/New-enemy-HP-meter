@@ -60,7 +60,14 @@
 					LDA !9E,y
 					CMP #$0D				;\Other than bob-omb
 					BNE ?....NonExplosionSprites		;/
-					LDA !7FAB10,y				;\Is custom sprite
+					if !sa1
+						LDA !7FAB10,y				;\Is custom sprite
+					else
+						PHX
+						TYX
+						LDA !7FAB10,x
+						PLX
+					endif
 					BIT.b #%00001000			;|
 					BNE ?....NonExplosionSprites		;/
 					LDA !1534,y				;\Is exploding
