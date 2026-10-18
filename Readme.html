@@ -1089,7 +1089,7 @@ autoclean JML HideHPMeterIfSpriteDespawns		;
 		Note that setting <kbd>$14C8</kbd> to <kbd>#$00</kbd> would not show the meter because the sprite have instantly become a free sprite slot (deleted), which this ASM pack would avoid showing HP of a non-existent sprite. Thus if you want
 		to display an empty bar for such a sprite, it needs to have a death animation before the sprite vanishes.<br><br>
 		
-		Also important to note that it should be performed <a href="#DespawnSpawnTransferBug">immediately after the sprite is erased</a>.
+		Also important to note that the meter, being on that sprite (not counting total HP mode), should disappear <a href="#DespawnSpawnTransferBug">immediately after the sprite is erased</a>.
 	</p>
 	<h3><a href="#ToC_MakeSpritesDisplayHP_GetHPValue_TotalHPAllPhases" id="JMPTo_MakeSpritesDisplayHP_GetHPValue_TotalHPAllPhases">^</a>Getting total HP of all phases</h3>
 	<p>This section covers sprites, most likely bosses, that stores HP in memory that is per-phase, and we need to get the total HP value of all phases. So far, I have not seen any sprite released in the section that does this. If they have, most likely they would have different coding and behavior structures.
@@ -1283,7 +1283,8 @@ MarioFireball:
 			A: There are possible cases that have occurred:
 			<ul>
 				<li>
-					Numbers not showing (either because you have them disabled via <kbd>!Setting_SpriteHP_DisplayNumerical == 0</kbd> or too many symbols in the text display of the numbers), and it's HP is set above its maximum. With intro-fill enabled and displaying the graphical bar, the sound effect <kbd>!Setting_SpriteHP_FillingSFXNumb</kbd> being nonzero, results in the filling sound effect continuing to play even after the bar reaches 100%.
+					Numbers not showing (either because you have them disabled via <kbd>!Setting_SpriteHP_DisplayNumerical == 0</kbd> or too many symbols in the text display of the numbers), or it's HP is set above its maximum. With intro-fill enabled and displaying the graphical bar, the sound effect <kbd>!Setting_SpriteHP_FillingSFXNumb</kbd> being nonzero, results in the filling sound effect continuing to play even after the bar reaches 100%.
+					Note that this can also happen in total HP mode with excessive HP.
 				</li>
 				<li>The amount of damage it receives was set to 0 damage, causing no changes on its HP value.</li>
 				<li>You forgot to modify the sprite's code to write its own HP data into this ASM resource' HP data to display properly.</li>
