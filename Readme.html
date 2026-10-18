@@ -586,7 +586,7 @@ autoclean JML HideHPMeterIfSpriteDespawns		;
 		<p>
 			Notes:
 			<ul>
-				<li>Define <kbd>!sprite_slots</kbd> holds the number of sprite slots that exists. For LoROM, its 12, if SA-1, its 22. Note that at the time of writing this, Pixi have <kbd>!SprSize</kbd> and not <kbd>!sprite_slots</kbd>.</li>
+				<li>Define <kbd>!sprite_slots</kbd> holds the number of sprite slots that exists. For LoROM, its <kbd>$0C</kbd> (<kbd>12</kbd>), if SA-1, its <kbd>$16</kbd> (<kbd>22</kbd>). Note that at the time of writing this, Pixi have <kbd>!SprSize</kbd> and not <kbd>!sprite_slots</kbd>.</li>
 				<li>The RAM stuff here are merely for <b>displaying</b> the amount of HP. Meaning depending on how the sprite's code is formatted, most often it's actual HP value is stored in a vanilla sprite table, which may be transferred to here. If it's
 				a damage counter, it is converted to &ldquo;remaining hits/damage left to kill&rdquo; before written to these new RAM stuff here. Of course, for custom sprites, you can make changes to it to directly use these table instead.</li>
 			</ul>
