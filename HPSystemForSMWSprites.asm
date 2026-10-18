@@ -1815,8 +1815,13 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					BCC .HideHPMeterImmidiately
 					CMP.b #(!sprite_slots*2)+2
 					BCS .HideHPMeterImmidiately
-					LDA.b #!Setting_SpriteHP_BarChangeDelay		;\Freeze damage indicator (this makes the bar animation hangs before decreasing towards current HP fill amount)
-					STA !Freeram_SpriteHP_BarAnimationTimer		;/
+					..TotalHPHandler
+						LDA !14C8,x			;\If enemy falling down the screen and despawns, don't re-freeze, or to extend
+						CMP #$06			;|the damage indicator pause.
+						BCC ...SkipFreeze	;/
+						LDA.b #!Setting_SpriteHP_BarChangeDelay		;\Freeze damage indicator (this makes the bar animation hangs before decreasing towards current HP fill amount)
+						STA !Freeram_SpriteHP_BarAnimationTimer		;/
+						...SkipFreeze
 				endif
 			.HideHPMeterImmidiately
 				JSL !SharedSub_HideHPMeterIfSpriteDespawns
