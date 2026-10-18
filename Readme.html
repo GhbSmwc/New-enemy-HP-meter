@@ -1407,7 +1407,7 @@ MarioFireball:
 			resides there, it too will also be skipped.
 		</li>
 		<li>
-			Q: I have a bunch of sprites in a level, and after scrolling one of the enemies offscreen, the meter suddenly fills up, (with the numbers being changed, if displaying numerical enabled)
+			Q: I have a bunch of sprites in a level, and after one of the enemies disappears, the meter suddenly fills up, (with the numbers being changed, if displaying numerical enabled)
 			(started playing the filling animation, if bar animation enabled), what's happening?<br><br>
 		
 			A: What's happening is that a sprite is getting despawned, and the newly spawned sprite happens to occupy the same sprite slot as the one that despawned at the same frame, right before <kbd>DisplayEnemyHP.asm</kbd> detects that
