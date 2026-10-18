@@ -840,7 +840,7 @@ autoclean JML HideHPMeterIfSpriteDespawns		;
 	incsrc "<span class="ParentDirectoryCount">../</span>GraphicalBarDefines.asm"
 </pre></div><br>
 	Note that &ldquo;<kbd>../</kbd>&rdquo; means to go up a directory (parent directory, exiting a &ldquo;folder&rdquo;), relative to the ASM file at the start of the file path string.
-	The more folders down the ASM file is located, the more <kbd>../</kbd> is needed.<br><br>
+	The more folders down the ASM file is located, the more <kbd>../</kbd> is needed. It must navigate to the same directory as where the <kbd>pixi.exe</kbd> is located.<br><br>
 	
 	Else you get define not being defined errors.
 	
@@ -853,8 +853,8 @@ autoclean JML HideHPMeterIfSpriteDespawns		;
 			changed to a 10 HP sprite, and triggers phase 2 when its HP drops to 3 or lower).
 		</li>
 		<li>
-			Most sprites with a health system don't have 16-bit health. If you have <kbd>!Setting_SpriteHP_TwoByte == 1</kbd>, you need to either always set their <kbd>!Freeram_SpriteHP_CurrentHPHi</kbd> and <kbd>!Freeram_SpriteHP_MaxHPHi</kbd> to always zero,
-			or every code that reads and set their HP to account the high byte when their HP value can go greater than 255.
+			Most sprites with a health system don't have 16-bit health. If you have <kbd>!Setting_SpriteHP_TwoByte == 1</kbd>, you need to either always set their <kbd>!Freeram_SpriteHP_CurrentHPHi</kbd> and <kbd>!Freeram_SpriteHP_MaxHPHi</kbd> to always be zero,
+			or every code that reads and set their HP to account the high byte if you allow their HP value to exceed 255.
 		</li>
 	</ul>
 	
@@ -953,7 +953,7 @@ autoclean JML HideHPMeterIfSpriteDespawns		;
 		in their ASM codes (CTRL+F to see how the defines are being used and you get a clue on what RAM is its health/damage) that tell you what the codes do. However, this isn't just changing the HP amounts when the sprite takes damage or heals, you also need to do in addition:
 		<ul>
 			<li>
-				If you have animation enabled (<kbd>!Setting_SpriteHP_BarAnimation</kbd> set to <kbd>1</kbd>), you need to set some values for that.
+				If you have bar animation enabled (<kbd>!Setting_SpriteHP_DisplayGraphicalBar</kbd> and<kbd>!Setting_SpriteHP_BarAnimation</kbd> set to <kbd>1</kbd>), you need to set some values for that.
 				Without it, dealing damage would skip the animation (such as the bar that shows previous fill amount prior to the damage immediately
 				decreasing without the freeze delay). If you have <kbd>!Freeram_SpriteHP_BarAnimationTimer != 0</kbd>, it should also set the delay
 				timer to the value of <kbd>!Freeram_SpriteHP_BarAnimationTimer</kbd>.
