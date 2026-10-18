@@ -797,6 +797,9 @@
 			if and(!Setting_SpriteHP_BarExtendLeft, !Setting_SpriteHP_GraphicalBar_VariableMiddleLength)
 				!SharedSubUseFlag_BarExtendLeft = 1
 			endif
+			if !Setting_SpriteHP_TotalHPMode
+				!SharedSubUseFlag_TotalHPModeIntro = 1
+			endif
 		endif
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;Other
