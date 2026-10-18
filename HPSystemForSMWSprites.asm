@@ -837,7 +837,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					org $03987E
 					.NotBaseSprite
 				endif
-			if and(and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Bosses), notequal(!Setting_SpriteHP_TotalHPMode, 0))
+			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Bosses)
 				org $0398E1
 				autoclean JSL ReznorDefeatedClearHPMeter
 				NOP
@@ -2334,15 +2334,13 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				LDA #$03
 				STA $1DF9|!addr
 				RTL
-		if !Setting_SpriteHP_TotalHPMode
-			ReznorDefeatedClearHPMeter: ;>JSL from $0398E1
+		ReznorDefeatedClearHPMeter: ;>JSL from $0398E1
+			LDA #$FF
+			STA !Freeram_SpriteHP_MeterState
+			.Restore
 				LDA #$FF
-				STA !Freeram_SpriteHP_MeterState
-				.Restore
-					LDA #$FF
-					STA $1493|!addr
-					RTL
-		endif
+				STA $1493|!addr
+				RTL
 		IggyLarryIntroFill: ;>JSL from $01CD56
 			JSL !SharedSub_SpriteHPIntroEffect
 			.Restore
