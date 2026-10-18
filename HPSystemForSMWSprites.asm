@@ -823,7 +823,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		%SubOffScreenHijacks($03B8AF, SubOffscreenXBnk3PreventHPMeterTransfer, $03B8BF)
 	;Bosses below (only applies to bosses with a HP system, and not bowser)
 		;Reznor. Note that when killed, it calls the "InitSpriteTables" subroutine from $039AEE.
-		;Thus resulting in the meter jumping to 0 back to 1. I had to hijack at $039AF2 to force it to be zero
+		;Thus resulting in the meter jumping to 0 back to 1. I had to hijack at or after $039AF2 to force it to be zero
 			ReznorHijack:
 				if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Bosses)
 					org $039872
@@ -847,15 +847,28 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				LDA #$FF
 				STA $1493|!addr
 			endif
-			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Bosses)
+			if and(and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Bosses), !Setting_SpriteHP_TotalHPMode)
 				org $039ABB
-				autoclean JSL ReznorDead
+				autoclean JSL ReznorDeadTotalHPUpdate
 				NOP
 			else
 				%RemoveFreespaceCodeFromJMLJSL($039ABB)
 				org $039ABB
 				LDA #$03
 				STA $1DF9|!addr
+			endif
+			;Note to self: When a Reznor is killed falling down the screen, they're not actually killed, but just spawn a copy of itself
+			;in a falling down the screen state. The original sprite simply just stop drawing its "standing on the platform" sprite.
+			;this is so that the platforms themselves don't get erased. This is hijacked at an address after initializing its sprite table
+			;to ensure it is spawned with 0HP (else the meter would just fill up).
+			if and(and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Bosses), equal(!Setting_SpriteHP_TotalHPMode, 0))
+				org $039AF2
+				autoclean JSL ReznorDeadTransferHPToDying
+			else
+				%RemoveFreespaceCodeFromJMLJSL($039AF2)
+				org $039AF2
+				LDA #$C0
+				STA !AA,x
 			endif
 		;Big boo boss
 			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Bosses)
@@ -2325,15 +2338,24 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				JML $039876|!bank
 				..CODE_03987E
 					JML $03987E|!bank
-		
-		ReznorDead: ;>JSL from $039ABB
-			PHX
-			%DealFixedDamage(!SpriteHP_MaxHPAndDamageValue)
-			PLX
-			.Restore
-				LDA #$03
-				STA $1DF9|!addr
-				RTL
+		if !Setting_SpriteHP_TotalHPMode
+			ReznorDeadTotalHPUpdate: ;>JSL from $039ABB
+				PHX
+				%DealFixedDamage(!SpriteHP_MaxHPAndDamageValue)
+				PLX
+				.Restore
+					LDA #$03
+					STA $1DF9|!addr
+					RTL
+		endif
+		if !Setting_SpriteHP_TotalHPMode == 0
+			ReznorDeadTransferHPToDying: ;>JSL from $039AF2
+				%DealFixedDamage(!SpriteHP_MaxHPAndDamageValue)
+				.Restore
+					LDA #$C0
+					STA !AA,x
+					RTL
+		endif
 		ReznorDefeatedClearHPMeter: ;>JSL from $0398E1
 			LDA #$FF
 			STA !Freeram_SpriteHP_MeterState
