@@ -960,10 +960,16 @@ autoclean JML HideHPMeterIfSpriteDespawns		;
 			</li>
 			<li>
 				Ensure that the health meter always switches to the recently damaged enemy when hit. Otherwise it either stays hidden, stays on the enemy second-or-later-last sprite the player caused damage to or by intro-fill.
+				The exception is for sprites that shouldn't have HP (blacklisted), such as projectiles. Easiest way is to simply give such sprites a max HP of <kbd>0</kbd> and check if it is that.
 			</li>
-			<li>If total HP mode is used, the sprite shall not switch the HP meter from total mode to its own sprite slot.</li>
+			<li>
+				If total HP mode is used, the sprite shall not switch the HP meter from total mode to its own sprite slot.
+			</li>
+			<li>
+				For damages not caused by the player, such as falling in lava, ensure that it doesn't automatically switch the HP meter, but still handle the damage animation (if enabled) if the HP meter is on them prior.
+			</li>
 		</ul>
-		Thankfully, all that logic is handled automatically in a shared subroutine defined as <kbd>!SharedSub_SpriteHPDamage</kbd>, with the inputs stored in RAM <kbd>$00</kbd> (2 bytes, <kbd>$00~$01</kbd>, if <kbd>!Setting_SpriteHP_TwoByte == 1</kbd>). Feel free to check out the subroutines and comments as you wish.<br><br>
+		Thankfully, all that logic is handled automatically in a shared subroutine defined as <kbd>!SharedSub_SpriteHPDamage</kbd> (and <kbd>!SharedSub_SpriteHPDamageNoAutoSwitchMeter</kbd>), with the inputs stored in RAM <kbd>$00</kbd> (2 bytes, <kbd>$00~$01</kbd>, if <kbd>!Setting_SpriteHP_TwoByte == 1</kbd>). Feel free to check out the subroutines and comments as you wish.<br><br>
 		
 		The same rule applies to healing as well (to show how much the fill increases). A subroutine for pixi <kbd>pixi/routines/EnemyHPHeal.asm</kbd>, which can be called via <kbd>%EnemyHPHeal()</kbd> (similarly <kbd>$00</kbd> or <kbd>$00~$01</kbd> for how much HP recovered).
 		Why in pixi? It's because none of vanilla SMW sprites heals.

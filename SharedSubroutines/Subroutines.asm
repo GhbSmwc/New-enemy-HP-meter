@@ -1639,8 +1639,11 @@ endif
 ; - HP is already subtracted, if damage > currentHP, HP is
 ;   set to 0.
 ;
-;Note that this DOES NOT handle stun/death sequence, only
-;subtracts HP.
+;Notes:
+; - This DOES NOT handle stun/death sequence, only
+;   subtracts HP.
+; - If max HP is 0, it will not automatically switch, which
+;   can be used for sprites that shouldn't have HP.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 SpriteHPDamage:
 	PHY
@@ -1656,6 +1659,11 @@ SpriteHPDamage:
 		BCC ..TotalHPMode					;/
 		
 		..Normal
+			LDA !Freeram_SpriteHP_MaxHPLow,x
+			if !Setting_SpriteHP_TwoByte
+				ORA !Freeram_SpriteHP_MaxHPHi,x
+			endif
+			BEQ .Done ;>If sprite have no HP, it's a blacklisted sprite.
 			if !Setting_SpriteHP_BarAnimation == 0
 				TXA
 				STA !Freeram_SpriteHP_MeterState
