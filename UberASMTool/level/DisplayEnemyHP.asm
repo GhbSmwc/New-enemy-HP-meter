@@ -92,6 +92,16 @@ incsrc "../NumberDisplayRoutinesDefines.asm"
 			JSL !SharedSub_ConvertToRightAlignedFormat2
 		endif
 	endmacro
+
+	macro HexDisplay(RamToRead, StatusBarAddress)
+		LDA <RamToRead>					;\every 16th number increments the 1st digit (divide by 16).
+		LSR #$04					;|
+		STA <StatusBarAddress>				;/
+		LDA <RamToRead>					;\wrap the rightmost digit to $00~$0F (modulo by 16)
+		AND #$0F					;|
+		STA <StatusBarAddress>+(1*!StatusbarFormat)	;/
+	endmacro
+
 ;Blacklisted sprite macros
 	macro SpriteHPMeterBlacklist(SpriteNumb, LabelToJump)
 		CMP.b #<SpriteNumb>
@@ -162,6 +172,29 @@ main:
 	PHB
 	PHK
 	PLB
+	if !Setting_SpriteHP_DebugMode
+		.DebugDisplay
+			%HexDisplay(!Freeram_SpriteHP_MeterState, !Setting_SpriteHP_DebugDisplayAddrTile)
+			LDA !Freeram_SpriteHP_MeterState
+			CMP.b #!sprite_slots*2
+			BCS ..NotSpriteSlot
+			
+			..SpriteSlot
+				CMP.b #!sprite_slots
+				BCC ...Normal
+				...IntroFill
+					SEC
+					SBC.b #!sprite_slots
+				...Normal
+					STA $00
+					%HexDisplay($00, !Setting_SpriteHP_DebugDisplayAddrTile+(3*!StatusbarFormat))
+					BRA ..DebugDone
+			..NotSpriteSlot
+				LDA #$27
+				STA !Setting_SpriteHP_DebugDisplayAddrTile+(3*!StatusbarFormat)
+				STA !Setting_SpriteHP_DebugDisplayAddrTile+(4*!StatusbarFormat)
+			..DebugDone
+	endif
 	.HPMeterStateCheck
 		JSR ClearHPDisplay
 			;^Default to blank tiles (may get overritten afterwards to ensure tiles that should disappear will disappear when number

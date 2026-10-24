@@ -82,8 +82,8 @@
 	; - LoROM number of bytes used: 25 to 55.
 	; - SA-1 ROM number of bytes used: 45 to 95.
 	;
-	;If you want to know display the RAM usage of this, have !Setting_SpriteHP_DisplaySpriteHPDataOnConsole set to 1 and
-	;insert via uberasm tool. The console window will show the list of itemized used RAM, in "Address Tracker" format:
+	;If you want to know display the RAM usage of this, have !Setting_SpriteHP_DebugMode set to 1
+	;and insert via uberasm tool. The console window will show the list of itemized used RAM, in "Address Tracker" format:
 	;https://www.smwcentral.net/?p=section&a=details&id=39887.
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		if !sa1 == 0
@@ -610,12 +610,22 @@
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;Debug settings
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-		!Setting_SpriteHP_DisplaySpriteHPDataOnConsole = 0
-			;^Display RAM usage on Asar console window:
+		!Setting_SpriteHP_DebugMode = 1
+			;^Display debug info:
 			; - 0 = No
-			; - 1 = Yes, display the HP data RAM usage on asar console (would not work for pixi due to print command
-			;   reserved for description).
-
+			; - 1 = Yes:
+			; -- Displays the HP data RAM usage on asar console (Warning: would not work for pixi due to print command
+			;    reserved for description, have it set to 0 for pixi if this happens).
+			; -- In-game, the HUD shows the meter state and the slot number (hexadecimal):
+			; --- SS LL
+			;    SS = State number (value of RAM !Freeram_SpriteHP_MeterState), LL = Sprite slot number (if non-slot state,
+			;    will show up as "--").
+		;XY Position (in tiles, same with the numerical and bar XY pos). The leftmost tile of the display.
+			!Setting_SpriteHP_Debug_XPos = 0
+			!Setting_SpriteHP_Debug_YPos = 0
+		;Tile properties settings (use only values stated)
+			!Setting_SpriteHP_Debug_Page = 0 ;>Valid: 0-3
+			!Setting_SpriteHP_Debug_Palette = 6 ;>Valid: 0-7
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;Don't touch these unless you know what you're doing
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -708,6 +718,7 @@
 		!Setting_SpriteHP_Numerical_StatusBarAddrTile = VanillaStatusBarXYToAddress(!Setting_SpriteHP_NumericalPos_x, !Setting_SpriteHP_NumericalPos_y, !RAM_0EF9)
 		!Setting_SpriteHP_NumericalRightAligned_StatusBarAddrTile = VanillaStatusBarXYToAddress(!Setting_SpriteHP_NumericalPosRightAligned_x, !Setting_SpriteHP_NumericalPosRightAligned_y, !RAM_0EF9)
 		!Setting_SpriteHP_GraphicalBar_StatusBarAddrTile = VanillaStatusBarXYToAddress(!Setting_SpriteHP_GraphicalBarPos_x, !Setting_SpriteHP_GraphicalBarPos_y, !RAM_0EF9)
+		!Setting_SpriteHP_DebugDisplayAddrTile = !VanillaStatusBarXYToAddress(!Setting_SpriteHP_Debug_XPos, !Setting_SpriteHP_Debug_YPos, !RAM_0EF9)
 		
 		if !UsingCustomStatusBar
 			!Setting_SpriteHP_Numerical_StatusBarAddrTile = PatchedStatusBarXYToAddress(!Setting_SpriteHP_NumericalPos_x, !Setting_SpriteHP_NumericalPos_y, !StatusBarPatchAddr_Tile, !StatusbarFormat)
@@ -718,12 +729,16 @@
 			
 			!Setting_SpriteHP_GraphicalBar_StatusBarAddrTile = PatchedStatusBarXYToAddress(!Setting_SpriteHP_GraphicalBarPos_x, !Setting_SpriteHP_GraphicalBarPos_y, !StatusBarPatchAddr_Tile, !StatusbarFormat)
 			!Setting_SpriteHP_GraphicalBar_StatusBarAddrProp = PatchedStatusBarXYToAddress(!Setting_SpriteHP_GraphicalBarPos_x, !Setting_SpriteHP_GraphicalBarPos_y, !StatusBarPatchAddr_Prop, !StatusbarFormat)
+			
+			!Setting_SpriteHP_DebugDisplayAddrTile = PatchedStatusBarXYToAddress(!Setting_SpriteHP_Debug_XPos, !Setting_SpriteHP_Debug_YPos, !StatusBarPatchAddr_Tile, !StatusbarFormat)
+			!Setting_SpriteHP_DebugDisplayAddrProp = PatchedStatusBarXYToAddress(!Setting_SpriteHP_Debug_XPos, !Setting_SpriteHP_Debug_YPos, !StatusBarPatchAddr_Prop, !StatusbarFormat)
 		endif
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;Get YXPCCCTT data
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		!Setting_SpriteHP_NumericalProp = GetLayer3YXPCCCTT(0, 0, 1, !Setting_SpriteHP_Numerical_PropPalette, !Setting_SpriteHP_Numerical_PropPage)
 		!Setting_SpriteHP_GraphicalBarProp = GetLayer3YXPCCCTT(0, 0, 1, !Setting_SpriteHP_BarProps_Palette, !Setting_SpriteHP_BarProps_Page)
+		!Setting_SpriteHP_DebugProp = GetLayer3YXPCCCTT(0, 0, 1, !Setting_SpriteHP_Debug_Palette, !Setting_SpriteHP_Debug_Page)
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;Graphical bar values
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -819,7 +834,7 @@
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;Debug display
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-		if !Setting_SpriteHP_DisplaySpriteHPDataOnConsole
+		if !Setting_SpriteHP_DebugMode
 			print "---------------------------------------------------------------------------------"
 			print "\!Freeram_SpriteHP_SpriteHPData's Total bytes used: ", dec(!CurrentAddressToAssignDefine_SpriteHPData-!Freeram_SpriteHP_SpriteHPData)
 			print "Range: $", hex(!Freeram_SpriteHP_SpriteHPData), "~$", hex(!CurrentAddressToAssignDefine_SpriteHPData-1)
@@ -841,9 +856,9 @@
 			endif
 			if !Setting_SpriteHP_TotalHPMode
 				if !Setting_SpriteHP_TotalHPMode == 2
-					print "$" hex(!Freeram_SpriteHP_TotalHPOfUnloadedSprites), dec(!sprite_slots), " Total HP of sprites that are unloaded (\!Freeram_SpriteHP_TotalHPOfUnloadedSprites)."
+					print "$", hex(!Freeram_SpriteHP_TotalHPOfUnloadedSprites), dec(!sprite_slots), " Total HP of sprites that are unloaded (\!Freeram_SpriteHP_TotalHPOfUnloadedSprites)."
 				endif
-				print "$" hex(!Freeram_SpriteHP_TotalMaxHP), dec(!sprite_slots), " Total max HP of sprites (\!Freeram_SpriteHP_TotalMaxHP)."
+				print "$", hex(!Freeram_SpriteHP_TotalMaxHP), dec(!sprite_slots), " Total max HP of sprites (\!Freeram_SpriteHP_TotalMaxHP)."
 			endif
 			print "---------------------------------------------------------------------------------"
 		endif
