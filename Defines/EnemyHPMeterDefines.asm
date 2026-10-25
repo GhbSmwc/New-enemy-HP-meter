@@ -619,7 +619,7 @@
 			; -- In-game, the HUD shows the meter state and the slot number (hexadecimal):
 			; --- SS LL
 			;    SS = State number (value of RAM !Freeram_SpriteHP_MeterState), LL = Sprite slot number (if non-slot state,
-			;    will show up as "--").
+			;    will show up as "--", otherwise it's values from $00 to either: $0B for LoROM or $15 in SA-1).
 		;XY Position (in tiles, same with the numerical and bar XY pos). The leftmost tile of the display.
 			!Setting_SpriteHP_Debug_XPos = 0
 			!Setting_SpriteHP_Debug_YPos = 0
