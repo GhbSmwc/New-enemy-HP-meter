@@ -1823,41 +1823,45 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			%VanillaSubOffScrnFreespaceCode(SubOffscreenXBnk2PreventHPMeterTransfer, $02D090) ;>JML from $02D07D
 			%VanillaSubOffScrnFreespaceCode(SubOffscreenXBnk3PreventHPMeterTransfer, $03B8C2) ;>JML from $03B8AF
 		SubOffScrnHandleHPMeter:
+			.HandleTotalHPAnimation
+				;Plays the bar animation for total HP when enemies despawn via falling off the level
+				if and(and(!Setting_SpriteHP_TotalHPMode, !Setting_SpriteHP_BarAnimation), !Setting_SpriteHP_BarChangeDelay)
+					PHA
+					LDA !Freeram_SpriteHP_MeterState
+					CMP.b #!sprite_slots*2		;\If meter is on specific sprite slots, hide the meter immidiately
+					BCC ..TotalHPAnimationDone	;|
+					CMP.b #(!sprite_slots*2)+2	;|
+					BCS ..TotalHPAnimationDone	;/
+					..TotalHPHandler
+						LDA !14C8,x			;\If enemy falling down the screen and despawns, don't re-freeze, or to extend
+						CMP #$06			;|the damage indicator pause.
+						BCC ...SkipFreeze	;/
+						...Freeze
+							LDA.b #!Setting_SpriteHP_BarChangeDelay		;\Freeze damage indicator (this makes the bar animation hangs before decreasing towards current HP fill amount)
+							STA !Freeram_SpriteHP_BarAnimationTimer		;/
+						...SkipFreeze
+					..TotalHPAnimationDone
+					PLA
+				endif
 			.CommonRestore
 				CMP #$08
 				BCC ..OffScrKillSprite
 				LDY !161A,x
 				CPY #$FF
 				BEQ ..OffScrKillSprite
-				
-				if or(!Setting_SpriteHP_PixiDisable255SpritesPerLevel, equal(!Setting_SpriteHP_UsingCustomSprites, 0))
-					LDA.b #$00
-					STA !1938,y
-				else
-					PHX
-					TYX
-					LDA.b #$00
-					STA !7FAF00,x
-					PLX
-				endif
+				..DeleteSpriteNotPermanently
+					if or(!Setting_SpriteHP_PixiDisable255SpritesPerLevel, equal(!Setting_SpriteHP_UsingCustomSprites, 0))
+						LDA.b #$00
+						STA !1938,y
+					else
+						PHX
+						TYX
+						LDA.b #$00
+						STA !7FAF00,x
+						PLX
+					endif
 				..OffScrKillSprite
 					STZ !14C8,x
-			.HandleTotalHP
-				;Plays the bar animation for total HP when enemies despawn via falling off the level
-				if and(and(!Setting_SpriteHP_TotalHPMode, !Setting_SpriteHP_BarAnimation), !Setting_SpriteHP_BarChangeDelay)
-					LDA !Freeram_SpriteHP_MeterState
-					CMP.b #!sprite_slots*2
-					BCC .HideHPMeterImmidiately
-					CMP.b #(!sprite_slots*2)+2
-					BCS .HideHPMeterImmidiately
-					..TotalHPHandler
-						LDA !14C8,x			;\If enemy falling down the screen and despawns, don't re-freeze, or to extend
-						CMP #$06			;|the damage indicator pause.
-						BCC ...SkipFreeze	;/
-						LDA.b #!Setting_SpriteHP_BarChangeDelay		;\Freeze damage indicator (this makes the bar animation hangs before decreasing towards current HP fill amount)
-						STA !Freeram_SpriteHP_BarAnimationTimer		;/
-						...SkipFreeze
-				endif
 			.HideHPMeterImmidiately
 				JSL !SharedSub_HideHPMeterIfSpriteDespawns
 				RTS
