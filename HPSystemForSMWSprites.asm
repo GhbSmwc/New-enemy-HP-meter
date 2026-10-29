@@ -1828,8 +1828,8 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				if and(and(!Setting_SpriteHP_TotalHPMode, !Setting_SpriteHP_BarAnimation), !Setting_SpriteHP_BarChangeDelay)
 					PHA
 					LDA !Freeram_SpriteHP_MeterState
-					CMP.b #!sprite_slots*2		;\If meter is on specific sprite slots, hide the meter immidiately
-					BCC ..TotalHPAnimationDone	;|
+					CMP.b #!sprite_slots*2		;\If meter is on specific sprite slot, skip the meter animation entirely
+					BCC ..TotalHPAnimationDone	;|since it shall disappear if on a sprite that got off-screen-erased.
 					CMP.b #(!sprite_slots*2)+2	;|
 					BCS ..TotalHPAnimationDone	;/
 					..TotalHPHandler
