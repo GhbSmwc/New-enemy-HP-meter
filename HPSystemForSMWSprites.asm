@@ -903,7 +903,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				CMP #$08				;|and makes it display its health.
 				BNE $2E					;/
 			endif
-		;Wendy and Lemmy
+		;Lemmy and Wendy
 			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Bosses)
 				org $03CECB
 				autoclean JSL DamageWendyLemmy
@@ -1020,6 +1020,28 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				org $01FB60
 				LDA #$20
 				STA $1DFC|!addr
+			endif
+			
+			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Bosses)
+				org $01FCCE
+				autoclean JSL IggyLarryJumped
+				NOP #1
+			else
+				%RemoveFreespaceCodeFromJMLJSL($01FCCE)
+				org $01FCCE
+				LDA #$28
+				STA $1DFC|!addr
+			endif
+			
+			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Bosses)
+				org $01FD40
+				autoclean JSL IggyLarryHitByFireball
+				NOP #1
+			else
+				%RemoveFreespaceCodeFromJMLJSL($01FD40)
+				org $01FD40
+				LDA #$01
+				STA $1DF9|!addr
 			endif
 ;Freespace code
 	freecode
@@ -2373,5 +2395,17 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			.Restore
 				LDA #$20
 				STA $1DFC|!addr
+				RTL
+		IggyLarryJumped: ;>JSL from $01FCCE
+			%DealFixedDamage(0) ;>Make it so when a boss is bounced on, merely show its HP.
+			.Restore
+				LDA #$28
+				STA $1DFC|!addr
+				RTL
+		IggyLarryHitByFireball: ;>JSL from $01FD40
+			%DealFixedDamage(0) ;>Make it so when a boss is hit by fireball, merely show its HP.
+			.Restore
+				LDA.b #!Setting_SpriteHP_VanillaSprite_IggyLarry_Push_SoundNumber
+				STA !Setting_SpriteHP_VanillaSprite_IggyLarry_Push_SoundPort
 				RTL
 	endif
