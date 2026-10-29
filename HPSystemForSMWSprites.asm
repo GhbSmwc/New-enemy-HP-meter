@@ -183,15 +183,16 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		;JSL SharedSub_HideHPMeterIfSpriteDespawns to prevent HP meter transfer
 		;bug when a sprite goes off-screen, despawns, new sprite spawns on same
 		;slot as the despawned sprite at the same frame.
-		;	CMP.b #$08					;Addr+$00 ;\Hijacked
-		;	BCC OffScrKillSprite		;Addr+$02 ;/
-		;	LDY.w $161A,X				;Addr+$04 ;\This is skipped
-		;	CPY.b #$FF					;Addr+$07 ;|
-		;	BEQ OffScrKillSprite		;Addr+$09 ;|
-		;	LDA.b #$00					;Addr+$0B ;|\Hijacked by pixi on LoROM and !Disable255SpritesPerLevel == 0.
-		;	STA.w $1938,Y				;Addr+$0D ;|/
+		;	LDA $14C8,x					;Addr+$00 ;\Hijacked
+		;	CMP.b #$08					;Addr+$03 ;/
+		;	BCC OffScrKillSprite		;Addr+$05 ;
+		;	LDY.w $161A,X				;Addr+$07 ;\This is skipped
+		;	CPY.b #$FF					;Addr+$0A ;|
+		;	BEQ OffScrKillSprite		;Addr+$0C ;|
+		;	LDA.b #$00					;Addr+$0E ;|\Hijacked by pixi on LoROM and !Disable255SpritesPerLevel == 0.
+		;	STA.w $1938,Y				;Addr+$10 ;|/
 		;OffScrKillSprite:				;-------- ;|
-		;	STZ.w $14C8,X				;Addr+$10 ;/
+		;	STZ.w $14C8,X				;Addr+$13 ;/
 		;ReturnXXXXXX:					;
 		;	RTS							;Addr+$13 ;>Will execute this after this hijack code finishes.
 		?SubOffScreenXBnkX:
@@ -201,11 +202,8 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			else
 				%RemoveFreespaceCodeFromJMLJSL(<Addr_Hijack>)
 				org <Addr_Hijack>
+				LDA !14C8,x
 				CMP #$08
-				BCC ?.OffScrKillSprite
-				
-				org <Addr_BranchToKillSpr>
-				?.OffScrKillSprite
 			endif
 	endmacro
 	macro JSLRTS(JumpTo, RTLOfSameBank)
@@ -780,6 +778,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		;Because STZ.w $14C8,X happens in less than 4 bytes before RTS, I have to hijack
 		;an address before that, which looks ugly. Following disassembly shows what's
 		;hijacked:
+		;	LDA $14C8,x					;$01AC8E	|\
 		;	CMP.b #$08					;$01AC91	||
 		;	BCC OffScrKillSprite		;$01AC93	||
 		;	LDY.w $161A,X				;$01AC95	||
@@ -793,9 +792,10 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		;	RTS							;$01ACA4	|
 		;^Note that this subroutine is also used to delete sprites once their falling-off-screen animation ends,
 		; when it falls below the level (runs $018127 -> $019AA2 -> $019ADD -> $01AC3E -> $01ACA1).
-		%SubOffScreenHijacks($01AC91, SubOffscreenXBnk1PreventHPMeterTransfer, $01ACA1)
+		%SubOffScreenHijacks($01AC8E, SubOffscreenXBnk1PreventHPMeterTransfer, $01ACA1)
 		
 		;Similar code as above. I can move the restore code to a subroutine here.
+		;	LDA.w $14C8,X				;$02D07A	|\ 
 		;	CMP.b #$08					;$02D07D	||
 		;	BCC OffScrKillSprBnk2		;$02D07F	||
 		;	LDY.w $161A,X				;$02D081	||
@@ -807,8 +807,9 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		;	STZ.w $14C8,X				;$02D08D	|/
 		;Return02D090:					;			|
 		;	RTS							;$02D090	|
-		%SubOffScreenHijacks($02D07D, SubOffscreenXBnk2PreventHPMeterTransfer, $02D08D)
+		%SubOffScreenHijacks($02D07A, SubOffscreenXBnk2PreventHPMeterTransfer, $02D08D)
 		;Same.
+		;	LDA.w $14C8,X				;$03B8AC	|
 		;	CMP.b #$08					;$03B8AF	|
 		;	BCC OffScrKillSprBnk3		;$03B8B1	|
 		;	LDY.w $161A,X				;$03B8B3	|
@@ -820,7 +821,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		;	STZ.w $14C8,X				;$03B8BF	|
 		;Return03B8C2:					;			|
 		;	RTS							;$03B8C2	|
-		%SubOffScreenHijacks($03B8AF, SubOffscreenXBnk3PreventHPMeterTransfer, $03B8BF)
+		%SubOffScreenHijacks($03B8AC, SubOffscreenXBnk3PreventHPMeterTransfer, $03B8BF)
 	;Bosses below (only applies to bosses with a HP system, and not bowser)
 		;Reznor. Note that when killed, it calls the "InitSpriteTables" subroutine from $039AEE.
 		;Thus resulting in the meter jumping to 0 back to 1. I had to hijack at or after $039AF2 to force it to be zero
@@ -1826,7 +1827,6 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			.HandleTotalHPAnimation
 				;Plays the bar animation for total HP when enemies despawn via falling off the level
 				if and(and(!Setting_SpriteHP_TotalHPMode, !Setting_SpriteHP_BarAnimation), !Setting_SpriteHP_BarChangeDelay)
-					PHA
 					LDA !Freeram_SpriteHP_MeterState
 					CMP.b #!sprite_slots*2		;\If meter is on specific sprite slot, skip the meter animation entirely
 					BCC ..TotalHPAnimationDone	;|since it shall disappear if on a sprite that got off-screen-erased.
@@ -1841,9 +1841,9 @@ incsrc "Defines/GraphicalBarDefines.asm"
 							STA !Freeram_SpriteHP_BarAnimationTimer		;/
 						...SkipFreeze
 					..TotalHPAnimationDone
-					PLA
 				endif
 			.CommonRestore
+				LDA !14C8,x
 				CMP #$08
 				BCC ..OffScrKillSprite
 				LDY !161A,x
