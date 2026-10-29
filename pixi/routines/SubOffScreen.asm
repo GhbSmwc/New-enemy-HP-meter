@@ -1,9 +1,12 @@
+incsrc "../EnemyHPMeterDefines.asm"
 incsrc "../SharedSubroutineDefs.asm"
 
-;This is a edited version of Pixi's routine "SubOffScreen.asm", but with bugfix
-;that prevents the HP meter from transferring to another sprite if a sprite the HP meter
-;is on despawns and a new sprite spawns on the same sprite slot at the same frame.
-;Immidiately after !14C8,x gets cleared, call JSL !SharedSub_HideHPMeterIfSpriteDespawns.
+;This is a edited version of Pixi's routine "SubOffScreen.asm", but with:
+; - A bugfix that prevents the HP meter from transferring to another sprite if a sprite
+;   the HP meter is on despawns and a new sprite spawns on the same sprite slot at the
+;   same frame.
+; - A system that properly handles total HP mode to handle the damage animation on the
+;   bar.
 ;
 ;Replace that file with this file, unless there are changes in pixi's SubOffScreen.asm,
 ;then this file needs to be updated prior to replacing. And yes, if such a change occurs,
@@ -126,6 +129,23 @@ endif
     PLX                     ;BlindEdit: alright back to the planning phase (restore X)
 
 ?.kill    
+	;Plays the bar animation for total HP when enemies despawn via falling off the level
+	if and(and(!Setting_SpriteHP_TotalHPMode, !Setting_SpriteHP_BarAnimation), !Setting_SpriteHP_BarChangeDelay)
+		LDA !Freeram_SpriteHP_MeterState
+		CMP.b #!SprSize*2			;\If meter is on specific sprite slot, skip the meter animation entirely
+		BCC ?..TotalHPAnimationDone	;|since it shall disappear if on a sprite that got off-screen-erased.
+		CMP.b #(!SprSize*2)+2		;|
+		BCS ?..TotalHPAnimationDone	;/
+		?..TotalHPHandler
+			LDA !14C8,x			;\If enemy falling down the screen and despawns, don't re-freeze, or to extend
+			CMP #$06			;|the damage indicator pause.
+			BCC ?...SkipFreeze	;/
+			?...Freeze
+				LDA.b #!Setting_SpriteHP_BarChangeDelay		;\Freeze damage indicator (this makes the bar animation hangs before decreasing towards current HP fill amount)
+				STA !Freeram_SpriteHP_BarAnimationTimer		;/
+			?...SkipFreeze
+		?..TotalHPAnimationDone
+	endif
     STZ !14C8,x             ; erase sprite
     JSL !SharedSub_HideHPMeterIfSpriteDespawns ;>Immidiately hide the HP meter (prevent sprite despawn, new sprite spawns on same slot, at the same frame, and HP meter transfers).
 ?.return
