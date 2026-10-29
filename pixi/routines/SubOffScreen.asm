@@ -189,7 +189,7 @@ endif
 ?.spr_l38
     LDA $00
     BPL ?.return
-    BMI ?.erase
+    JMP ?.erase
 
 ?.spr_t12
     db $40,$B0
