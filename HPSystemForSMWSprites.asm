@@ -1348,7 +1348,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					STA $1DF9|!addr
 				.CheckSprite
 					JSR IsKoopaShellEmpty
-					BCS .Done
+					BCS .Done ;>If player jumps on a kicked shell, don't switch HP meter.
 				.ShowHP
 					%DealFixedDamage(0)
 				.Done
