@@ -413,10 +413,10 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				JSR.w $019ACB
 				JSL $07FC3B|!bank
 			endif
-		;Spinjumping/riding yoshi on a spikey enemy to switch HP meter (and no damage/kill)
+		;Jump/Spinjumping/riding yoshi on enemy to switch HP meter (and no damage/kill)
 			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
 				org $01A8D8
-				autoclean JSL ShowHPOnSpinjumpOrYoshiNoKill
+				autoclean JSL ShowHPOnJumpOrSpinjump
 				NOP
 			else
 				%RemoveFreespaceCodeFromJMLJSL($01A8D8)
@@ -1342,10 +1342,13 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					%JSLRTS($019ACB|!bank, $01A7E3|!bank)
 					JSL $07FC3B|!bank
 					RTL
-			ShowHPOnSpinjumpOrYoshiNoKill: ;>JSL from $01A8D8
+			ShowHPOnJumpOrSpinjump: ;>JSL from $01A8D8
 				.Restore
 					LDA #$02
 					STA $1DF9|!addr
+				.CheckSprite
+					JSR IsKoopaShellEmpty
+					BCS .Done
 				.ShowHP
 					%DealFixedDamage(0)
 				.Done
