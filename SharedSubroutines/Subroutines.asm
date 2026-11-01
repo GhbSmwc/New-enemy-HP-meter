@@ -580,18 +580,30 @@ if !SharedSubUseFlag_UsingGraphicalBarRoutines
 								;label text on where to jump to (which specifies the length
 								;of the bar).
 								;
-									;%CheckSpriteNumber($xx, .MidLength)
-								;Don't remove this.
+								;	Syntax:
+								;	%CheckSpriteNumber(<Sprite_Number>, .<Label_LengthName>)
+								;		;^
+								;		; - <Sprite_Number> = Sprite number to set length.
+								;		;   for here, this is the custom sprite number.
+								;		;   the other is for vanilla sprite numbers.
+								;		;   Normally you enter as "$xx" as a hexadecimal
+								;		;   number.
+								;		; - <Label_LengthName> = a label of specified length
+								;		;   by default, it is either ".MidLength",
+								;		;   ".LongLength", or ".ShortLength".
+								
+								;Don't remove this. This is the default bar length when the
+								;sprite is not listed.
 									JMP .ShortLength
 						endif
 				.VanillaSpriteMiddleLengths
 					LDA !9E,x
-					;Enter your list of vanilla sprite numbers here. Same as above.
+					;Enter your list of vanilla sprite numbers here. Same as for custom sprite.
 						%CheckSpriteNumber($46, .MidLength)               ;\Chargin' chucks.
 						%CheckSpriteNumber_Range($91, $98, .MidLength)    ;/
 						%CheckSpriteNumber($C5, .LongLength)              ;>Big Boo Boss.
 						%CheckSpriteNumber($29, .LongLength)              ;>Koopa kids.
-					;Don't remove this.
+					;Don't remove this. Like above, this is the default length for sprites that are not listed.
 						JMP .ShortLength
 				.LongLength
 					LDA #$09		;>Number of middle tiles for LongLength. branch from a given sprite number.
