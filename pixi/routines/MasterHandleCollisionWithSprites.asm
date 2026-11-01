@@ -35,7 +35,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ?MasterHandleSpriteCollisions:
 	?.MainSprites
-		LDY.b #!sprite_slots-1
+		LDY.b #!SprSize-1
 		?..Loop
 			TYA
 			CMP $15E9|!Base2
