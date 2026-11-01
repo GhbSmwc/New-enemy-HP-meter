@@ -6,7 +6,7 @@
 ;; NOTE: To make sure it does not use default interaction with other sprites, such as
 ;; fireball disappearing with or without killing/damaging the sprite, make sure $167A
 ;; bit 1 (i bit, Invincible to star/cape/fire/bouncing bricks) is set. This allows only
-;; custom code to handle fireball and the new damage routine.
+;; custom code to handle fireball, cape, other interactions and the new damage routine.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
