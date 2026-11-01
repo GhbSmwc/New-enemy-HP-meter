@@ -1206,21 +1206,26 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					EOR $13F9|!addr
 					BNE .NextSlot ;>...this includes not on matching layer
 			.CapeHitsDoesNothingDisplayHP
-				..CheckForIggyLarry
+				..CheckForKoopaKids
 					if !Setting_SpriteHP_UsingCustomSprites
 						LDA !7FAB10,x
 						AND.b #%00001000
 						BNE ...No
 					endif
-					LDA !9E,x		;\If the sprite is Iggy/Larry, ignore (this will be handled in-sprite code by a hijack at $01FCBA)
-					CMP #$29		;|because if allowed, this hitbox would use the position above the visible sprite, since the game
-					BNE ...No		;|uses XY pos relative to screen border and not level.
-					LDA !C2,x		;|
-					CMP #$03		;|
-					BCC ...No		;|
-					CMP #$05		;|
-					BCS ...No		;|
-					BRA .NextSlot	;/
+					LDA !9E,x			;\If the sprite is Iggy/Larry, ignore (this will be handled in-sprite code by a hijack at $01FCBA)
+					CMP #$29			;|because if allowed, this hitbox would use the position above the visible sprite, since the game
+					BNE ...No			;|uses XY pos relative to screen border and not level.
+					LDA !C2,x			;|
+					CMP #$03			;|
+					BCC ...No			;|
+					CMP #$05			;|
+					BCS ...LemmyWendy	;|
+					...IggyLarry
+						BRA .NextSlot	;
+					...LemmyWendy
+						LDA !1528,x		;\Check if its a dummy (most of the sprite table data is just copied from Lemmy/Wendy for the dummy sprite, including its HP)
+						CMP #$08		;/If is a dummy, don't show HP for it.
+						BEQ .NextSlot
 					...No
 				LDA !166E,x
 				AND.b #%00100000
