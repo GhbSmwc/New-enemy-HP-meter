@@ -1044,6 +1044,16 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				LDA #$01
 				STA $1DF9|!addr
 			endif
+			
+			
+			if and(!Setting_ModifySprAndDisplayHPOfSMWSpr, !Setting_SpriteHP_VanillaSprite_Bosses)
+				org $01FCBA
+				autoclean JML IggyLarryHitByCape
+			else
+				%RemoveFreespaceCodeFromJMLJSL($01FCBA)
+				org $01FCBA
+				JSL $03B72B|!bank
+			endif
 ;Freespace code
 	freecode
 	if and(and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_VanillaSprite_Chuck), equal(!Setting_SpriteHP_VanillaSprite_OneShotSprites, 0))
@@ -1196,6 +1206,22 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					EOR $13F9|!addr
 					BNE .NextSlot ;>...this includes not on matching layer
 			.CapeHitsDoesNothingDisplayHP
+				..CheckForIggyLarry
+					if !Setting_SpriteHP_UsingCustomSprites
+						LDA !7FAB10,x
+						AND.b #%00001000
+						BNE ...No
+					endif
+					LDA !9E,x		;\If the sprite is Iggy/Larry, ignore (this will be handled in-sprite code by a hijack at $01FCBA)
+					CMP #$29		;|because if allowed, this hitbox would use the position above the visible sprite, since the game
+					BNE ...No		;|uses XY pos relative to screen border and not level.
+					LDA !C2,x		;|
+					CMP #$03		;|
+					BCC ...No		;|
+					CMP #$05		;|
+					BCS ...No		;|
+					BRA .NextSlot	;/
+					...No
 				LDA !166E,x
 				AND.b #%00100000
 				BEQ .NotImmune ;>If not immune, let flip-sprite effects hijack handle this.
@@ -2415,4 +2441,49 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				LDA.b #!Setting_SpriteHP_VanillaSprite_IggyLarry_Push_SoundNumber
 				STA !Setting_SpriteHP_VanillaSprite_IggyLarry_Push_SoundPort
 				RTL
+		IggyLarryHitByCape: ;>JML from $01FCBA
+			.Restore
+				JSL $03B72B|!bank ;>Check for contact between Boss and Mario...
+				BCC ..HandleFireball ;>If not, handle fireball and the newly added cape interaction (but this only handles switching the HP meter)
+				JML $01FCC0|!bank ;>Return as normal
+				
+				..HandleFireball
+					%JSLRTS($01FD0A|!bank, $018021|!bank)
+			.HandleCape
+				;Note to self: Iggy/Larry hitbox clipping info is hitbox B.
+				;
+				;We need the cape hitbox in A (which is custom-written due to $029696 lacking a vertical displacement)
+				;The cape hitbox, unlike to most other sprites, is just a ~48x8 px dimension centered on the player.
+				;Also note that the player, fireball, and cape hitboxes must be using XY pos relative to the screen,
+				;not their level-absolute XY pos.
+				LDA $19				;\Not cape, then return
+				CMP #$02			;|
+				BNE ..Done			;/
+				LDA $140D|!addr		;\Needs a Cape + either a spin jump or a cape spin
+				ORA $14A6|!addr		;|
+				BEQ ..Done			;/
+				LDA $7E				;\X position
+				SEC					;|
+				SBC #$10			;|
+				STA $04				;|
+				LDA $7F				;|
+				SBC #$00			;|
+				STA $0A				;/
+				LDA $80				;\Y position
+				CLC					;|
+				ADC #$10			;|
+				STA $05				;|
+				LDA $81				;|
+				ADC #$00			;|
+				STA $0B				;/
+				LDA #$30			;\Width
+				STA $06				;/
+				LDA #$08			;\Height
+				STA $07				;/
+				JSL $03B72B|!bank	;>Check Contact
+				BCC ..Done
+				..ShowHP
+					%DealFixedDamage(0)
+				..Done
+					JML $01FD4F|!bank
 	endif
