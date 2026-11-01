@@ -1209,20 +1209,23 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				if !Setting_SpriteHP_VanillaSprite_Bosses
 					..CheckForKoopaKids
 						if !Setting_SpriteHP_UsingCustomSprites
-							LDA !7FAB10,x
-							AND.b #%00001000
-							BNE ...No
+							LDA !7FAB10,x		;\If sprite custom, ignore
+							AND.b #%00001000	;|
+							BNE ...No			;/
 						endif
-						LDA !9E,x			;\If the sprite is Iggy/Larry, ignore (this will be handled in-sprite code by a hijack at $01FCBA)
-						CMP #$29			;|because if allowed, this hitbox would use the position above the visible sprite, since the game
-						BNE ...No			;|uses XY pos relative to screen border and not level.
-						LDA !C2,x			;|
+						LDA !9E,x			;\If not Koopa kid, allow default interaction
+						CMP #$29			;|
+						BNE ...No			;/
+						LDA !C2,x			;\Determine which koopa kid
 						CMP #$03			;|
 						BCC ...No			;|
 						CMP #$05			;|
-						BCS ...LemmyWendy	;|
+						BCS ...LemmyWendy	;/
 						...IggyLarry
 							BRA .NextSlot	;
+								;^If the sprite is Iggy/Larry, ignore (this will be handled in-sprite code by a hijack at $01FCBA)
+								; because if allowed, this hitbox would use the position above the visible sprite, since the game
+								; uses XY pos relative to screen border and not level.
 						...LemmyWendy
 							LDA !1528,x		;\Check if its a dummy (most of the sprite table data is just copied from Lemmy/Wendy for the dummy sprite, including its HP)
 							CMP #$08		;/If is a dummy, don't show HP for it.
@@ -1232,6 +1235,9 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				LDA !166E,x
 				AND.b #%00100000
 				BEQ .NotImmune ;>If not immune, let flip-sprite effects hijack handle this.
+				LDA !167A,x
+				AND.b #%00000010
+				BNE .NextSlot ;>If interaction with most things disabled, skip ($167A's "i" (bit 1) is Invincible to star/cape/fire/bouncing bricks )
 				..Immune
 					JSL $03B69F|!bank
 					LDA $0E ;>$0E: 0 for quake sprite, 1 = capespin/net punch
