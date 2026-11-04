@@ -1361,6 +1361,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					LDA !C2,x
 					RTL
 			else
+				;When !Setting_SpriteHP_VanillaSprite_Rex == 2 -> Using the HP data directly.
 				%DealFixedDamage(!Setting_SpriteHP_VanillaSprite_Rex_StompDamage)
 				INC !C2,x	;>Advance the Rex state
 				LDA !Freeram_SpriteHP_CurrentHPLow,x
