@@ -332,6 +332,9 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			AND.b #%00010000
 		endif
 	;Cape spin hits enemy and is immune. Like above, merely shows HP meter and deals no damage.
+	;Note that there are some exemptions:
+	; - Sprites with 0/0 HP
+	; - Sprites with tweaker $167A's bit 1 (%000000*0) being set (skip interaction with most things).
 		if and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
 			org $0293BE
 			autoclean JML ShowHPOnCapeImmune
@@ -1237,7 +1240,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				BEQ .NotImmune ;>If not immune, let flip-sprite effects hijack handle this.
 				LDA !167A,x
 				AND.b #%00000010
-				BNE .NextSlot ;>If interaction with most things disabled, skip ($167A's "i" (bit 1) is Invincible to star/cape/fire/bouncing bricks )
+				BNE .NextSlot ;>If interaction with most things disabled, skip ($167A's "i" (bit 1) is Invincible to star/cape/fire/bouncing bricks)
 				..Immune
 					JSL $03B69F|!bank
 					LDA $0E ;>$0E: 0 for quake sprite, 1 = capespin/net punch
