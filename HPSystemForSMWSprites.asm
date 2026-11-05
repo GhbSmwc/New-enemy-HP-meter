@@ -346,11 +346,13 @@ incsrc "Defines/GraphicalBarDefines.asm"
 		endif
 	;Fireball turns enemy into coin. In normal cases, the meter should disappear since it is no longer an enemy.
 	;However if any of the following are true:
-	; - For total HP mode, we need to make sure that the bar damage animation plays out properly.
+	; - For total HP mode, we need to make sure that the bar damage animation plays out properly (the damage
+	;   shown should not immidiately shrink to current HP).
 	; - If Classic fireball (included in this patch) is enabled, the HP meter must show up as it falls down the
 	;   screen (without classic fireball, SMW would spawn a coin (actually the enemy *transforms* into a coin),
 	;   which is a blacklisted sprite that shouldn't have an HP meter).
-	;would apply the hijack.
+	;
+	;...would apply the hijack.
 		!Setting_SpriteHP_ModifyFireballKill = or(and(and(!Setting_SpriteHP_BarAnimation, !Setting_SpriteHP_BarChangeDelay), !Setting_SpriteHP_TotalHPMode), !Setting_SpriteHP_ClassicFireball)
 		if !Setting_SpriteHP_ModifyFireballKill
 			org $02A129
@@ -531,7 +533,10 @@ incsrc "Defines/GraphicalBarDefines.asm"
 				JSR.w $01AC80
 				LDY !1594,x
 			endif
-	;Vertical despawn fixes
+	;Vertical despawn fixes (again, if something deletes a sprite via zeroing $14C8,x not using JSL !SharedSub_HideHPMeterIfSpriteDespawns
+	;can cause HP meter transfer if a new sprite spawns on the same slot as the deleted sprite at the same frame). However, because this
+	;is itself techinically a glitch, it simply makes it rely on the suboffscreen (now hijacked) and level boundaries instead, along with
+	;JSL !SharedSub_HideHPMeterIfSpriteDespawns being used.
 		;Magikoopa
 			if and(!Setting_SpriteHP_RemoveOrApplyPatch, !Setting_SpriteHP_VanillaSprite_OneShotSprites)
 				org $01BCD3
@@ -1584,13 +1589,16 @@ incsrc "Defines/GraphicalBarDefines.asm"
 			;Default HP values for sprites and custom sprites. These are values that their current and max HP are set when they first spawn
 			;(before their init code executes).
 			;
-			;Any sprite with a max HP of 0 are consitered "blacklisted" and the meter will not display HP for that.
+			;Notes:
+			; - Each number here is for each sprite ID number.
+			; - Define "!DefaultHPTableSize" is just a substitute to either use "db" or "dw", which tells asar the number of bytes the
+			;   value occupies, depending on if "!Setting_SpriteHP_TwoByte" is set to 0 or 1.
+			; - Any sprite with a max HP of 0 are consitered "blacklisted" and the meter will not display HP for that.
+			; -- For conditionally blacklisted sprites (where a specific state should not have HP, such as a bob-omb), see
+			;    "UberASMTool/level/DisplayEnemyHP.asm" under ".CheckForBlacklistedSprites"
+			; - If !Setting_SpriteHP_TwoByte == 0, then only enter values 0-255, else 0-65535 is allowed. Values at or above 256 or 65536
+			;   will be modulo'ed by those values. A value without a prefix ("%" = binary, "$" = hex) means decimal.
 			;
-			;If !Setting_SpriteHP_TwoByte == 0, then only enter values 0-255, else 0-65535 is allowed. Values at or above 256 or 65536 will
-			;be modulo'ed by those values. A value without a prefix ("%" = binary, "$" = hex) means decimal.
-			;
-			;For conditionally blacklisted sprites (where a specific state should not have HP, such as a bob-omb), see
-			;"UberASMTool/level/DisplayEnemyHP.asm" under ".CheckForBlacklistedSprites"
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
