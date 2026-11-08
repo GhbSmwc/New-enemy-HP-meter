@@ -2063,7 +2063,7 @@ incsrc "Defines/GraphicalBarDefines.asm"
 					JSL !SharedSub_SpriteHPGetSlotIndex
 					TXA
 					CMP !Scratchram_SpriteHP_SpriteSlotToDisplay
-					BNE .Done									;>If HP meter isn't on the enemy that the player just jumped on or is stunned in their shells and unstun themselves, skip
+					BNE .TransferHPValues						;>If HP meter isn't on the enemy that the player just jumped on or is stunned in their shells and unstun themselves, skip
 				.SwitchMeter
 					TYA											;\Switch meter to the shell-less koopa (note that since these enemies have 1HP, we don't need bar animation)
 					STA !Freeram_SpriteHP_MeterState			;/
